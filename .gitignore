@@ -1,0 +1,16 @@
+*.o
+*~
+*.so
+*.log
+*.aux
+*.out
+*.exe
+*.pyc
+*.api
+*.slcio
+*.replay
+*.trace
+.hidden
+GPATH
+GRTAGS
+GTAGS
