@@ -3,15 +3,6 @@
 #include <TROOT.h>
 #include <cstdlib>
 
-//row data fomat
-const unsigned int CHIPHEAD = 4;
-const unsigned int CHIPENDTAG = 2;
-const unsigned int CHIPIDSIZE = 1;
-const unsigned int NCHANNELS = NumChipChFull;
-const unsigned int MEMDEPTH = NumSca;
-const unsigned int NCHIPS = NumChip;
-
-
 //***************************************
 wgConst::wgConst(){
 }

@@ -7,39 +7,41 @@
 #include <TTree.h>
 #include <TNamed.h>
 
-#define NumDif 2
-#define NumChip 20
+#define NumDif        2
+#define NumChip       20
+#define NumChipSMRD   3
 #define NumChipChFull 36
-#define NumChipCh 32
-#define NumSca 16
+#define NumChipCh     32
+#define NumSca        16
 
 #define NumReconAxis 2
 
 #define MAX_NUM_BCID_CLUSTER 10 
-#define MAX_NUM_HIT 1000
-#define MAX_NUM_TRACK 50
-#define MAX_NUM_TRACKHIT 250
+#define MAX_NUM_HIT          1000
+#define MAX_NUM_TRACK        50
+#define MAX_NUM_TRACKHIT     250
 
-#define MAX_NUMCH_WG 1280 //8 tracking planes
+#define MAX_NUMCH_WG  1280 //8 tracking planes
 #define MAX_NUMCH_ING 616 //11 tracking planes, 4 veto planes
-#define MAX_NUMCH_PM 1204 //18 tracking planes, 4 veto planes
+#define MAX_NUMCH_PM  1204 //18 tracking planes, 4 veto planes
 
-#define MAX_NUM_INGHIT  1000 //within a spill
+#define MAX_NUM_INGHIT   1000 //within a spill
 #define MAX_NUM_INGRECON 100 // within a spill
-#define NUM_CYC 8
+#define NUM_CYC          8
 
 
 using namespace std;
 
 //#define DEBUG_DECODE
 
-extern const unsigned int CHIPHEAD;
-extern const unsigned int CHIPENDTAG;
-extern const unsigned int CHIPIDSIZE;
-extern const unsigned int NCHANNELS;
-extern const unsigned int MEMDEPTH;
-extern const unsigned int NCHIPS;
-
+//row data fomat
+const unsigned int CHIPHEAD   = 4;
+const unsigned int CHIPENDTAG = 2;
+const unsigned int CHIPIDSIZE = 1;
+const unsigned int NCHANNELS  = NumChipChFull;
+const unsigned int MEMDEPTH   = NumSca;
+const unsigned int NCHIPS     = NumChip;
+const unsigned int NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
 class Raw_t
