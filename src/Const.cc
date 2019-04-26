@@ -118,14 +118,14 @@ Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols) {
 	tdc_intcpt[ichip].reserve(n_chans);
 
     for(unsigned int ich = 0; ich < n_chans; ich++) {
-	  charge[ichip].reserve(n_cols);
-	  time[ichip].reserve(n_cols);
-	  hit[ichip].reserve(n_cols);
-	  gs[ichip].reserve(n_cols);
-	  pedestal[ichip].reserve(n_cols);
-	  ped_nohit[ichip].reserve(n_cols);
-	  pe[ichip].reserve(n_cols);
-	  time_ns[ichip].reserve(n_cols);
+	  charge[ichip][ich].reserve(n_cols);
+	  time[ichip][ich].reserve(n_cols);
+	  hit[ichip][ich].reserve(n_cols);
+	  gs[ichip][ich].reserve(n_cols);
+	  pedestal[ichip][ich].reserve(n_cols);
+	  ped_nohit[ichip][ich].reserve(n_cols);
+	  pe[ichip][ich].reserve(n_cols);
+	  time_ns[ichip][ich].reserve(n_cols);
 	}
   }
   this->clear(n_chips, n_chans, n_cols);
