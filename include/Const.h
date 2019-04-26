@@ -45,9 +45,11 @@ const unsigned int NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
 
+typedef vector<vector<vector<vector<double>>>> d4vector;
 typedef vector<vector<vector<double>>> d3vector;
 typedef vector<vector<double>> d2vector;
 typedef vector<double> dvector;
+typedef vector<vector<vector<vector<int>>>> i4vector;
 typedef vector<vector<vector<int>>> i3vector;
 typedef vector<vector<int>> i2vector;
 typedef vector<int> ivector;
