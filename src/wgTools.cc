@@ -17,7 +17,7 @@
 
 using namespace std;
 
-string OperateString::GetExtension(string& str)
+string OperateString::GetExtension(const string& str)
 {
   OperateString::str = str;
   size_t pos1 = str.rfind('.');
@@ -40,18 +40,19 @@ string OperateString::GetExtension(string& str)
   return ext;
 }
 
-string OperateString::GetName(string& str)
+string OperateString::GetName(const string& str)
 {
   string fn;
+  string tmp = str;
   string::size_type fpos;
-  if( (fpos = str.find_last_of("/")) == str.size()-1){
-    str = str.substr(0,str.size()-1);
+  if( (fpos = tmp.find_last_of("/")) == tmp.size()-1){
+    tmp = tmp.substr(0,tmp.size()-1);
   }
 
-  if((fpos = str.find_last_of("/")) != string::npos){
-    fn = str.substr(fpos+1);
+  if((fpos = tmp.find_last_of("/")) != string::npos){
+    fn = tmp.substr(fpos+1);
   }else{
-    fn = str;
+    fn = tmp;
   }
   if((fpos = fn.find_last_of(".")) != string::npos){
     if(fpos>1){
@@ -61,7 +62,7 @@ string OperateString::GetName(string& str)
   return fn;
 }
 
-string OperateString::GetPath(string& str)
+string OperateString::GetPath(const string& str)
 {
   size_t pos1;
   pos1 = str.rfind("/");
@@ -71,7 +72,7 @@ string OperateString::GetPath(string& str)
   return "";
 }
 
-string OperateString::GetNameBeforeLastUnderBar(string& str)
+string OperateString::GetNameBeforeLastUnderBar(const string& str)
 {
   string fn;
   string::size_type fpos;

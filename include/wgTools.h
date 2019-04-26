@@ -13,19 +13,23 @@ private:
   string str;
   string ext;
 public:  
-  string GetExtension(string& str);  //Get Extension from full path.
-  string GetName(string& str);       //Get Name from full path.
-  string GetPath(string& str);       //Get Path from full path.
-  string GetNameBeforeLastUnderBar(string& str);       //Get Path from full path.
+  string GetExtension(const string& str);  //Get Extension from full path.
+  string GetName(const string& str);       //Get Name from full path.
+  string GetPath(const string& str);       //Get Path from full path.
+  string GetNameBeforeLastUnderBar(const string& str);       //Get Path from full path.
 };
 
 /* - Initialize: opens two files (one for info logging and another one for error
-   logging) in the log_dir directory. If the directory is not given the environment variable
-   WAGASCI_LOGDIR is used instead.
+                 logging) in the log_dir directory. If the directory is not
+                 given the environment variable WAGASCI_LOGDIR is used instead.
   
    - Write: logs a message to the info logging file
 
    - eWrite: logs a message to the error logging file
+
+   - LogToCout and LogToCerr: if set tu true the Logger will not log to file but
+                              will redirect every message to std::cout and
+                              std::cerr respectively
 */
 
 class Logger
