@@ -2,6 +2,7 @@
 #define CONST_H_INCLUDE
 
 #include <string>
+#include <memory>
 #include <TROOT.h>
 #include <TFile.h>
 #include <TTree.h>
@@ -16,7 +17,7 @@
 
 #define NumReconAxis 2
 
-#define MAX_NUM_BCID_CLUSTER 10 
+#define MAX_NUM_BCID_CLUSTER 10
 #define MAX_NUM_HIT          1000
 #define MAX_NUM_TRACK        50
 #define MAX_NUM_TRACKHIT     250
@@ -28,7 +29,6 @@
 #define MAX_NUM_INGHIT   1000 //within a spill
 #define MAX_NUM_INGRECON 100 // within a spill
 #define NUM_CYC          8
-
 
 using namespace std;
 
@@ -44,216 +44,231 @@ const unsigned int NCHIPS     = NumChip;
 const unsigned int NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
+
+typedef vector<vector<vector<double>>> d3vector;
+typedef vector<vector<double>> d2vector;
+typedef vector<double> dvector;
+typedef vector<vector<vector<int>>> i3vector;
+typedef vector<vector<int>> i2vector;
+typedef vector<int> ivector;
+
 class Raw_t
 {
-  public:
-    int spill;
-    int spill_mode;
-    int spill_count;
-    int spill_flag;
-    int chipid      [NumChip];    //ASU 
-    int chipid_tag  [NumChip];    //DIF
-    int chip        [NumChip];
-    int chipch               [NumChipChFull];
-    int col                                 [NumSca];
-    int charge      [NumChip][NumChipChFull][NumSca];
-    int time        [NumChip][NumChipChFull][NumSca];
-    int bcid        [NumChip]               [NumSca];
-    int hit         [NumChip][NumChipChFull][NumSca];
-    int gs          [NumChip][NumChipChFull][NumSca];
-    int debug       [NumChip];
+public:
+  int spill;
+  int spill_mode;
+  int spill_count;
+  int spill_flag;
+  ivector chipid;            // [NumChip];    //ASU 
+  ivector chipid_tag;        // [NumChip];    //DIF
+  ivector chip;              // [NumChip];
+  ivector chipch;            //          [NumChipChFull];
+  ivector col;               //                         [NumSca];
+  i3vector charge;           // [NumChip][NumChipChFull][NumSca];
+  i3vector time;             // [NumChip][NumChipChFull][NumSca];
+  i2vector bcid;             // [NumChip]               [NumSca];
+  i3vector hit;              // [NumChip][NumChipChFull][NumSca];
+  i3vector gs;               // [NumChip][NumChipChFull][NumSca];
+  ivector debug;             // [NumChip];
 
-    int view;
-    int pln         [NumChip][NumChipChFull];
-    int ch          [NumChip][NumChipChFull];
-    int grid        [NumChip][NumChipChFull];
-    double x        [NumChip][NumChipChFull];
-    double y        [NumChip][NumChipChFull];
-    double z        [NumChip][NumChipChFull];
-    double pedestal [NumChip][NumChipChFull][NumSca];
-    double ped_nohit[NumChip][NumChipChFull][NumSca];
-    double pe       [NumChip][NumChipChFull][NumSca];
-    double time_ns  [NumChip][NumChipChFull][NumSca];
-    double gain     [NumChip][NumChipChFull];
+  int view;
+  i2vector pln;              // [NumChip][NumChipChFull];
+  i2vector ch;               // [NumChip][NumChipChFull];
+  i2vector grid;             // [NumChip][NumChipChFull];
+  d2vector x;                // [NumChip][NumChipChFull];
+  d2vector y;                // [NumChip][NumChipChFull];
+  d2vector z;                // [NumChip][NumChipChFull];
+  d3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
+  d3vector ped_nohit;        // [NumChip][NumChipChFull][NumSca];
+  d3vector pe;               // [NumChip][NumChipChFull][NumSca];
+  d3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
+  d2vector gain;             // [NumChip][NumChipChFull];
+  d2vector tdc_slope;        // [NumChip][NumChipChFull];
+  d2vector tdc_intcpt;       // [NumChip][NumChipChFull];
 
-    Raw_t();
-    ~Raw_t();
-    void init();
-    void clear();
+  int n_chips;
+  int n_chans;
+  int n_cols;
+
+  Raw_t();
+  Raw_t(size_t n_chips, size_t n_chans, size_t n_cols);
+  ~Raw_t();
+  void init(size_t n_chips, size_t n_chans, size_t n_cols);
+  void clear(size_t n_chips, size_t n_chans, size_t n_cols);
 };
 
 class Hit_t
 {
-  public:
-    int    num_hits;
-    int    num_bcid_cluster;
-    int    num_bcid_hits   [MAX_NUM_BCID_CLUSTER];
-    int    clustered_bcid  [MAX_NUM_BCID_CLUSTER];
-    int    clustered_hitid [MAX_NUM_BCID_CLUSTER][MAX_NUM_HIT];
-    int    hit_bcid        [MAX_NUM_HIT];
-    int    hit_view        [MAX_NUM_HIT];
-    int    hit_pln         [MAX_NUM_HIT];
-    int    hit_ch          [MAX_NUM_HIT];
-    int    hit_dif         [MAX_NUM_HIT];
-    int    hit_chip        [MAX_NUM_HIT];
-    int    hit_chipch      [MAX_NUM_HIT];
-    int    hit_sca         [MAX_NUM_HIT];
-    int    hit_adc         [MAX_NUM_HIT];
-    int    hit_gs          [MAX_NUM_HIT];
-    int    hit_tdc         [MAX_NUM_HIT];
-    double hit_pe          [MAX_NUM_HIT];
-    double hit_time        [MAX_NUM_HIT];
-    double hit_pe_permm    [MAX_NUM_HIT];
-    double hit_cos         [MAX_NUM_HIT];
-    double hit_pathlength  [MAX_NUM_HIT];
-    bool   hit_ontrack     [MAX_NUM_HIT];
-    bool   hit_grid        [MAX_NUM_HIT];
-    int    hit_numtrack    [MAX_NUM_HIT];
-    double hit_cluster_pe   [MAX_NUM_HIT];
+public:
+  int    num_hits;
+  int    num_bcid_cluster;
+  int    num_bcid_hits   [MAX_NUM_BCID_CLUSTER];
+  int    clustered_bcid  [MAX_NUM_BCID_CLUSTER];
+  int    clustered_hitid [MAX_NUM_BCID_CLUSTER][MAX_NUM_HIT];
+  int    hit_bcid        [MAX_NUM_HIT];
+  int    hit_view        [MAX_NUM_HIT];
+  int    hit_pln         [MAX_NUM_HIT];
+  int    hit_ch          [MAX_NUM_HIT];
+  int    hit_dif         [MAX_NUM_HIT];
+  int    hit_chip        [MAX_NUM_HIT];
+  int    hit_chipch      [MAX_NUM_HIT];
+  int    hit_sca         [MAX_NUM_HIT];
+  int    hit_adc         [MAX_NUM_HIT];
+  int    hit_gs          [MAX_NUM_HIT];
+  int    hit_tdc         [MAX_NUM_HIT];
+  double hit_pe          [MAX_NUM_HIT];
+  double hit_time        [MAX_NUM_HIT];
+  double hit_pe_permm    [MAX_NUM_HIT];
+  double hit_cos         [MAX_NUM_HIT];
+  double hit_pathlength  [MAX_NUM_HIT];
+  bool   hit_ontrack     [MAX_NUM_HIT];
+  bool   hit_grid        [MAX_NUM_HIT];
+  int    hit_numtrack    [MAX_NUM_HIT];
+  double hit_cluster_pe  [MAX_NUM_HIT];
 
-    void Clear();
+  void Clear();
 };
 
 
 class Recon_t
 {
-  public:
+public:
 
-    void Clear();
-    void Clear_ReconVector();
+  void Clear();
+  void Clear_ReconVector();
 
-    std::vector<std::vector<unsigned int> > bcid_cluster_hitid;
-    std::vector<std::vector<unsigned int> > time_cluster_hitid;
+  vector<vector<unsigned int> > bcid_cluster_hitid;
+  vector<vector<unsigned int> > time_cluster_hitid;
 
-    // ==== Filled data for tree ==== //
-    int    num_recon;
-    int    num_recon_hits  [MAX_NUM_TRACK];
-    int    recon_hits_hitid[MAX_NUM_TRACK][MAX_NUM_TRACKHIT];
-    double recon_start_z   [MAX_NUM_TRACK];
-    double recon_stop_z    [MAX_NUM_TRACK];
-    int    recon_start_pln [MAX_NUM_TRACK];
-    int    recon_stop_pln  [MAX_NUM_TRACK];
-    int    recon_start_ch  [MAX_NUM_TRACK];
-    int    recon_stop_ch   [MAX_NUM_TRACK];
-    double recon_start_xy  [MAX_NUM_TRACK];
-    double recon_stop_xy   [MAX_NUM_TRACK];
-    double recon_slope     [MAX_NUM_TRACK];
-    double recon_intercept [MAX_NUM_TRACK];
-    double recon_pathlength[MAX_NUM_TRACK];
-    double recon_total_pe  [MAX_NUM_TRACK];
-    double recon_mean_dedx [MAX_NUM_TRACK];
-    double recon_mean_time [MAX_NUM_TRACK];
-    int    recon_view      [MAX_NUM_TRACK];
-    int    recon_bcid      [MAX_NUM_TRACK];
-    int    recon_bcid_id   [MAX_NUM_TRACK];
-    int    recon_veto      [MAX_NUM_TRACK];
-    int    recon_sideescape[MAX_NUM_TRACK];
-    double recon_cos       [MAX_NUM_TRACK];
-    double recon_len       [MAX_NUM_TRACK];
-    double recon_chi2      [MAX_NUM_TRACK];
+  // ==== Filled data for tree ==== //
+  int    num_recon;
+  int    num_recon_hits  [MAX_NUM_TRACK];
+  int    recon_hits_hitid[MAX_NUM_TRACK][MAX_NUM_TRACKHIT];
+  double recon_start_z   [MAX_NUM_TRACK];
+  double recon_stop_z    [MAX_NUM_TRACK];
+  int    recon_start_pln [MAX_NUM_TRACK];
+  int    recon_stop_pln  [MAX_NUM_TRACK];
+  int    recon_start_ch  [MAX_NUM_TRACK];
+  int    recon_stop_ch   [MAX_NUM_TRACK];
+  double recon_start_xy  [MAX_NUM_TRACK];
+  double recon_stop_xy   [MAX_NUM_TRACK];
+  double recon_slope     [MAX_NUM_TRACK];
+  double recon_intercept [MAX_NUM_TRACK];
+  double recon_pathlength[MAX_NUM_TRACK];
+  double recon_total_pe  [MAX_NUM_TRACK];
+  double recon_mean_dedx [MAX_NUM_TRACK];
+  double recon_mean_time [MAX_NUM_TRACK];
+  int    recon_view      [MAX_NUM_TRACK];
+  int    recon_bcid      [MAX_NUM_TRACK];
+  int    recon_bcid_id   [MAX_NUM_TRACK];
+  int    recon_veto      [MAX_NUM_TRACK];
+  int    recon_sideescape[MAX_NUM_TRACK];
+  double recon_cos       [MAX_NUM_TRACK];
+  double recon_len       [MAX_NUM_TRACK];
+  double recon_chi2      [MAX_NUM_TRACK];
     
-    // ==== Vectors for reconstruction ==== ///
-    std::vector<std::vector<std::vector<unsigned int> > > neighborhits_hitid;
-    std::vector<std::vector<std::vector<unsigned int> > > cell_clusterid;
-    std::vector<std::vector<std::vector<unsigned int> > > neighborcell_down_cellid;
-    std::vector<std::vector<std::vector<unsigned int> > > neighborcell_up_cellid;
-    std::vector<std::vector<unsigned int> > cell_state;  
+  // ==== Vectors for reconstruction ==== ///
+  vector<vector<vector<unsigned int> > > neighborhits_hitid;
+  vector<vector<vector<unsigned int> > > cell_clusterid;
+  vector<vector<vector<unsigned int> > > neighborcell_down_cellid;
+  vector<vector<vector<unsigned int> > > neighborcell_up_cellid;
+  vector<vector<unsigned int> > cell_state;  
 };
 
 class Track_t
 {
-  public:
+public:
 
-    void Clear();
-    void Clear_TrackVector();
+  void Clear();
+  void Clear_TrackVector();
 
-    // ==== Filled data for tree ==== //
-    int    num_track;
-    int    num_trackid;
-    int    num_track_hits  [MAX_NUM_TRACK];
-    int    num_track_recon [MAX_NUM_TRACK];
-    int    track_hits_hitid[MAX_NUM_TRACK][MAX_NUM_TRACKHIT];
-    int    track_recon_id  [MAX_NUM_TRACK][MAX_NUM_TRACK];
-    double track_start_z   [MAX_NUM_TRACK];
-    double track_stop_z    [MAX_NUM_TRACK];
-    double track_start_xy  [MAX_NUM_TRACK];
-    double track_stop_xy   [MAX_NUM_TRACK];
-    int    track_start_pln [MAX_NUM_TRACK];
-    int    track_stop_pln  [MAX_NUM_TRACK];
-    int    track_start_ch  [MAX_NUM_TRACK];
-    int    track_stop_ch   [MAX_NUM_TRACK];
-    double track_slope     [MAX_NUM_TRACK];
-    double track_intercept [MAX_NUM_TRACK];
-    double track_pathlength[MAX_NUM_TRACK];
-    double track_total_pe  [MAX_NUM_TRACK];
-    double track_mean_dedx [MAX_NUM_TRACK];
-    double track_mean_time [MAX_NUM_TRACK];
-    int    track_view      [MAX_NUM_TRACK];
-    int    track_bcid      [MAX_NUM_TRACK];
-    int    track_bcid_id   [MAX_NUM_TRACK];
-    int    track_veto      [MAX_NUM_TRACK];
-    int    track_sideescape[MAX_NUM_TRACK];
-    double track_cos_zen   [MAX_NUM_TRACK];
-    double track_cos_azi   [MAX_NUM_TRACK];
-    double track_len       [MAX_NUM_TRACK];
-    int    track_id        [MAX_NUM_TRACK];
+  // ==== Filled data for tree ==== //
+  int    num_track;
+  int    num_trackid;
+  int    num_track_hits  [MAX_NUM_TRACK];
+  int    num_track_recon [MAX_NUM_TRACK];
+  int    track_hits_hitid[MAX_NUM_TRACK][MAX_NUM_TRACKHIT];
+  int    track_recon_id  [MAX_NUM_TRACK][MAX_NUM_TRACK];
+  double track_start_z   [MAX_NUM_TRACK];
+  double track_stop_z    [MAX_NUM_TRACK];
+  double track_start_xy  [MAX_NUM_TRACK];
+  double track_stop_xy   [MAX_NUM_TRACK];
+  int    track_start_pln [MAX_NUM_TRACK];
+  int    track_stop_pln  [MAX_NUM_TRACK];
+  int    track_start_ch  [MAX_NUM_TRACK];
+  int    track_stop_ch   [MAX_NUM_TRACK];
+  double track_slope     [MAX_NUM_TRACK];
+  double track_intercept [MAX_NUM_TRACK];
+  double track_pathlength[MAX_NUM_TRACK];
+  double track_total_pe  [MAX_NUM_TRACK];
+  double track_mean_dedx [MAX_NUM_TRACK];
+  double track_mean_time [MAX_NUM_TRACK];
+  int    track_view      [MAX_NUM_TRACK];
+  int    track_bcid      [MAX_NUM_TRACK];
+  int    track_bcid_id   [MAX_NUM_TRACK];
+  int    track_veto      [MAX_NUM_TRACK];
+  int    track_sideescape[MAX_NUM_TRACK];
+  double track_cos_zen   [MAX_NUM_TRACK];
+  double track_cos_azi   [MAX_NUM_TRACK];
+  double track_len       [MAX_NUM_TRACK];
+  int    track_id        [MAX_NUM_TRACK];
     
-    // ==== Vectors for reconstruction ==== ///
-    std::vector<short int> num_pass_reconpln;
-    std::vector<short int> num_pass_pair_reconpln;
-    std::vector<std::vector<short int>> pair_track;
-    std::vector<std::vector<std::vector<short int>>> connected_track;
-    std::vector<std::vector<int>> recon_pair_start_reconpln;
-    std::vector<std::vector<int>> recon_pair_stop_reconpln;
+  // ==== Vectors for reconstruction ==== ///
+  vector<short int> num_pass_reconpln;
+  vector<short int> num_pass_pair_reconpln;
+  vector<vector<short int>> pair_track;
+  vector<vector<vector<short int>>> connected_track;
+  vector<vector<int>> recon_pair_start_reconpln;
+  vector<vector<int>> recon_pair_stop_reconpln;
 };
 
 
 class BSD_t
 {
 
-  public:
+public:
 
-    TFile  *infile;
-    TFile  *outfile;
-    TNamed *version_name;
-    TTree  *bsd;
-    TTree  *bsd_out;
+  TFile  *infile;
+  TFile  *outfile;
+  TNamed *version_name;
+  TTree  *bsd;
+  TTree  *bsd_out;
 
-    void Clear();
-    bool OpenBsdFile(string);
-    void GetEntry(int);
-    void MakeTree(string);
+  void Clear();
+  bool OpenBsdFile(string);
+  void GetEntry(int);
+  void MakeTree(string);
 
-    string version;
-    int    is_bsd;
+  string version;
+  int    is_bsd;
 
-    int    nurun          ;
-    int    midas_event    ;
-    int    mrrun          ;
-    int    mrshot         ;
-    int    spillnum       ;
-    int    trg_sec[3]     ;
-    int    trg_nano[3]    ;
-    int    gpsstat[2]     ;
-    double ct_np[5][9]    ;
-    double beam_time[5][9];
-    int    beam_flag[5][9];
-    double hct[3][5]      ;
-    double tpos[2]        ;
-    double tdir[2]        ;
-    double tsize[2]       ;
-    double mumon[12]      ;
-    double otr[13]        ;
-    int    good_gps_flag  ;
-    int    trigger_flag   ;
-    int    spill_flag     ;
-    int    good_spill_flag;
-    double target_eff[3]  ;
-    int    run_type       ;
-    int    magset_id      ;
-    double hctx[2][5]     ;
-    double htrans[2]      ;
-    double hps[2]         ;
+  int    nurun          ;
+  int    midas_event    ;
+  int    mrrun          ;
+  int    mrshot         ;
+  int    spillnum       ;
+  int    trg_sec[3]     ;
+  int    trg_nano[3]    ;
+  int    gpsstat[2]     ;
+  double ct_np[5][9]    ;
+  double beam_time[5][9];
+  int    beam_flag[5][9];
+  double hct[3][5]      ;
+  double tpos[2]        ;
+  double tdir[2]        ;
+  double tsize[2]       ;
+  double mumon[12]      ;
+  double otr[13]        ;
+  int    good_gps_flag  ;
+  int    trigger_flag   ;
+  int    spill_flag     ;
+  int    good_spill_flag;
+  double target_eff[3]  ;
+  int    run_type       ;
+  int    magset_id      ;
+  double hctx[2][5]     ;
+  double htrans[2]      ;
+  double hps[2]         ;
 };
 
 

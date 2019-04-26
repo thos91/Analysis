@@ -31,9 +31,67 @@ void wgConst::GetENV(){
 }
 
 //***************************************
-Raw_t::Raw_t(){
-  this->init();
-  this->clear();
+//***************************************
+Raw_t::Raw_t() : Raw_t(20, 32, 16) {}
+
+Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols) {
+  chipid.reserve(n_chips);
+  chipid_tag.reserve(n_chips);
+  chip.reserve(n_chips);
+  chipch.reserve(n_chans);
+  col.reserve(n_cols);
+  charge.reserve(n_chips);
+  time.reserve(n_chips);
+  bcid.reserve(n_chips);
+  hit.reserve(n_chips);
+  gs.reserve(n_chips);
+  debug.reserve(n_chips);
+  pln.reserve(n_chips);
+  ch.reserve(n_chips);
+  grid.reserve(n_chips);
+  x.reserve(n_chips);
+  y.reserve(n_chips);
+  z.reserve(n_chips);
+  pedestal.reserve(n_chips);
+  ped_nohit.reserve(n_chips);
+  pe.reserve(n_chips);
+  time_ns.reserve(n_chips);
+  gain.reserve(n_chips);
+  tdc_slope.reserve(n_chips);
+  tdc_intcpt.reserve(n_chips);
+  
+  for(unsigned int ichip = 0; ichip < n_chips; ichip++) {
+	charge[ichip].reserve(n_chans);
+	time[ichip].reserve(n_chans);
+	bcid[ichip].reserve(n_cols);
+	hit[ichip].reserve(n_chans);
+	gs[ichip].reserve(n_chans);
+	pln[ichip].reserve(n_chans);
+	ch[ichip].reserve(n_chans);
+	grid[ichip].reserve(n_chans);
+	x[ichip].reserve(n_chans);
+	y[ichip].reserve(n_chans);
+	z[ichip].reserve(n_chans);
+	pedestal[ichip].reserve(n_chans);
+	ped_nohit[ichip].reserve(n_chans);
+	pe[ichip].reserve(n_chans);
+	time_ns[ichip].reserve(n_chans);
+	gain[ichip].reserve(n_chans);
+	tdc_slope[ichip].reserve(n_chans);
+	tdc_intcpt[ichip].reserve(n_chans);
+
+    for(unsigned int ich = 0; ich < n_chans; ich++) {
+	  charge[ichip].reserve(n_cols);
+	  time[ichip].reserve(n_cols);
+	  hit[ichip].reserve(n_cols);
+	  gs[ichip].reserve(n_cols);
+	  pedestal[ichip].reserve(n_cols);
+	  ped_nohit[ichip].reserve(n_cols);
+	  pe[ichip].reserve(n_cols);
+	  time_ns[ichip].reserve(n_cols);
+	}
+  }
+  this->clear(n_chips, n_chans, n_cols);
 }
 
 //***************************************
@@ -41,30 +99,22 @@ Raw_t::~Raw_t(){
 }
 
 //***************************************
-void Raw_t::init(){
-  this->clear();
-  for(int i=0;i<20;i++){ Raw_t::chip[i]=i; }
-  for(int i=0;i<36;i++){ Raw_t::chipch[i]=i; }
-  for(int i=0;i<16;i++){ Raw_t::col[i]=i; }
-}
-
-//***************************************
-void Raw_t::clear(){
-  Raw_t::spill=-1;
-  Raw_t::spill_flag=-1;
-  Raw_t::spill_mode=-1;
-  Raw_t::spill_count=-1;
-  for(int i=0;i<20;i++){
-    Raw_t::chipid[i]=-1;
-    Raw_t::chipid_tag[i]=-1;
-    Raw_t::debug[i]=0;
-    for(int k=0;k<16;k++){
-      Raw_t::bcid[i][k]=-1;
-      for(int j=0;j<36;j++){
-        Raw_t::charge[i][j][k]=-1;
-        Raw_t::time[i][j][k]=-1;
-        Raw_t::hit[i][j][k]=-1;
-        Raw_t::gs[i][j][k]=-1;
+void Raw_t::clear(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols){
+  Raw_t::spill       = -1;
+  Raw_t::spill_flag  = -1;
+  Raw_t::spill_mode  = -1;
+  Raw_t::spill_count = -1;
+  for(unsigned i = 0; i < n_chips; i++){
+    Raw_t::chipid[i]     = -1;
+    Raw_t::chipid_tag[i] = -1;
+    Raw_t::debug[i]      = 0;
+    for(unsigned k=0; k < n_cols; k++) {
+      Raw_t::bcid[i][k]        = -1;
+      for(unsigned j = 0; j < n_chans; j++){
+        Raw_t::charge[i][j][k] = -1;
+        Raw_t::time[i][j][k]   = -1;
+        Raw_t::hit[i][j][k]    = -1;
+        Raw_t::gs[i][j][k]     = -1;
       }
     }
   }
@@ -210,11 +260,11 @@ void Track_t::Clear()
   recon_pair_start_reconpln.clear();
   recon_pair_stop_reconpln.clear();
   /*
-     num_pass_reconpln.shrink_to_fit();
-     num_pass_pair_reconpln.shrink_to_fit();
-     recon_pair_start_reconpln.shrink_to_fit();
-     recon_pair_stop_reconpln.shrink_to_fit();
-     */
+	num_pass_reconpln.shrink_to_fit();
+	num_pass_pair_reconpln.shrink_to_fit();
+	recon_pair_start_reconpln.shrink_to_fit();
+	recon_pair_stop_reconpln.shrink_to_fit();
+  */
 };
 
 //***************************************
@@ -225,11 +275,11 @@ void Track_t::Clear_TrackVector()
   recon_pair_start_reconpln.clear();
   recon_pair_stop_reconpln.clear();
   /*
-     num_pass_reconpln.shrink_to_fit();
-     num_pass_pair_reconpln.shrink_to_fit();
-     recon_pair_start_reconpln.shrink_to_fit();
-     recon_pair_stop_reconpln.shrink_to_fit();
-     */
+	num_pass_reconpln.shrink_to_fit();
+	num_pass_pair_reconpln.shrink_to_fit();
+	recon_pair_start_reconpln.shrink_to_fit();
+	recon_pair_stop_reconpln.shrink_to_fit();
+  */
 };
 
 
