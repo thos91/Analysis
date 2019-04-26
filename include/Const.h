@@ -337,13 +337,11 @@ public:
   string IMGDATA_DIRECTORY;
   string LOG_DIRECTORY;
   string MAIN_DIRECTORY;
-  string RUNCOMMAND_DIRECTORY;
-  string CALICOE_DIRECTORY;
+  string CALICOES_DIRECTORY;
   string CALIBDATA_DIRECTORY;
   string BSD_DIRECTORY;
   string DQ_DIRECTORY;
   string DQHISTORY_DIRECTORY;
-  string SPILL_DIRECTORY;
 };
 
 #endif
