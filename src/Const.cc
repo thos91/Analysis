@@ -13,21 +13,58 @@ wgConst::~wgConst(){
 
 //***************************************
 void wgConst::GetENV(){
-  RAWDATA_DIRECTORY    = std::getenv("WAGASCI_RAWDATADIR");
-  DECODE_DIRECTORY     = std::getenv("WAGASCI_DECODEDIR");
-  HIST_DIRECTORY       = std::getenv("WAGASCI_HISTDIR");
-  RECON_DIRECTORY      = std::getenv("WAGASCI_RECONDIR");
-  XMLDATA_DIRECTORY    = std::getenv("WAGASCI_XMLDATADIR");
-  IMGDATA_DIRECTORY    = std::getenv("WAGASCI_IMGDATADIR");
-  LOG_DIRECTORY        = std::getenv("WAGASCI_LOGDIR");
-  MAIN_DIRECTORY       = std::getenv("WAGASCI_MAINDIR");
-  RUNCOMMAND_DIRECTORY = std::getenv("WAGASCI_RUNCOMMANDDIR");
-  CALICOE_DIRECTORY    = std::getenv("WAGASCI_CALICOEDIR");
-  CALIBDATA_DIRECTORY  = std::getenv("WAGASCI_CALIBDATADIR");
-  BSD_DIRECTORY        = std::getenv("WAGASCI_BSDDIR");
-  DQ_DIRECTORY         = std::getenv("WAGASCI_DQDIR");
-  DQHISTORY_DIRECTORY  = std::getenv("WAGASCI_DQHISTORYDIR");
-  SPILL_DIRECTORY      = std::getenv("WAGASCI_SPILLDIR");
+  if ( std::getenv("WAGASCI_RAWDATADIR") != NULL )
+	RAWDATA_DIRECTORY    = std::getenv("WAGASCI_RAWDATADIR");
+  else
+	RAWDATA_DIRECTORY    = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_DECODEDIR") != NULL )
+	DECODE_DIRECTORY     = std::getenv("WAGASCI_DECODEDIR");
+  else
+	DECODE_DIRECTORY     = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_HISTDIR") )
+	HIST_DIRECTORY       = std::getenv("WAGASCI_HISTDIR");
+  else
+	HIST_DIRECTORY       =  std::getenv("HOME");
+  if ( std::getenv("WAGASCI_RECONDIR") != NULL )
+	RECON_DIRECTORY      = std::getenv("WAGASCI_RECONDIR");
+  else
+	RECON_DIRECTORY      = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_XMLDATADIR") != NULL )
+	XMLDATA_DIRECTORY    = std::getenv("WAGASCI_XMLDATADIR");
+  else
+	XMLDATA_DIRECTORY    =  std::getenv("HOME");
+  if ( std::getenv("WAGASCI_IMGDATADIR") != NULL )
+	IMGDATA_DIRECTORY    = std::getenv("WAGASCI_IMGDATADIR");
+  else
+	IMGDATA_DIRECTORY    = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_LOGDIR") != NULL )
+	LOG_DIRECTORY        = std::getenv("WAGASCI_LOGDIR");
+  else
+	LOG_DIRECTORY        = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_MAINDIR") != NULL )
+	MAIN_DIRECTORY       = std::getenv("WAGASCI_MAINDIR");
+  else
+	MAIN_DIRECTORY       = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_CALICOESDIR") != NULL )
+	CALICOES_DIRECTORY   = std::getenv("WAGASCI_CALICOESDIR");
+  else
+	CALICOES_DIRECTORY   = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_CALIBDATADIR") != NULL )
+	CALIBDATA_DIRECTORY  = std::getenv("WAGASCI_CALIBDATADIR");
+  else
+	CALIBDATA_DIRECTORY  = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_BSDDIR") != NULL )
+	BSD_DIRECTORY        = std::getenv("WAGASCI_BSDDIR");
+  else
+	BSD_DIRECTORY        = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_DQDIR") != NULL )
+	DQ_DIRECTORY         = std::getenv("WAGASCI_DQDIR");
+  else
+	DQ_DIRECTORY    = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_DQHISTORYDIR") != NULL )
+	DQHISTORY_DIRECTORY  = std::getenv("WAGASCI_DQHISTORYDIR");
+  else
+	DQHISTORY_DIRECTORY  = std::getenv("HOME");
 }
 
 //***************************************
