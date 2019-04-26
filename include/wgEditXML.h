@@ -19,6 +19,12 @@ public:
   void Close();
   void Write();
   void GetConfig(string&,unsigned int,unsigned int,vector<int>&);
+
+  /* GetLog: Parse a .log file and fill a vector with:
+      - v[0]: start_time
+      - v[1]: stop_time
+      - v[2]: nb_data_pkts
+      - v[3]: nb_lost_pkts */
   void GetLog(string&,vector<int>&);
   void SetConfigValue(string&,int,int);
   void SetColValue(string&,const int,double,int);
