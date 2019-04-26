@@ -10,6 +10,7 @@
 #include "wgEditXML.h"
 #include "wgEditConfig.h"
 #include "wgErrorCode.h"
+#include "wgExceptions.h"
 
 using namespace std;
 using namespace tinyxml2;
@@ -897,13 +898,14 @@ double wgEditXML::Calib_GetValue(string& name,int idif, int ichip, int ich){
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
   XMLElement* ch   = chip->FirstChildElement(Form("ch_%d",ich));
   XMLElement* target = ch->FirstChildElement(name.c_str());
-  if(target){
-    string value = target->GetText();
-    return atof(value.c_str());
-  }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
-    return -1.;
+  string value;
+  if (target) {
+    value = target->GetText();
   }
+  else {
+    throw wgElementNotFound(Form("Element: %s doesn't exist!", name.c_str()));
+  }
+  return atof(value.c_str());
 }
 
 
