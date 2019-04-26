@@ -31,16 +31,16 @@ public:
 class Logger
 {
 public:
-  void Initialize();
-  void Initialize(string&);
+  Logger();
+  Logger(const string&);
   void Write(const string&);
   void eWrite(const string&);
   ~Logger();
 protected:
-  static string fileName;
-  static string efileName;
-  static ofstream file;
-  static ofstream efile;
+  static string m_fileName;
+  static string m_efileName;
+  static ofstream m_file;
+  static ofstream m_efile;
 };
 
 #endif

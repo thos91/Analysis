@@ -96,33 +96,33 @@ string Logger::m_efileName = "";
 ofstream Logger::m_file;
 ofstream Logger::m_efile;
 
-void Logger::Initialize() : Initialize("") {}
- 
-void Logger::Initialize(string& log_dir)
+Logger::Logger() : Logger(string("")) {}
+
+Logger::Logger(const string& log_dir)
 {
   time_t newTime = time( NULL );
   struct tm *t_st = localtime( &newTime );
-
+  string dir;
   // If log_dir is empty try to infer it from the environment
   if ( log_dir.empty() ) {
 	wgConst *con = new wgConst();
 	con->GetENV();
-	log_dir = con->LOG_DIRECTORY;
+	dir = con->LOG_DIRECTORY;
 	delete con;
-  }
+  } else dir = log_dir;
   
   // If the log directory is not found, create it
   struct stat sb;
-  if (stat(log_dir, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
-	const int dir_err = mkdir(log_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+  if (stat(dir.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	if (dir_err == -1) {
-	  string error_message("error while creating " + log_dir + " directory!");
+	  string error_message("error while creating " + dir + " directory!");
 	  throw wgInvalidFile(error_message);
 	}
   }
  
-  Logger::m_fileName  = Form("%s/%d_%d_%d.txt",      log_dir, t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
-  Logger::m_efileName = Form("%s/e_log%d_%d_%d.txt", log_dir, t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
+  m_fileName  = Form("%s/%d_%d_%d.txt",      dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
+  m_efileName = Form("%s/e_log%d_%d_%d.txt", dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
 
   m_file.open(m_fileName, ofstream::out | ofstream::app);
   // After this attempt to open a file, we can safely use strerror() only  
