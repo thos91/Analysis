@@ -322,27 +322,26 @@ public:
   void    Clear();
 };
 
-
 class wgConst{
 public:
   wgConst();
   ~wgConst();
   void GetENV();
-  char* RAWDATA_DIRECTORY;
-  char* DECODE_DIRECTORY;
-  char* HIST_DIRECTORY;
-  char* RECON_DIRECTORY;
-  char* XMLDATA_DIRECTORY;
-  char* IMGDATA_DIRECTORY;
-  char* LOG_DIRECTORY;
-  char* MAIN_DIRECTORY;
-  char* RUNCOMMAND_DIRECTORY;
-  char* CALICOE_DIRECTORY;
-  char* CALIBDATA_DIRECTORY;
-  char* BSD_DIRECTORY;
-  char* DQ_DIRECTORY;
-  char* DQHISTORY_DIRECTORY;
-  char* SPILL_DIRECTORY;
+  string RAWDATA_DIRECTORY;
+  string DECODE_DIRECTORY;
+  string HIST_DIRECTORY;
+  string RECON_DIRECTORY;
+  string XMLDATA_DIRECTORY;
+  string IMGDATA_DIRECTORY;
+  string LOG_DIRECTORY;
+  string MAIN_DIRECTORY;
+  string RUNCOMMAND_DIRECTORY;
+  string CALICOE_DIRECTORY;
+  string CALIBDATA_DIRECTORY;
+  string BSD_DIRECTORY;
+  string DQ_DIRECTORY;
+  string DQHISTORY_DIRECTORY;
+  string SPILL_DIRECTORY;
 };
 
 #endif

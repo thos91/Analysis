@@ -13,21 +13,21 @@ wgConst::~wgConst(){
 
 //***************************************
 void wgConst::GetENV(){
-  RAWDATA_DIRECTORY    = Form("%s",std::getenv("WAGASCI_RAWDATADIR"));
-  DECODE_DIRECTORY     = Form("%s",std::getenv("WAGASCI_DECODEDIR"));
-  HIST_DIRECTORY       = Form("%s",std::getenv("WAGASCI_HISTDIR"));
-  RECON_DIRECTORY      = Form("%s",std::getenv("WAGASCI_RECONDIR"));
-  XMLDATA_DIRECTORY    = Form("%s",std::getenv("WAGASCI_XMLDATADIR"));
-  IMGDATA_DIRECTORY    = Form("%s",std::getenv("WAGASCI_IMGDATADIR"));
-  LOG_DIRECTORY        = Form("%s",std::getenv("WAGASCI_LOGDIR"));
-  MAIN_DIRECTORY       = Form("%s",std::getenv("WAGASCI_MAINDIR"));
-  RUNCOMMAND_DIRECTORY = Form("%s",std::getenv("WAGASCI_RUNCOMMANDDIR"));
-  CALICOE_DIRECTORY    = Form("%s",std::getenv("WAGASCI_CALICOEDIR"));
-  CALIBDATA_DIRECTORY  = Form("%s",std::getenv("WAGASCI_CALIBDATADIR"));
-  BSD_DIRECTORY        = Form("%s",std::getenv("WAGASCI_BSDDIR"));
-  DQ_DIRECTORY         = Form("%s",std::getenv("WAGASCI_DQDIR"));
-  DQHISTORY_DIRECTORY  = Form("%s",std::getenv("WAGASCI_DQHISTORYDIR"));
-  SPILL_DIRECTORY      = Form("%s",std::getenv("WAGASCI_SPILLDIR"));
+  RAWDATA_DIRECTORY    = std::getenv("WAGASCI_RAWDATADIR");
+  DECODE_DIRECTORY     = std::getenv("WAGASCI_DECODEDIR");
+  HIST_DIRECTORY       = std::getenv("WAGASCI_HISTDIR");
+  RECON_DIRECTORY      = std::getenv("WAGASCI_RECONDIR");
+  XMLDATA_DIRECTORY    = std::getenv("WAGASCI_XMLDATADIR");
+  IMGDATA_DIRECTORY    = std::getenv("WAGASCI_IMGDATADIR");
+  LOG_DIRECTORY        = std::getenv("WAGASCI_LOGDIR");
+  MAIN_DIRECTORY       = std::getenv("WAGASCI_MAINDIR");
+  RUNCOMMAND_DIRECTORY = std::getenv("WAGASCI_RUNCOMMANDDIR");
+  CALICOE_DIRECTORY    = std::getenv("WAGASCI_CALICOEDIR");
+  CALIBDATA_DIRECTORY  = std::getenv("WAGASCI_CALIBDATADIR");
+  BSD_DIRECTORY        = std::getenv("WAGASCI_BSDDIR");
+  DQ_DIRECTORY         = std::getenv("WAGASCI_DQDIR");
+  DQHISTORY_DIRECTORY  = std::getenv("WAGASCI_DQHISTORYDIR");
+  SPILL_DIRECTORY      = std::getenv("WAGASCI_SPILLDIR");
 }
 
 //***************************************
@@ -108,7 +108,7 @@ void Raw_t::clear(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols){
     Raw_t::chipid[i]     = -1;
     Raw_t::chipid_tag[i] = -1;
     Raw_t::debug[i]      = 0;
-    for(unsigned k=0; k < n_cols; k++) {
+    for(unsigned k = 0; k < n_cols; k++) {
       Raw_t::bcid[i][k]        = -1;
       for(unsigned j = 0; j < n_chans; j++){
         Raw_t::charge[i][j][k] = -1;
