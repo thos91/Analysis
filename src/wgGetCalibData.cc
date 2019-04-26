@@ -1,141 +1,151 @@
 #include <TROOT.h>
 
+#include "wgGetCalibData.h"
+#include "wgTools.h"
 #include "Const.h"
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgEditXML.h"
-#include "wgGetCalibData.h"
+#include "wgExceptions.h"
 
 //******************************************************************************
-void wgGetCalibData::Get_Pedestal(int ndif,double pedestal[20][36][16],double ped_nohit[20][36][16]){
-
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
-      int ich=j;
-      for(unsigned int k=0;k<MEMDEPTH;k++){
-        int icol=k;
-        ped_nohit[ichip][ich][icol]=1.;
-        pedestal[ichip][ich][icol]=1.;
-      }
-    }
-  }
-
-  string pedFileName("");
-  wgConst *con = new wgConst();
-  con->GetENV();
-  pedFileName=Form("%s/pedestal_card.xml",con->CALIBDATA_DIRECTORY);
-  delete con; 
-
-  if(ndif!=1 && ndif!=2) return;
-
-  wgEditXML *Edit = new wgEditXML();
-  Edit->Open(pedFileName);
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
-      int ich=j;
-      if(ich>31){
-        for(unsigned int k=0;k<MEMDEPTH;k++){
-          int icol=k;
-          ped_nohit[ichip][ich][icol]=1.;
-          pedestal[ichip][ich][icol]=1.;
-        }
-      }else{
-        for(unsigned int k=0;k<MEMDEPTH;k++){
-          int icol=k;
-          string name;
-          name=Form("ped_nohit_%d",icol);
-          ped_nohit[ichip][ich][icol]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-          name=Form("ped_%d",icol);
-          pedestal[ichip][ich][icol]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-        }
-      }
-    }
-  }
-  Edit->Close();
-  delete Edit;
-}
-
-//******************************************************************************
-void wgGetCalibData::Get_TdcCoeff(int ndif,double slope[2][20][36],double intcpt[2][20][36])
-{
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
-      int ich=j;
-      slope[0][ichip][ich]=1.;
-      slope[1][ichip][ich]=1.;
-      intcpt[0][ichip][ich]=1.;
-      intcpt[1][ichip][ich]=1.;
-    }
-  }
-
-  string pedFileName("");
-  wgConst *con = new wgConst();
-  con->GetENV();
-  pedFileName=Form("%s/tdc_coefficient_card.xml",con->CALIBDATA_DIRECTORY);
-  delete con; 
-
-  if(ndif!=1 && ndif!=2) return;
-
-  wgEditXML *Edit = new wgEditXML();
-  Edit->Open(pedFileName);
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
-      int ich=j;
-      if(ich<32){
-        string name;
-        name="slope_even";
-        slope[0][ichip][ich]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-        name="slope_odd";
-        slope[1][ichip][ich]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-        name="intcpt_even";
-        intcpt[0][ichip][ich]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-        name="intcpt_odd";
-        intcpt[1][ichip][ich]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-      }
-    }
-  }
-  Edit->Close();
-  delete Edit;
-}
-
-//******************************************************************************
-void wgGetCalibData::Get_Gain(string& calibFileName,int ndif, double gain[20][36]){
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
-      int ich=j;
-      gain[ichip][ich]=1.;
-    }
-  }
-
-  if(ndif!=1 && ndif!=2) return;
-
-  CheckExist *check  =  new CheckExist;
-  if(calibFileName=="" || !check->XmlFile(calibFileName)){
-    return;
+int wgGetCalibData::Get_Pedestal(string& pedFileName, d3vector pedestal, d3vector ped_nohit, size_t dif) {
+CheckExist *check  =  new CheckExist;
+  if( pedFileName == "" || !check->XmlFile(pedFileName)){
+	throw wgInvalidFile(Form("Pedestal file not found or invalid (%s)", pedFileName.c_str()));
   }
   delete check;
 
+  // Number of channels where the pedestal or ped_nohit could not be found
+  int n_not_found = 0;
+
+  // Pedestal when there is no hit
+  wgEditXML *Edit = new wgEditXML();
+  Edit->Open(pedFileName);
+  for(unsigned int ichip = 0; ichip < ped_nohit.size(); ichip++) {
+    for(unsigned int ich = 0; ich < ped_nohit[ichip].size(); ich++) {
+      for(unsigned int icol = 0; icol < ped_nohit[ich].size(); icol++) {
+		string name;
+		try {
+		  name=Form("ped_nohit_%d", icol);
+		  ped_nohit[ichip][ich][icol] = Edit->Calib_GetValue(name, dif, ichip, ich);
+		}
+		catch (const wgElementNotFound& e) {
+		  ped_nohit[ichip][ich][icol] = 1.;
+		  n_not_found++;
+		}
+	  }
+	}
+  }
+
+  // Pedestal when there is a hit
+  for(unsigned int ichip = 0; ichip < pedestal.size(); ichip++) {
+    for(unsigned int ich = 0; ich < pedestal[ichip].size(); ich++) {
+      for(unsigned int icol = 0; icol < pedestal[ich].size(); icol++) {
+		string name;
+		try {
+		  name=Form("ped_%d",icol);
+		  pedestal[ichip][ich][icol]=Edit->Calib_GetValue(name, dif, ichip, ich);
+		}
+		catch (const wgElementNotFound& e) {
+		  ped_nohit[ichip][ich][icol] = 1.;
+		  n_not_found++;
+		}
+	  }
+	}
+  }
+  Edit->Close();
+  delete Edit;
+  return n_not_found;
+}
+
+//******************************************************************************
+int wgGetCalibData::Get_TdcCoeff(string& tdcFileName, d3vector slope, d3vector intcpt, unsigned dif) {
+  CheckExist *check  =  new CheckExist;
+  if(tdcFileName=="" || !check->XmlFile(tdcFileName)){
+	throw wgInvalidFile (Form("TDC calibration card file not found or invalid (%s)", tdcFileName.c_str()));
+  }
+  delete check;
+
+  int n_not_found = 0;
+  
+  wgEditXML *Edit = new wgEditXML();
+  Edit->Open(tdcFileName);
+  for(unsigned int ichip = 0; ichip < slope.size(); ichip++){
+    for(unsigned int ich = 0; ich < slope[ichip].size(); ich++){
+	  string name;
+	  try {		
+		name="slope_even";
+		slope[ichip][ich][TDC_RAMP_EVEN] = Edit->Calib_GetValue(name, dif, ichip, ich);
+	  }
+	  catch (const wgElementNotFound& e) {
+		slope[ichip][ich][TDC_RAMP_EVEN] = 1.;
+		n_not_found++;
+	  }
+	  try {
+        name="slope_odd";
+        slope[ichip][ich][TDC_RAMP_ODD] = Edit->Calib_GetValue(name, dif, ichip, ich);
+	  }
+	  catch (const wgElementNotFound& e) {
+		slope[ichip][ich][TDC_RAMP_ODD] = 1.;
+		n_not_found++;
+	  }
+	}
+  }
+  for(unsigned int ichip = 0; ichip < intcpt.size(); ichip++){
+    for(unsigned int ich = 0; ich < intcpt[ichip].size(); ich++){
+	  string name;
+	  try {
+        name="intcpt_even";
+        intcpt[ichip][ich][TDC_RAMP_EVEN] = Edit->Calib_GetValue(name, dif, ichip, ich);
+	  }
+	  catch (const wgElementNotFound& e) {
+		intcpt[ichip][ich][TDC_RAMP_EVEN] = 1.;
+		n_not_found++;
+	  }
+	  try {
+        name="intcpt_odd";
+        intcpt[ichip][ich][TDC_RAMP_ODD] = Edit->Calib_GetValue(name, dif, ichip, ich);
+	  }
+	  catch (const wgElementNotFound& e) {
+		intcpt[ichip][ich][TDC_RAMP_ODD] = 1.;
+		n_not_found++;
+	  }
+	}
+  }
+  Edit->Close();
+  delete Edit;
+  return n_not_found;
+}
+
+//******************************************************************************
+int wgGetCalibData::Get_Gain(string& calibFileName, d2vector gain, unsigned dif) {
+  CheckExist *check  =  new CheckExist;
+  if(calibFileName=="" || !check->XmlFile(calibFileName)){
+	throw wgInvalidFile (Form("Calibration card file not found or invalid (%s)", calibFileName.c_str()));
+  }
+  delete check;
+
+  // Number of channels where the gain info could not be found
+  int n_not_found = 0;
+  
   wgEditXML *Edit = new wgEditXML();
   Edit->Open(calibFileName);
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
-      int ich=j;
-      if(ich>31){
-        gain[ichip][ich]=1.;
-      }else{
-        string name("");
-        name=Form("Gain");
-        gain[ichip][ich]=Edit->Calib_GetValue(name,ndif,ichip,ich);
-      }
+  for(unsigned int ichip = 0; ichip < gain.size(); ichip++){
+    for(unsigned int ich = 0; ich < gain[ichip].size(); ich++){
+	  string name("");
+	  try {
+		name=Form("Gain");
+		gain[ichip][ich]=Edit->Calib_GetValue(name, dif, ichip, ich);
+	  }
+	  catch (const wgElementNotFound& e) {
+		gain[ichip][ich] = 1.;
+		n_not_found++;
+	  }
     }
   }
   Edit->Close();
   delete Edit;
+  return n_not_found;
 }
 

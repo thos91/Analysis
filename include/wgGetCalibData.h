@@ -5,6 +5,11 @@
 #include <vector>
 #include "tinyxml2.h"
 #include "wgEditXML.h"
+#include "wgTools.h"
+#include "Const.h"
+
+#define TDC_RAMP_ODD  0
+#define TDC_RAMP_EVEN 1
 
 using namespace tinyxml2;
 using namespace std;
@@ -13,12 +18,28 @@ class wgGetCalibData
 {
 private:
   static string filename;
+  
 public:
-  void Get_Pedestal(int,double pedestal[20][36][16],double ped_nohit[20][36][16]);
-  void Get_TdcCoeff(int ndif,double slope[2][20][36],double intcpt[2][20][36]);
-  void Get_Gain(string& calibFileName,int ndif, double gain[20][36]);
+  // Get pedestal ADC count from the pedestal card file pedFileName
+  // The DIF number "dif" is a positive non zero integer.
+  // Two arrays are filled (for the DIF "dif"):
+  //                         pedestal[n_chips][n_chans][n_cols]
+  //                         ped_nohit[n_chips][n_chans][n_cols]
+  // The pedestal array contains the pedestal when the hit bit is one,
+  // while the ped_nohit array contains the pedestal when the hit bit is zero.
+  // The hit bit is set to one when the ADC value is above the threshold
+  int Get_Pedestal(string& pedFileName, d3vector pedestal, d3vector ped_nohit, size_t dif);
 
+  // Get the TDC ramp slope and intercept the TDC calibration card file tdcFileName
+  // Two arrays are filled (for the DIF "dif"):
+  //                         slope[n_chips][n_chans][2]
+  //                         intcpt[n_chips][n_chans][2]
+  int Get_TdcCoeff(string& tdcFileName, d3vector slope, d3vector intcpt, unsigned dif);
+
+  // Get the gain from the gain calibration card file calibFileName
+  // One arrays is filled (for the DIF "dif"):
+  //                         gain[n_chips][n_chans]
+  int Get_Gain(string& calibFileName, d2vector gain, unsigned dif);
 };
 
-
-#endif
+#endif // WG_GETCALIBDATA_H_INCLUDE
