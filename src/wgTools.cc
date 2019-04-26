@@ -1,8 +1,10 @@
 #include "wgTools.h"
 #include "TROOT.h"
 #include "wgErrorCode.h"
+#include "wgExceptions.h"
 #include "Const.h"
 
+#include <cerrno>
 #include <time.h>
 #include <fstream>
 #include <iostream>
@@ -87,60 +89,76 @@ string OperateString::GetNameBeforeLastUnderBar(string& str)
   return fn;
 }
 
-string Logger::fileName = "";
-string Logger::efileName = "";
-FILE * Logger::file = NULL;
-FILE * Logger::efile = NULL;
+//==================== Logger Class ====================//
 
-void Logger::Initialize()
+string Logger::m_fileName = "";
+string Logger::m_efileName = "";
+ofstream Logger::m_file;
+ofstream Logger::m_efile;
+
+void Logger::Initialize() : Initialize("") {}
+ 
+void Logger::Initialize(string& log_dir)
 {
   time_t newTime = time( NULL );
   struct tm *t_st = localtime( &newTime );
-  wgConst *con = new wgConst();
-  con->GetENV();
-  Logger::fileName = Form("%s/%d_%d_%d.txt",con->LOG_DIRECTORY,t_st->tm_year+1900,t_st->tm_mon+1,t_st->tm_mday); 
-  Logger::efileName = Form("%s/e_log%d_%d_%d.txt",con->LOG_DIRECTORY,t_st->tm_year+1900,t_st->tm_mon+1,t_st->tm_mday); 
-  delete con;
-  file = fopen( fileName.data(), "a" );
-  if ( file == NULL )
-  {
-    printf("Failed to open log file for writing.\n");
-    exit(1);
+
+  // If log_dir is empty try to infer it from the environment
+  if ( log_dir.empty() ) {
+	wgConst *con = new wgConst();
+	con->GetENV();
+	log_dir = con->LOG_DIRECTORY;
+	delete con;
   }
-  efile = fopen( efileName.data(), "a" );
-  if ( file == NULL )
-  {
-    printf("Failed to open elog file for writing.\n");
-    exit(1);
+  
+  // If the log directory is not found, create it
+  struct stat sb;
+  if (stat(log_dir, &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+	const int dir_err = mkdir(log_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	if (dir_err == -1) {
+	  string error_message("error while creating " + log_dir + " directory!");
+	  throw wgInvalidFile(error_message);
+	}
+  }
+ 
+  Logger::m_fileName  = Form("%s/%d_%d_%d.txt",      log_dir, t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
+  Logger::m_efileName = Form("%s/e_log%d_%d_%d.txt", log_dir, t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
+
+  m_file.open(m_fileName, ofstream::out | ofstream::app);
+  // After this attempt to open a file, we can safely use strerror() only  
+  // in case file.is_open() returns False.
+  if (!m_file.is_open()) {
+	stringstream error_message;
+	error_message << "error while opening file " << m_fileName << " (" << strerror(errno) << ")";
+	throw wgInvalidFile(error_message.str());
+  }
+  m_efile.open(m_efileName, ofstream::out | ofstream::app);
+  if (!m_efile.is_open()) {
+	stringstream error_message;
+	error_message << "error while opening file " << m_efileName << " (" << strerror(errno) << ")";
+	throw wgInvalidFile(error_message.str());
   }
 }
 
-void Logger::Write(const std::string& log)
+void Logger::Write(const string& log)
 {
   time_t newTime = time(NULL);
-  char* japtime;
-  japtime = ctime(&newTime);
-  japtime[strlen(japtime)-1] = '\0';
-
-  fprintf( file, "[%s]:%s\n",japtime,log.c_str());
-  fflush( file );
+  string japtime(ctime(&newTime));
+  m_file << "[ " << japtime << " ]: " << log << endl;
 }
 
-void Logger::eWrite(const std::string& log)
+void Logger::eWrite(const string& log)
 {
   time_t newTime = time(NULL);
-  char* japtime;
-  japtime = ctime(&newTime);
-  japtime[strlen(japtime)-1] = '\0';
-
-  fprintf( efile, "[ %s ]: %s\n",japtime,log.c_str());
-  fflush( file );
+  string japtime(ctime(&newTime));
+  m_efile << "[ " << japtime << " ]: " << log << endl;
 }
 
 Logger::~Logger()
 {
-  fclose(file);
+  m_file.close();
+  m_efile.close();
 }
 
-//======end Logger Class//
+//==================== end Logger Class ====================//
 
