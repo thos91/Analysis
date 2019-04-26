@@ -28,14 +28,14 @@
 #define DEBUG_MISSING_CHIP_HEADER 64
 #define DEBUG_MISSING_CHIP_TRAILER 128
 #define DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP 256
-// #define DEBUG_DECODE
-// #ifndef DEBUG
-// #define DEBUG
-// #endif
+#define DEBUG_DECODE
+#ifndef DEBUG
+#define DEBUG
+#endif
 
 using namespace std;
 
-void ReadFile(string inputFileName, string calibFileName,  bool overwrite, unsigned int maxEvt,string outputDir, string logoutputDir);
+void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsigned int maxEvt,string outputDir, string logoutputDir, int n_difs = 0, int n_chips = 0, int n_channels = 0);
 unsigned short int check_StartChipIndex(unsigned short int head1,unsigned short int head2,unsigned short int head3,unsigned short  int head4, bool* checkid_exist, int* Missing_Header);
 bool check_ChipID(int v_chipid);
 void tdc2time(int time[20][36][16],int bcid[20][16],double time_ns[20][36][16],double slope[2][20][36],double intcpt[2][20][36]);
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
 //******************************************************************************
 
 void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsigned int maxEvt,
-    string outputDir, string logoutputDir){
+			  string outputDir, string logoutputDir, int n_chips, int n_difs, int n_channels){
 
   string outputTreeFileName = OptStr->GetName(inputFileName)+"_tree.root";
 
@@ -188,29 +188,43 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
 
   Raw_t rd;
   rd.spill=-1;
-  rd.spill_flag=NCHIPS;
+  rd.spill_flag=n_chips;
 
-  int ndif = 0;
-  pos = inputFileName.find("dif_1_1_")+8;
-  if(inputFileName[pos]=='1'){
-    ndif=1;
-  }else if(inputFileName[pos]=='2'){
-    ndif=2;
-  }else{
-    ndif=0;
+  // If the number of DIFs is not provided as an argument, try to infer it from
+  // the file name
+  if ( n_difs == 0 ) {
+	pos = inputFileName.find("dif_1_1_") + 8;
+	if(inputFileName[pos] == '1') {
+	  n_difs = 1;
+	}
+	else if(inputFileName[pos] == '2') {
+	  n_difs = 2;
+	}
+	else {
+	  n_difs = 0;
+	}
   }
 
+  // If the number of chips is not provided as an argument, use the global macro
+  // defined in the Const.h header
+  if ( n_chips == 0 ) n_chips = NCHIPS;
+
+  // If the number of channels per chip is not provided as an argument, use the
+  // global macro defined in the Const.h header
+  if ( n_channels == 0 ) n_channels = NCHANNELS;
+
+  // Get the geometrical information (position in space) for each channel
   wgChannelMap *Map = new wgChannelMap();
-  for(int ichip=0;ichip<(int)NCHIPS;ichip++){
-    Map->GetMap(ndif-1,ichip,&rd.view,rd.pln[ichip],rd.ch[ichip],rd.grid[ichip],rd.x[ichip],rd.y[ichip],rd.z[ichip]);
+  for(int ichip = 0; ichip < (int) n_chips; ichip++) {
+    Map->GetMap(n_difs - 1, ichip, &rd.view, rd.pln[ichip], rd.ch[ichip], rd.grid[ichip], rd.x[ichip], rd.y[ichip], rd.z[ichip]);
   }
   delete Map;
 
-  double tdc_slope[2][20][36], tdc_intcpt[2][20][36];
+  // Read the value of pedestal, TDC ramp and gain from the calibration file
   wgGetCalibData *getcalib = new wgGetCalibData();
-  getcalib->Get_Pedestal(ndif,rd.pedestal,rd.ped_nohit); 
-  getcalib->Get_TdcCoeff(ndif,tdc_slope,tdc_intcpt); //TODO 
-  getcalib->Get_Gain(calibFileName,ndif,rd.gain);
+  getcalib->Get_Pedestal(n_difs,rd.pedestal,rd.ped_nohit); 
+  getcalib->Get_TdcCoeff(n_difs,tdc_slope,tdc_intcpt); //TODO 
+  getcalib->Get_Gain(calibFileName,n_difs,rd.gain);
   delete getcalib;
 
   
@@ -274,33 +288,33 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
   h_nb_lost_pkts -> Write(); 
 
   TTree * tree = new TTree("tree","tree");
-  tree->Branch("spill"       ,&rd.spill       ,Form("spill/I"));
-  tree->Branch("spill_mode"  ,&rd.spill_mode  ,Form("spill_mode/I"));
-  tree->Branch("spill_flag"  ,&rd.spill_flag  ,Form("spill_flag/I"));
-  tree->Branch("spill_count" ,&rd.spill_count ,Form("spill_count/I"));
-  tree->Branch("bcid"        ,rd.bcid         ,Form("bcid[%d][%d]/I"      ,NCHIPS,MEMDEPTH));
-  tree->Branch("charge"      ,rd.charge       ,Form("charge[%d][%d][%d]/I",NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("time"        ,rd.time         ,Form("time[%d][%d][%d]/I"  ,NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("gs"          ,rd.gs           ,Form("gs[%d][%d][%d]/I"    ,NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("hit"         ,rd.hit          ,Form("hit[%d][%d][%d]/I"   ,NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("chipid_tag"  ,rd.chipid_tag   ,Form("chipid_tag[%d]/I"    ,NCHIPS   ));
-  tree->Branch("chipid"      ,rd.chipid       ,Form("chipid[%d]/I"        ,NCHIPS   ));
-  tree->Branch("col"         ,rd.col          ,Form("col[%d]/I"           ,MEMDEPTH ));
-  tree->Branch("chipch"      ,rd.chipch       ,Form("chipch[%d]/I"        ,NCHANNELS));
-  tree->Branch("chip"        ,rd.chip         ,Form("chip[%d]/I"          ,NCHIPS   ));
-  tree->Branch("debug"       ,rd.debug        ,Form("debug[%d]/I"         ,NCHIPS));
-  tree->Branch("view"        ,&rd.view         ,Form("view/I"));
-  tree->Branch("pln"         ,rd.pln           ,Form("pln[%d][%d]/I",NCHIPS,NCHANNELS));
-  tree->Branch("ch"          ,rd.ch            ,Form("ch[%d][%d]/I",NCHIPS,NCHANNELS));
-  tree->Branch("grid"        ,rd.grid          ,Form("grid[%d][%d]/I",NCHIPS,NCHANNELS));
-  tree->Branch("x"           ,rd.x             ,Form("x[%d][%d]/D",NCHIPS,NCHANNELS));
-  tree->Branch("y"           ,rd.y             ,Form("y[%d][%d]/D",NCHIPS,NCHANNELS));
-  tree->Branch("z"           ,rd.z             ,Form("z[%d][%d]/D",NCHIPS,NCHANNELS));
-  tree->Branch("pe"          ,rd.pe            ,Form("pe[%d][%d][%d]/D"    ,NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("time_ns"     ,rd.time_ns      ,Form("time_ns[%d][%d][%d]/D"  ,NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("gain"        ,rd.gain          ,Form("gain[%d][%d]/D",NCHIPS,NCHANNELS));
-  tree->Branch("pedestal"    ,rd.pedestal      ,Form("pedestal[%d][%d][%d]/D",NCHIPS,NCHANNELS,MEMDEPTH));
-  tree->Branch("ped_nohit"   ,rd.ped_nohit     ,Form("ped_nohit[%d][%d][%d]/D",NCHIPS,NCHANNELS,MEMDEPTH));
+  tree->Branch("spill"       ,&rd.spill       ,Form("spill/I"                                                ));
+  tree->Branch("spill_mode"  ,&rd.spill_mode  ,Form("spill_mode/I"                                           ));
+  tree->Branch("spill_flag"  ,&rd.spill_flag  ,Form("spill_flag/I"                                           ));
+  tree->Branch("spill_count" ,&rd.spill_count ,Form("spill_count/I"                                          ));
+  tree->Branch("bcid"        ,rd.bcid         ,Form("bcid[%d][%d]/I"          ,n_chips,             MEMDEPTH ));
+  tree->Branch("charge"      ,rd.charge       ,Form("charge[%d][%d][%d]/I"    ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("time"        ,rd.time         ,Form("time[%d][%d][%d]/I"      ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("gs"          ,rd.gs           ,Form("gs[%d][%d][%d]/I"        ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("hit"         ,rd.hit          ,Form("hit[%d][%d][%d]/I"       ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("chipid_tag"  ,rd.chipid_tag   ,Form("chipid_tag[%d]/I"        ,n_chips                       ));
+  tree->Branch("chipid"      ,rd.chipid       ,Form("chipid[%d]/I"            ,n_chips                       ));
+  tree->Branch("col"         ,rd.col          ,Form("col[%d]/I"               ,                     MEMDEPTH ));
+  tree->Branch("chipch"      ,rd.chipch       ,Form("chipch[%d]/I"            ,         n_channels           ));
+  tree->Branch("chip"        ,rd.chip         ,Form("chip[%d]/I"              ,n_chips                       ));
+  tree->Branch("debug"       ,rd.debug        ,Form("debug[%d]/I"             ,n_chips                       ));
+  tree->Branch("view"        ,&rd.view        ,Form("view/I"                                                 ));
+  tree->Branch("pln"         ,rd.pln          ,Form("pln[%d][%d]/I"           ,n_chips, n_channels           ));
+  tree->Branch("ch"          ,rd.ch           ,Form("ch[%d][%d]/I"            ,n_chips, n_channels           ));
+  tree->Branch("grid"        ,rd.grid         ,Form("grid[%d][%d]/I"          ,n_chips, n_channels           ));
+  tree->Branch("x"           ,rd.x            ,Form("x[%d][%d]/D"             ,n_chips, n_channels           ));
+  tree->Branch("y"           ,rd.y            ,Form("y[%d][%d]/D"             ,n_chips, n_channels           ));
+  tree->Branch("z"           ,rd.z            ,Form("z[%d][%d]/D"             ,n_chips, n_channels           ));
+  tree->Branch("pe"          ,rd.pe           ,Form("pe[%d][%d][%d]/D"        ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("time_ns"     ,rd.time_ns      ,Form("time_ns[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("gain"        ,rd.gain         ,Form("gain[%d][%d]/D"          ,n_chips, n_channels           ));
+  tree->Branch("pedestal"    ,rd.pedestal     ,Form("pedestal[%d][%d][%d]/D"  ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("ped_nohit"   ,rd.ped_nohit    ,Form("ped_nohit[%d][%d][%d]/D" ,n_chips, n_channels, MEMDEPTH ));
   
   // =====================================================
   //     ============================================
@@ -361,11 +375,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
             || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32768
             || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 65536
             ){
-            for(unsigned int ichip=0;ichip<NCHIPS;ichip++){
+            for(unsigned int ichip=0;ichip<n_chips;ichip++){
               rd.debug[ichip] +=DEBUG_GOOD_SPILLGAP;
             }
           }else{
-            for(unsigned int ichip=0;ichip<NCHIPS;ichip++){
+            for(unsigned int ichip=0;ichip<n_chips;ichip++){
               rd.debug[ichip] +=DEBUG_BAD_SPILLGAP;
             }
           }
@@ -396,7 +410,7 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
           }
 
           rd.spill_count    = SPILL_COUNT;
-          rd.spill_flag     = NCHIPS;
+          rd.spill_flag     = n_chips;
           FILL_FLAG         = true;
          
           if( spill_insert_tag ){
@@ -476,13 +490,13 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
 
           vector<unsigned short int>& eventData  = packetData;
 
-          Int_t v_chipid   [NCHIPS];
-          Int_t v_bcid     [NCHIPS][MEMDEPTH];
-          Int_t v_time     [NCHIPS][NCHANNELS][MEMDEPTH];
-          Int_t v_charge   [NCHIPS][NCHANNELS][MEMDEPTH];
-          Int_t v_gain_hit [NCHIPS][NCHANNELS][MEMDEPTH];
+          Int_t v_chipid   [n_chips];
+          Int_t v_bcid     [n_chips][MEMDEPTH];
+          Int_t v_time     [n_chips][n_channels][MEMDEPTH];
+          Int_t v_charge   [n_chips][n_channels][MEMDEPTH];
+          Int_t v_gain_hit [n_chips][n_channels][MEMDEPTH];
 
-          for(unsigned int i0=0;i0<NCHIPS;i0++){
+          for(unsigned int i0=0;i0<n_chips;i0++){
             v_chipid[i0]=-1;
             for(unsigned int k0=0;k0<MEMDEPTH;k0++){
               v_bcid[i0][k0]=-1;
@@ -604,8 +618,8 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
 
               if (isValidChip){
                 rawDataSize = i - chipStartIndex - CHIPENDTAG;
-                nColumns    = (rawDataSize-CHIPIDSIZE)/(1+NCHANNELS*2);
-                if ( (rawDataSize-CHIPIDSIZE)%(1+NCHANNELS*2) != 0) {
+                nColumns    = (rawDataSize-CHIPIDSIZE)/(1+n_channels*2);
+                if ( (rawDataSize-CHIPIDSIZE)%(1+n_channels*2) != 0) {
                   cout << "!! WARNING !! Bad data size! (size : "<< rawDataSize-CHIPIDSIZE << " , spill_count:"<< SPILL_COUNT <<")"  << endl;
                   Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD DATA SIZE! spill:%d ,chip:%d",
                         inputFileName.c_str(),
@@ -666,13 +680,13 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
                   rd.bcid[currentChipID][ibc] = bcid_inter + v_bcid[currentChipID][ibc] *bcid_slope;
                   
                   // Range for this column
-                  unsigned int begin = i - CHIPENDTAG - CHIPIDSIZE - nColumns - ibc*NCHANNELS*2;
-                  unsigned int end   = begin - NCHANNELS;
+                  unsigned int begin = i - CHIPENDTAG - CHIPIDSIZE - nColumns - ibc*n_channels*2;
+                  unsigned int end   = begin - n_channels;
                   unsigned int ichan = 0;
                   //int count_hits     = 0;
 
                   for (j = begin ; j>end ; j--) {
-                    if (ibc<MEMDEPTH && ichan<NCHANNELS) {
+                    if (ibc<MEMDEPTH && ichan<n_channels) {
                       //extract charge
                       v_charge  [currentChipID][ichan][ibc] = eventData[j] & 0x0FFF;
                       rd.charge [currentChipID][ichan][ibc] = v_charge[currentChipID][ichan][ibc];
@@ -696,11 +710,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
                   } // loop on j
 
                   begin = end;
-                  end   = begin - NCHANNELS;
+                  end   = begin - n_channels;
                   ichan = 0;
 
                   for (j = begin ; j>end ; j--) {
-                    if (ibc<MEMDEPTH && ichan<NCHANNELS) {
+                    if (ibc<MEMDEPTH && ichan<n_channels) {
                       //extract time
                       v_time [currentChipID][ichan][ibc] = eventData[j] & 0x0FFF;
                       rd.time[currentChipID][ichan][ibc] = v_time[currentChipID][ichan][ibc];
@@ -723,14 +737,14 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
           rd.spill_mode      = -1;
           rd.spill_count      = -1;
           rd.spill_flag =  1;
-          for(unsigned int ichip=0 ; ichip<NCHIPS ; ichip++){
+          for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
             v_chipid[ichip]  = -1;
             rd.chipid[ichip] = -1;
             rd.debug[ichip]    =  0;
             for(unsigned int icol = 0 ; icol<MEMDEPTH ;icol++){
               v_bcid [ichip][icol] = -1 ;  
               rd.bcid[ichip][icol] = -1;
-              for(unsigned int ich=0 ; ich<NCHANNELS; ich++){
+              for(unsigned int ich=0 ; ich<n_channels; ich++){
                 rd.charge  [ichip][ich][icol] = -1;
                 rd.time    [ichip][ich][icol] = -1;
                 rd.time_ns [ichip][ich][icol] = -100.;
@@ -752,11 +766,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
       if (lastTwo[3] == 0xFFFF) { // SPILL trailer check
         packetData.clear();
         endOfChipTag = false;
-        for(unsigned int ichip=0 ; ichip<NCHIPS ; ichip++){
+        for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
           rd.chipid[ichip] = -1;
           for(unsigned int icol = 0 ; icol<MEMDEPTH ;icol++){ 
             rd.bcid[ichip][icol] = -1;
-            for(unsigned int ich=0 ; ich<NCHANNELS; ich++){
+            for(unsigned int ich=0 ; ich<n_channels; ich++){
               rd.charge[ichip][ich][icol] = -1;
               rd.pe[ichip][ich][icol]     = -100.;
               rd.time  [ichip][ich][icol] = -1;
@@ -766,11 +780,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
           }	
         }
         if(FILL_FLAG){
-          for(unsigned int ichip=0 ; ichip<NCHIPS ; ichip++){
+          for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
             rd.debug[ichip] += DEBUG_NODATA;
           }
           tree->Fill(); 
-          for(unsigned int ichip=0 ; ichip<NCHIPS ; ichip++){
+          for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
             rd.debug[ichip] = 0;
           }
         }
@@ -821,7 +835,7 @@ unsigned short int check_StartChipIndex(unsigned short int head1,unsigned short 
   unsigned short int head[4]={head1,head2,head3,head4};
   unsigned short int ret;
 
-  if( (head[0]&0x00FF) > 0 && (head[0]&0x00FF) <=NCHIPS ){
+  if( (head[0]&0x00FF) > 0 && (head[0]&0x00FF) <=n_chips ){
     ret = head[0];
     *checkid_exist=true;
   }else{
@@ -911,21 +925,21 @@ bool check_ChipID(int v_chipid){
 //******************************************************************************
 void Get_calibData(string inputFileName,string calibFileName,string pedFileName, double gain[20][36], double pedestal[20][36][16], double ped_nohit[20][36][16]){
 
-  int ndif = 0;
+  int n_difs = 0;
   int pos = inputFileName.find("dif_1_1_")+8;
   if(inputFileName[pos]=='1'){
-    ndif=1;
+    n_difs=1;
   }else if(inputFileName[pos]=='2'){
-    ndif=2;
+    n_difs=2;
   }
-  if(ndif==0) return; 
+  if(n_difs==0) return; 
   string name("");
   wgEditXML *Edit = new wgEditXML();
 
   Edit->Open(pedFileName);
-  for(unsigned int i=0;i<NCHIPS;i++){
+  for(unsigned int i=0;i<n_chips;i++){
     int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
+    for(unsigned int j=0;j<n_channels;j++){
       int ich=j;
       if(ich>31){
         for(unsigned int k=0;k<MEMDEPTH;k++){
@@ -937,9 +951,9 @@ void Get_calibData(string inputFileName,string calibFileName,string pedFileName,
         for(unsigned int k=0;k<MEMDEPTH;k++){
           int icol=k;
           name=Form("ped_nohit_%d",icol);
-          ped_nohit[ichip][ich][icol]=Edit->Calib_GetValue(name,ndif,ichip,ich);
+          ped_nohit[ichip][ich][icol]=Edit->Calib_GetValue(name,n_difs,ichip,ich);
           name=Form("ped_%d",icol);
-          pedestal[ichip][ich][icol]=Edit->Calib_GetValue(name,ndif,ichip,ich);
+          pedestal[ichip][ich][icol]=Edit->Calib_GetValue(name,n_difs,ichip,ich);
         }
       }
     }
@@ -947,9 +961,9 @@ void Get_calibData(string inputFileName,string calibFileName,string pedFileName,
   Edit->Close();
 
   if(calibFileName==""){
-    for(unsigned int i=0;i<NCHIPS;i++){
+    for(unsigned int i=0;i<n_chips;i++){
       int ichip=i;
-      for(unsigned int j=0;j<NCHANNELS;j++){
+      for(unsigned int j=0;j<n_channels;j++){
         int ich=j;
         gain[ichip][ich]=1.;
       }
@@ -959,9 +973,9 @@ void Get_calibData(string inputFileName,string calibFileName,string pedFileName,
 
 
   Edit->Open(calibFileName);
-  for(unsigned int i=0;i<NCHIPS;i++){
+  for(unsigned int i=0;i<n_chips;i++){
     int ichip=i;
-    for(unsigned int j=0;j<NCHANNELS;j++){
+    for(unsigned int j=0;j<n_channels;j++){
       int ich=j;
       if(ich>31){
         gain[ichip][ich]=1.;
@@ -972,7 +986,7 @@ void Get_calibData(string inputFileName,string calibFileName,string pedFileName,
         }
       }else{
         name=Form("Gain");
-        gain[ichip][ich]=Edit->Calib_GetValue(name,ndif,ichip,ich);
+        gain[ichip][ich]=Edit->Calib_GetValue(name,n_difs,ichip,ich);
       }
     }
   }
@@ -988,11 +1002,11 @@ void tdc2time(int time[20][36][16],int bcid[20][16],double time_ns[20][36][16],d
     int Parity;
     int BCIDwidth=580;//ns
 
-    for(int chip=0; chip<(int)NCHIPS;chip++){
+    for(int chip=0; chip<(int)n_chips;chip++){
       for(int col=0; col<(int)MEMDEPTH; col++){
         if(bcid[chip][col]%2 == 0){ Parity = Even; }
         else           { Parity = Odd;  }
-        for(int ch=0;ch<(int)NCHANNELS;ch++){
+        for(int ch=0;ch<(int)n_channels;ch++){
           time_ns[chip][ch][col] 
             = (time[chip][ch][col]-intcpt[Parity][chip][ch])
             /slope[Parity][chip][ch]+(bcid[chip][col]-Parity)*BCIDwidth;
