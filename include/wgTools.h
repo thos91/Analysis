@@ -35,6 +35,8 @@ public:
 class Logger
 {
 public:
+  bool LogToCout = false;
+  bool LogToCerr = false;
   Logger();
   Logger(const string&);
   void Write(const string&);

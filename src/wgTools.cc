@@ -113,8 +113,8 @@ Logger::Logger(const string& log_dir)
   } else dir = log_dir;
   
   // If the log directory is not found, create it
-  struct stat sb;
-  if (stat(dir.c_str(), &sb) != 0 || !S_ISDIR(sb.st_mode)) {
+  CheckExist check;
+  if ( check.Dir(dir) == false ) {
 	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 	if (dir_err == -1) {
 	  string error_message("error while creating " + dir + " directory!");
@@ -145,14 +145,20 @@ void Logger::Write(const string& log)
 {
   time_t newTime = time(NULL);
   string japtime(ctime(&newTime));
-  m_file << "[ " << japtime << " ]: " << log << endl;
+  if ( LogToCout )
+	cout << "[ " << japtime << " ]: " << log << endl;
+  else
+	m_file << "[ " << japtime << " ]: " << log << endl;
 }
 
 void Logger::eWrite(const string& log)
 {
   time_t newTime = time(NULL);
   string japtime(ctime(&newTime));
-  m_efile << "[ " << japtime << " ]: " << log << endl;
+  if ( LogToCerr )
+	cerr << "[ " << japtime << " ]: " << log << endl;
+  else
+	m_efile << "[ " << japtime << " ]: " << log << endl;
 }
 
 Logger::~Logger()
