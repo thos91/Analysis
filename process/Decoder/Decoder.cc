@@ -16,6 +16,7 @@
 #include "Const.h"
 #include "wgTools.h"
 #include "wgErrorCode.h"
+#include "wgExceptions.h"
 #include "wgGetCalibData.h"
 #include "wgChannelMap.h"
 
@@ -36,29 +37,59 @@
 using namespace std;
 
 void print_help();
-void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsigned int maxEvt,string outputDir, string logoutputDir, int n_difs = 0, int n_chips = 0, int n_channels = 0);
-unsigned short int check_StartChipIndex(unsigned short int head1,unsigned short int head2,unsigned short int head3,unsigned short  int head4, bool* checkid_exist, int* Missing_Header);
+
+void Decode(const string& inputFileName,
+			const string& calibFileName,
+			const string& outputDir,
+			bool overwrite,
+			unsigned int maxEvt,
+			int n_difs = 0,
+			int n_chips = 0,
+			int n_channels = 0);
+
+unsigned short check_StartChipIndex(unsigned short head1,
+									unsigned short head2,
+									unsigned short head3,
+									unsigned short head4,
+									bool* checkid_exist,
+									int* Missing_Header);
+
 bool check_ChipID(int v_chipid);
-void tdc2time(int time[20][36][16],int bcid[20][16],double time_ns[20][36][16],double slope[2][20][36],double intcpt[2][20][36]);
+
+void tdc2time(int time[20][36][16],
+			  int bcid[20][16],
+			  double time_ns[20][36][16],
+			  double slope[2][20][36],
+			  double intcpt[2][20][36]);
 
 OperateString *OptStr;
 CheckExist    *check;
 Logger        *Log;
 
 void print_help(const char * program_name) {
-  cout << "this program is for decodeing a .raw file into a .root file\n"
+  cout << "this program decodes a .raw file into a .root file\n"
 	"usage example: " << program_name << " -f inputfile.raw -r\n"
 	"  -h         : help\n"
-	"  -f (char*) : choose inputfile you want to read (must)\n"
-	"  -i (char*) : choose calibration file.\n"
-	"  -o (char*) : choose output directory. (default=WAGASCI_DECODEDIR)\n"
+	"  -f (char*) : input .raw file that you want to read (mandatory)\n"
+	"  -i (char*) : calibration file.\n"
+	"  -o (char*) : output directory (default = WAGASCI_DECODEDIR)\n"
 	"  -r         : overwrite mode\n";
 }
 
 int main(int argc, char** argv) {
   OptStr =  new OperateString;
   check  =  new CheckExist;
-  Log    =  new Logger;
+
+  // Initialize the logger. If the log files cannot be opened the Logger will
+  // use the std::cout and std::cerr instead
+  try { Log  =  new Logger; }
+  catch (const wgInvalidFile& e) {
+	Log->LogToCout = Log->LogToCerr = true;
+  }
+  catch (const exception& e) {
+	cout << e.what() << endl;
+	exit(1);
+  }
 
   // Get environment variables
   wgConst *con = new wgConst();
@@ -72,8 +103,6 @@ int main(int argc, char** argv) {
   string logoutputDir = con->LOG_DIRECTORY;
   bool overwrite = false;
   delete con;
-  
-  Log->Initialize();
 
   while((opt = getopt(argc,argv, "f:i:o:rh")) !=-1 ){
     switch(opt){
@@ -132,29 +161,30 @@ int main(int argc, char** argv) {
   const unsigned int maxEvt =99999999;
   cout << "Maximum number of events treated = " << maxEvt << endl;
 
-  ReadFile(inputFileName, calibFileName, overwrite, maxEvt, outputDir, logoutputDir);
+  Decode(inputFileName, calibFileName, outputDir, overwrite, maxEvt);
   return 0;
 }
 
 //******************************************************************************
 
-void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsigned int maxEvt,
-			  string outputDir, string logoutputDir, int n_chips, int n_difs, int n_channels){
+void Decode(const string& inputFileName, const string& calibFileName, const string& outputDir,
+			bool overwrite, unsigned int maxEvt, int n_chips, int n_difs, int n_channels){
 
   string outputTreeFileName = OptStr->GetName(inputFileName)+"_tree.root";
-
   vector<int> v_log(4,0);
-  string logpath = OptStr->GetPath(inputFileName);
-  string logfilename = OptStr->GetName(inputFileName);
-  int pos = logfilename.rfind("_ecal_dif_");
-  string logfile = logpath + logfilename.substr(0,pos) + ".log";
-  if(check->LogFile(logfile)){
+  // This is not the output log file but the log file that should be already
+  // present in the input folder and was created together with the .raw file
+  string logpath            = OptStr->GetPath(inputFileName);
+  string logfilename        = OptStr->GetName(inputFileName);
+  int pos                   = logfilename.rfind("_ecal_dif_");
+  string logfile            = logpath + logfilename.substr(0,pos) + ".log";
+  
+  if( check->LogFile(logfile) ) {
     wgEditXML *Edit = new wgEditXML();
-    Edit->GetLog(logfile,v_log);
+    Edit->GetLog(logfile, v_log);
     delete Edit;
-  }else{
-    cout << " LOGFILE:" << logfile << " doesn't exist!" << endl;
   }
+  else cout << " LOGFILE:" << logfile << " doesn't exist!" << endl;
 
 #ifndef DEBUG_DECODE
   cout << " *****  READING FILE     :" << inputFileName      << "  *****" << endl;
@@ -166,32 +196,20 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
   TFile * outputTreeFile;
 
   if (!overwrite){
-    outputTreeFile = new TFile(Form("%s/%s",outputDir.c_str(),
-									outputTreeFileName.c_str()),
-							   "create");
+    outputTreeFile = new TFile(Form("%s/%s", outputDir.c_str(), outputTreeFileName.c_str()), "create");
     if ( !outputTreeFile->IsOpen() ) {
-      Log->eWrite(Form("[%s][Decoder]Error!!:%s/%s already exists!",
-					   inputFileName.c_str(),
-					   outputDir.c_str(),
-					   outputTreeFileName.c_str()));
+      Log->eWrite(Form("[%s][Decoder]Error!!:%s/%s already exists!", inputFileName.c_str(), outputDir.c_str(), outputTreeFileName.c_str()));
       cout << "!! ERROR !!\tFile already created!" << endl;
       return;
     }
   }
-  else {
-    outputTreeFile = new TFile(Form("%s/%s",outputDir.c_str(),
-									outputTreeFileName.c_str()),
-							   "recreate");
-  }
+  else outputTreeFile = new TFile(Form("%s/%s",outputDir.c_str(), outputTreeFileName.c_str()), "recreate");
 
-  Log->Write(Form("[%s][Decoder]%s/%s is being created",
-				  inputFileName.c_str(),
-				  outputDir.c_str(),
-				  outputTreeFileName.c_str()));
+  Log->Write(Form("[%s][Decoder]%s/%s is being created", inputFileName.c_str(), outputDir.c_str(), outputTreeFileName.c_str()));
 
   Raw_t rd;
-  rd.spill=-1;
-  rd.spill_flag=n_chips;
+  rd.spill      = -1;
+  rd.spill_flag = n_chips;
 
   // If the number of DIFs is not provided as an argument, try to infer it from
   // the file name
@@ -218,8 +236,8 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
 
   // Get the geometrical information (position in space) for each channel
   wgChannelMap *Map = new wgChannelMap();
-  for(int ichip = 0; ichip < (int) n_chips; ichip++) {
-    Map->GetMap(n_difs - 1, ichip, &rd.view, rd.pln[ichip], rd.ch[ichip], rd.grid[ichip], rd.x[ichip], rd.y[ichip], rd.z[ichip]);
+  for(int ichip = 0; ichip < n_chips; ichip++) {
+    Map->GetMap(n_difs - 1, ichip, rd.view, rd.pln[ichip], rd.ch[ichip], rd.grid[ichip], rd.x[ichip], rd.y[ichip], rd.z[ichip]);
   }
   delete Map;
 
