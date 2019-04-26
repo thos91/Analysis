@@ -35,6 +35,7 @@
 
 using namespace std;
 
+void print_help();
 void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsigned int maxEvt,string outputDir, string logoutputDir, int n_difs = 0, int n_chips = 0, int n_channels = 0);
 unsigned short int check_StartChipIndex(unsigned short int head1,unsigned short int head2,unsigned short int head3,unsigned short  int head4, bool* checkid_exist, int* Missing_Header);
 bool check_ChipID(int v_chipid);
@@ -44,75 +45,77 @@ OperateString *OptStr;
 CheckExist    *check;
 Logger        *Log;
 
+void print_help(const char * program_name) {
+  cout << "this program is for decodeing a .raw file into a .root file\n"
+	"usage example: " << program_name << " -f inputfile.raw -r\n"
+	"  -h         : help\n"
+	"  -f (char*) : choose inputfile you want to read (must)\n"
+	"  -i (char*) : choose calibration file.\n"
+	"  -o (char*) : choose output directory. (default=WAGASCI_DECODEDIR)\n"
+	"  -r         : overwrite mode\n";
+}
+
 int main(int argc, char** argv) {
   OptStr =  new OperateString;
   check  =  new CheckExist;
   Log    =  new Logger;
+
+  // Get environment variables
   wgConst *con = new wgConst();
   con->GetENV();
+
   int opt;
   string inputFileName("");
   string calibFileName("");
   string outputFile("");
   string outputDir    = con->DECODE_DIRECTORY;
   string logoutputDir = con->LOG_DIRECTORY;
-  bool overwrite = false; 
+  bool overwrite = false;
   delete con;
+  
   Log->Initialize();
 
   while((opt = getopt(argc,argv, "f:i:o:rh")) !=-1 ){
     switch(opt){
-      case 'f':
-        inputFileName=optarg;
-        if(!check->RawFile(inputFileName)){ 
-          cout<<"!!Error!! "<<inputFileName.c_str()<<"is wrong!!"<<endl;
-          Log->eWrite(Form("[%s][Decoder]!!target is wrong!!",inputFileName.c_str()));
-          return 1;
-        }
-        delete check;
-        cout << "== readfile :" << inputFileName.c_str() << " ==" << endl;
-        Log->Write(Form("[%s][Decoder] start decodeing",inputFileName.c_str()));
-        break;
-      case 'i':
-        calibFileName=optarg;
-        if(!check->XmlFile(calibFileName)){ 
-          cout<<"!!Error!! "<<calibFileName.c_str()<<"is wrong!!"<<endl;
-          Log->eWrite(Form("[%s][Decoder]!!calibration file is wrong!!",calibFileName.c_str()));
-          return 1;
-        }
-        cout << "== calibation file :" << calibFileName.c_str() << " ==" << endl;
-        break;
-      case 'o':
-        outputDir = optarg; 
-        if(!check->Dir(outputDir)){
-          cout << "!!Error!! output directory:" << outputDir<< " don't exist!" << endl;
-          Log->eWrite(Form("[%s][Decoder]!!output directory is wrong!!",outputDir.c_str()));
-          return 1;
-        }
-        break;
-      case 'r':
-        overwrite = true;
-        cout << "== mode : overwrite  ==" << endl;
-        Log->Write(Form("[%s][Decoder] overwrite mode",inputFileName.c_str()));
-        break;
-      case 'h':
-        cout <<"this program is for decodeing .raw file to .root file "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h         : help"<<endl;
-        cout <<"  -f (char*) : choose inputfile you wanna read(must)"<<endl;
-        cout <<"  -i (char*) : choose calibration file."<<endl;
-        cout <<"  -o (char*) : choose output directory. (default=WAGASCI_DECODEDIR)"<<endl;
-        cout <<"  -r         : overwrite mode "<<endl;
-        exit(0);
-      default:
-        cout <<"this program is for decodeing .raw file to .root file "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h         : help"<<endl;
-        cout <<"  -f (char*) : choose inputfile you wanna read(must)"<<endl;
-        cout <<"  -i (char*) : choose calibration file."<<endl;
-        cout <<"  -o (char*) : choose output directory. (default=WAGASCI_DECODEDIR)"<<endl;
-        cout <<"  -r         : overwrite mode "<<endl;
-        exit(0);
+	case 'f':
+	  inputFileName=optarg;
+	  if(!check->RawFile(inputFileName)){ 
+		cout<<"!!Error!! "<<inputFileName.c_str()<<"is wrong!!"<<endl;
+		Log->eWrite(Form("[%s][Decoder]!!target is wrong!!",inputFileName.c_str()));
+		return 1;
+	  }
+	  delete check;
+	  cout << "== readfile :" << inputFileName.c_str() << " ==" << endl;
+	  Log->Write(Form("[%s][Decoder] start decodeing",inputFileName.c_str()));
+	  break;
+	case 'i':
+	  calibFileName=optarg;
+	  if(!check->XmlFile(calibFileName)){ 
+		cout<<"!!Error!! "<<calibFileName.c_str()<<"is wrong!!"<<endl;
+		Log->eWrite(Form("[%s][Decoder]!!calibration file is wrong!!",calibFileName.c_str()));
+		return 1;
+	  }
+	  cout << "== calibation file :" << calibFileName.c_str() << " ==" << endl;
+	  break;
+	case 'o':
+	  outputDir = optarg; 
+	  if(!check->Dir(outputDir)){
+		cout << "!!Error!! output directory:" << outputDir<< " don't exist!" << endl;
+		Log->eWrite(Form("[%s][Decoder]!!output directory is wrong!!",outputDir.c_str()));
+		return 1;
+	  }
+	  break;
+	case 'r':
+	  overwrite = true;
+	  cout << "== mode : overwrite  ==" << endl;
+	  Log->Write(Form("[%s][Decoder] overwrite mode",inputFileName.c_str()));
+	  break;
+	case 'h':
+	  print_help(argv[0]);
+	  exit(0);
+	default:
+	  print_help(argv[0]);
+	  exit(0);
     }
   }
 
@@ -164,27 +167,27 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
 
   if (!overwrite){
     outputTreeFile = new TFile(Form("%s/%s",outputDir.c_str(),
-          outputTreeFileName.c_str()),
-        "create");
+									outputTreeFileName.c_str()),
+							   "create");
     if ( !outputTreeFile->IsOpen() ) {
       Log->eWrite(Form("[%s][Decoder]Error!!:%s/%s already exists!",
-            inputFileName.c_str(),
-            outputDir.c_str(),
-            outputTreeFileName.c_str()));
+					   inputFileName.c_str(),
+					   outputDir.c_str(),
+					   outputTreeFileName.c_str()));
       cout << "!! ERROR !!\tFile already created!" << endl;
       return;
     }
   }
   else {
     outputTreeFile = new TFile(Form("%s/%s",outputDir.c_str(),
-          outputTreeFileName.c_str()),
-        "recreate");
+									outputTreeFileName.c_str()),
+							   "recreate");
   }
 
   Log->Write(Form("[%s][Decoder]%s/%s is being created",
-        inputFileName.c_str(),
-        outputDir.c_str(),
-        outputTreeFileName.c_str()));
+				  inputFileName.c_str(),
+				  outputDir.c_str(),
+				  outputTreeFileName.c_str()));
 
   Raw_t rd;
   rd.spill=-1;
@@ -261,9 +264,9 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
   time_t current_time = time(0);
   tm *tm = localtime(&current_time);
   string this_year = Form("%04d-%02d-%02d-%02d-%02d",
-      tm->tm_year+1900,1,1,0,0);
+						  tm->tm_year+1900,1,1,0,0);
   string next_year = Form("%04d-%02d-%02d-%02d-%02d",
-      tm->tm_year+1900+1,1,1,0,0);
+						  tm->tm_year+1900+1,1,1,0,0);
   struct tm y;
   strptime(this_year.c_str(),"%Y-%m-%d-%H-%M", &y);
   int DATETIME_STR = (int)mktime(&y);
@@ -352,29 +355,29 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
         SPILL_NUMBER = lastTwo[1] & 0xFFFF;
         if( LAST_SPILL_NUMBER + 1 != SPILL_NUMBER ){
           Log->eWrite(Form("[%s][Decoder]!! WARNING !! SPILL GAP!! last_spill=%d,current_spill=%d",
-                inputFileName.c_str(),
-                LAST_SPILL_NUMBER,
-                SPILL_NUMBER));
+						   inputFileName.c_str(),
+						   LAST_SPILL_NUMBER,
+						   SPILL_NUMBER));
           cout << "!! WARNING !! SPILL GAP!! (last="<< LAST_SPILL_NUMBER << ", current="<<SPILL_NUMBER << ")" << endl;
           
           if(  LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 1  
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 2 
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 4 
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 8 
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 16 
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 64
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 128
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 256 
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 512
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 1024
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 2048
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 4096
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 8192
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 16384
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32768
-            || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 65536
-            ){
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 2 
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 4 
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 8 
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 16 
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 64
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 128
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 256 
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 512
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 1024
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 2048
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 4096
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 8192
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 16384
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32768
+			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 65536
+			   ){
             for(unsigned int ichip=0;ichip<n_chips;ichip++){
               rd.debug[ichip] +=DEBUG_GOOD_SPILLGAP;
             }
@@ -389,9 +392,9 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
           spill_insert_tag = true; 
         }else{
           Log->eWrite(Form("[%s][Decoder]!! WARNING !! SPILL INSERT TAG is inserted in different position!! last_spill=%d,current_spill=%d",
-                inputFileName.c_str(),
-                LAST_SPILL_COUNT,
-                SPILL_COUNT)); 
+						   inputFileName.c_str(),
+						   LAST_SPILL_COUNT,
+						   SPILL_COUNT)); 
           cout << "!! WARNING !! SPILL INSERT TAG is inserted in different position!! (last="<< LAST_SPILL_COUNT << ", current="<<SPILL_COUNT << ")" << endl;     
         }
       }
@@ -426,17 +429,17 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
               ( LAST_SPILL_COUNT != 0 && ( SPILL_COUNT==LAST_SPILL_COUNT+1 ))){
           }else{
             Log->eWrite(Form("[%s][Decoder]!! WARNING !! SPILL COUNT GAP!! last_spill=%d,current_spill=%d",
-                  inputFileName.c_str(),
-                  LAST_SPILL_COUNT,
-                  SPILL_COUNT)); 
+							 inputFileName.c_str(),
+							 LAST_SPILL_COUNT,
+							 SPILL_COUNT)); 
             cout << "!! WARNING !! SPILL COUNT GAP!! (last="<< LAST_SPILL_COUNT << ", current="<<SPILL_COUNT << ")" << endl; 
           }
           
           endOfSpillTag=false;
         }else{
           Log->eWrite(Form("[%s][Decoder]!! WARNING !! WHILE DECODING, NEXT SPILL IS INSERTED!! ,current_spill=%d",
-                inputFileName.c_str(),
-                SPILL_COUNT)); 
+						   inputFileName.c_str(),
+						   SPILL_COUNT)); 
           cout << "!! WARNING !! WHILE DECODING, NEXT SPILL IS INSERTED, current=)"<<SPILL_COUNT << endl;
           cout << "!! WARNING !! DATA is aborted !! "<< endl;
         }
@@ -461,11 +464,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
           cout << "!! WARNING !! nChipData = " << nChipData << " is too small!!" <<endl;
 #endif
           Log->eWrite(Form("[%s][Decoder]!! WARNING !!nChipData is too small!!.(nChipData is %d) spill=%d, chipid_tag=%d",
-                inputFileName.c_str(),
-                nChipData,
-                SPILL_COUNT,
-                nChips+1
-                )); 
+						   inputFileName.c_str(),
+						   nChipData,
+						   SPILL_COUNT,
+						   nChips+1
+						   )); 
           rd.spill_flag--;
         }
       }
@@ -479,11 +482,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
           cout << "!! WARNING !! The number of chips doesn't match the number of Chip Trailer! spill:"<< SPILL_COUNT<< endl;
 #endif
           Log->eWrite(Form("[%s][Decoder]!! WARNING !! The number of chips doesn't match the number of Chip Trailer!) acqid=%d, nbchip=%d, #chip_trailer=%d",
-                inputFileName.c_str(),
-                SPILL_COUNT,
-                nbchip,
-                nChips
-                )); 
+						   inputFileName.c_str(),
+						   SPILL_COUNT,
+						   nbchip,
+						   nChips
+						   )); 
         }
         if (nChips > 0){
           //=================  read Event ====================  //
@@ -605,13 +608,13 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
                   isValidChip = false;
                   rd.debug[currentChipID]+=DEBUG_BAD_CHIPNUM;
                   cout << "!! ERROR !! CHIP is not valid!\n" << "eventData\tis\t"
-                    << (eventData[i]&0x00FF)        << "\ncurrentChipID\tis\t"
-                    << currentChipID              << endl;
+					   << (eventData[i]&0x00FF)        << "\ncurrentChipID\tis\t"
+					   << currentChipID              << endl;
                   Log->eWrite(Form("[%s][Decoder]WARNING!!:HEAD ChipID and END ChipID is wrong!(HEAD:%d,END:%d) spill:%d",
-                        inputFileName.c_str(),
-                        currentChipID,
-                        eventData[i],
-                        rd.spill));
+								   inputFileName.c_str(),
+								   currentChipID,
+								   eventData[i],
+								   rd.spill));
                   rd.spill_flag--;
                 }
               }
@@ -622,9 +625,9 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
                 if ( (rawDataSize-CHIPIDSIZE)%(1+n_channels*2) != 0) {
                   cout << "!! WARNING !! Bad data size! (size : "<< rawDataSize-CHIPIDSIZE << " , spill_count:"<< SPILL_COUNT <<")"  << endl;
                   Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD DATA SIZE! spill:%d ,chip:%d",
-                        inputFileName.c_str(),
-                        rd.spill,
-                        currentChipID));
+								   inputFileName.c_str(),
+								   rd.spill,
+								   currentChipID));
                   rd.spill_flag--;
                   rd.debug[currentChipID]+=DEBUG_BAD_CHIPDATA_SIZE;
                   last=(eventData[i])&0xFFFF;
@@ -636,9 +639,9 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
                     cout << "!! WARNING !! Bad number of columns!" << endl;
                     rd.debug[currentChipID]+=DEBUG_BAD_CHIPDATA_SIZE;
                     Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD COLUMN SIZE! DataSize:%d column:%d",
-                          inputFileName.c_str(),
-                          rd.spill,
-                          nColumns));
+									 inputFileName.c_str(),
+									 rd.spill,
+									 nColumns));
                     rd.spill_flag--;
                     last=(eventData[i])&0xFFFF;
                     isValidChip=false;
@@ -653,11 +656,11 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
                 if (check_ChipID(v_chipid[currentChipID])) isGoodChipNumber = true;
                 if (!isGoodChipNumber) {
                   cout << "!! WARNING !! Bad chip ID: " 
-                    << v_chipid[currentChipID] << endl;
+					   << v_chipid[currentChipID] << endl;
                   Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD CHIP ID! spill:%d chipid:%d",
-                        inputFileName.c_str(),
-                        rd.spill,
-                        v_chipid[currentChipID]));
+								   inputFileName.c_str(),
+								   rd.spill,
+								   v_chipid[currentChipID]));
                   rd.spill_flag--;
                   rd.debug[currentChipID]+=DEBUG_BAD_CHIPNUM;
                 }
@@ -798,10 +801,10 @@ void ReadFile(string inputFileName, string calibFileName, bool overwrite, unsign
         // i.e. at the end of SPILL header
         if (endOfChipTag) {
           cout << "!! WARNING !! New SPILL w/o end flag of the previous SPILL!"
-            << " - some CHIPS found!" << endl;
+			   << " - some CHIPS found!" << endl;
           Log->eWrite(Form("[%s][Decoder]Error!!:SPILL trailer is missed!! spill:%d",
-                inputFileName.c_str(),
-                rd.spill));
+						   inputFileName.c_str(),
+						   rd.spill));
         }
         packetData.clear();
         endOfChipTag = false;
@@ -997,20 +1000,20 @@ void Get_calibData(string inputFileName,string calibFileName,string pedFileName,
 //******************************************************************************
 void tdc2time(int time[20][36][16],int bcid[20][16],double time_ns[20][36][16],double slope[2][20][36],double intcpt[2][20][36])
 {
-    const int Even=0;
-    const int Odd=1;
-    int Parity;
-    int BCIDwidth=580;//ns
+  const int Even=0;
+  const int Odd=1;
+  int Parity;
+  int BCIDwidth=580;//ns
 
-    for(int chip=0; chip<(int)n_chips;chip++){
-      for(int col=0; col<(int)MEMDEPTH; col++){
-        if(bcid[chip][col]%2 == 0){ Parity = Even; }
-        else           { Parity = Odd;  }
-        for(int ch=0;ch<(int)n_channels;ch++){
-          time_ns[chip][ch][col] 
-            = (time[chip][ch][col]-intcpt[Parity][chip][ch])
-            /slope[Parity][chip][ch]+(bcid[chip][col]-Parity)*BCIDwidth;
-        }
-      }
-    }
+  for(int chip=0; chip<(int)n_chips;chip++){
+	for(int col=0; col<(int)MEMDEPTH; col++){
+	  if(bcid[chip][col]%2 == 0){ Parity = Even; }
+	  else           { Parity = Odd;  }
+	  for(int ch=0;ch<(int)n_channels;ch++){
+		time_ns[chip][ch][col] 
+		  = (time[chip][ch][col]-intcpt[Parity][chip][ch])
+		  /slope[Parity][chip][ch]+(bcid[chip][col]-Parity)*BCIDwidth;
+	  }
+	}
+  }
 };
