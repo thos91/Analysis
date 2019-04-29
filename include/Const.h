@@ -14,7 +14,7 @@
 #define NumChipChFull 36
 #define NumChipCh     32
 #define NumSca        16
-
+#define BCIDwidth     580 //ns
 #define NumReconAxis 2
 
 #define MAX_NUM_BCID_CLUSTER 10
