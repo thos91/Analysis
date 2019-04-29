@@ -15,7 +15,7 @@ private:
 public:
   XMLDocument *xml;
   void Make(string&,const int,const int);
-  void Open(string&);
+  void Open(const string&);
   void Close();
   void Write();
   void GetConfig(string&,unsigned int,unsigned int,vector<int>&);

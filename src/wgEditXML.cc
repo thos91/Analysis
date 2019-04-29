@@ -23,7 +23,7 @@ void wgEditXML::Write(){
 }
 
 //**********************************************************************
-void wgEditXML::Open(string& filename){
+void wgEditXML::Open(const string& filename){
   CheckExist * Check = new CheckExist;
   if(!Check->XmlFile(filename)){ cout << "Warning! "<< filename <<" doesn't match requirement!"<<endl; return; }
   delete Check;
