@@ -3,6 +3,9 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <cstdint>
+
+#include <bits/stdc++.h>
 #include <math.h>
 #include "TROOT.h"
 #include "TFile.h"
@@ -29,7 +32,7 @@ vector<string> wgEditConfig::split(string& input, char delimiter)
 vector<string> wgEditConfig::GetCSV(){
   wgConst *con = new wgConst();
   con->GetENV();
-  char* map_csv=Form("%s/src/spiroc2d.csv",con->MAIN_DIRECTORY);
+  char* map_csv=Form("%s/src/spiroc2d.csv",con->MAIN_DIRECTORY.c_str());
   ifstream ifs(map_csv);
   string line;
   vector<string> output;
@@ -49,7 +52,7 @@ vector<string> wgEditConfig::GetCSV(){
 void wgEditConfig::Get_MPPCinfo(int ichip){ 
   wgConst *con = new wgConst();
   con->GetENV();
-  const char* mppc_csv= Form("%s/config/spiroc2d/mppc_map.csv",con->CALICOE_DIRECTORY);
+  const char* mppc_csv= Form("%s/config/spiroc2d/mppc_map.csv",con->CALICOES_DIRECTORY.c_str());
   ifstream ifs(mppc_csv);
   string line;
   vector<string> tmp_mppc_map;
@@ -63,7 +66,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
     mppc_map[atoi(tmp_mppc_map[0].c_str())]=atoi(tmp_mppc_map[1].c_str());
   }
 
-  TFile *fmppc = new TFile( Form("%s/config/spiroc2d/arraymppc_data.root",con->CALICOE_DIRECTORY),"read");
+  TFile *fmppc = new TFile( Form("%s/config/spiroc2d/arraymppc_data.root",con->CALICOES_DIRECTORY.c_str()),"read");
   TTree *mppc = (TTree*)fmppc->Get("mppc");
 
   mppc->SetBranchAddress("BDV",&tmp_bdv);
@@ -88,7 +91,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
 }
 
 //*********************************************************************************
-void wgEditConfig::Open(string& input){
+void wgEditConfig::Open(const string& input){
   string str;
   ifstream ifs(input.c_str());
   getline(ifs,str);
@@ -228,16 +231,19 @@ string wgEditConfig::BiToDe(string& input){
 }
 
 //*********************************************************************************
-string wgEditConfig::DeToBi(string& input){
-  string output("");
-  char num[1];
-  int decimal=atoi(input.c_str());
- 
-  while(decimal>0){
-    sprintf(num,"%d",decimal%2);
-    output = num + output; 
-    decimal = decimal / 2;
+string wgEditConfig::DeToBi(const string& input){
+  int decimal = std::stoi(input);
+  if ( decimal < 0 )
+	throw std::invalid_argument("DeToBi: cannot convert negative numbers");
+  if ( decimal > (int) UINT32_MAX )
+	throw std::invalid_argument("DeToBi: input greater than UINT32_MAX");
+  std::stringstream ss;
+  bitset<32> binary((uint32_t) decimal);
+  for (int i = 31; i >= 0; i--) {
+	ss << binary[i];
   }
+  std::string output(ss.str());
+  output.erase(0, min(output.find_first_not_of('0'), output.size() - 1));
   return output;
 }
 

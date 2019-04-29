@@ -10,7 +10,7 @@ class wgEditConfig
 private:
   string hex_config;
   string bi_config;
-  string DeToBi(string&);
+  string DeToBi(const string&);
   string BiToDe(string&);
   string HexToBi(string&);
   string BiToHex(string&);
@@ -20,7 +20,7 @@ public:
   vector<string>  split(string&,char);
   vector<string> GetCSV();
   void Get_MPPCinfo(int);
-  void Open(string&);
+  void Open(const string&);
   void SetBitstream(string&);
   void Write(string&);
   void Modify(string&,int);
