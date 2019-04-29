@@ -3,15 +3,16 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <stdlib.h>
-#include <stdio.h>
+#include <limits>
 
 #include "TDirectory.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TTree.h"
+#include "TInterpreter.h"
 #include "unistd.h"
+#include <bits/stdc++.h>
 
 #include "Const.h"
 #include "wgTools.h"
@@ -20,6 +21,7 @@
 #include "wgGetCalibData.h"
 #include "wgChannelMap.h"
 
+// Debug macros that will fill the debug histogram
 #define DEBUG_NODATA 1
 #define DEBUG_GOOD_SPILLGAP 2
 #define DEBUG_BAD_SPILLGAP 4
@@ -29,38 +31,69 @@
 #define DEBUG_MISSING_CHIP_HEADER 64
 #define DEBUG_MISSING_CHIP_TRAILER 128
 #define DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP 256
-#define DEBUG_DECODE
-#ifndef DEBUG
-#define DEBUG
-#endif
+
+// #define DEBUG_DECODE
+
+#define NON_BEAM_SPILL 0
+#define BEAM_SPILL     1
+
+#define HIGH_GAIN      1
+#define LOW_GAIN       0
+#define HIGH_GAIN_NORM 1.08
+#define LOW_GAIN_NORM  10.8
+
+// bitset macros
+#define M 16
+#define x00FF bitset<M>(0x00FF)
+#define x0FFF bitset<M>(0x0FFF)
+#define xF000 bitset<M>(0xF000)
+#define x2020 bitset<M>(0x2020)
+#define x5053 bitset<M>(0x5053)
+#define x4C49 bitset<M>(0x4C49)
+#define x4843 bitset<M>(0x4843)
+#define x5049 bitset<M>(0x5049)
+#define xFFFF bitset<M>(0xFFFF)
+#define xFFFE bitset<M>(0xFFFE)
+#define xFFFD bitset<M>(0xFFFD)
+#define xFFFC bitset<M>(0xFFFC)
+#define xFFFB bitset<M>(0xFFFB)
 
 using namespace std;
 
-void print_help();
+// print_help
+// prints an help message with all the arguments taken by the program
+void print_help(const char * program_name);
 
-void Decode(const string& inputFileName,
-			const string& calibFileName,
-			const string& outputDir,
-			bool overwrite,
-			unsigned int maxEvt,
-			int n_difs = 0,
-			int n_chips = 0,
-			int n_channels = 0);
+// Decode
+// Main decoder function (here is were all the fun happens)
+int Decode(const string& inputFileName,
+		   const string& calibFileName,
+		   const string& pedFileName,
+		   const string& tdcFileName,
+		   const string& outputDir,
+		   bool overwrite,
+		   unsigned maxEvt,
+		   unsigned dif = 0,
+		   unsigned n_chips = NCHIPS,
+		   unsigned n_channels = NCHANNELS,
+		   unsigned n_cols = MEMDEPTH);
 
-unsigned short check_StartChipIndex(unsigned short head1,
-									unsigned short head2,
-									unsigned short head3,
-									unsigned short head4,
-									bool* checkid_exist,
-									int* Missing_Header);
+// check_ChipHeader
+/* Checks if the ChipHeader is well formed. If the number of chip is greater
+   than "n_chips" or if the size of "head" vector is less than offset + 4, the
+   0xFFFF value is returned and the "checkid_exist" flag is set to
+   false. Otherwise, if there are other missing 2Bytes in the header, the
+   "Missing_Header" counter is increased for any 2Bytes that are missing. */
+uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offset, bool& checkid_exist, int& Missing_Header);
 
-bool check_ChipID(int v_chipid);
+// check_ChipID
+/* Check that the chip id is not less that zero and greater than 40 */ 
+bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
 
-void tdc2time(int time[20][36][16],
-			  int bcid[20][16],
-			  double time_ns[20][36][16],
-			  double slope[2][20][36],
-			  double intcpt[2][20][36]);
+// tdc2time
+/* If the detector is calibrated (if the TDC coefficient file is present) this
+   function converts the raw TDC into an absolute time in nanoseconds */
+int tdc2time(i3vector time, i2vector bcid, f3vector time_ns, f3vector slope, f3vector intcpt);
 
 OperateString *OptStr;
 CheckExist    *check;
@@ -71,9 +104,12 @@ void print_help(const char * program_name) {
 	"usage example: " << program_name << " -f inputfile.raw -r\n"
 	"  -h         : help\n"
 	"  -f (char*) : input .raw file that you want to read (mandatory)\n"
-	"  -i (char*) : calibration file.\n"
+	"  -i (char*) : calibration card file\n"
+	"  -p (char*) : pedestal card file\n"
+	"  -t (char*) : tdc card file\n"
 	"  -o (char*) : output directory (default = WAGASCI_DECODEDIR)\n"
-	"  -r         : overwrite mode\n";
+	"  -r         : overwrite mode\n"
+	"  -b         : batch (silent) mode\n";
 }
 
 int main(int argc, char** argv) {
@@ -84,7 +120,7 @@ int main(int argc, char** argv) {
   // use the std::cout and std::cerr instead
   try { Log  =  new Logger; }
   catch (const wgInvalidFile& e) {
-	Log->LogToCout = Log->LogToCerr = true;
+	Log->WhereToLog = COUT;
   }
   catch (const exception& e) {
 	cout << e.what() << endl;
@@ -98,114 +134,133 @@ int main(int argc, char** argv) {
   int opt;
   string inputFileName("");
   string calibFileName("");
+  string pedFileName("");
+  string tdcFileName("");
   string outputFile("");
-  string outputDir    = con->DECODE_DIRECTORY;
-  string logoutputDir = con->LOG_DIRECTORY;
+  const string confDir(con->CONF_DIRECTORY);
+  string outputDir(con->DECODE_DIRECTORY);
   bool overwrite = false;
+  bool batch = false;
   delete con;
 
-  while((opt = getopt(argc,argv, "f:i:o:rh")) !=-1 ){
+  while((opt = getopt(argc,argv, "hf:i:p:t:o:rb")) !=-1 ){
     switch(opt){
 	case 'f':
-	  inputFileName=optarg;
-	  if(!check->RawFile(inputFileName)){ 
-		cout<<"!!Error!! "<<inputFileName.c_str()<<"is wrong!!"<<endl;
-		Log->eWrite(Form("[%s][Decoder]!!target is wrong!!",inputFileName.c_str()));
+	  inputFileName = optarg;
+	  if( !check->RawFile(inputFileName) ) { 
+		Log->eWrite("[" + inputFileName + "][Decoder] target is wrong");
 		return 1;
 	  }
 	  delete check;
-	  cout << "== readfile :" << inputFileName.c_str() << " ==" << endl;
-	  Log->Write(Form("[%s][Decoder] start decodeing",inputFileName.c_str()));
+	  Log->Write("[" + inputFileName + "][Decoder] start decoding");
 	  break;
 	case 'i':
-	  calibFileName=optarg;
-	  if(!check->XmlFile(calibFileName)){ 
-		cout<<"!!Error!! "<<calibFileName.c_str()<<"is wrong!!"<<endl;
-		Log->eWrite(Form("[%s][Decoder]!!calibration file is wrong!!",calibFileName.c_str()));
+	  calibFileName = optarg;
+	  if( !check->XmlFile(calibFileName) ) { 
+		Log->eWrite("[" + calibFileName + "][Decoder] calibration file is wrong");
 		return 1;
 	  }
-	  cout << "== calibation file :" << calibFileName.c_str() << " ==" << endl;
+	  break;
+	case 'p':
+	  pedFileName = optarg;
+	  if( !check->XmlFile(pedFileName) ) { 
+		Log->eWrite("[" + pedFileName + "][Decoder] pedestal file is wrong");
+		return 1;
+	  }
+	  break;
+	case 't':
+	  tdcFileName = optarg;
+	  if( !check->XmlFile(tdcFileName) ) { 
+		Log->eWrite("[" + tdcFileName + "][Decoder] TDC calibration file is wrong");
+		return 1;
+	  }
 	  break;
 	case 'o':
 	  outputDir = optarg; 
-	  if(!check->Dir(outputDir)){
-		cout << "!!Error!! output directory:" << outputDir<< " don't exist!" << endl;
-		Log->eWrite(Form("[%s][Decoder]!!output directory is wrong!!",outputDir.c_str()));
+	  if( !check->Dir(outputDir) ) {
+		Log->eWrite("[" + outputDir + "][Decoder]output directory is wrong");
 		return 1;
 	  }
 	  break;
 	case 'r':
 	  overwrite = true;
-	  cout << "== mode : overwrite  ==" << endl;
-	  Log->Write(Form("[%s][Decoder] overwrite mode",inputFileName.c_str()));
+	  Log->Write("[" + inputFileName + "][Decoder] overwrite mode");
+	  break;
+	case 'b':
+	  batch = true;
+	  Log->Write("[" + inputFileName + "][Decoder] batch (silent) mode");
 	  break;
 	case 'h':
 	  print_help(argv[0]);
 	  exit(0);
+	  break;
 	default:
 	  print_help(argv[0]);
 	  exit(0);
     }
   }
 
-  if(inputFileName==""){
-    cout << "!!ERROR!! please input filename." <<endl;
-#ifdef DEBUG_DECODE
-    cout << "if you don't know how to input, please see help."<<endl;
-    cout << "help : ./Decoder -h" <<endl;
-#endif
-    Log->eWrite(Form("[%s][Decoder]!!No input file!!",inputFileName.c_str()));
+  if(inputFileName == ""){
+    Log->eWrite("[Decoder] No input file");
     exit(1);
   }
 
-  const unsigned int maxEvt =99999999;
-  cout << "Maximum number of events treated = " << maxEvt << endl;
+  if(calibFileName == "") {
+	calibFileName = confDir + "/cards/calibration_card.xml";
+  }
+  if(pedFileName == "") {
+	pedFileName = confDir + "/cards/pedestal_card.xml";
+  }
+  if(tdcFileName == "") {
+	tdcFileName = confDir + "/cards/tdc_coefficient_card.xml";
+  }
+  if ( (batch == true) && (Log->WhereToLog == COUT) ) {
+    Log->eWrite("Batch mode is selected but cannot open the log file");
+	exit(1);
+  } else if (batch == true) Log->WhereToLog = LOGFILE;
+  
+  const unsigned int maxEvt = 99999999;
+  Log->Write("Maximum number of events treated = " + to_string(maxEvt));
 
-  Decode(inputFileName, calibFileName, outputDir, overwrite, maxEvt);
+  int retcode;
+  if ( (retcode = Decode(inputFileName, calibFileName, pedFileName, tdcFileName, outputDir, overwrite, maxEvt)) != 0 )
+	Log->eWrite("Decoder failed with code " + to_string(retcode));
+  delete Log;
   return 0;
 }
 
 //******************************************************************************
 
-void Decode(const string& inputFileName, const string& calibFileName, const string& outputDir,
-			bool overwrite, unsigned int maxEvt, int n_chips, int n_difs, int n_channels){
+int Decode(const string& inputFileName, const string& calibFileName, const string& pedFileName, const string& tdcFileName,
+		   const string& outputDir, bool overwrite, unsigned maxEvt, unsigned dif, unsigned n_chips, unsigned n_channels, unsigned n_cols){
 
   string outputTreeFileName = OptStr->GetName(inputFileName)+"_tree.root";
-  vector<int> v_log(4,0);
+
   // This is not the output log file but the log file that should be already
   // present in the input folder and was created together with the .raw file
-  string logpath            = OptStr->GetPath(inputFileName);
-  string logfilename        = OptStr->GetName(inputFileName);
-  int pos                   = logfilename.rfind("_ecal_dif_");
-  string logfile            = logpath + logfilename.substr(0,pos) + ".log";
+  string logfilename  = OptStr->GetName(inputFileName);
+  int pos             = logfilename.rfind("_ecal_dif_") ;
+  string logfile      = OptStr->GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
   
-  if( check->LogFile(logfile) ) {
-    wgEditXML *Edit = new wgEditXML();
-    Edit->GetLog(logfile, v_log);
-    delete Edit;
-  }
-  else cout << " LOGFILE:" << logfile << " doesn't exist!" << endl;
-
 #ifndef DEBUG_DECODE
-  cout << " *****  READING FILE     :" << inputFileName      << "  *****" << endl;
-  cout << " *****  OUTPUT TREE FILE :" << outputTreeFileName << "  *****" << endl;
-  cout << " *****  OUTPUT DIRECTORY :" << outputDir          << "  *****" << endl;
-  cout << " *****  LOG DIRECTORY    :" << logoutputDir       << "  *****" << endl;
+  Log->Write("[" + logfilename + "][Decoder] *****  READING FILE     :" + inputFileName      + "  *****");
+  Log->Write("[" + logfilename + "][Decoder] *****  OUTPUT TREE FILE :" + outputTreeFileName + "  *****");
+  Log->Write("[" + logfilename + "][Decoder] *****  OUTPUT DIRECTORY :" + outputDir          + "  *****");
+  Log->Write("[" + logfilename + "][Decoder] *****  LOG FILE         :" + logfilename        + "  *****");
 #endif
 
   TFile * outputTreeFile;
 
   if (!overwrite){
-    outputTreeFile = new TFile(Form("%s/%s", outputDir.c_str(), outputTreeFileName.c_str()), "create");
+    outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "create");
     if ( !outputTreeFile->IsOpen() ) {
-      Log->eWrite(Form("[%s][Decoder]Error!!:%s/%s already exists!", inputFileName.c_str(), outputDir.c_str(), outputTreeFileName.c_str()));
-      cout << "!! ERROR !!\tFile already created!" << endl;
-      return;
+      Log->eWrite("[" + logfilename + "][Decoder] Error:" + outputDir + "/" + outputTreeFileName + " already exists!");
+      return 1;
     }
   }
-  else outputTreeFile = new TFile(Form("%s/%s",outputDir.c_str(), outputTreeFileName.c_str()), "recreate");
+  else outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "recreate");
 
-  Log->Write(Form("[%s][Decoder]%s/%s is being created", inputFileName.c_str(), outputDir.c_str(), outputTreeFileName.c_str()));
+  Log->Write("[" + logfilename + "][Decoder] " + outputDir + "/" + outputTreeFileName + " is being created");
 
   Raw_t rd;
   rd.spill      = -1;
@@ -213,16 +268,17 @@ void Decode(const string& inputFileName, const string& calibFileName, const stri
 
   // If the number of DIFs is not provided as an argument, try to infer it from
   // the file name
-  if ( n_difs == 0 ) {
+  if ( dif == 0 ) {
 	pos = inputFileName.find("dif_1_1_") + 8;
 	if(inputFileName[pos] == '1') {
-	  n_difs = 1;
+	  dif = 1;
 	}
 	else if(inputFileName[pos] == '2') {
-	  n_difs = 2;
+	  dif = 2;
 	}
 	else {
-	  n_difs = 0;
+	  Log->eWrite("[" + logfilename + "][Decoder] Error: DIF ID number not given nor found");
+	  return 1;
 	}
   }
 
@@ -236,107 +292,155 @@ void Decode(const string& inputFileName, const string& calibFileName, const stri
 
   // Get the geometrical information (position in space) for each channel
   wgChannelMap *Map = new wgChannelMap();
-  for(int ichip = 0; ichip < n_chips; ichip++) {
-    Map->GetMap(n_difs - 1, ichip, rd.view, rd.pln[ichip], rd.ch[ichip], rd.grid[ichip], rd.x[ichip], rd.y[ichip], rd.z[ichip]);
+  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+    Map->GetMap(dif - 1, ichip, rd.view, rd.pln[ichip], rd.ch[ichip], rd.grid[ichip], rd.x[ichip], rd.y[ichip], rd.z[ichip]);
   }
   delete Map;
 
   // Read the value of pedestal, TDC ramp and gain from the calibration file
   wgGetCalibData *getcalib = new wgGetCalibData();
-  getcalib->Get_Pedestal(n_difs,rd.pedestal,rd.ped_nohit); 
-  getcalib->Get_TdcCoeff(n_difs,tdc_slope,tdc_intcpt); //TODO 
-  getcalib->Get_Gain(calibFileName,n_difs,rd.gain);
+  bool charge_calibration = false, time_calibration = false; 
+  try {
+	if (pedFileName.empty()) throw wgInvalidFile("pedestal card file not given");
+	else getcalib->Get_Pedestal(pedFileName, dif, rd.pedestal, rd.ped_nohit);
+	if (calibFileName.empty()) throw wgInvalidFile("calibration card file not given");
+	else getcalib->Get_Gain(calibFileName, dif, rd.gain);
+	charge_calibration = true;
+  } catch (const exception& e) {
+	Log->eWrite(e.what());
+	charge_calibration = false;
+  } catch (...) {
+	charge_calibration = false;
+  }
+  try {
+	if (tdcFileName.empty()) throw wgInvalidFile("TDC coefficient card file not given");
+	else getcalib->Get_TdcCoeff(tdcFileName, dif, rd.tdc_slope, rd.tdc_intcpt);
+	time_calibration = true;
+  } catch (const exception& e) {
+	Log->eWrite(e.what());
+	time_calibration = false;
+  } catch (...) {
+	time_calibration = false;
+  }
   delete getcalib;
 
-  
-  unsigned int i,j; //,k;
-  unsigned int iEvt=0;
-  unsigned int ineff_data=0;
+  unsigned int iEvt = 0;
+  unsigned int ineff_data = 0;
 
   //int acqNumber = 0;
   int nChips    = 0;
   int nChipData = 0;
 
-  unsigned short int dataResult = 0;
-  unsigned short int lastTwo[4] = {0,0,0,0};
+  // 2 bytes (16 bits) are the smallest data unit in all the headers and trailers
+  bitset<M> dataResult;
+  // The last four dataResult values are kept in the lastFour array
+  bitset<M> lastFour[4];
 
-  unsigned int SPILL_NUMBER = 0;
-  unsigned int SPILL_MODE = 0;
-  unsigned int SPILL_COUNT = 0;
-  unsigned int LAST_SPILL_COUNT = 0;
-  unsigned int LAST_SPILL_NUMBER = 0;
-  bool FILL_FLAG = false;
+  uint16_t SPILL_NUMBER      = 0;
+  uint16_t SPILL_MODE        = 0;
+  uint32_t SPILL_COUNT       = 0;
+  uint32_t LAST_SPILL_COUNT  = 0;
+  uint16_t LAST_SPILL_NUMBER = 0;
+  bool FILL_FLAG        = false;
 
-  bool spill_insert_tag=false;
-  bool endOfChipTag=false;
-  bool endOfSpillTag=false;
-  bool First_Event=false;
+  bool spillInsertTag   = false;
+  bool endOfChipTag     = false;
+  bool endOfSpillTag    = false;
+  bool First_Event      = false;
 
-  vector<unsigned short int> packetData;
+  vector<bitset<M>> packetData;
 
   ifstream inputFile;
   inputFile.open(inputFileName.c_str(), ios_base::in | ios_base::binary);
+  if (!inputFile.is_open()) {
+	Log->eWrite("[" + logfilename + "][Decoder] Error:" + strerror(errno));
+	return 1;
+  }
 
+  // Move to ROOT tree
   outputTreeFile->cd();
- 
-  time_t current_time = time(0);
-  tm *tm = localtime(&current_time);
-  string this_year = Form("%04d-%02d-%02d-%02d-%02d",
-						  tm->tm_year+1900,1,1,0,0);
-  string next_year = Form("%04d-%02d-%02d-%02d-%02d",
-						  tm->tm_year+1900+1,1,1,0,0);
-  struct tm y;
-  strptime(this_year.c_str(),"%Y-%m-%d-%H-%M", &y);
-  int DATETIME_STR = (int)mktime(&y);
-  strptime(next_year.c_str(),"%Y-%m-%d-%H-%M", &y);
-  int DATETIME_END = (int)mktime(&y);
-  int DATETIME_BIN = DATETIME_END-DATETIME_STR;
 
-  TH1F * h_start_time = new TH1F("start_time","start_time",DATETIME_BIN,DATETIME_STR,DATETIME_END);
-  h_start_time -> Fill(v_log[0],v_log[0]);
-  h_start_time -> Fill(v_log[0]+1,v_log[0]-DATETIME_END);
-  TH1F * h_stop_time = new TH1F("stop_time","stop_time",DATETIME_BIN,DATETIME_STR,DATETIME_END);
-  h_stop_time -> Fill(v_log[1],v_log[1]);
-  h_stop_time -> Fill(v_log[1]+1,v_log[1]-DATETIME_END);
-  TH1F * h_nb_data_pkts = new TH1F("nb_data_pkts","nb_data_pkts",DATETIME_BIN,DATETIME_STR,DATETIME_END);
-  h_nb_data_pkts -> Fill(v_log[2]);
-  TH1F * h_nb_lost_pkts = new TH1F("nb_lost_pkts","nb_lost_pkts",DATETIME_BIN,DATETIME_STR,DATETIME_END);
-  h_nb_lost_pkts -> Fill(v_log[3]);
+  if( check->LogFile(logfile) ) {
+	// Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
+	vector<int> v_log(4,0);
+    wgEditXML *Edit = new wgEditXML();
+    Edit->GetLog(logfile, v_log);
+    delete Edit;
 
-  h_start_time   -> Write(); 
-  h_stop_time    -> Write(); 
-  h_nb_data_pkts -> Write(); 
-  h_nb_lost_pkts -> Write(); 
+	time_t current_time = time(0);
+	tm *tm = localtime(&current_time);
+	string this_year(Form("%04d-%02d-%02d-%02d-%02d", tm->tm_year+1900, 1, 1, 0, 0));
+	string next_year(Form("%04d-%02d-%02d-%02d-%02d", tm->tm_year+1900+1, 1, 1, 0, 0));
+	struct tm y;
+	strptime(this_year.c_str(), "%Y-%m-%d-%H-%M", &y);
+	int DATETIME_STR = (int) mktime(&y);
+	strptime(next_year.c_str(), "%Y-%m-%d-%H-%M", &y);
+	int DATETIME_END = (int)mktime(&y);
+	int DATETIME_BIN = DATETIME_END - DATETIME_STR;
 
-  TTree * tree = new TTree("tree","tree");
-  tree->Branch("spill"       ,&rd.spill       ,Form("spill/I"                                                ));
-  tree->Branch("spill_mode"  ,&rd.spill_mode  ,Form("spill_mode/I"                                           ));
-  tree->Branch("spill_flag"  ,&rd.spill_flag  ,Form("spill_flag/I"                                           ));
-  tree->Branch("spill_count" ,&rd.spill_count ,Form("spill_count/I"                                          ));
-  tree->Branch("bcid"        ,rd.bcid         ,Form("bcid[%d][%d]/I"          ,n_chips,             MEMDEPTH ));
-  tree->Branch("charge"      ,rd.charge       ,Form("charge[%d][%d][%d]/I"    ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("time"        ,rd.time         ,Form("time[%d][%d][%d]/I"      ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("gs"          ,rd.gs           ,Form("gs[%d][%d][%d]/I"        ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("hit"         ,rd.hit          ,Form("hit[%d][%d][%d]/I"       ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("chipid_tag"  ,rd.chipid_tag   ,Form("chipid_tag[%d]/I"        ,n_chips                       ));
-  tree->Branch("chipid"      ,rd.chipid       ,Form("chipid[%d]/I"            ,n_chips                       ));
-  tree->Branch("col"         ,rd.col          ,Form("col[%d]/I"               ,                     MEMDEPTH ));
-  tree->Branch("chipch"      ,rd.chipch       ,Form("chipch[%d]/I"            ,         n_channels           ));
-  tree->Branch("chip"        ,rd.chip         ,Form("chip[%d]/I"              ,n_chips                       ));
-  tree->Branch("debug"       ,rd.debug        ,Form("debug[%d]/I"             ,n_chips                       ));
-  tree->Branch("view"        ,&rd.view        ,Form("view/I"                                                 ));
-  tree->Branch("pln"         ,rd.pln          ,Form("pln[%d][%d]/I"           ,n_chips, n_channels           ));
-  tree->Branch("ch"          ,rd.ch           ,Form("ch[%d][%d]/I"            ,n_chips, n_channels           ));
-  tree->Branch("grid"        ,rd.grid         ,Form("grid[%d][%d]/I"          ,n_chips, n_channels           ));
-  tree->Branch("x"           ,rd.x            ,Form("x[%d][%d]/D"             ,n_chips, n_channels           ));
-  tree->Branch("y"           ,rd.y            ,Form("y[%d][%d]/D"             ,n_chips, n_channels           ));
-  tree->Branch("z"           ,rd.z            ,Form("z[%d][%d]/D"             ,n_chips, n_channels           ));
-  tree->Branch("pe"          ,rd.pe           ,Form("pe[%d][%d][%d]/D"        ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("time_ns"     ,rd.time_ns      ,Form("time_ns[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("gain"        ,rd.gain         ,Form("gain[%d][%d]/D"          ,n_chips, n_channels           ));
-  tree->Branch("pedestal"    ,rd.pedestal     ,Form("pedestal[%d][%d][%d]/D"  ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("ped_nohit"   ,rd.ped_nohit    ,Form("ped_nohit[%d][%d][%d]/D" ,n_chips, n_channels, MEMDEPTH ));
-  
+	// Start time of the acquisition that produced the .raw file
+	TH1F * h_start_time = new TH1F("start_time", "Time the acquisition started", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	h_start_time -> Fill(v_log[0], v_log[0]);
+	h_start_time -> Fill(v_log[0] + 1, v_log[0] - DATETIME_END);
+	// Stop time of the acquisition that produced the .raw file
+	TH1F * h_stop_time = new TH1F("stop_time","Time the acquisition stopped", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	h_stop_time -> Fill(v_log[1], v_log[1]);
+	h_stop_time -> Fill(v_log[1] + 1, v_log[1] - DATETIME_END);
+	// Number of data packets acquired as reported by Pyrame in the acquisition log file
+	TH1F * h_nb_data_pkts = new TH1F("nb_data_pkts","Number of data packets", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	h_nb_data_pkts -> Fill(v_log[2]);
+	// Number of lost packets acquired as reported by Pyrame in the acquisition log file
+	TH1F * h_nb_lost_pkts = new TH1F("nb_lost_pkts","Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	h_nb_lost_pkts -> Fill(v_log[3]);
+
+	h_start_time   -> Write();
+	h_stop_time    -> Write();
+	h_nb_data_pkts -> Write();
+	h_nb_lost_pkts -> Write();
+  }
+  else Log->eWrite("LOGFILE:" + logfile + " doesn't exist!");
+
+  gInterpreter->GenerateDictionary("vector<vector<vector<float>>>", "vector");
+  gInterpreter->GenerateDictionary("vector<vector<float>>", "vector");
+  gInterpreter->GenerateDictionary("vector<float>", "vector");
+  gInterpreter->GenerateDictionary("vector<vector<vector<int>>>", "vector");
+  gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
+  gInterpreter->GenerateDictionary("vector<int>", "vector");
+
+  TTree * tree = new TTree("tree", "ROOT tree containing decoded data");
+  tree->Branch("spill"       ,&rd.spill            ,Form("spill/I"                                               ));
+  tree->Branch("spill_mode"  ,&rd.spill_mode       ,Form("spill_mode/I"                                          ));
+  tree->Branch("spill_flag"  ,&rd.spill_flag       ,Form("spill_flag/I"                                          ));
+  tree->Branch("spill_count" ,&rd.spill_count);  //,Form("spill_count/I"                                         ));
+  tree->Branch("bcid"        ,&rd.bcid);         //,Form("bcid[%d][%d]/I"           ,n_chips,             n_cols ));
+  tree->Branch("charge"      ,&rd.charge);       //,Form("charge[%d][%d][%d]/I"     ,n_chips, n_channels, n_cols ));
+  tree->Branch("time"        ,&rd.time);         //,Form("time[%d][%d][%d]/I"       ,n_chips, n_channels, n_cols ));
+  tree->Branch("gs"          ,&rd.gs);           //,Form("gs[%d][%d][%d]/I"         ,n_chips, n_channels, n_cols ));
+  tree->Branch("hit"         ,&rd.hit);          //,Form("hit[%d][%d][%d]/I"        ,n_chips, n_channels, n_cols ));
+  tree->Branch("chipid_tag"  ,&rd.chipid_tag);   //,Form("chipid_tag[%d]/I"         ,n_chips                     ));
+  tree->Branch("chipid"      ,&rd.chipid);       //,Form("chipid[%d]/I"             ,n_chips                     ));
+  tree->Branch("col"         ,&rd.col);          //,Form("col[%d]/I"                ,                     n_cols ));
+  tree->Branch("chipch"      ,&rd.chipch);       //,Form("chipch[%d]/I"             ,         n_channels         ));
+  tree->Branch("chip"        ,&rd.chip);         //,Form("chip[%d]/I"               ,n_chips                     ));
+  tree->Branch("debug"       ,&rd.debug);        //,Form("debug[%d]/I"              ,n_chips                     ));
+  tree->Branch("view"        ,&rd.view             ,Form("view/I"                                                ));
+  tree->Branch("pln"         ,&rd.pln);          //,Form("pln[%d][%d]/I"            ,n_chips, n_channels         ));
+  tree->Branch("ch"          ,&rd.ch);           //,Form("ch[%d][%d]/I"             ,n_chips, n_channels         ));
+  tree->Branch("grid"        ,&rd.grid);         //,Form("grid[%d][%d]/I"           ,n_chips, n_channels         ));
+  tree->Branch("x"           ,&rd.x);            //,Form("x[%d][%d]/F"              ,n_chips, n_channels         ));
+  tree->Branch("y"           ,&rd.y);            //,Form("y[%d][%d]/F"              ,n_chips, n_channels         ));
+  tree->Branch("z"           ,&rd.z);            //,Form("z[%d][%d]/F"              ,n_chips, n_channels         ));
+  if (charge_calibration) {
+	tree->Branch("pe"        ,&rd.pe);           //,Form("pe[%d][%d][%d]/F"         ,n_chips, n_channels, n_cols ));
+	tree->Branch("gain"      ,&rd.gain);         //,Form("gain[%d][%d]/F"           ,n_chips, n_channels         ));
+	tree->Branch("pedestal"  ,&rd.pedestal);     //,Form("pedestal[%d][%d][%d]/F"   ,n_chips, n_channels, n_cols ));
+	tree->Branch("ped_nohit" ,&rd.ped_nohit);    //,Form("ped_nohit[%d][%d][%d]/F"  ,n_chips, n_channels, n_cols ));
+  }
+  if (time_calibration) {
+	tree->Branch("time_ns"   ,&rd.time_ns);      //,Form("time_ns[%d][%d][%d]/F"    ,n_chips, n_channels, n_cols ));
+	tree->Branch("tdc_slope" ,&rd.tdc_slope);    //,Form("tdc_slope[%d][%d][%d]/F"  ,n_chips, n_channels, 2      ));
+	tree->Branch("tdc_intcpt",&rd.tdc_intcpt);   //,Form("tdc_intcpt[%d][%d][%d]/F" ,n_chips, n_channels, 2      ));
+  }
   // =====================================================
   //     ============================================
   //              Start reading binary file
@@ -344,8 +448,14 @@ void Decode(const string& inputFileName, const string& calibFileName, const stri
   // =====================================================
 
   if (inputFile.is_open()) {
-    cout << "     *****  Start reading file  *****" << endl;
-    while (inputFile.read((char*) &dataResult, sizeof dataResult)&& iEvt < maxEvt) {
+    Log->Write("[" + logfilename + "][Decoder] *****  Start reading file  *****");
+
+	// Pretend that we just reached the end of a previous spill so that the
+	// first spill header is correctly recognized
+	endOfSpillTag = true;
+	lastFour[0] = x2020;
+	
+    while (inputFile.read((char*) &dataResult, M / 8) && iEvt < maxEvt) {
       packetData.push_back(dataResult);
       nChipData++;
 
@@ -356,682 +466,591 @@ void Decode(const string& inputFileName, const string& calibFileName, const stri
       // CHIP  trailer --> start with 0xFFFE
       // SPILL trailer --> start with 0xFFFF
 
+	  // After the spill insert 0xFFFB sequence there are 2 couples of 2 bytes
+	  // (2 x bitset<M>) , the first one is the spill number (SPILL_NUMBER) and
+	  // the second one is the spill flag (SPILL_MODE)
+	  
       // *********   CHIP TRAILER  ********* //
-      if (lastTwo[1] == 0xFFFE && dataResult == 0x2020){
+      if (lastFour[1] == xFFFE && dataResult == x2020) {
         endOfChipTag = true;
       }
 
       // *********   SPILL TRAILER  ********* //
-      if (lastTwo[2] == 0x2020 && lastTwo[1] == 0xFFFF) {
+      if (lastFour[2] == x2020 && lastFour[1] == xFFFF) {
         endOfSpillTag = true;
       }
      
       // *********   SPILL_INSERT  ********* //
-      if (endOfSpillTag && lastTwo[2] == 0xFFFB) {
-        SPILL_MODE = ((lastTwo[0]&0x8000)>>15); 
-        if(SPILL_MODE==1) LAST_SPILL_NUMBER=SPILL_NUMBER;
-        SPILL_NUMBER = lastTwo[1] & 0xFFFF;
-        if( LAST_SPILL_NUMBER + 1 != SPILL_NUMBER ){
-          Log->eWrite(Form("[%s][Decoder]!! WARNING !! SPILL GAP!! last_spill=%d,current_spill=%d",
-						   inputFileName.c_str(),
-						   LAST_SPILL_NUMBER,
-						   SPILL_NUMBER));
-          cout << "!! WARNING !! SPILL GAP!! (last="<< LAST_SPILL_NUMBER << ", current="<<SPILL_NUMBER << ")" << endl;
-          
-          if(  LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 1  
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 2 
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 4 
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 8 
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 16 
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 64
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 128
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 256 
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 512
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 1024
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 2048
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 4096
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 8192
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 16384
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 32768
-			   || LAST_SPILL_NUMBER - SPILL_NUMBER+ 1 == 65536
-			   ){
-            for(unsigned int ichip=0;ichip<n_chips;ichip++){
-              rd.debug[ichip] +=DEBUG_GOOD_SPILLGAP;
-            }
-          }else{
-            for(unsigned int ichip=0;ichip<n_chips;ichip++){
-              rd.debug[ichip] +=DEBUG_BAD_SPILLGAP;
-            }
-          }
-        }
+      if (endOfSpillTag && lastFour[2] == xFFFB) {
+		// If the most significative bit in the spill flag is set to BEAM_SPILL
+		// the spill mode is set accordingly
+		if ( lastFour[0][15] == BEAM_SPILL )
+		  SPILL_MODE = BEAM_SPILL;
+		else
+		  SPILL_MODE = NON_BEAM_SPILL;
+        if (SPILL_MODE == 1 ) LAST_SPILL_NUMBER = SPILL_NUMBER;
 
-        if( dataResult == 0xFFFC ){
-          spill_insert_tag = true; 
-        }else{
-          Log->eWrite(Form("[%s][Decoder]!! WARNING !! SPILL INSERT TAG is inserted in different position!! last_spill=%d,current_spill=%d",
-						   inputFileName.c_str(),
-						   LAST_SPILL_COUNT,
-						   SPILL_COUNT)); 
-          cout << "!! WARNING !! SPILL INSERT TAG is inserted in different position!! (last="<< LAST_SPILL_COUNT << ", current="<<SPILL_COUNT << ")" << endl;     
-        }
-      }
+		// Spill number
+        SPILL_NUMBER = lastFour[1].to_ulong();
+		bitset<M> SPILL_GAP((int) LAST_SPILL_NUMBER + 1 - SPILL_NUMBER);
+
+		// Sometimes a bit in the spill number can flip creating a spill gap
+		// (the cause can be the ZedBoard misbehaving and in that case the spill
+		// gap is not that bad, if the cause is something else the problem is
+		// more serious)
+        if( SPILL_GAP.to_ulong() != 0 ){
+		  Log->eWrite("[" + logfilename + "][Decoder] spill gap warning: last = " + to_string(LAST_SPILL_NUMBER) + ", current = "
+					  + to_string(SPILL_NUMBER));
+
+		  bool good_spill_gap = false;
+		  for (size_t i = 0; i < SPILL_GAP.size(); ++i)
+			// for example in the case of i = 8 and size = 16 the following reads:
+			//    if (SPILL_GAP == 0000000100000000) bad_spill_gap = true;
+			if( SPILL_GAP == bitset<M>().set(i) ) good_spill_gap = true;
+		  
+		  if ( good_spill_gap ) {
+			for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+			  rd.debug[ichip] += DEBUG_GOOD_SPILLGAP;
+			}
+		  }else{
+			for(unsigned ichip = 0; ichip < n_chips; ichip++){
+			  rd.debug[ichip] += DEBUG_BAD_SPILLGAP;
+			}
+		  }
+		}
+
+        if( dataResult == xFFFC )
+          spillInsertTag = true; 
+		else
+          Log->eWrite("[" + logfilename + "][Decoder] spill insert tag was inserted in wrong position, last_spill = "
+					  + to_string(LAST_SPILL_COUNT) + ", current_spill = " + to_string(SPILL_COUNT)); 
+	  }
 
       // *********   SPILL_HEADER  ********* //
-      if( lastTwo[1]==0xFFFC && endOfSpillTag ){
-        if(!First_Event) First_Event=true;
-        if(endOfSpillTag){
+      if( lastFour[1] == xFFFC && endOfSpillTag ){
+        if( !First_Event ) First_Event = true;
+        if( endOfSpillTag ) {
           //Read SPILL information
           nChips            = 0;
           LAST_SPILL_COUNT  = SPILL_COUNT;
-          if(dataResult==0x0000){
-            SPILL_COUNT       = lastTwo[0]*65534+65535;
-          }else{ 
-            SPILL_COUNT       = lastTwo[0]*65535+dataResult;
-          }
+		  // Spill count most significant byte
+		  bitset<2*M> spill_count_msb = lastFour[0].to_ulong();
+		  spill_count_msb <<= M;
+		  // Spill count least significant byte
+		  bitset<2*M> spill_count_lsb = dataResult.to_ulong();
+		  SPILL_COUNT = (spill_count_msb | spill_count_lsb).to_ullong();
 
-          rd.spill_count    = SPILL_COUNT;
-          rd.spill_flag     = n_chips;
-          FILL_FLAG         = true;
+          rd.spill_count   = SPILL_COUNT;
+          rd.spill_flag    = n_chips;
+          FILL_FLAG        = true;
          
-          if( spill_insert_tag ){
-            rd.spill          = SPILL_NUMBER;
-            rd.spill_mode     = SPILL_MODE;
-            spill_insert_tag  = false;
+          if( spillInsertTag ){
+            rd.spill       = SPILL_NUMBER;
+            rd.spill_mode  = SPILL_MODE;
+            spillInsertTag = false;
           }else{
-            rd.spill          = SPILL_NUMBER;
-            rd.spill_mode     = SPILL_MODE;
+            rd.spill       = -1;
+            rd.spill_mode  = -1;
           }
 
-          if( LAST_SPILL_COUNT == 0 ||
-              ( LAST_SPILL_COUNT != 0 && ( SPILL_COUNT==LAST_SPILL_COUNT+1 ))){
-          }else{
-            Log->eWrite(Form("[%s][Decoder]!! WARNING !! SPILL COUNT GAP!! last_spill=%d,current_spill=%d",
-							 inputFileName.c_str(),
-							 LAST_SPILL_COUNT,
-							 SPILL_COUNT)); 
-            cout << "!! WARNING !! SPILL COUNT GAP!! (last="<< LAST_SPILL_COUNT << ", current="<<SPILL_COUNT << ")" << endl; 
-          }
+		  uint32_t SPILL_COUNT_GAP = LAST_SPILL_COUNT + 1 - SPILL_COUNT;
+          if( SPILL_COUNT_GAP != 0 )
+            Log->eWrite("[" + logfilename + "][Decoder] spill count gap warning: last_spill = " + to_string(LAST_SPILL_COUNT) +
+						", current_spill = " + to_string(SPILL_COUNT)); 
           
-          endOfSpillTag=false;
-        }else{
-          Log->eWrite(Form("[%s][Decoder]!! WARNING !! WHILE DECODING, NEXT SPILL IS INSERTED!! ,current_spill=%d",
-						   inputFileName.c_str(),
-						   SPILL_COUNT)); 
-          cout << "!! WARNING !! WHILE DECODING, NEXT SPILL IS INSERTED, current=)"<<SPILL_COUNT << endl;
-          cout << "!! WARNING !! DATA is aborted !! "<< endl;
+		  endOfSpillTag=false;
         }
-      }
+		else {
+          Log->eWrite("[" + logfilename + "][Decoder] Warning : spill trailer not found: current_spill = " +
+					  to_string(SPILL_COUNT));
+		}
+	  }
 
-      // *********   CHIP_HEADER  ********* //
-      if (lastTwo[2] == 0x2020 &&lastTwo[1] == 0xFFFD){
-        nChipData = 0;
-      }
+	  // *********   CHIP_HEADER  ********* //
+	  if (lastFour[2] == x2020 && lastFour[1] == xFFFD){
+		nChipData = 0;
+	  }
 
+	  // *********   CHIP TRAILER  ********* //
+	  if (lastFour[1] == xFFFE && dataResult == x2020){
+		nChips++;
+		if (nChipData >= 74) {
+		  // when 1 column or more is filled
+		  // if only 1 column 
+		  // => 36 charges + 36 time + 1 BCID + 1 chipID = 74
+		  // +2 +3 (header/trailer) = 79
+		  // let's replace this magic number 
+		}else{          
+		  Log->eWrite("[" + logfilename + "][Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
+					  to_string(SPILL_COUNT) + ", chip number = " + to_string(nChips + 1));
+		  rd.spill_flag--;
+		}
+	  }
 
-      // *********   CHIP TRAILER  ********* //
-      if (lastTwo[1] == 0xFFFE && dataResult == 0x2020){
-        nChips++;
-        if (nChipData > 78) { // when 1 column or more is filled
-          // if only 1 column 
-          // => 36 charges + 36 time + 1 BCID + 1 chipID = 74
-          // +2 +3 (header/trailer) = 79
-          // let's replace this magic number !!!!
-        }else{          
-#ifdef DEBUG_DECODE
-          cout << "!! WARNING !! nChipData = " << nChipData << " is too small!!" <<endl;
-#endif
-          Log->eWrite(Form("[%s][Decoder]!! WARNING !!nChipData is too small!!.(nChipData is %d) spill=%d, chipid_tag=%d",
-						   inputFileName.c_str(),
-						   nChipData,
-						   SPILL_COUNT,
-						   nChips+1
-						   )); 
-          rd.spill_flag--;
-        }
-      }
-
-      // *********   SPILL TRAILER  ********* //
-      if (First_Event && lastTwo[3] == 0x2020 && lastTwo[2] == 0xFFFF){
+	  // *********   SPILL TRAILER  ********* //
+	  if (First_Event && lastFour[3] == x2020 && lastFour[2] == xFFFF) {
           
-        int nbchip = (dataResult&0x00FF);
-        if( nChips != nbchip){
+		uint16_t nbchip = ( dataResult & x00FF ).to_ulong();
+		if( nChips != nbchip ){
+		  // maybe one word was skipped
+		  nbchip = ( lastFour[0] & x00FF ).to_ulong();
+		  if( nChips != nbchip ){
+			Log->eWrite("[" + logfilename + "][Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
+						", (spill trailer) nbchip = " + to_string(nbchip) + ", acq id = " + to_string(SPILL_COUNT));
+		  }
+		}
+		if (nChips > 0) {
+		  //=================  read Event ====================  //
+
+		  vector<bitset<M>>& eventData  = packetData;
+
+		  ivector  v_chipid  (n_chips,                 -1);
+		  i2vector v_bcid    (n_chips, ivector(n_cols, -1));
+
+		  bitset<M> last          = 0;
+		  uint16_t lastChipID[3]  = {0,0,0};
+		  uint16_t currentChipID  = 0;
+		  uint16_t chip_count     = 0;
+		  bool chipid_exist       = false;
+		  int Missing_Header      = 0;
+		  uint32_t chipStartIndex = 0;
+		  uint32_t rawDataSize    = 0;
+		  uint32_t nColumns       = 0;
+		  bool isValidChip        = false;
+
+		  // ============================================
+		  //             Start reading event
+		  // ============================================
+
+		  for (size_t i = 0; i < eventData.size(); i++){
+			// CHIP START MARKER
+			if (eventData[i] == xFFFD) {
+			  
+			  chip_count++;
+			  // Sanity check of the chip header
+			  currentChipID = check_ChipHeader(n_chips, eventData, i+1, chipid_exist, Missing_Header);
+
+			  if(chipid_exist) {
+				currentChipID--;
+			  }
+			  else {
+				currentChipID = chip_count - 1;
 #ifdef DEBUG_DECODE
-          cout << "!! WARNING !! The number of chips doesn't match the number of Chip Trailer! spill:"<< SPILL_COUNT<< endl;
+				Log->eWrite("[" + logfilename + "][Decoder] Warning : one chipid_tag is missing "
+							"(chipid_count: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");
 #endif
-          Log->eWrite(Form("[%s][Decoder]!! WARNING !! The number of chips doesn't match the number of Chip Trailer!) acqid=%d, nbchip=%d, #chip_trailer=%d",
-						   inputFileName.c_str(),
-						   SPILL_COUNT,
-						   nbchip,
-						   nChips
-						   )); 
-        }
-        if (nChips > 0){
-          //=================  read Event ====================  //
+				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIPID_TAG;
+			  }
 
-          vector<unsigned short int>& eventData  = packetData;
+			  lastChipID[2] = lastChipID[1];
+			  lastChipID[1] = lastChipID[0];
+			  lastChipID[0] = currentChipID;
 
-          Int_t v_chipid   [n_chips];
-          Int_t v_bcid     [n_chips][MEMDEPTH];
-          Int_t v_time     [n_chips][n_channels][MEMDEPTH];
-          Int_t v_charge   [n_chips][n_channels][MEMDEPTH];
-          Int_t v_gain_hit [n_chips][n_channels][MEMDEPTH];
+			  if( Missing_Header > 1 ) {
+				Log->eWrite("[" + logfilename + "][Decoder] Warning : part of chip header is missing (missing words: " + to_string(Missing_Header)  +
+							", chipid_tag: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");;
+				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIP_HEADER;
+			  }
+			  chipStartIndex = i + CHIPHEAD - Missing_Header;
+			}
 
-          for(unsigned int i0=0;i0<n_chips;i0++){
-            v_chipid[i0]=-1;
-            for(unsigned int k0=0;k0<MEMDEPTH;k0++){
-              v_bcid[i0][k0]=-1;
-              for(unsigned int j0=0;j0<MEMDEPTH;j0++){
-                v_time    [i0][j0][k0]=-1;
-                v_charge  [i0][j0][k0]=-1;
-                v_gain_hit[i0][j0][k0]=-1;
-              }
-            }
-          }
+			// CHIP END MARKER
+			if (last == xFFFE) { 
+			  if ( (eventData[i] & x00FF) == currentChipID + 1) {
+				isValidChip = true;
+			  }
+			  else{                    
+				Log->eWrite("[" + logfilename + "][Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
+							", read ChipID = " + to_string((eventData[i] & x00FF).to_ulong()) + ", acq id = " + to_string(SPILL_COUNT)); 
+				bool matchChipID = false;
+				if( lastChipID[0] + 1 < nChips && lastChipID[0] > 0 ) {
+				  if( currentChipID == lastChipID[1] + 1) {
+					for(unsigned int i_int = i; i_int < i + CHIPHEAD; i_int++) {
+					  if(eventData[i_int] == xFFFD) {
+						if( currentChipID + 1 == (uint16_t) ((eventData[i_int+1] & x00FF)).to_ulong() - 1 ) {
+						  matchChipID = true;
+						  rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER;
+						}
+						break;
+					  }
+					}
+				  }
+				}
+				else if( lastChipID[0] == 0 ) {
+				  if(nChips==1) {
+					rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP;
+				  }
+				  else {
+					for(unsigned int i_int = i; i_int< i + CHIPHEAD; i_int++) {
+					  if(eventData[i_int] == xFFFD) {
+						if( currentChipID+1 == (uint16_t) ((eventData[i_int+1] & x00FF)).to_ulong() - 1 ) {
+						  matchChipID=true;
+						  rd.debug[currentChipID]+=DEBUG_MISSING_CHIP_TRAILER;
+						}
+						break;
+					  }
+					}
+				  }
+				}
+				else if( lastChipID[0] == nChips - 1 ) {
+				  if(currentChipID == lastChipID[1] + 1) {
+					rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER;
+					matchChipID = true;
+				  }
+				} 
 
-          unsigned short int last          = 0;
-          unsigned short int lastChipID[3] = {0,0,0};
-          unsigned short int currentChipID = 0;
-          unsigned short int chip_count=0;
-          bool chipid_exist=false;
-          int Missing_Header=0;
-          unsigned int chipStartIndex = 0;
-          unsigned int rawDataSize    = 0;
-          unsigned int nColumns       = 0;
-          bool isValidChip = false;
-
-          for (i=0; i < eventData.size(); i++){
-            if (eventData[i] == 0xFFFD) { // Start CHIP tag
-              chip_count++;
-              //check CHIP start index ...
-              currentChipID = check_StartChipIndex(eventData[i+1],eventData[i+2],eventData[i+3],eventData[i+4],&chipid_exist,&Missing_Header);
-
-              if(chipid_exist){
-                currentChipID--;
-              }else{
-                currentChipID=chip_count-1;
+				if(matchChipID) {
 #ifdef DEBUG_DECODE
-                cout << " !!WARNING!! 1 chipid_tag is mssed! "<<endl; 
+				  Log->Write("[" + logfilename + "][Decoder] Debug : the order of CHIPID is OK!");  
 #endif
-                rd.debug[chip_count-1] +=DEBUG_MISSING_CHIPID_TAG;
-              }
+				  isValidChip = true;
+				  rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER;
 
-              lastChipID[2] = lastChipID[1];
-              lastChipID[1] = lastChipID[0];
-              lastChipID[0] = currentChipID;
+				}
+				else {
+				  isValidChip = false;
+				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
+				  Log->eWrite("[" + logfilename + "][Decoder] Warning : HEAD ChipID and END ChipID is wrong! (HEAD: " +
+							  to_string(currentChipID) + ", END: " + to_string(eventData[i].to_ulong()) + ") spill: " + to_string(rd.spill));
+				  rd.spill_flag--;
+				}
+			  }
 
-              if(Missing_Header>1){
-                cout << " !! ERROR !! CHIP HEADER INDEX IS TOTTALY BROKEN! (#Missing Header:" << Missing_Header <<", chipid_tag:"<< chip_count << ",acq id:"<< SPILL_COUNT << ")" << endl;
-                Missing_Header=0;
-              }else if(Missing_Header==1){
-#ifdef DEBUG_DECODE
-                cout << " !!WARNING!! 1 chip headers are missed! "<<endl; 
-#endif
-                rd.debug[chip_count-1] +=DEBUG_MISSING_CHIP_HEADER;
-              }
-              chipStartIndex = i + CHIPHEAD-Missing_Header;
-            }
+			  /* ============= Decode the SPIROC2D raw data =============== */
+			  
+			  if (isValidChip) {
+				// Check the rawDataSize
+				rawDataSize = i - chipStartIndex - CHIPENDTAG;
+				nColumns    = (rawDataSize - CHIPIDSIZE) / (1 + NCHANNELS * 2);
+				if ( (rawDataSize - CHIPIDSIZE) % (1 + NCHANNELS * 2) != 0) {
+				  Log->eWrite("[" + logfilename + "][Decoder] Warning : BAD DATA SIZE! "
+							  "spill: " + to_string(rd.spill) + ", chip: " + to_string(currentChipID));
+				  rd.spill_flag--;
+				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
+				  last = eventData[i].to_ulong();
+				  isValidChip = false;
+				  ineff_data++;
+				  continue;
+				}
+				else if(nColumns > MEMDEPTH) {
+				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
+				  Log->eWrite("[" + logfilename + "][Decoder] Warning : BAD COLUMN SIZE! "
+							  "DataSize: " + to_string(rd.spill) + ", column: " + to_string(nColumns));
+				  rd.spill_flag--;
+				  last = eventData[i].to_ulong();
+				  isValidChip=false;
+				  continue;
+				}
 
-            if (last == 0xFFFE){ // Find end chip tag
-              if ( (eventData[i]&0x00FF) == currentChipID+1){
-                isValidChip = true;
-              }else{                    
-#ifdef DEBUG_DECODE
-                cout << "!! WARNING !! CHIPID is not found....."<<endl;
-                cout << "    Last ChipID is "<< lastChipID[1] << "current is" << currentChipID << endl;
-#endif
-                bool matchChipID=false;
-                if( lastChipID[0]+1 < nChips && lastChipID[0] > 0 ){
-                  if(currentChipID==lastChipID[1]+1){
-                    for(unsigned int i_int=i; i_int< i+4;i_int++){
-                      if(eventData[i_int] == 0xFFFD){
-                        if( currentChipID+1 == (eventData[i_int+1]&0x00FF)-1){
-                          matchChipID=true;
-                          rd.debug[currentChipID]+=DEBUG_MISSING_CHIP_TRAILER;
-                        }
-                        break;
-                      }
-                    }
-                  }
+				// extract chipid
+				v_chipid[currentChipID] = (eventData[i - CHIPENDTAG] & x00FF).to_ulong();
 
-                }else if( lastChipID[0] == 0 ){
-                  if(nChips==1){
-                    rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP;
-                  }else{
-                    for(unsigned int i_int=i; i_int< i+4;i_int++){
-                      if(eventData[i_int] == 0xFFFD){
-                        if( currentChipID+1 == (eventData[i_int+1]&0x00FF)-1){
-                          matchChipID=true;
-                          rd.debug[currentChipID]+=DEBUG_MISSING_CHIP_TRAILER;
-                        }
-                        break;
-                      }
-                    }
-                  }
-                }else if( lastChipID[0] == nChips-1 ){
-                  if(currentChipID==lastChipID[1]+1){
-                    rd.debug[currentChipID]+=DEBUG_MISSING_CHIP_TRAILER;
-                    matchChipID=true;
-                  }
-                } 
+				if ( !check_ChipID(v_chipid[currentChipID], n_chips) ) {
+				  Log->eWrite("[" + logfilename + "][Decoder] Warning : BAD CHIP ID! spill: " + to_string(rd.spill) +
+							  " chipid: " + to_string(v_chipid[currentChipID]));
+				  rd.spill_flag--;
+				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
+				}
 
-                if(matchChipID){
-#ifdef DEBUG_DECODE
-                  cout << "          ... the order of CHIPID is OK!" <<endl;  
-#endif
-                  isValidChip = true;
-                  rd.debug[currentChipID]+=DEBUG_MISSING_CHIP_TRAILER;
+				// TO-DO chipid debug
+				
+				rd.chipid[currentChipID] = v_chipid[currentChipID];
+				rd.chipid_tag[currentChipID] = currentChipID;
 
-                }else{
-                  isValidChip = false;
-                  rd.debug[currentChipID]+=DEBUG_BAD_CHIPNUM;
-                  cout << "!! ERROR !! CHIP is not valid!\n" << "eventData\tis\t"
-					   << (eventData[i]&0x00FF)        << "\ncurrentChipID\tis\t"
-					   << currentChipID              << endl;
-                  Log->eWrite(Form("[%s][Decoder]WARNING!!:HEAD ChipID and END ChipID is wrong!(HEAD:%d,END:%d) spill:%d",
-								   inputFileName.c_str(),
-								   currentChipID,
-								   eventData[i],
-								   rd.spill));
-                  rd.spill_flag--;
-                }
-              }
-
-              if (isValidChip){
-                rawDataSize = i - chipStartIndex - CHIPENDTAG;
-                nColumns    = (rawDataSize-CHIPIDSIZE)/(1+n_channels*2);
-                if ( (rawDataSize-CHIPIDSIZE)%(1+n_channels*2) != 0) {
-                  cout << "!! WARNING !! Bad data size! (size : "<< rawDataSize-CHIPIDSIZE << " , spill_count:"<< SPILL_COUNT <<")"  << endl;
-                  Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD DATA SIZE! spill:%d ,chip:%d",
-								   inputFileName.c_str(),
-								   rd.spill,
-								   currentChipID));
-                  rd.spill_flag--;
-                  rd.debug[currentChipID]+=DEBUG_BAD_CHIPDATA_SIZE;
-                  last=(eventData[i])&0xFFFF;
-                  isValidChip=false;
-                  ineff_data++;
-                  continue;
-                }else{
-                  if(nColumns>MEMDEPTH){
-                    cout << "!! WARNING !! Bad number of columns!" << endl;
-                    rd.debug[currentChipID]+=DEBUG_BAD_CHIPDATA_SIZE;
-                    Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD COLUMN SIZE! DataSize:%d column:%d",
-									 inputFileName.c_str(),
-									 rd.spill,
-									 nColumns));
-                    rd.spill_flag--;
-                    last=(eventData[i])&0xFFFF;
-                    isValidChip=false;
-                    continue;
-                  }
-                }
-
-                //extract chipid
-                v_chipid[currentChipID] = eventData[i-CHIPENDTAG] & 0x00FF;
-
-                bool isGoodChipNumber=false;
-                if (check_ChipID(v_chipid[currentChipID])) isGoodChipNumber = true;
-                if (!isGoodChipNumber) {
-                  cout << "!! WARNING !! Bad chip ID: " 
-					   << v_chipid[currentChipID] << endl;
-                  Log->eWrite(Form("[%s][Decoder]WARNING!!:BAD CHIP ID! spill:%d chipid:%d",
-								   inputFileName.c_str(),
-								   rd.spill,
-								   v_chipid[currentChipID]));
-                  rd.spill_flag--;
-                  rd.debug[currentChipID]+=DEBUG_BAD_CHIPNUM;
-                }
-
-                rd.chipid[currentChipID] = v_chipid[currentChipID];
-                rd.chipid_tag[currentChipID] = currentChipID;
-
-                int loopBCID = 0;
-                for (unsigned int ibc=0; ibc < nColumns; ibc++) {
-                  //extract bcid
+				int loopBCID = 0; /*  this one /   */
+				for (unsigned int ibc = 0; ibc < nColumns; ibc++) {
+				  //extract bcid
                   
-                  v_bcid [currentChipID][ibc] = eventData[i-CHIPENDTAG-CHIPIDSIZE-ibc] & 0x0FFF;
-                  loopBCID                    = (eventData[i-CHIPENDTAG-CHIPIDSIZE-ibc] & 0xF000) >>12;
+				  v_bcid [currentChipID][ibc] = ( eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & x0FFF).to_ulong();
+				  loopBCID                    = ((eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & xF000) >> 12).to_ulong();
                    
-                  int bcid_slope=1;
-                  int bcid_inter=0;
-                  if(loopBCID==1)              { bcid_slope= -1;  bcid_inter=2*4096;}
-                  else if(loopBCID==3)         { bcid_slope=  1;  bcid_inter=2*4096;}
-                  else if(loopBCID==2)         { bcid_slope= -1;  bcid_inter=4*4096;}
-                  rd.bcid[currentChipID][ibc] = bcid_inter + v_bcid[currentChipID][ibc] *bcid_slope;
+				  int bcid_slope = 1;
+				  int bcid_inter = 0;
+				  if     ( loopBCID == 1) { bcid_slope= -1;  bcid_inter = 2 * 4096; } /*  this one /\   */
+				  else if( loopBCID == 3) { bcid_slope=  1;  bcid_inter = 2 * 4096; } /*  this one /\/   */
+				  else if( loopBCID == 2) { bcid_slope= -1;  bcid_inter = 4 * 4096; } /*  this one /\/\   */
+				  rd.bcid[currentChipID][ibc] = bcid_inter + v_bcid[currentChipID][ibc] * bcid_slope;
                   
-                  // Range for this column
-                  unsigned int begin = i - CHIPENDTAG - CHIPIDSIZE - nColumns - ibc*n_channels*2;
-                  unsigned int end   = begin - n_channels;
-                  unsigned int ichan = 0;
-                  //int count_hits     = 0;
+				  // Range for this column
+				  unsigned int begin = i - CHIPENDTAG - CHIPIDSIZE - nColumns - ibc * NCHANNELS * 2;
+				  unsigned int end   = begin - NCHANNELS;
+				  unsigned int ichan = 0;
+				  //int count_hits     = 0;
 
-                  for (j = begin ; j>end ; j--) {
-                    if (ibc<MEMDEPTH && ichan<n_channels) {
-                      //extract charge
-                      v_charge  [currentChipID][ichan][ibc] = eventData[j] & 0x0FFF;
-                      rd.charge [currentChipID][ichan][ibc] = v_charge[currentChipID][ichan][ibc];
-                      //extract hit 
-                      v_gain_hit[currentChipID][ichan][ibc] = (eventData[j] >> 12) & 0x0003;
-                      rd.hit    [currentChipID][ichan][ibc] = v_gain_hit[currentChipID][ichan][ibc]%2 & 0x0001;
-                      //extract gain
-                      rd.gs    [currentChipID][ichan][ibc] = v_gain_hit[currentChipID][ichan][ibc]/2 & 0x0001;
-                      //extract pe
-                      if(rd.chipid[currentChipID]>=0 && rd.chipid[currentChipID]<20){
-                        if(rd.gs[currentChipID][ichan][ibc] == 1){
-                          rd.pe[currentChipID][ichan][ibc] = (v_charge[currentChipID][ichan][ibc]-rd.pedestal[rd.chipid[currentChipID]][ichan][ibc])/rd.gain[rd.chipid[currentChipID]][ichan]*1.08;
-                        }else{
-                          rd.pe[currentChipID][ichan][ibc] = (v_charge[currentChipID][ichan][ibc]-rd.pedestal[rd.chipid[currentChipID]][ichan][ibc])/rd.gain[rd.chipid[currentChipID]][ichan]*10.8;
-                        }
-                      }else{
-                        rd.pe[currentChipID][ichan][ibc] = -100.;
-                      }
-                    }
-                    ichan++;  
-                  } // loop on j
+				  for (unsigned j = begin; j > end; j--) {
+					if (ibc < n_cols && ichan < n_channels) {
+					  //extract charge
+					  rd.charge [currentChipID][ichan][ibc] = (eventData[j] & x0FFF).to_ulong();
+					  //extract hit (0: no hit, 1: hit)
+					  rd.hit    [currentChipID][ichan][ibc] = eventData[j][12];
+					  //extract gain (0: low gain, 1: high gain)
+					  rd.gs    [currentChipID][ichan][ibc] = eventData[j][13];
+					  // Only if the detector is already calibrated fill the histograms
+					  if (charge_calibration) {
+						//extract pe
+						if( rd.chipid[currentChipID] >= 0 && rd.chipid[currentChipID] < (int) n_chips ) {
+						  if( rd.gs[currentChipID][ichan][ibc] == HIGH_GAIN ) { // High Gain
+							rd.pe[currentChipID][ichan][ibc] = HIGH_GAIN_NORM * ( rd.charge[currentChipID][ichan][ibc] - rd.pedestal[rd.chipid[currentChipID]][ichan][ibc] ) /
+							  rd.gain[rd.chipid[currentChipID]][ichan];
+						  }
+						  else if( rd.gs[currentChipID][ichan][ibc] == LOW_GAIN ) { // Low Gain
+							rd.pe[currentChipID][ichan][ibc] = LOW_GAIN_NORM * ( rd.charge[currentChipID][ichan][ibc] - rd.pedestal[rd.chipid[currentChipID]][ichan][ibc] ) /
+							  rd.gain[rd.chipid[currentChipID]][ichan];
+						  }
+						  else {
+							stringstream ss;
+							ss << "[" << logfilename << "][Decoder] Warning : BAD GAIN BIT! " <<
+							  "gs[" << currentChipID << "][" << ichan << "][" << ibc << "] = " << rd.gs[currentChipID][ichan][ibc];
+							Log->eWrite(ss.str());
+							rd.pe[currentChipID][ichan][ibc] = -100.;
+						  }
+						}
+					  }
+					}
+					else if (ibc >= MEMDEPTH || ichan >= NCHANNELS) {
+					  stringstream ss;
+					  ss << "[" << logfilename << "][Decoder] Warning : BAD CHANNEL OR COLUMN NUMBER! " <<
+						"chip = " << currentChipID << ", channel = " << ichan << ", column = " << ibc;
+					  Log->eWrite(ss.str());
+					}
+					ichan++;  
+				  } // loop on j
 
-                  begin = end;
-                  end   = begin - n_channels;
-                  ichan = 0;
+				  begin = end;
+				  end   = begin - NCHANNELS;
+				  ichan = 0;
 
-                  for (j = begin ; j>end ; j--) {
-                    if (ibc<MEMDEPTH && ichan<n_channels) {
-                      //extract time
-                      v_time [currentChipID][ichan][ibc] = eventData[j] & 0x0FFF;
-                      rd.time[currentChipID][ichan][ibc] = v_time[currentChipID][ichan][ibc];
-                    }		    
-                    ichan++;
-                  } // loop on j
-                } // for iColumn
-                isValidChip = false;
-              } // isValidChip
-            } // if last = 0xFFFE
-            last = eventData[i];
-          } // loop on the elements of eventData
+				  for (unsigned j = begin ; j > end ; j--) {
+					if (ibc < n_cols && ichan < n_channels) {
+					  //extract time
+					  rd.time[currentChipID][ichan][ibc] = (eventData[j] & x0FFF).to_ulong();
+					}
+					ichan++;
+				  } // loop on j
+				} // for iColumn
+				isValidChip = false;
+			  } // isValidChip
+			} // if last = 0xFFFE
+			last = eventData[i].to_ulong();;
+		  } // loop on all the elements of eventData
 
-          tdc2time(rd.time,rd.bcid,rd.time_ns,tdc_slope,tdc_intcpt);
-          // ***** Fill Tree ***** //
+		  // ============================================
+		  //           Finished reading event
+		  // ============================================
 
-          tree->Fill();
-          FILL_FLAG = false;
-          rd.spill      = -1;
-          rd.spill_mode      = -1;
-          rd.spill_count      = -1;
-          rd.spill_flag =  1;
-          for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
-            v_chipid[ichip]  = -1;
-            rd.chipid[ichip] = -1;
-            rd.debug[ichip]    =  0;
-            for(unsigned int icol = 0 ; icol<MEMDEPTH ;icol++){
-              v_bcid [ichip][icol] = -1 ;  
-              rd.bcid[ichip][icol] = -1;
-              for(unsigned int ich=0 ; ich<n_channels; ich++){
-                rd.charge  [ichip][ich][icol] = -1;
-                rd.time    [ichip][ich][icol] = -1;
-                rd.time_ns [ichip][ich][icol] = -100.;
-                rd.pe      [ichip][ich][icol] = -100.;
-                rd.gs      [ichip][ich][icol] = -1;
-                rd.hit     [ichip][ich][icol] = -1;
-                v_time     [ichip][ich][icol] =  0;
-                v_charge   [ichip][ich][icol] =  0;
-                v_gain_hit [ichip][ich][icol] =  0;
-              }	
-            } 	
-          }
-          //============= END =================//
-          if(iEvt%1000==0) cout << "Entry number ... " << iEvt << endl;
-          iEvt++;
-        }
-      } // END of SPILL trailer
+		  if (time_calibration) {
+			int retcode = 0;
+			if ( (retcode = tdc2time(rd.time, rd.bcid, rd.time_ns, rd.tdc_slope, rd.tdc_intcpt)) != 0 )
+			  Log->eWrite("Error in tdc2time: size mismatch (retcode = " + to_string(retcode) + ")");
+		  }
 
-      if (lastTwo[3] == 0xFFFF) { // SPILL trailer check
-        packetData.clear();
-        endOfChipTag = false;
-        for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
-          rd.chipid[ichip] = -1;
-          for(unsigned int icol = 0 ; icol<MEMDEPTH ;icol++){ 
-            rd.bcid[ichip][icol] = -1;
-            for(unsigned int ich=0 ; ich<n_channels; ich++){
-              rd.charge[ichip][ich][icol] = -1;
-              rd.pe[ichip][ich][icol]     = -100.;
-              rd.time  [ichip][ich][icol] = -1;
-              rd.gs    [ichip][ich][icol] = -1;
-              rd.hit   [ichip][ich][icol] = -1;
-            }
-          }	
-        }
-        if(FILL_FLAG){
-          for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
-            rd.debug[ichip] += DEBUG_NODATA;
-          }
-          tree->Fill(); 
-          for(unsigned int ichip=0 ; ichip<n_chips ; ichip++){
-            rd.debug[ichip] = 0;
-          }
-        }
-        FILL_FLAG=false;
-      }
+		  // ***** Fill Tree ***** //
 
-      if (lastTwo[1] == 0x5053 && lastTwo[0] == 0x4C49 &&
-          dataResult == 0x2020) { // SPILL header
-        // New SPILL: extract SPILL number
-        // dataResult is just before CHIP header
-        // i.e. at the end of SPILL header
-        if (endOfChipTag) {
-          cout << "!! WARNING !! New SPILL w/o end flag of the previous SPILL!"
-			   << " - some CHIPS found!" << endl;
-          Log->eWrite(Form("[%s][Decoder]Error!!:SPILL trailer is missed!! spill:%d",
-						   inputFileName.c_str(),
-						   rd.spill));
-        }
-        packetData.clear();
-        endOfChipTag = false;
-      }
+		  tree->Fill();
+		  FILL_FLAG = false;
+		  rd.spill            = -1;
+		  rd.spill_mode       = -1;
+		  rd.spill_count      = -1;
+		  rd.spill_flag       =  1;
+		  for(unsigned ichip = 0 ; ichip < n_chips ; ichip++) {
+			v_chipid[ichip]  = -1;
+			rd.chipid[ichip] = -1;
+			rd.debug[ichip]  =  0;
+			for(unsigned icol = 0 ; icol < n_cols ; icol++) {
+			  v_bcid [ichip][icol] = -1;
+			  rd.bcid[ichip][icol] = -1;
+			  for(unsigned ich = 0 ; ich < n_channels; ich++) {
+				rd.charge            [ichip][ich][icol] = -1;
+				rd.time              [ichip][ich][icol] = -1;
+				rd.gs                [ichip][ich][icol] = -1;
+				rd.hit               [ichip][ich][icol] = -1;
+				if (charge_calibration) {
+				  rd.gain            [ichip][ich]       = -100.;	  
+				  rd.pedestal        [ichip][ich][icol] = -100.;
+				  rd.ped_nohit       [ichip][ich][icol] = -100.;
+				  rd.pe              [ichip][ich][icol] = -100.;
+				}
+				if (time_calibration) {
+				  rd.time_ns         [ichip][ich][icol]   = -100.;
+				  rd.tdc_slope       [ichip][ich][icol%2] = 0;
+				  rd.tdc_intcpt      [ichip][ich][icol%2] = -100;
+				}
+			  }
+			}
+		  } // end fill tree
+		  
+		  //============= END =================//
 
-      lastTwo[3] = lastTwo[2];
-      lastTwo[2] = lastTwo[1];
-      lastTwo[1] = lastTwo[0];
-      lastTwo[0] = dataResult;
+		  if( iEvt % 1000 == 0 ) Log->Write("Entry number ... " + to_string(iEvt));
+		  iEvt++;
+		}
+		else {
+		  Log->eWrite("[" +  logfilename + "][Decoder] Warning : number of chips less than zero : spill count = " + to_string(rd.spill_count));
+		}
+	  } // END of SPILL trailer
 
-    } // while (inputFile.read(...
+	  if ( lastFour[3] == xFFFF ) { // SPILL trailer check
+		packetData.clear();
+		endOfChipTag = false;
+		for(unsigned ichip = 0 ; ichip < n_chips ; ichip++){
+		  rd.chipid[ichip] = -1;
+		  for(unsigned icol = 0 ; icol < n_cols ;icol++){ 
+			rd.bcid[ichip][icol] = -1;
+			for(unsigned ich = 0 ; ich < n_channels; ich++){
+			  rd.charge[ichip][ich][icol] = -1;
+			  rd.time  [ichip][ich][icol] = -1;
+			  rd.gs    [ichip][ich][icol] = -1;
+			  rd.hit   [ichip][ich][icol] = -1;
+			  if (charge_calibration) {
+				rd.gain            [ichip][ich]       = -100.;	  
+				rd.pedestal        [ichip][ich][icol] = -100.;
+				rd.ped_nohit       [ichip][ich][icol] = -100.;
+				rd.pe              [ichip][ich][icol] = -100.;
+			  }
+			  if (time_calibration) {
+				rd.time_ns         [ichip][ich][icol]   = -100.;
+				rd.tdc_slope       [ichip][ich][icol%2] = 0;
+				rd.tdc_intcpt      [ichip][ich][icol%2] = -100;
+			  }
+			}
+		  }	
+		}
+		if(FILL_FLAG) {
+		  Log->eWrite("[" +  logfilename + "][Decoder] Warning : no data recorded : spill count = " + to_string(rd.spill_count));
+		  for(unsigned ichip = 0 ; ichip < n_chips ; ichip++) {
+			rd.debug[ichip] += DEBUG_NODATA;
+		  }
+		  tree->Fill(); 
+		  for(unsigned int ichip = 0 ; ichip < n_chips ; ichip++){
+			rd.debug[ichip] = 0;
+		  }
+		}
+		FILL_FLAG = false;
+	  }
+
+	  // SPILL header
+	  if (lastFour[1] == x5053 && lastFour[0] == x4C49 &&  dataResult == x2020) { 
+		// New SPILL: extract SPILL number
+		// dataResult is just before CHIP header
+		// i.e. at the end of SPILL header
+		if (endOfChipTag) {
+		  Log->eWrite("[" +  logfilename + "][Decoder] Warning : spill trailer is missing : spill number = " + to_string(rd.spill));
+		}
+		packetData.clear();
+		endOfChipTag = false;
+	  }
+
+	  lastFour[3] = lastFour[2];
+	  lastFour[2] = lastFour[1];
+	  lastFour[1] = lastFour[0];
+	  lastFour[0] = dataResult;
+
+	} // while (inputFile.read(...
   } // if (fin.is_open())
 
-  cout << endl;
-  cout << "     *****  Finished reading file  *****" << endl;
-  cout << "     *****  with " << iEvt << " entries  *****" << endl;
-  cout << "     *****       BAD data : "<< ineff_data  << " *****" << endl;
-  cout << endl;
+  Log->Write("[" + logfilename + "][Decoder] *****  Finished reading file  *****");
+  Log->Write("[" + logfilename + "][Decoder] *****  with " + to_string(iEvt) + " entries  *****");
+  Log->Write("[" + logfilename + "][Decoder] *****       BAD data : " + to_string(ineff_data) + " *****");
 
   outputTreeFile->cd();
   tree->Write();
   outputTreeFile->Close();
-  Log->Write(Form("[%s][Decoder]Finish Decode",inputFileName.c_str()));
-  delete Log;
+  Log->Write("[" + logfilename + "][Decoder] Decode is finished");
+  return 0;
 }
 
-
 //******************************************************************************
-unsigned short int check_StartChipIndex(unsigned short int head1,unsigned short int head2,unsigned short  int head3,unsigned short int head4,bool* checkid_exist, int *Missing_Header){
-  int miss=0;
-  unsigned short int head[4]={head1,head2,head3,head4};
-  unsigned short int ret;
 
-  if( (head[0]&0x00FF) > 0 && (head[0]&0x00FF) <=n_chips ){
-    ret = head[0];
-    *checkid_exist=true;
-  }else{
-    ret=0xFFFF;
-    head[3]=head[2];
-    head[2]=head[1];
-    head[1]=head[0];
-    miss++;
-    *checkid_exist=false;
+uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offset, bool& checkid_exist, int& Missing_Header){
+  int miss = 0;
+  uint16_t ret;
+  if (head.size() < offset + CHIPHEAD)
+	return 0xFFFF;
+  if( (head[offset+0] & x00FF).to_ulong() > 0 && (head[offset+0] & x00FF).to_ulong() <= n_chips ){
+	ret = head[offset+0].to_ulong();
+	checkid_exist = true;
+  }
+  else {
 #ifdef DEBUG_DECODE
-    cout << "DEBUG : " << (head[1]&0xFFFF) << " / " << (head[2]&0xFFFF) << " / " << (head[3]&0xFFFF) << endl; 
+	string s(Form("%#04x - %#04x - %#04x - %#04x", (int) head[offset].to_ulong(), (int) head[offset+1].to_ulong(), (int) head[offset+2].to_ulong(), (int) head[offset+3].to_ulong()));
+	Log->Write("[check_ChipHeader] Debug: chip header = " + s); 
 #endif
+	ret = 0xFFFF;
+	for (size_t i = offset + CHIPHEAD - 1; i > offset; i--) head[i] = head[i-1];
+	miss++;
+	checkid_exist = false;
   }
 
-  if( head[1]!=0x4843 ){
-    miss++;
-    if( head[1] !=0x5049){
-      miss++;
-      if( head[1] !=0x2020){
-        miss++;
-      }
-    }else{
-      if(head[2] != 0x2020) miss++;
-    }
+  if( head[offset+1] != x4843 ){
+	miss++;
+	if( head[offset+1] != x5049){
+	  miss++;
+	  if( head[offset+1] !=x2020){
+		miss++;
+	  }
+	}else{
+	  if(head[offset+2] != x2020) miss++;
+	}
   }else{
-    if( head[2]!= 0x5049){
-      miss++;
-      if( head[2] !=0x2020){
-        miss++;
-      }
-    }else{
-      if( head[3]!= 0x2020) miss++;
-    }
+	if( head[offset+2]!= x5049){
+	  miss++;
+	  if( head[offset+2] !=x2020){
+		miss++;
+	  }
+	}else{
+	  if( head[offset+3]!= x2020) miss++;
+	}
   }
-  *Missing_Header=miss;
-  return (ret&0x00FF);
+  Missing_Header = miss;
+  return (ret & 0x00FF);
 }
 
 //******************************************************************************
-bool check_ChipID(int v_chipid){
-  if (v_chipid == 0x0000 ||
-      v_chipid == 0x0001 || 
-      v_chipid == 0x0002 ||
-      v_chipid == 0x0003 ||
-      v_chipid == 0x0004 ||
-      v_chipid == 0x0005 ||
-      v_chipid == 0x0006 ||
-      v_chipid == 0x0007 ||
-      v_chipid == 0x0008 ||
-      v_chipid == 0x0009 ||
-      v_chipid == 0x000a ||
-      v_chipid == 0x000b ||
-      v_chipid == 0x000c ||
-      v_chipid == 0x000d ||
-      v_chipid == 0x000e ||
-      v_chipid == 0x000f ||
-      v_chipid == 0x0010 ||
-      v_chipid == 0x0011 ||
-      v_chipid == 0x0012 ||
-      v_chipid == 0x0013 ||
-      v_chipid == 0x0014 ||
-      v_chipid == 0x0015 ||
-      v_chipid == 0x0016 ||
-      v_chipid == 0x0017 ||
-      v_chipid == 0x0018 ||
-      v_chipid == 0x0019 ||
-      v_chipid == 0x001a ||
-      v_chipid == 0x001b ||
-      v_chipid == 0x001c ||
-      v_chipid == 0x001d ||
-      v_chipid == 0x001e ||
-      v_chipid == 0x001f ||
-      v_chipid == 0x0020 ||
-      v_chipid == 0x0021 ||
-      v_chipid == 0x0022 ||
-      v_chipid == 0x0023 ||
-      v_chipid == 0x0024 ||
-      v_chipid == 0x0025 ||
-      v_chipid == 0x0026 ||
-      v_chipid == 0x0027 ||
-      v_chipid == 0x0028 
-      ) return true;
-  else return false;
 
+bool check_ChipID(int16_t v_chipid, uint16_t n_chips) {
+  if ( v_chipid > n_chips ) return false;
+  else return true;
 }
 
 //******************************************************************************
-void Get_calibData(string inputFileName,string calibFileName,string pedFileName, double gain[20][36], double pedestal[20][36][16], double ped_nohit[20][36][16]){
 
-  int n_difs = 0;
-  int pos = inputFileName.find("dif_1_1_")+8;
-  if(inputFileName[pos]=='1'){
-    n_difs=1;
-  }else if(inputFileName[pos]=='2'){
-    n_difs=2;
-  }
-  if(n_difs==0) return; 
-  string name("");
-  wgEditXML *Edit = new wgEditXML();
-
-  Edit->Open(pedFileName);
-  for(unsigned int i=0;i<n_chips;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<n_channels;j++){
-      int ich=j;
-      if(ich>31){
-        for(unsigned int k=0;k<MEMDEPTH;k++){
-          int icol=k;
-          ped_nohit[ichip][ich][icol]=1.;
-          pedestal[ichip][ich][icol]=1.;
-        }
-      }else{
-        for(unsigned int k=0;k<MEMDEPTH;k++){
-          int icol=k;
-          name=Form("ped_nohit_%d",icol);
-          ped_nohit[ichip][ich][icol]=Edit->Calib_GetValue(name,n_difs,ichip,ich);
-          name=Form("ped_%d",icol);
-          pedestal[ichip][ich][icol]=Edit->Calib_GetValue(name,n_difs,ichip,ich);
-        }
-      }
-    }
-  }
-  Edit->Close();
-
-  if(calibFileName==""){
-    for(unsigned int i=0;i<n_chips;i++){
-      int ichip=i;
-      for(unsigned int j=0;j<n_channels;j++){
-        int ich=j;
-        gain[ichip][ich]=1.;
-      }
-    }
-    return;
-  }
-
-
-  Edit->Open(calibFileName);
-  for(unsigned int i=0;i<n_chips;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<n_channels;j++){
-      int ich=j;
-      if(ich>31){
-        gain[ichip][ich]=1.;
-        for(unsigned int k=0;k<MEMDEPTH;k++){
-          int icol=k;
-          ped_nohit[ichip][ich][icol]=1.;
-          pedestal[ichip][ich][icol]=1.;
-        }
-      }else{
-        name=Form("Gain");
-        gain[ichip][ich]=Edit->Calib_GetValue(name,n_difs,ichip,ich);
-      }
-    }
-  }
-  Edit->Close();
-  
-}
-
-//******************************************************************************
-void tdc2time(int time[20][36][16],int bcid[20][16],double time_ns[20][36][16],double slope[2][20][36],double intcpt[2][20][36])
+int tdc2time(i3vector time, i2vector bcid, f3vector time_ns, f3vector slope, f3vector intcpt)
 {
-  const int Even=0;
-  const int Odd=1;
   int Parity;
-  int BCIDwidth=580;//ns
 
-  for(int chip=0; chip<(int)n_chips;chip++){
-	for(int col=0; col<(int)MEMDEPTH; col++){
-	  if(bcid[chip][col]%2 == 0){ Parity = Even; }
-	  else           { Parity = Odd;  }
-	  for(int ch=0;ch<(int)n_channels;ch++){
-		time_ns[chip][ch][col] 
-		  = (time[chip][ch][col]-intcpt[Parity][chip][ch])
-		  /slope[Parity][chip][ch]+(bcid[chip][col]-Parity)*BCIDwidth;
+  bitset<numeric_limits<size_t>::digits> size[5];
+  // should all be equal to n_chips
+  size[0] = time.size();
+  size[1] = bcid.size();
+  size[2] = time_ns.size();
+  size[3] = slope.size();
+  size[4] = intcpt.size();
+  if ( (size[0] ^ size[1] ^ size[2] ^ size[3] ^ size[4]).to_ulong() != (unsigned long) 0 )
+	return 1;
+
+  for(size_t ichip = 0; ichip < time.size(); ichip++){
+	// should all be equal to n_channels
+	size[0] = time[ichip].size();
+	size[1] = time_ns[ichip].size();
+	size[2] = slope[ichip].size();
+	size[3] = intcpt[ichip].size();
+	if ( (size[0] ^ size[1] ^ size[2] ^ size[3]).to_ulong() != (unsigned long) 0 )
+	  return 2;
+
+	for(size_t icol = 0; icol < bcid[ichip].size(); icol++) {
+	  if( bcid[ichip][icol]%2 == 0 ) { Parity = TDC_RAMP_EVEN; }
+	  else                           { Parity = TDC_RAMP_ODD;  }
+
+	  for(size_t ich = 0; ich < time[ichip].size(); ich++){
+		// should all be equal to n_cols
+		size[0] = time[ichip][ich].size();
+		size[1] = bcid[ichip].size();
+		size[2] = time_ns[ichip][ich].size();
+		if ( (size[0] ^ size[1] ^ size[2]).to_ulong() != (unsigned long) 0 )
+		  return 3;		
+		time_ns[ichip][ich][icol] = (time[ichip][ich][icol] - intcpt[ichip][ich][Parity]) / slope[ichip][ich][Parity] + (bcid[ichip][icol] - Parity) * BCIDwidth;
 	  }
 	}
   }
+  return 0;
 };
