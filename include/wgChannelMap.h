@@ -74,6 +74,7 @@ public:
 
 public:
   Map_t load_mapping();
+  MapInv_t load_mapping_inv();
   MapInv_t load_mapping_inv(size_t n_chans);
   ReconMap_t load_reconmap();
 

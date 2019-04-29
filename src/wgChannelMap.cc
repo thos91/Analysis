@@ -516,6 +516,7 @@ Map_t wgChannelMap::load_mapping(){
 }
 
 //******************************************************************************
+MapInv_t wgChannelMap::load_mapping_inv() { return this->load_mapping_inv(32); }
 MapInv_t wgChannelMap::load_mapping_inv(size_t n_chans){
   MapInv_t mapinv_struct;
   //reading mapping
