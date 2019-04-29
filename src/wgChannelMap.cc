@@ -393,7 +393,7 @@ bool wgChannelMap::GetViewPlnCh(const int dif_id, const int chip_id, const int c
 }; //GetViewPlnCh
 
 //******************************************************************************
-bool wgChannelMap::GetXYZ(int view, int pln, int ch, double& x, double& y, double& z)
+bool wgChannelMap::GetXYZ(int view, int pln, int ch, float& x, float& y, float& z)
 {
 
   unsigned short grid = (ch/20)&0b11;
@@ -464,7 +464,7 @@ bool wgChannelMap::GetChipAlloc(const int dif_id, const int chip_id, int& id_z, 
 } //GetChipAlloc
 
 //******************************************************************************
-bool wgChannelMap::GetMap(const int dif_id, const int chip_id, int& view, vector<int> pln, vector<int> ch, vector<int> grid, vector<double> x, vector<double> y, vector<double> z) {
+bool wgChannelMap::GetMap(const int dif_id, const int chip_id, int& view, vector<int> pln, vector<int> ch, vector<int> grid, vector<float> x, vector<float> y, vector<float> z) {
   for(int ich = 0; ich < NumChipCh; ich++) {
     if( !GetViewPlnCh(dif_id, chip_id, ich, view, pln[ich], ch[ich], grid[ich])) {
       cout << "Failed to GetViewPlnCh" << endl;
@@ -523,7 +523,7 @@ MapInv_t wgChannelMap::load_mapping_inv(size_t n_chans){
     for(int ichip=0;ichip<NumChip;ichip++){
       int view;
       vector<int> pln(n_chans), ch(n_chans), grid(n_chans);
-      vector<double> x(n_chans), y(n_chans), z(n_chans);
+      vector<float> x(n_chans), y(n_chans), z(n_chans);
       this->GetMap(idif, ichip, view, pln, ch, grid, x, y, z);
         
       for(int ich=0;ich<NumChipCh;ich++){

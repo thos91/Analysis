@@ -19,9 +19,9 @@ typedef struct Map
   i3vector pln;  // [NumDif][NumChip][NumChipCh];
   i3vector ch;   // [NumDif][NumChip][NumChipCh];
   i3vector grid; // [NumDif][NumChip][NumChipCh];
-  d3vector x;    // [NumDif][NumChip][NumChipCh];
-  d3vector y;    // [NumDif][NumChip][NumChipCh];
-  d3vector z;    // [NumDif][NumChip][NumChipCh];
+  f3vector x;    // [NumDif][NumChip][NumChipCh];
+  f3vector y;    // [NumDif][NumChip][NumChipCh];
+  f3vector z;    // [NumDif][NumChip][NumChipCh];
 } Map_t;
 
 typedef struct MapInv
@@ -31,9 +31,9 @@ typedef struct MapInv
   i3vector dif;    // [NumView][NumPln][NumCh];
   i3vector chip;   // [NumView][NumPln][NumCh];
   i3vector chipch; // [NumView][NumPln][NumCh];
-  d3vector x;      // [NumView][NumPln][NumCh];
-  d3vector y;      // [NumView][NumPln][NumCh];
-  d3vector z;      // [NumView][NumPln][NumCh];
+  f3vector x;      // [NumView][NumPln][NumCh];
+  f3vector y;      // [NumView][NumPln][NumCh];
+  f3vector z;      // [NumView][NumPln][NumCh];
 } MapInv_t;
 
 typedef struct ReconMap
@@ -68,9 +68,9 @@ public:
   bool ChipchToMPPCch(const int chip_ch, string& mppc_ch);
   bool GetViewPlnCh(const int dif_id, const int chip_id, const int chip_ch, int& view, int& pln, int& ch, int& grid);
   bool GetMPPCPlnCh(string mppc_ch, int view, int& pln, int& ch, int& grid);
-  bool GetXYZ(int view, int pln, int ch, double& x, double& y, double& z);
+  bool GetXYZ(int view, int pln, int ch, float& x, float& y, float& z);
   bool GetChipAlloc(const int dif_id, const int chip_id, int& id_z, int& id_xy);
-  bool GetMap(const int dif_id, const int chip_id, int& view, vector<int> pln, vector<int> ch, vector<int> grid, vector<double> x, vector<double> y, vector<double> z);
+  bool GetMap(const int dif_id, const int chip_id, int& view, vector<int> pln, vector<int> ch, vector<int> grid, vector<float> x, vector<float> y, vector<float> z);
 
 public:
   Map_t load_mapping();

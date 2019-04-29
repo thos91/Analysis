@@ -9,7 +9,7 @@
 #include "wgExceptions.h"
 
 //******************************************************************************
-int wgGetCalibData::Get_Pedestal(string& pedFileName, d3vector pedestal, d3vector ped_nohit, size_t dif) {
+int wgGetCalibData::Get_Pedestal(const string& pedFileName, unsigned dif, f3vector& pedestal, f3vector& ped_nohit) {
 CheckExist *check  =  new CheckExist;
   if( pedFileName == "" || !check->XmlFile(pedFileName)){
 	throw wgInvalidFile(Form("Pedestal file not found or invalid (%s)", pedFileName.c_str()));
@@ -60,7 +60,7 @@ CheckExist *check  =  new CheckExist;
 }
 
 //******************************************************************************
-int wgGetCalibData::Get_TdcCoeff(string& tdcFileName, d3vector slope, d3vector intcpt, unsigned dif) {
+int wgGetCalibData::Get_TdcCoeff(const string& tdcFileName, unsigned dif, f3vector& slope, f3vector& intcpt) {
   CheckExist *check  =  new CheckExist;
   if(tdcFileName=="" || !check->XmlFile(tdcFileName)){
 	throw wgInvalidFile (Form("TDC calibration card file not found or invalid (%s)", tdcFileName.c_str()));
@@ -119,9 +119,9 @@ int wgGetCalibData::Get_TdcCoeff(string& tdcFileName, d3vector slope, d3vector i
 }
 
 //******************************************************************************
-int wgGetCalibData::Get_Gain(string& calibFileName, d2vector gain, unsigned dif) {
+int wgGetCalibData::Get_Gain(const string& calibFileName, const unsigned dif, f2vector& gain) {
   CheckExist *check  =  new CheckExist;
-  if(calibFileName=="" || !check->XmlFile(calibFileName)){
+  if(calibFileName == "" || !check->XmlFile(calibFileName)){
 	throw wgInvalidFile (Form("Calibration card file not found or invalid (%s)", calibFileName.c_str()));
   }
   delete check;
