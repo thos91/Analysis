@@ -3,7 +3,7 @@ Decoder program
 ===============
 
 The Decoder program takes the raw data from the WAGASCI detector and extracts
-(decodes) all the information that it can, organizing it into a ROOT tree.  The
+(decodes) all the information that it can, organizing it into a ROOT tree. The
 ROOT tree is then written in a ROOT file.
 
 Arguments
@@ -19,3 +19,26 @@ Arguments
 Histograms
 ==========
 
+- spill: spill number (for each event)
+- spill_mode: 0 for non-beam spill, 1 for beam spill (for each event)
+- spill_count: number of spill acquired during this acquisition (until that
+  particular event)
+- spill_flag: for each event counts the number of chips that were correctly read
+
+- bcid: the bunch crossing identification time (out of 16 bit the most
+  significant four indicate the slope and intercept and the least significant 12
+  indicate the raw BCID value. The four bit correspondence is as following:
+  0: slope  1, intercept 0
+  1: slope -1, intercept 2*4096
+  3: slope  1, intercept 2*4096
+  2: slope -1, intercept 4*4096
+  BCID = intercept + rawBCID * slope
+- hit: if the hit bit in the raw data (for each chip and each channel) is set to
+  one we have a hit, if it set to zero we don't have a hit
+- gain: if the gain bit in the raw data (for each chip and each channel) is
+  set to one the high gain preamplifier is used, if it set to zero the low gain
+  preamplifier is used.
+- debug: for each DEBUG macro defined in Decoder.cc that bin is increased by one
+  every time that the relative error occurres
+- chipid: chip ID tag as it is recorded in the chip trailer.
+- chipid_tag: chip ID tag as it is recorded in the chip header (if not found the software tries to guess it)
