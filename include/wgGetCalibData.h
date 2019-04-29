@@ -8,8 +8,8 @@
 #include "wgTools.h"
 #include "Const.h"
 
-#define TDC_RAMP_ODD  0
-#define TDC_RAMP_EVEN 1
+#define TDC_RAMP_ODD  1
+#define TDC_RAMP_EVEN 0
 
 using namespace tinyxml2;
 using namespace std;
