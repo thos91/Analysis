@@ -62,7 +62,7 @@ bool CheckExist::TxtFile(string &filename)
   }
 }
 
-bool CheckExist::XmlFile(string &filename)
+bool CheckExist::XmlFile(const string &filename)
 {
   OperateString* OpStr =new OperateString;
   struct stat st; 

@@ -19,7 +19,7 @@ class CheckExist
     bool RootFile(string& filename);            //check the existence of file.
     bool RawFile(string& filename);             //check the existence of file.
     bool TxtFile(string& filename);             //check the existence of file.
-    bool XmlFile(string& filename);             //check the existence of file.
+    bool XmlFile(const string& filename);             //check the existence of file.
     bool LogFile(string& filename);             //check the existence of file.
     bool Dir(string& filename);                 //check the existence of dir.
 };
