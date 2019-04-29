@@ -45,10 +45,10 @@ const uint16_t NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
 
-typedef vector<vector<vector<vector<double>>>> d4vector;
-typedef vector<vector<vector<double>>> d3vector;
-typedef vector<vector<double>> d2vector;
-typedef vector<double> dvector;
+typedef vector<vector<vector<vector<float>>>> f4vector;
+typedef vector<vector<vector<float>>> f3vector;
+typedef vector<vector<float>> f2vector;
+typedef vector<float> fvector;
 typedef vector<vector<vector<vector<int>>>> i4vector;
 typedef vector<vector<vector<int>>> i3vector;
 typedef vector<vector<int>> i2vector;
@@ -77,16 +77,16 @@ public:
   i2vector pln;              // [NumChip][NumChipChFull];
   i2vector ch;               // [NumChip][NumChipChFull];
   i2vector grid;             // [NumChip][NumChipChFull];
-  d2vector x;                // [NumChip][NumChipChFull];
-  d2vector y;                // [NumChip][NumChipChFull];
-  d2vector z;                // [NumChip][NumChipChFull];
-  d3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
-  d3vector ped_nohit;        // [NumChip][NumChipChFull][NumSca];
-  d3vector pe;               // [NumChip][NumChipChFull][NumSca];
-  d3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
-  d2vector gain;             // [NumChip][NumChipChFull];
-  d2vector tdc_slope;        // [NumChip][NumChipChFull];
-  d2vector tdc_intcpt;       // [NumChip][NumChipChFull];
+  f2vector x;                // [NumChip][NumChipChFull];
+  f2vector y;                // [NumChip][NumChipChFull];
+  f2vector z;                // [NumChip][NumChipChFull];
+  f3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
+  f3vector ped_nohit;        // [NumChip][NumChipChFull][NumSca];
+  f3vector pe;               // [NumChip][NumChipChFull][NumSca];
+  f3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
+  f2vector gain;             // [NumChip][NumChipChFull];
+  f3vector tdc_slope;        // [NumChip][NumChipChFull][2];
+  f3vector tdc_intcpt;       // [NumChip][NumChipChFull][2];
 
   int n_chips;
   int n_chans;
@@ -118,15 +118,15 @@ public:
   int    hit_adc         [MAX_NUM_HIT];
   int    hit_gs          [MAX_NUM_HIT];
   int    hit_tdc         [MAX_NUM_HIT];
-  double hit_pe          [MAX_NUM_HIT];
-  double hit_time        [MAX_NUM_HIT];
-  double hit_pe_permm    [MAX_NUM_HIT];
-  double hit_cos         [MAX_NUM_HIT];
-  double hit_pathlength  [MAX_NUM_HIT];
+  float hit_pe          [MAX_NUM_HIT];
+  float hit_time        [MAX_NUM_HIT];
+  float hit_pe_permm    [MAX_NUM_HIT];
+  float hit_cos         [MAX_NUM_HIT];
+  float hit_pathlength  [MAX_NUM_HIT];
   bool   hit_ontrack     [MAX_NUM_HIT];
   bool   hit_grid        [MAX_NUM_HIT];
   int    hit_numtrack    [MAX_NUM_HIT];
-  double hit_cluster_pe  [MAX_NUM_HIT];
+  float hit_cluster_pe  [MAX_NUM_HIT];
 
   void Clear();
 };
