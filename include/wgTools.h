@@ -32,17 +32,23 @@ public:
                               std::cerr respectively
 */
 
+typedef enum {
+   LOGFILE  = 0,
+   COUT     = 1,
+   BOTH     = 2
+} TriState;
+
 class Logger
 {
 public:
-  bool LogToCout = false;
-  bool LogToCerr = false;
+  TriState WhereToLog = BOTH;
   Logger();
   Logger(const string&);
   void Write(const string&);
   void eWrite(const string&);
   ~Logger();
 protected:
+  string m_printTime();
   static string m_fileName;
   static string m_efileName;
   static ofstream m_file;

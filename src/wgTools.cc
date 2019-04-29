@@ -4,16 +4,15 @@
 #include "wgExceptions.h"
 #include "Const.h"
 
-#include <cerrno>
-#include <time.h>
-#include <fstream>
 #include <iostream>
+#include <chrono>
+#include <iomanip>
+#include <cerrno>
+#include <fstream>
 #include <string>
-#include <string.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 using namespace std;
 
@@ -122,7 +121,7 @@ Logger::Logger(const string& log_dir)
 	}
   }
  
-  m_fileName  = Form("%s/%d_%d_%d.txt",      dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
+  m_fileName  = Form("%s/log%d_%d_%d.txt",      dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
   m_efileName = Form("%s/e_log%d_%d_%d.txt", dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
 
   m_file.open(m_fileName, ofstream::out | ofstream::app);
@@ -143,22 +142,37 @@ Logger::Logger(const string& log_dir)
 
 void Logger::Write(const string& log)
 {
-  time_t newTime = time(NULL);
-  string japtime(ctime(&newTime));
-  if ( LogToCout )
-	cout << "[ " << japtime << " ]: " << log << endl;
-  else
-	m_file << "[ " << japtime << " ]: " << log << endl;
+  if ( WhereToLog == COUT )
+	cout << "[ " << m_printTime() << " ]: " << log << endl;
+  else if ( WhereToLog == LOGFILE )
+	m_file << "[ " << m_printTime() << " ]: " << log << endl;
+  else {
+	cout << "[ " << m_printTime() << " ]: " << log << endl;
+	m_file << "[ " << m_printTime() << " ]: " << log << endl;
+  }
 }
 
 void Logger::eWrite(const string& log)
 {
-  time_t newTime = time(NULL);
-  string japtime(ctime(&newTime));
-  if ( LogToCerr )
-	cerr << "[ " << japtime << " ]: " << log << endl;
-  else
-	m_efile << "[ " << japtime << " ]: " << log << endl;
+  if ( WhereToLog == COUT )
+	cerr << "[ " << m_printTime() << " ]: " << log << endl;
+  else if ( WhereToLog == LOGFILE )
+	m_efile << "[ " << m_printTime() << " ]: " << log << endl;
+  else {
+	cerr << "[ " << m_printTime() << " ]: " << log << endl;
+	m_efile << "[ " << m_printTime() << " ]: " << log << endl;
+  }
+}
+
+// Prints UTC timestamp
+string Logger::m_printTime() {
+  chrono::time_point<chrono::system_clock> now = chrono::system_clock::now();
+  time_t now_time = chrono::system_clock::to_time_t(now);
+  auto gmt_time = gmtime(&now_time);
+  auto timestamp = std::put_time(gmt_time, "%Y-%m-%d %H:%M:%S");
+  stringstream ss;
+  ss << timestamp;
+  return ss.str();
 }
 
 Logger::~Logger()
