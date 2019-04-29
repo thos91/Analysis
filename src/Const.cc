@@ -65,67 +65,73 @@ void wgConst::GetENV(){
 	DQHISTORY_DIRECTORY  = std::getenv("WAGASCI_DQHISTORYDIR");
   else
 	DQHISTORY_DIRECTORY  = std::getenv("HOME");
+  if ( std::getenv("WAGASCI_CONFDIR") != NULL )
+	CONF_DIRECTORY  = std::getenv("WAGASCI_CONFDIR");
+  else
+	CONF_DIRECTORY  = std::getenv("HOME");
 }
 
 //***************************************
 //***************************************
-Raw_t::Raw_t() : Raw_t(20, 32, 16) {}
+Raw_t::Raw_t() : Raw_t(NCHIPS, NCHANNELS, MEMDEPTH) {}
 
 Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols) {
-  chipid.reserve(n_chips);
-  chipid_tag.reserve(n_chips);
-  chip.reserve(n_chips);
-  chipch.reserve(n_chans);
-  col.reserve(n_cols);
-  charge.reserve(n_chips);
-  time.reserve(n_chips);
-  bcid.reserve(n_chips);
-  hit.reserve(n_chips);
-  gs.reserve(n_chips);
-  debug.reserve(n_chips);
-  pln.reserve(n_chips);
-  ch.reserve(n_chips);
-  grid.reserve(n_chips);
-  x.reserve(n_chips);
-  y.reserve(n_chips);
-  z.reserve(n_chips);
-  pedestal.reserve(n_chips);
-  ped_nohit.reserve(n_chips);
-  pe.reserve(n_chips);
-  time_ns.reserve(n_chips);
-  gain.reserve(n_chips);
-  tdc_slope.reserve(n_chips);
-  tdc_intcpt.reserve(n_chips);
+  chipid.resize(n_chips);
+  chipid_tag.resize(n_chips);
+  chip.resize(n_chips);
+  chipch.resize(n_chans);
+  col.resize(n_cols);
+  charge.resize(n_chips);
+  time.resize(n_chips);
+  bcid.resize(n_chips);
+  hit.resize(n_chips);
+  gs.resize(n_chips);
+  debug.resize(n_chips);
+  pln.resize(n_chips);
+  ch.resize(n_chips);
+  grid.resize(n_chips);
+  x.resize(n_chips);
+  y.resize(n_chips);
+  z.resize(n_chips);
+  pedestal.resize(n_chips);
+  ped_nohit.resize(n_chips);
+  pe.resize(n_chips);
+  time_ns.resize(n_chips);
+  gain.resize(n_chips);
+  tdc_slope.resize(n_chips);
+  tdc_intcpt.resize(n_chips);
   
   for(unsigned int ichip = 0; ichip < n_chips; ichip++) {
-	charge[ichip].reserve(n_chans);
-	time[ichip].reserve(n_chans);
-	bcid[ichip].reserve(n_cols);
-	hit[ichip].reserve(n_chans);
-	gs[ichip].reserve(n_chans);
-	pln[ichip].reserve(n_chans);
-	ch[ichip].reserve(n_chans);
-	grid[ichip].reserve(n_chans);
-	x[ichip].reserve(n_chans);
-	y[ichip].reserve(n_chans);
-	z[ichip].reserve(n_chans);
-	pedestal[ichip].reserve(n_chans);
-	ped_nohit[ichip].reserve(n_chans);
-	pe[ichip].reserve(n_chans);
-	time_ns[ichip].reserve(n_chans);
-	gain[ichip].reserve(n_chans);
-	tdc_slope[ichip].reserve(n_chans);
-	tdc_intcpt[ichip].reserve(n_chans);
+	charge[ichip].resize(n_chans);
+	time[ichip].resize(n_chans);
+	bcid[ichip].resize(n_cols);
+	hit[ichip].resize(n_chans);
+	gs[ichip].resize(n_chans);
+	pln[ichip].resize(n_chans);
+	ch[ichip].resize(n_chans);
+	grid[ichip].resize(n_chans);
+	x[ichip].resize(n_chans);
+	y[ichip].resize(n_chans);
+	z[ichip].resize(n_chans);
+	pedestal[ichip].resize(n_chans);
+	ped_nohit[ichip].resize(n_chans);
+	pe[ichip].resize(n_chans);
+	time_ns[ichip].resize(n_chans);
+	gain[ichip].resize(n_chans);
+	tdc_slope[ichip].resize(n_chans);
+	tdc_intcpt[ichip].resize(n_chans);
 
     for(unsigned int ich = 0; ich < n_chans; ich++) {
-	  charge[ichip][ich].reserve(n_cols);
-	  time[ichip][ich].reserve(n_cols);
-	  hit[ichip][ich].reserve(n_cols);
-	  gs[ichip][ich].reserve(n_cols);
-	  pedestal[ichip][ich].reserve(n_cols);
-	  ped_nohit[ichip][ich].reserve(n_cols);
-	  pe[ichip][ich].reserve(n_cols);
-	  time_ns[ichip][ich].reserve(n_cols);
+	  charge[ichip][ich].resize(n_cols);
+	  time[ichip][ich].resize(n_cols);
+	  hit[ichip][ich].resize(n_cols);
+	  gs[ichip][ich].resize(n_cols);
+	  pedestal[ichip][ich].resize(n_cols);
+	  ped_nohit[ichip][ich].resize(n_cols);
+	  pe[ichip][ich].resize(n_cols);
+	  time_ns[ichip][ich].resize(n_cols);
+	  tdc_slope[ichip][ich].resize(2);
+	  tdc_intcpt[ichip][ich].resize(2);
 	}
   }
   this->clear(n_chips, n_chans, n_cols);

@@ -342,6 +342,7 @@ public:
   string BSD_DIRECTORY;
   string DQ_DIRECTORY;
   string DQHISTORY_DIRECTORY;
+  string CONF_DIRECTORY;
 };
 
 #endif
