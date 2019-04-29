@@ -35,13 +35,13 @@ using namespace std;
 //#define DEBUG_DECODE
 
 //row data fomat
-const unsigned int CHIPHEAD   = 4;
-const unsigned int CHIPENDTAG = 2;
-const unsigned int CHIPIDSIZE = 1;
-const unsigned int NCHANNELS  = NumChipChFull;
-const unsigned int MEMDEPTH   = NumSca;
-const unsigned int NCHIPS     = NumChip;
-const unsigned int NCHIPSSMRD = NumChipSMRD;
+const uint16_t CHIPHEAD   = 4;
+const uint16_t CHIPENDTAG = 2;
+const uint16_t CHIPIDSIZE = 1;
+const uint16_t NCHANNELS  = NumChipChFull;
+const uint16_t MEMDEPTH   = NumSca;
+const uint16_t NCHIPS     = NumChip;
+const uint16_t NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
 
@@ -139,8 +139,8 @@ public:
   void Clear();
   void Clear_ReconVector();
 
-  vector<vector<unsigned int> > bcid_cluster_hitid;
-  vector<vector<unsigned int> > time_cluster_hitid;
+  vector<vector<uint16_t> > bcid_cluster_hitid;
+  vector<vector<uint16_t> > time_cluster_hitid;
 
   // ==== Filled data for tree ==== //
   int    num_recon;
@@ -170,11 +170,11 @@ public:
   double recon_chi2      [MAX_NUM_TRACK];
     
   // ==== Vectors for reconstruction ==== ///
-  vector<vector<vector<unsigned int> > > neighborhits_hitid;
-  vector<vector<vector<unsigned int> > > cell_clusterid;
-  vector<vector<vector<unsigned int> > > neighborcell_down_cellid;
-  vector<vector<vector<unsigned int> > > neighborcell_up_cellid;
-  vector<vector<unsigned int> > cell_state;  
+  vector<vector<vector<uint16_t> > > neighborhits_hitid;
+  vector<vector<vector<uint16_t> > > cell_clusterid;
+  vector<vector<vector<uint16_t> > > neighborcell_down_cellid;
+  vector<vector<vector<uint16_t> > > neighborcell_up_cellid;
+  vector<vector<uint16_t> > cell_state;
 };
 
 class Track_t
