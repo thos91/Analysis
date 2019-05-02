@@ -75,8 +75,7 @@ int Decode(const string& inputFileName,
 		   unsigned maxEvt,
 		   unsigned dif = 0,
 		   unsigned n_chips = NCHIPS,
-		   unsigned n_channels = NCHANNELS,
-		   unsigned n_cols = MEMDEPTH);
+		   unsigned n_channels = NCHANNELS);
 
 // check_ChipHeader
 /* Checks if the ChipHeader is well formed. If the number of chip is greater
@@ -93,7 +92,7 @@ bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
 // tdc2time
 /* If the detector is calibrated (if the TDC coefficient file is present) this
    function converts the raw TDC into an absolute time in nanoseconds */
-int tdc2time(i3vector time, i2vector bcid, f3vector time_ns, f3vector slope, f3vector intcpt);
+int tdc2time(f3vector &time_ns, i3vector &time, i2vector &bcid, f3vector &slope, f3vector &intcpt);
 
 OperateString *OptStr;
 CheckExist    *check;
@@ -232,7 +231,7 @@ int main(int argc, char** argv) {
 //******************************************************************************
 
 int Decode(const string& inputFileName, const string& calibFileName, const string& pedFileName, const string& tdcFileName,
-		   const string& outputDir, bool overwrite, unsigned maxEvt, unsigned dif, unsigned n_chips, unsigned n_channels, unsigned n_cols){
+		   const string& outputDir, bool overwrite, unsigned maxEvt, unsigned dif, unsigned n_chips, unsigned n_channels){
 
   string outputTreeFileName = OptStr->GetName(inputFileName)+"_tree.root";
 
@@ -262,7 +261,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
   Log->Write("[" + logfilename + "][Decoder] " + outputDir + "/" + outputTreeFileName + " is being created");
 
-  Raw_t rd;
+  Raw_t rd(n_chips, n_channels);
   rd.spill      = -1;
   rd.spill_flag = n_chips;
 
@@ -292,8 +291,24 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
   // Get the geometrical information (position in space) for each channel
   wgChannelMap *Map = new wgChannelMap();
-  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-    Map->GetMap(dif - 1, ichip, rd.view, rd.pln[ichip], rd.ch[ichip], rd.grid[ichip], rd.x[ichip], rd.y[ichip], rd.z[ichip]);
+  {
+	vector<int> pln, ch, grid;
+	vector<float> x, y, z;
+	for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+	  wrapArrayInVector( rd.pln [ichip].data(), rd.pln [ichip].size(), pln );
+	  wrapArrayInVector( rd.ch  [ichip].data(), rd.ch  [ichip].size(), ch  );
+	  wrapArrayInVector( rd.grid[ichip].data(), rd.grid[ichip].size(), grid);
+	  wrapArrayInVector( rd.x   [ichip].data(), rd.x   [ichip].size(), x   );
+	  wrapArrayInVector( rd.y   [ichip].data(), rd.y   [ichip].size(), y   );
+	  wrapArrayInVector( rd.z   [ichip].data(), rd.z   [ichip].size(), z   );
+	  Map->GetMap( dif -1, ichip, rd.view, pln, ch, grid, x, y, z );
+	  releaseVectorWrapper( pln );
+	  releaseVectorWrapper( ch );
+	  releaseVectorWrapper( grid );
+	  releaseVectorWrapper( x );
+	  releaseVectorWrapper( y );
+	  releaseVectorWrapper( z );
+	}
   }
   delete Map;
 
@@ -400,46 +415,42 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
   }
   else Log->eWrite("LOGFILE:" + logfile + " doesn't exist!");
 
-  gInterpreter->GenerateDictionary("vector<vector<vector<float>>>", "vector");
-  gInterpreter->GenerateDictionary("vector<vector<float>>", "vector");
-  gInterpreter->GenerateDictionary("vector<float>", "vector");
-  gInterpreter->GenerateDictionary("vector<vector<vector<int>>>", "vector");
-  gInterpreter->GenerateDictionary("vector<vector<int>>", "vector");
-  gInterpreter->GenerateDictionary("vector<int>", "vector");
+  // gInterpreter->GenerateDictionary("vector<float>", "vector");
+  // gInterpreter->GenerateDictionary("vector<int>", "vector");
 
   TTree * tree = new TTree("tree", "ROOT tree containing decoded data");
-  tree->Branch("spill"       ,&rd.spill            ,Form("spill/I"                                               ));
-  tree->Branch("spill_mode"  ,&rd.spill_mode       ,Form("spill_mode/I"                                          ));
-  tree->Branch("spill_flag"  ,&rd.spill_flag       ,Form("spill_flag/I"                                          ));
-  tree->Branch("spill_count" ,&rd.spill_count);  //,Form("spill_count/I"                                         ));
-  tree->Branch("bcid"        ,&rd.bcid);         //,Form("bcid[%d][%d]/I"           ,n_chips,             n_cols ));
-  tree->Branch("charge"      ,&rd.charge);       //,Form("charge[%d][%d][%d]/I"     ,n_chips, n_channels, n_cols ));
-  tree->Branch("time"        ,&rd.time);         //,Form("time[%d][%d][%d]/I"       ,n_chips, n_channels, n_cols ));
-  tree->Branch("gs"          ,&rd.gs);           //,Form("gs[%d][%d][%d]/I"         ,n_chips, n_channels, n_cols ));
-  tree->Branch("hit"         ,&rd.hit);          //,Form("hit[%d][%d][%d]/I"        ,n_chips, n_channels, n_cols ));
-  tree->Branch("chipid_tag"  ,&rd.chipid_tag);   //,Form("chipid_tag[%d]/I"         ,n_chips                     ));
-  tree->Branch("chipid"      ,&rd.chipid);       //,Form("chipid[%d]/I"             ,n_chips                     ));
-  tree->Branch("col"         ,&rd.col);          //,Form("col[%d]/I"                ,                     n_cols ));
-  tree->Branch("chipch"      ,&rd.chipch);       //,Form("chipch[%d]/I"             ,         n_channels         ));
-  tree->Branch("chip"        ,&rd.chip);         //,Form("chip[%d]/I"               ,n_chips                     ));
-  tree->Branch("debug"       ,&rd.debug);        //,Form("debug[%d]/I"              ,n_chips                     ));
-  tree->Branch("view"        ,&rd.view             ,Form("view/I"                                                ));
-  tree->Branch("pln"         ,&rd.pln);          //,Form("pln[%d][%d]/I"            ,n_chips, n_channels         ));
-  tree->Branch("ch"          ,&rd.ch);           //,Form("ch[%d][%d]/I"             ,n_chips, n_channels         ));
-  tree->Branch("grid"        ,&rd.grid);         //,Form("grid[%d][%d]/I"           ,n_chips, n_channels         ));
-  tree->Branch("x"           ,&rd.x);            //,Form("x[%d][%d]/F"              ,n_chips, n_channels         ));
-  tree->Branch("y"           ,&rd.y);            //,Form("y[%d][%d]/F"              ,n_chips, n_channels         ));
-  tree->Branch("z"           ,&rd.z);            //,Form("z[%d][%d]/F"              ,n_chips, n_channels         ));
+  tree->Branch("spill"       ,&rd.spill            ,Form("spill/I"                                                 ));
+  tree->Branch("spill_mode"  ,&rd.spill_mode       ,Form("spill_mode/I"                                            ));
+  tree->Branch("spill_flag"  ,&rd.spill_flag       ,Form("spill_flag/I"                                            ));
+  tree->Branch("spill_count" ,&rd.spill_count      ,Form("spill_count/I"                                           ));
+  tree->Branch("bcid"        ,rd.bcid.data()       ,Form("bcid[%d][%d]/I"           ,n_chips,             MEMDEPTH ));
+  tree->Branch("charge"      ,rd.charge.data()     ,Form("charge[%d][%d][%d]/I"     ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("time"        ,rd.time.data()       ,Form("time[%d][%d][%d]/I"       ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("gs"          ,rd.gs.data()         ,Form("gs[%d][%d][%d]/I"         ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("hit"         ,rd.hit.data()        ,Form("hit[%d][%d][%d]/I"        ,n_chips, n_channels, MEMDEPTH ));
+  tree->Branch("chipid_tag"  ,rd.chipid_tag.data() ,Form("chipid_tag[%d]/I"         ,n_chips                       ));
+  tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                       ));
+  tree->Branch("col"         ,rd.col.data()        ,Form("col[%d]/I"                ,                     MEMDEPTH ));
+  tree->Branch("chipch"      ,rd.chipch.data()     ,Form("chipch[%d]/I"             ,         n_channels           ));
+  tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                       ));
+  tree->Branch("debug"       ,rd.debug.data()      ,Form("debug[%d]/I"              ,n_chips                       ));
+  tree->Branch("view"        ,&rd.view             ,Form("view/I"                                                  ));
+  tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, n_channels           ));
+  tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, n_channels           ));
+  tree->Branch("grid"        ,rd.grid.data()       ,Form("grid[%d][%d]/I"           ,n_chips, n_channels           ));
+  tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/F"              ,n_chips, n_channels           ));
+  tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/F"              ,n_chips, n_channels           ));
+  tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/F"              ,n_chips, n_channels           ));
   if (charge_calibration) {
-	tree->Branch("pe"        ,&rd.pe);           //,Form("pe[%d][%d][%d]/F"         ,n_chips, n_channels, n_cols ));
-	tree->Branch("gain"      ,&rd.gain);         //,Form("gain[%d][%d]/F"           ,n_chips, n_channels         ));
-	tree->Branch("pedestal"  ,&rd.pedestal);     //,Form("pedestal[%d][%d][%d]/F"   ,n_chips, n_channels, n_cols ));
-	tree->Branch("ped_nohit" ,&rd.ped_nohit);    //,Form("ped_nohit[%d][%d][%d]/F"  ,n_chips, n_channels, n_cols ));
+	tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/F"         ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d]/F"           ,n_chips, n_channels           ));
+	tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/F"   ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("ped_nohit" ,rd.ped_nohit.data()  ,Form("ped_nohit[%d][%d][%d]/F"  ,n_chips, n_channels, MEMDEPTH ));
   }
   if (time_calibration) {
-	tree->Branch("time_ns"   ,&rd.time_ns);      //,Form("time_ns[%d][%d][%d]/F"    ,n_chips, n_channels, n_cols ));
-	tree->Branch("tdc_slope" ,&rd.tdc_slope);    //,Form("tdc_slope[%d][%d][%d]/F"  ,n_chips, n_channels, 2      ));
-	tree->Branch("tdc_intcpt",&rd.tdc_intcpt);   //,Form("tdc_intcpt[%d][%d][%d]/F" ,n_chips, n_channels, 2      ));
+	tree->Branch("time_ns"   ,rd.time_ns.data()    ,Form("time_ns[%d][%d][%d]/F"    ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("tdc_slope" ,rd.tdc_slope.data()  ,Form("tdc_slope[%d][%d][%d]/F"  ,n_chips, n_channels, 2        ));
+	tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/F" ,n_chips, n_channels, 2        ));
   }
   // =====================================================
   //     ============================================
@@ -604,8 +615,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
 		  vector<bitset<M>>& eventData  = packetData;
 
-		  ivector  v_chipid  (n_chips,                 -1);
-		  i2vector v_bcid    (n_chips, ivector(n_cols, -1));
+		  ivector v_chipid(n_chips, -1);
 
 		  bitset<M> last          = 0;
 		  uint16_t lastChipID[3]  = {0,0,0};
@@ -761,7 +771,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				for (unsigned int ibc = 0; ibc < nColumns; ibc++) {
 				  //extract bcid
                   
-				  v_bcid [currentChipID][ibc] = ( eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & x0FFF).to_ulong();
+				  rd.bcid[currentChipID][ibc] = ( eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & x0FFF).to_ulong();
 				  loopBCID                    = ((eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & xF000) >> 12).to_ulong();
                    
 				  int bcid_slope = 1;
@@ -769,7 +779,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				  if     ( loopBCID == 1) { bcid_slope= -1;  bcid_inter = 2 * 4096; } /*  this one /\   */
 				  else if( loopBCID == 3) { bcid_slope=  1;  bcid_inter = 2 * 4096; } /*  this one /\/   */
 				  else if( loopBCID == 2) { bcid_slope= -1;  bcid_inter = 4 * 4096; } /*  this one /\/\   */
-				  rd.bcid[currentChipID][ibc] = bcid_inter + v_bcid[currentChipID][ibc] * bcid_slope;
+				  rd.bcid[currentChipID][ibc] = bcid_inter + rd.bcid[currentChipID][ibc] * bcid_slope;
                   
 				  // Range for this column
 				  unsigned int begin = i - CHIPENDTAG - CHIPIDSIZE - nColumns - ibc * NCHANNELS * 2;
@@ -778,7 +788,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				  //int count_hits     = 0;
 
 				  for (unsigned j = begin; j > end; j--) {
-					if (ibc < n_cols && ichan < n_channels) {
+					if (ibc < MEMDEPTH && ichan < n_channels) {
 					  //extract charge
 					  rd.charge [currentChipID][ichan][ibc] = (eventData[j] & x0FFF).to_ulong();
 					  //extract hit (0: no hit, 1: hit)
@@ -821,7 +831,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				  ichan = 0;
 
 				  for (unsigned j = begin ; j > end ; j--) {
-					if (ibc < n_cols && ichan < n_channels) {
+					if (ibc < MEMDEPTH && ichan < n_channels) {
 					  //extract time
 					  rd.time[currentChipID][ichan][ibc] = (eventData[j] & x0FFF).to_ulong();
 					}
@@ -840,7 +850,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
 		  if (time_calibration) {
 			int retcode = 0;
-			if ( (retcode = tdc2time(rd.time, rd.bcid, rd.time_ns, rd.tdc_slope, rd.tdc_intcpt)) != 0 )
+			if ( (retcode = tdc2time(rd.time_ns, rd.time, rd.bcid, rd.tdc_slope, rd.tdc_intcpt)) != 0 )
 			  Log->eWrite("Error in tdc2time: size mismatch (retcode = " + to_string(retcode) + ")");
 		  }
 
@@ -856,8 +866,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 			v_chipid[ichip]  = -1;
 			rd.chipid[ichip] = -1;
 			rd.debug[ichip]  =  0;
-			for(unsigned icol = 0 ; icol < n_cols ; icol++) {
-			  v_bcid [ichip][icol] = -1;
+			for(unsigned icol = 0 ; icol < MEMDEPTH ; icol++) {
 			  rd.bcid[ichip][icol] = -1;
 			  for(unsigned ich = 0 ; ich < n_channels; ich++) {
 				rd.charge            [ichip][ich][icol] = -1;
@@ -894,7 +903,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		endOfChipTag = false;
 		for(unsigned ichip = 0 ; ichip < n_chips ; ichip++){
 		  rd.chipid[ichip] = -1;
-		  for(unsigned icol = 0 ; icol < n_cols ;icol++){ 
+		  for(unsigned icol = 0 ; icol < MEMDEPTH ;icol++){ 
 			rd.bcid[ichip][icol] = -1;
 			for(unsigned ich = 0 ; ich < n_channels; ich++){
 			  rd.charge[ichip][ich][icol] = -1;
@@ -1014,40 +1023,13 @@ bool check_ChipID(int16_t v_chipid, uint16_t n_chips) {
 
 //******************************************************************************
 
-int tdc2time(i3vector time, i2vector bcid, f3vector time_ns, f3vector slope, f3vector intcpt)
-{
+int tdc2time(f3vector &time_ns, i3vector &time, i2vector &bcid, f3vector &slope, f3vector &intcpt) {
   int Parity;
-
-  bitset<numeric_limits<size_t>::digits> size[5];
-  // should all be equal to n_chips
-  size[0] = time.size();
-  size[1] = bcid.size();
-  size[2] = time_ns.size();
-  size[3] = slope.size();
-  size[4] = intcpt.size();
-  if ( (size[0] ^ size[1] ^ size[2] ^ size[3] ^ size[4]).to_ulong() != (unsigned long) 0 )
-	return 1;
-
   for(size_t ichip = 0; ichip < time.size(); ichip++){
-	// should all be equal to n_channels
-	size[0] = time[ichip].size();
-	size[1] = time_ns[ichip].size();
-	size[2] = slope[ichip].size();
-	size[3] = intcpt[ichip].size();
-	if ( (size[0] ^ size[1] ^ size[2] ^ size[3]).to_ulong() != (unsigned long) 0 )
-	  return 2;
-
-	for(size_t icol = 0; icol < bcid[ichip].size(); icol++) {
-	  if( bcid[ichip][icol]%2 == 0 ) { Parity = TDC_RAMP_EVEN; }
-	  else                           { Parity = TDC_RAMP_ODD;  }
-
-	  for(size_t ich = 0; ich < time[ichip].size(); ich++){
-		// should all be equal to n_cols
-		size[0] = time[ichip][ich].size();
-		size[1] = bcid[ichip].size();
-		size[2] = time_ns[ichip][ich].size();
-		if ( (size[0] ^ size[1] ^ size[2]).to_ulong() != (unsigned long) 0 )
-		  return 3;		
+	for(size_t ich = 0; ich < time[ichip].size(); ich++){
+	  for(size_t icol = 0; icol < time[ichip][ich].size(); icol++) {
+		if( bcid[ichip][icol]%2 == 0 ) { Parity = TDC_RAMP_EVEN; }
+		else                           { Parity = TDC_RAMP_ODD;  }
 		time_ns[ichip][ich][icol] = (time[ichip][ich][icol] - intcpt[ichip][ich][Parity]) / slope[ichip][ich][Parity] + (bcid[ichip][icol] - Parity) * BCIDwidth;
 	  }
 	}
