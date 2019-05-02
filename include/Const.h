@@ -2,6 +2,7 @@
 #define CONST_H_INCLUDE
 
 #include <string>
+#include "ContiguousVectors.h"
 #include <memory>
 #include <TROOT.h>
 #include <TFile.h>
@@ -44,14 +45,13 @@ const uint16_t NCHIPS     = NumChip;
 const uint16_t NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
-
 typedef vector<vector<vector<vector<float>>>> f4vector;
-typedef vector<vector<vector<float>>> f3vector;
-typedef vector<vector<float>> f2vector;
+typedef Contiguous3Vector<float> f3vector;
+typedef Contiguous2Vector<float> f2vector;
 typedef vector<float> fvector;
 typedef vector<vector<vector<vector<int>>>> i4vector;
-typedef vector<vector<vector<int>>> i3vector;
-typedef vector<vector<int>> i2vector;
+typedef Contiguous3Vector<int> i3vector;
+typedef Contiguous2Vector<int> i2vector;
 typedef vector<int> ivector;
 
 class Raw_t
@@ -93,10 +93,9 @@ public:
   int n_cols;
 
   Raw_t();
-  Raw_t(size_t n_chips, size_t n_chans, size_t n_cols);
+  Raw_t(size_t n_chips, size_t n_chans);
   ~Raw_t();
-  void init(size_t n_chips, size_t n_chans, size_t n_cols);
-  void clear(size_t n_chips, size_t n_chans, size_t n_cols);
+  void clear();
 };
 
 class Hit_t

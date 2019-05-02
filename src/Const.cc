@@ -73,68 +73,37 @@ void wgConst::GetENV(){
 
 //***************************************
 //***************************************
-Raw_t::Raw_t() : Raw_t(NCHIPS, NCHANNELS, MEMDEPTH) {}
+Raw_t::Raw_t() : Raw_t(NCHIPS, NCHANNELS) {}
 
-Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols) {
+Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans) {
+  n_chips = n_chips;
+  n_chans = n_chans;
+  n_cols = MEMDEPTH;
   chipid.resize(n_chips);
   chipid_tag.resize(n_chips);
   chip.resize(n_chips);
   chipch.resize(n_chans);
-  col.resize(n_cols);
-  charge.resize(n_chips);
-  time.resize(n_chips);
-  bcid.resize(n_chips);
-  hit.resize(n_chips);
-  gs.resize(n_chips);
+  col.resize(MEMDEPTH);
+  charge.Initialize(n_chips, n_chans, MEMDEPTH);
+  time.Initialize(n_chips, n_chans, MEMDEPTH);
+  bcid.Initialize(n_chips, MEMDEPTH);
+  hit.Initialize(n_chips, n_chans, MEMDEPTH);
+  gs.Initialize(n_chips, n_chans, MEMDEPTH);
   debug.resize(n_chips);
-  pln.resize(n_chips);
-  ch.resize(n_chips);
-  grid.resize(n_chips);
-  x.resize(n_chips);
-  y.resize(n_chips);
-  z.resize(n_chips);
-  pedestal.resize(n_chips);
-  ped_nohit.resize(n_chips);
-  pe.resize(n_chips);
-  time_ns.resize(n_chips);
-  gain.resize(n_chips);
-  tdc_slope.resize(n_chips);
-  tdc_intcpt.resize(n_chips);
-  
-  for(unsigned int ichip = 0; ichip < n_chips; ichip++) {
-	charge[ichip].resize(n_chans);
-	time[ichip].resize(n_chans);
-	bcid[ichip].resize(n_cols);
-	hit[ichip].resize(n_chans);
-	gs[ichip].resize(n_chans);
-	pln[ichip].resize(n_chans);
-	ch[ichip].resize(n_chans);
-	grid[ichip].resize(n_chans);
-	x[ichip].resize(n_chans);
-	y[ichip].resize(n_chans);
-	z[ichip].resize(n_chans);
-	pedestal[ichip].resize(n_chans);
-	ped_nohit[ichip].resize(n_chans);
-	pe[ichip].resize(n_chans);
-	time_ns[ichip].resize(n_chans);
-	gain[ichip].resize(n_chans);
-	tdc_slope[ichip].resize(n_chans);
-	tdc_intcpt[ichip].resize(n_chans);
-
-    for(unsigned int ich = 0; ich < n_chans; ich++) {
-	  charge[ichip][ich].resize(n_cols);
-	  time[ichip][ich].resize(n_cols);
-	  hit[ichip][ich].resize(n_cols);
-	  gs[ichip][ich].resize(n_cols);
-	  pedestal[ichip][ich].resize(n_cols);
-	  ped_nohit[ichip][ich].resize(n_cols);
-	  pe[ichip][ich].resize(n_cols);
-	  time_ns[ichip][ich].resize(n_cols);
-	  tdc_slope[ichip][ich].resize(2);
-	  tdc_intcpt[ichip][ich].resize(2);
-	}
-  }
-  this->clear(n_chips, n_chans, n_cols);
+  pln.Initialize(n_chips, n_chans);
+  ch.Initialize(n_chips, n_chans);
+  grid.Initialize(n_chips, n_chans);
+  x.Initialize(n_chips, n_chans);
+  y.Initialize(n_chips, n_chans);
+  z.Initialize(n_chips, n_chans);
+  pedestal.Initialize(n_chips, n_chans, MEMDEPTH);
+  ped_nohit.Initialize(n_chips, n_chans, MEMDEPTH);
+  pe.Initialize(n_chips, n_chans, MEMDEPTH);
+  time_ns.Initialize(n_chips, n_chans, MEMDEPTH);
+  gain.Initialize(n_chips, n_chans);
+  tdc_slope.Initialize(n_chips, n_chans, 2);
+  tdc_intcpt.Initialize(n_chips, n_chans, 2);
+  this->clear();
 }
 
 //***************************************
@@ -142,25 +111,36 @@ Raw_t::~Raw_t(){
 }
 
 //***************************************
-void Raw_t::clear(std::size_t n_chips, std::size_t n_chans, std::size_t n_cols){
-  Raw_t::spill       = -1;
-  Raw_t::spill_flag  = -1;
-  Raw_t::spill_mode  = -1;
-  Raw_t::spill_count = -1;
-  for(unsigned i = 0; i < n_chips; i++){
-    Raw_t::chipid[i]     = -1;
-    Raw_t::chipid_tag[i] = -1;
-    Raw_t::debug[i]      = 0;
-    for(unsigned k = 0; k < n_cols; k++) {
-      Raw_t::bcid[i][k]        = -1;
-      for(unsigned j = 0; j < n_chans; j++){
-        Raw_t::charge[i][j][k] = -1;
-        Raw_t::time[i][j][k]   = -1;
-        Raw_t::hit[i][j][k]    = -1;
-        Raw_t::gs[i][j][k]     = -1;
-      }
-    }
-  }
+void Raw_t::clear(){
+  Raw_t::spill =                                                   -1 ;
+  Raw_t::spill_mode =                                              -1 ;
+  Raw_t::spill_count =                                             -1 ;
+  Raw_t::spill_flag =                                              -1 ;
+  std::fill_n(Raw_t::chipid.begin(), Raw_t::chipid.size(),         -1);
+  std::fill_n(Raw_t::chipid_tag.begin(), Raw_t::chipid_tag.size(), -1);
+  std::fill_n(Raw_t::chip.begin(), Raw_t::chip.size(),             -1);
+  std::fill_n(Raw_t::chipch.begin(), Raw_t::chipch.size(),         -1);
+  std::fill_n(Raw_t::col.begin(), Raw_t::col.size(),               -1);
+  Raw_t::charge.fill                                              (-1);
+  Raw_t::time.fill                                                (-1);
+  Raw_t::bcid.fill                                                (-1);
+  Raw_t::hit.fill                                                 (-1);
+  Raw_t::gs.fill                                                  (-1);
+  std::fill_n(Raw_t::debug.begin(), Raw_t::debug.size(),            0);
+  Raw_t::view =                                                    -1 ;
+  Raw_t::pln.fill                                                 (-1);
+  Raw_t::ch.fill                                                  (-1);
+  Raw_t::grid.fill                                                (-1);
+  Raw_t::x.fill                                                  (NAN);
+  Raw_t::y.fill                                                  (NAN);
+  Raw_t::z.fill                                                  (NAN);
+  Raw_t::pedestal.fill                                            (-1);
+  Raw_t::ped_nohit.fill                                           (-1);
+  Raw_t::pe.fill                                                  (-1);
+  Raw_t::time_ns.fill                                             (-1);
+  Raw_t::gain.fill                                                (-1);
+  Raw_t::tdc_slope.fill                                            (0);
+  Raw_t::tdc_intcpt.fill                                          (-1);	
 }
 
 //***************************************
