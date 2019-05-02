@@ -2,6 +2,7 @@
 #include <TROOT.h>
 #include <iostream>
 #include "wgChannelMap.h"
+#include "ContiguousVectors.h"
 #include "DetectorConst.h"
 #include "Const.h"
 
@@ -15,58 +16,24 @@ using namespace std;
 //******************************************************************************
 Map::Map() : Map(NumDif, NumChip, NumChipCh) {}
 Map::Map(size_t n_difs, size_t n_chips, size_t n_chans) {
-  view.reserve(n_difs);
-  pln.reserve(n_difs);
-  ch.reserve(n_difs);
-  grid.reserve(n_difs);
-  x.reserve(n_difs);
-  y.reserve(n_difs);
-  z.reserve(n_difs);
-  for(unsigned int idif = 0; idif < n_difs; idif++) {
-	view[idif].reserve(n_chips);
-	pln[idif].reserve(n_chips);
-	ch[idif].reserve(n_chips);
-	grid[idif].reserve(n_chips);
-	x[idif].reserve(n_chips);
-	y[idif].reserve(n_chips);
-	z[idif].reserve(n_chips);
-    for(unsigned int ichip = 0; ichip < n_chips; ichip++) {
-	  view[idif][ichip].reserve(n_chans);
-	  pln[idif][ichip].reserve(n_chans);
-	  ch[idif][ichip].reserve(n_chans);
-	  grid[idif][ichip].reserve(n_chans);
-	  x[idif][ichip].reserve(n_chans);
-	  y[idif][ichip].reserve(n_chans);
-	  z[idif][ichip].reserve(n_chans);
-	}
-  }
+  view.Initialize(n_difs, n_chips, n_chans);
+  pln.Initialize(n_difs, n_chips, n_chans);
+  ch.Initialize(n_difs, n_chips, n_chans);
+  grid.Initialize(n_difs, n_chips, n_chans);
+  x.Initialize(n_difs, n_chips, n_chans);
+  y.Initialize(n_difs, n_chips, n_chans);
+  z.Initialize(n_difs, n_chips, n_chans);
 }
 
 //******************************************************************************
 MapInv::MapInv() : MapInv(NumView, NumPln, NumCh) {}
 MapInv::MapInv(size_t n_views, size_t n_plns, size_t n_chans) {
-  dif.reserve(n_views);
-  chip.reserve(n_views);
-  chipch.reserve(n_views);
-  x.reserve(n_views);
-  y.reserve(n_views);
-  z.reserve(n_views);
-  for(unsigned int iview = 0; iview < n_views; iview++) {
-	dif[iview].reserve(n_plns);
-	chip[iview].reserve(n_plns);
-	chipch[iview].reserve(n_plns);
-	x[iview].reserve(n_plns);
-	y[iview].reserve(n_plns);
-	z[iview].reserve(n_plns);
-    for(unsigned int ipln = 0; ipln < n_plns; ipln++) {
-	  dif[iview][ipln].reserve(n_chans);
-	  chip[iview][ipln].reserve(n_chans);
-	  chipch[iview][ipln].reserve(n_chans);
-	  x[iview][ipln].reserve(n_chans);
-	  y[iview][ipln].reserve(n_chans);
-	  z[iview][ipln].reserve(n_chans);
-	}
-  }
+  dif.Initialize(n_views, n_plns, n_chans);
+  chip.Initialize(n_views, n_plns, n_chans);
+  chipch.Initialize(n_views, n_plns, n_chans);
+  x.Initialize(n_views, n_plns, n_chans);
+  y.Initialize(n_views, n_plns, n_chans);
+  z.Initialize(n_views, n_plns, n_chans);
 }
 
 //******************************************************************************
@@ -463,14 +430,14 @@ bool wgChannelMap::GetChipAlloc(const int dif_id, const int chip_id, int& id_z, 
 
 } //GetChipAlloc
 
-//******************************************************************************
-bool wgChannelMap::GetMap(const int dif_id, const int chip_id, int& view, vector<int> pln, vector<int> ch, vector<int> grid, vector<float> x, vector<float> y, vector<float> z) {
-  for(int ich = 0; ich < NumChipCh; ich++) {
+//*****************************************************************************
+
+bool wgChannelMap::GetMap(const int dif_id, const int chip_id, int& view, ivector& pln, ivector& ch, ivector& grid, fvector& x, fvector& y, fvector& z) {
+  for(size_t ich = 0; ich < ch.size(); ich++) {
     if( !GetViewPlnCh(dif_id, chip_id, ich, view, pln[ich], ch[ich], grid[ich])) {
       cout << "Failed to GetViewPlnCh" << endl;
       return false;
-    }
-    
+    }    
     if(!GetXYZ(view, pln[ich], ch[ich], x[ich], y[ich], z[ich])){
       cout << "Failed to GetXYZ" << endl;
       return false;
@@ -481,23 +448,27 @@ bool wgChannelMap::GetMap(const int dif_id, const int chip_id, int& view, vector
 
 //******************************************************************************
 Map_t wgChannelMap::load_mapping(){
-
   Map_t map_struct;
   //reading mapping
-  
-  for(int idif=0;idif<NumDif;idif++){
-    for(int ichip=0;ichip<NumChip;ichip++){
-      this->GetMap(idif,ichip,
-          map_struct.view[idif][ichip][0],
-          map_struct.pln[idif][ichip],
-          map_struct.ch[idif][ichip],
-          map_struct.grid[idif][ichip],
-          map_struct.x[idif][ichip],
-          map_struct.y[idif][ichip],
-          map_struct.z[idif][ichip]
-          );
-      for(int ich=1;ich<NumChipCh;ich++){
-        map_struct.view[idif][ichip][ich]=map_struct.view[idif][ichip][0];
+  vector<int> pln, ch, grid;
+  vector<float> x, y, z;
+  for(size_t idif=0;idif<NumDif;idif++) {
+    for(size_t ichip=0;ichip<NumChip;ichip++) {
+	  wrapArrayInVector( map_struct.pln [idif][ichip].data(), map_struct.pln [idif][ichip].size(), pln );
+	  wrapArrayInVector( map_struct.ch  [idif][ichip].data(), map_struct.ch  [idif][ichip].size(), ch  );
+	  wrapArrayInVector( map_struct.grid[idif][ichip].data(), map_struct.grid[idif][ichip].size(), grid);
+	  wrapArrayInVector( map_struct.x   [idif][ichip].data(), map_struct.x   [idif][ichip].size(), x   );
+	  wrapArrayInVector( map_struct.y   [idif][ichip].data(), map_struct.y   [idif][ichip].size(), y   );
+	  wrapArrayInVector( map_struct.z   [idif][ichip].data(), map_struct.z   [idif][ichip].size(), z   );
+      this->GetMap( idif, ichip, map_struct.view[idif][ichip][0], pln, ch, grid, x, y, z );
+	  releaseVectorWrapper( pln );
+	  releaseVectorWrapper( ch );
+	  releaseVectorWrapper( grid );
+	  releaseVectorWrapper( x );
+	  releaseVectorWrapper( y );
+	  releaseVectorWrapper( z );
+      for(int ich = 1; ich < NumChipCh; ich++) {
+        map_struct.view[idif][ichip][ich] = map_struct.view[idif][ichip][0];
       }
     }
   }
