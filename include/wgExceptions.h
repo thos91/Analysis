@@ -1,3 +1,6 @@
+#ifndef WG_EXCEPTIONS_H_INCLUDE
+#define WG_EXCEPTIONS_H_INCLUDE
+
 #include <string>
 #include <exception>
 
@@ -27,3 +30,19 @@ public:
 	return what_message.c_str();
   }
 };
+
+// This exception is thrown when trying to access an object that has not been
+// initialized
+class wgNotInitialized : public std::exception
+{
+private:
+  std::string what_message = " ";
+public:
+  explicit wgNotInitialized(std::string message) : what_message(message) { }
+  const char* what() const noexcept override
+  {
+	return what_message.c_str();
+  }
+};
+
+#endif /* WG_EXCEPTIONS_H_INCLUDE */
