@@ -1,5 +1,7 @@
 #include "wgErrorCode.h"
+#include "wgExceptions.h"
 #include "wgTools.h"
+#include "TFile.h"
 #include "Const.h"
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -8,98 +10,86 @@
 #include <string>
 #include <sstream>
 
-bool CheckExist::RootFile(string &filename)
+bool CheckExist::GenericFile(const string& filename, const string & ext)
 {
-  OperateString* OpStr =new OperateString;
+  OperateString OpStr;
   struct stat st; 
   try {
-    if(stat(filename.c_str(),&st) != 0) throw 0;
+	// Check if the file exists
+    if(stat(filename.c_str(),&st) != 0)
+	  throw wgInvalidFile(filename + " not found");
+	// Check if the file is a directory
     mode_t m = st.st_mode;
-    if(S_ISDIR(m)) throw 1;
-    if(OpStr->GetExtension(filename)!="root") throw 2;
-    delete OpStr;
+    if(S_ISDIR(m))
+	  throw wgInvalidFile(filename + " is a directory and not a file");
+	// Check for the correct extension
+    if(OpStr.GetExtension(filename) != ext)
+	  throw wgInvalidFile(filename + " has not ." + ext + " extension");
+	// If everything is fine return true
     return true;
   }
-  catch(int fError) {
-    delete OpStr;
+  catch(const exception& e) {
+	Log.Write("[wgErrorCode][CheckExist::" + ext +"File] " + string(e.what()));
+    return false;
+  }
+  catch(int e) {
+	Log.Write("[wgErrorCode][CheckExist::" + ext + "File] error code = " + to_string(e));
+    return false;
+  }
+  catch(...) {
     return false;
   }
 }
 
-bool CheckExist::RawFile(string &filename)
+bool CheckExist::RootFile(const string& filename)
 {
-  OperateString* OpStr =new OperateString;
-  struct stat st; 
   try {
-    if(stat(filename.c_str(),&st) != 0) throw 0;
-    mode_t m = st.st_mode;
-    if(S_ISDIR(m)) throw 1;
-    if(OpStr->GetExtension(filename)!="raw") throw 2;
-    delete OpStr;
+	if (this->GenericFile(filename, string("root")) == false)
+	  return false;
+	// Check if the ROOT file is zombie
+	TFile file(filename.c_str());
+	if (file.IsZombie())
+	  throw wgInvalidFile(filename + " is zombie");
+	// Check if the ROOT file was successfully recovered
+	if (file.TestBit(TFile::kRecovered))
+	  Log.Write("[wgErrorCode][CheckExist::RootFile] " + filename + " was successfully recovered");
+	// If everything is fine return true
     return true;
   }
-  catch(int fError) {
-    delete OpStr;
+  catch(const exception& e) {
+	Log.Write("[wgErrorCode][CheckExist::RootFile] " + string(e.what()));
+    return false;
+  }
+  catch(int e) {
+	Log.Write("[wgErrorCode][CheckExist::RootFile] caught error number " + e);
+    return false;
+  }
+  catch(...) {
     return false;
   }
 }
 
-bool CheckExist::TxtFile(string &filename)
+bool CheckExist::RawFile(const string& filename)
 {
-  OperateString* OpStr =new OperateString;
-  struct stat st; 
-  try {
-    if(stat(filename.c_str(),&st) != 0) throw 0;
-    mode_t m = st.st_mode;
-    if(S_ISDIR(m)) throw 1;
-    if(OpStr->GetExtension(filename)!="txt") throw 2;
-    delete OpStr;
-    return true;
-  }
-  catch(int fError) {
-    delete OpStr;
-    return false;
-  }
+  return this->GenericFile(filename, string("raw"));
 }
 
-bool CheckExist::XmlFile(const string &filename)
+bool CheckExist::TxtFile(const string& filename)
 {
-  OperateString* OpStr =new OperateString;
-  struct stat st; 
-  try {
-    if(stat(filename.c_str(),&st) != 0) throw 0;
-    mode_t m = st.st_mode;
-    if(S_ISDIR(m)) throw 1;
-    if(OpStr->GetExtension(filename)!="xml") throw 2;
-    delete OpStr;
-    return true;
-  }
-  catch(int fError) {
-    delete OpStr;
-    return false;
-  }
+  return this->GenericFile(filename, string("txt"));
 }
 
-bool CheckExist::LogFile(string &filename)
+bool CheckExist::XmlFile(const string& filename)
 {
-  OperateString* OpStr =new OperateString;
-  struct stat st; 
-  try {
-    if(stat(filename.c_str(),&st) != 0) throw 0;
-    mode_t m = st.st_mode;
-    if(S_ISDIR(m)) throw 1;
-    if(OpStr->GetExtension(filename)!="log") throw 2;
-    delete OpStr;
-    return true;
-  }
-  catch(int fError) {
-    delete OpStr;
-    return false;
-  }
+ return this->GenericFile(filename, string("xml"));
 }
 
+bool CheckExist::LogFile(const string& filename)
+{
+ return this->GenericFile(filename, string("log"));
+}
 
-bool CheckExist::Dir(string &dirname)
+bool CheckExist::Dir(const string& dirname)
 {
   struct stat st; 
   if(stat(dirname.c_str(),&st) != 0){ 

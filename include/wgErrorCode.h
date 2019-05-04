@@ -10,18 +10,22 @@ using namespace std;
 //=== error list :decoder
 #define XXX_FILE_EXIST 100
 
+// All the methods of the CheckExist class check for existance and validity of
+// the passed file path. They should not throw any exception (all the exceptions
+// are handled and reported internally).
 
 class CheckExist
 {
-  private:
-    string filename;
-  public:
-    bool RootFile(string& filename);            //check the existence of file.
-    bool RawFile(string& filename);             //check the existence of file.
-    bool TxtFile(string& filename);             //check the existence of file.
-    bool XmlFile(const string& filename);             //check the existence of file.
-    bool LogFile(string& filename);             //check the existence of file.
-    bool Dir(string& filename);                 //check the existence of dir.
+private:
+  string filename;
+public:
+  bool GenericFile(const string& filename, const string & ext);
+  bool RootFile(const string& filename);   //check the existence of root file.
+  bool RawFile(const string& filename);    //check the existence of raw file.
+  bool TxtFile(const string& filename);    //check the existence of txt file.
+  bool XmlFile(const string& filename);    //check the existence of xml file.
+  bool LogFile(const string& filename);    //check the existence of log file.
+  bool Dir(const string& filename);        //check the existence of dir.
 };
 
 
