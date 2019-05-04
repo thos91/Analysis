@@ -30,7 +30,7 @@ void releaseVectorWrapper( std::vector<T, std::allocator<T> > &targetVector ) {
 template <class T>
 class Contiguous3Vector {
 
-private:
+protected:
   T*** m_array_outer;
   std::size_t m_size_outer;
   std::size_t m_size_middle;
@@ -196,7 +196,7 @@ public:
 template <class T>
 class Contiguous2Vector {
 
-private:
+protected:
   T** m_array_outer;
   std::size_t m_size_outer;
   std::size_t m_size_inner;
