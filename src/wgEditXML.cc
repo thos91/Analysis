@@ -39,7 +39,7 @@ void wgEditXML::Close(){
 
 
 //**********************************************************************
-void wgEditXML::Make(string& filename,const int ichip,const int ichan){
+void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigned ichan){
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
@@ -82,7 +82,6 @@ void wgEditXML::Make(string& filename,const int ichip,const int ichan){
   config->InsertEndChild(HG);
   HG->InsertEndChild(HG->GetDocument()->NewText(Form("%d",-1)));
 
-  /*
   XMLElement* LG = xml->NewElement("LG");
   config->InsertEndChild(LG);
   LG->InsertEndChild(LG->GetDocument()->NewText(Form("%d",-1)));
@@ -90,12 +89,11 @@ void wgEditXML::Make(string& filename,const int ichip,const int ichan){
   XMLElement* trig_adj = xml->NewElement("trig_adj");
   config->InsertEndChild(trig_adj);
   trig_adj->InsertEndChild(trig_adj->GetDocument()->NewText(Form("%d",-1)));
-  */
 
   XMLElement* ch = xml->NewElement("ch");
   data->InsertEndChild(ch);
 
-  for(unsigned int k=0; k<MEMDEPTH+1; k++){
+  for(unsigned int k=0; k<MEMDEPTH; k++){
     XMLElement* col = xml->NewElement(Form("col_%d",k));
     ch->InsertEndChild(col);
   }
@@ -157,7 +155,7 @@ void wgEditXML::GetConfig(string& configxml,unsigned int n_dif,unsigned int ichi
 }
 
 //**********************************************************************
-void wgEditXML::GetLog(string& filename,vector<int>& v){
+void wgEditXML::GetLog(const string& filename, vector<int>& v){
   string str("");
   string target("");
   v.clear();

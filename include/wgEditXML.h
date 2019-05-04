@@ -14,7 +14,31 @@ private:
   static string filename;
 public:
   XMLDocument *xml;
-  void Make(string&,const int,const int);
+
+  /* wgEditXML::Make: create an empty xml document with the following structure.
+     All the fields are initialized with their default value.
+---------------------------------------------------------------------------------
+<data>
+    <config>
+        <chipid>*chip_number*</chipid>
+        <chanid>*chan_number*</chanid>
+        <start_time>0</start_time>
+        <stop_time>0</stop_time>
+        <trigth>-1</trigth>
+        <gainth>-1</gainth>
+        <inputDAC>-1</inputDAC>
+        <HG>-1</HG>
+        <LG>-1</LG>
+		<trig_adj>-1<trig_adj>
+    </config>
+    <ch>
+	    <col>0<col_0/>
+        <col>1<col_1/>
+		...
+    </ch>
+</data>
+-------------------------------------------------------------------------------- */
+  void Make(const string&, const unsigned, const unsigned);
   void Open(const string&);
   void Close();
   void Write();
@@ -25,7 +49,7 @@ public:
       - v[1]: stop_time
       - v[2]: nb_data_pkts
       - v[3]: nb_lost_pkts */
-  void GetLog(string&,vector<int>&);
+  void GetLog(const string&, vector<int>&);
   void SetConfigValue(string&,int,int);
   void SetColValue(string&,const int,double,int);
   void SetChValue(string&,double,int);
