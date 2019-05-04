@@ -91,52 +91,66 @@ string OperateString::GetNameBeforeLastUnderBar(const string& str)
 
 //==================== Logger Class ====================//
 
+Logger Log;
 string Logger::m_fileName = "";
 string Logger::m_efileName = "";
 ofstream Logger::m_file;
 ofstream Logger::m_efile;
+TriState Logger::WhereToLog = BOTH;
 
 Logger::Logger() : Logger(string("")) {}
 
 Logger::Logger(const string& log_dir)
 {
-  time_t newTime = time( NULL );
-  struct tm *t_st = localtime( &newTime );
-  string dir;
-  // If log_dir is empty try to infer it from the environment
-  if ( log_dir.empty() ) {
-	wgConst *con = new wgConst();
-	con->GetENV();
-	dir = con->LOG_DIRECTORY;
-	delete con;
-  } else dir = log_dir;
+  try {
+	time_t newTime = time( NULL );
+	struct tm *t_st = localtime( &newTime );
+	string dir;
+	// If log_dir is empty try to infer it from the environment
+	if ( log_dir.empty() ) {
+	  wgConst *con = new wgConst();
+	  con->GetENV();
+	  dir = con->LOG_DIRECTORY;
+	  delete con;
+	} else dir = log_dir;
   
-  // If the log directory is not found, create it
-  CheckExist check;
-  if ( check.Dir(dir) == false ) {
-	const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	if (dir_err == -1) {
-	  string error_message("error while creating " + dir + " directory!");
-	  throw wgInvalidFile(error_message);
+	// If the log directory is not found, create it
+	CheckExist check;
+	if ( check.Dir(dir) == false ) {
+	  const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	  if (dir_err == -1) {
+		string error_message("error while creating " + dir + " directory!");
+		throw wgInvalidFile(error_message);
+	  }
+	}
+ 
+	m_fileName  = Form("%s/log%d_%d_%d.txt",      dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
+	m_efileName = Form("%s/e_log%d_%d_%d.txt", dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
+
+	m_file.open(m_fileName, ofstream::out | ofstream::app);
+	// After this attempt to open a file, we can safely use strerror() only  
+	// in case file.is_open() returns False.
+	if (!m_file.is_open()) {
+	  stringstream error_message;
+	  error_message << "error while opening file " << m_fileName << " (" << strerror(errno) << ")";
+	  throw wgInvalidFile(error_message.str());
+	}
+	m_efile.open(m_efileName, ofstream::out | ofstream::app);
+	if (!m_efile.is_open()) {
+	  stringstream error_message;
+	  error_message << "error while opening file " << m_efileName << " (" << strerror(errno) << ")";
+	  throw wgInvalidFile(error_message.str());
 	}
   }
- 
-  m_fileName  = Form("%s/log%d_%d_%d.txt",      dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
-  m_efileName = Form("%s/e_log%d_%d_%d.txt", dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
-
-  m_file.open(m_fileName, ofstream::out | ofstream::app);
-  // After this attempt to open a file, we can safely use strerror() only  
-  // in case file.is_open() returns False.
-  if (!m_file.is_open()) {
-	stringstream error_message;
-	error_message << "error while opening file " << m_fileName << " (" << strerror(errno) << ")";
-	throw wgInvalidFile(error_message.str());
+  catch (const exception& e) {
+	WhereToLog = COUT;
+	this->eWrite("[Logger] Error in Logger object constructor : " + string(e.what()));
+	this->Write( "[Logger] The standard output (cout) will be used for logging");
   }
-  m_efile.open(m_efileName, ofstream::out | ofstream::app);
-  if (!m_efile.is_open()) {
-	stringstream error_message;
-	error_message << "error while opening file " << m_efileName << " (" << strerror(errno) << ")";
-	throw wgInvalidFile(error_message.str());
+  catch (...) {
+	WhereToLog = COUT;
+	this->eWrite("[Logger] Error in Logger object constructor");
+	this->Write( "[Logger] The standard output (cout) will be used for logging");
   }
 }
 

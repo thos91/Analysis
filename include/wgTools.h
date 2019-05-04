@@ -7,16 +7,19 @@
 
 using namespace std;
 
+/* class to extract the information contained in a generic path. The members and
+   methods names are pretty self-explanatory */
+
 class OperateString
 {
 private:
   string str;
   string ext;
 public:  
-  string GetExtension(const string& str);  //Get Extension from full path.
-  string GetName(const string& str);       //Get Name from full path.
-  string GetPath(const string& str);       //Get Path from full path.
-  string GetNameBeforeLastUnderBar(const string& str);       //Get Path from full path.
+  string GetExtension(const string& str);                //Get Extension from full path.
+  string GetName(const string& str);                     //Get Name from full path.
+  string GetPath(const string& str);                     //Get Path from full path.
+  string GetNameBeforeLastUnderBar(const string& str);   //Get Path from full path.
 };
 
 /* - Initialize: opens two files (one for info logging and another one for error
@@ -41,7 +44,7 @@ typedef enum {
 class Logger
 {
 public:
-  TriState WhereToLog = BOTH;
+  static TriState WhereToLog;
   Logger();
   Logger(const string&);
   void Write(const string&);
@@ -54,5 +57,7 @@ protected:
   static ofstream m_file;
   static ofstream m_efile;
 };
+
+extern Logger Log;
 
 #endif
