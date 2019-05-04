@@ -21,6 +21,8 @@
 #include "wgGetCalibData.h"
 #include "wgChannelMap.h"
 
+// #define DEBUG_DECODE
+
 // Debug macros that will fill the debug histogram
 #define DEBUG_NODATA 1
 #define DEBUG_GOOD_SPILLGAP 2
@@ -31,16 +33,6 @@
 #define DEBUG_MISSING_CHIP_HEADER 64
 #define DEBUG_MISSING_CHIP_TRAILER 128
 #define DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP 256
-
-// #define DEBUG_DECODE
-
-#define NON_BEAM_SPILL 0
-#define BEAM_SPILL     1
-
-#define HIGH_GAIN      1
-#define LOW_GAIN       0
-#define HIGH_GAIN_NORM 1.08
-#define LOW_GAIN_NORM  10.8
 
 // bitset macros
 #define M 16
@@ -94,9 +86,9 @@ bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
    function converts the raw TDC into an absolute time in nanoseconds */
 int tdc2time(f3vector &time_ns, i3vector &time, i2vector &bcid, f3vector &slope, f3vector &intcpt);
 
-OperateString *OptStr;
-CheckExist    *check;
-Logger        *Log;
+// rd_clear
+// Clear the Raw_t rd arrays
+void rd_clear(Raw_t &rd);
 
 void print_help(const char * program_name) {
   cout << "this program decodes a .raw file into a .root file\n"
@@ -112,23 +104,12 @@ void print_help(const char * program_name) {
 }
 
 int main(int argc, char** argv) {
-  OptStr =  new OperateString;
-  check  =  new CheckExist;
-
-  // Initialize the logger. If the log files cannot be opened the Logger will
-  // use the std::cout and std::cerr instead
-  try { Log  =  new Logger; }
-  catch (const wgInvalidFile& e) {
-	Log->WhereToLog = COUT;
-  }
-  catch (const exception& e) {
-	cout << e.what() << endl;
-	exit(1);
-  }
+  // object used to check if various files exist or not 
+  CheckExist check;
 
   // Get environment variables
-  wgConst *con = new wgConst();
-  con->GetENV();
+  wgConst con;
+  con.GetENV();
 
   int opt;
   string inputFileName("");
@@ -136,58 +117,56 @@ int main(int argc, char** argv) {
   string pedFileName("");
   string tdcFileName("");
   string outputFile("");
-  const string confDir(con->CONF_DIRECTORY);
-  string outputDir(con->DECODE_DIRECTORY);
+  const string confDir(con.CONF_DIRECTORY);
+  string outputDir(con.DECODE_DIRECTORY);
   bool overwrite = false;
   bool batch = false;
-  delete con;
 
   while((opt = getopt(argc,argv, "hf:i:p:t:o:rb")) !=-1 ){
     switch(opt){
 	case 'f':
 	  inputFileName = optarg;
-	  if( !check->RawFile(inputFileName) ) { 
-		Log->eWrite("[" + inputFileName + "][Decoder] target is wrong");
+	  if( !check.RawFile(inputFileName) ) { 
+		Log.eWrite("[" + inputFileName + "][Decoder] target is wrong");
 		return 1;
 	  }
-	  delete check;
-	  Log->Write("[" + inputFileName + "][Decoder] start decoding");
+	  Log.Write("[" + inputFileName + "][Decoder] start decoding");
 	  break;
 	case 'i':
 	  calibFileName = optarg;
-	  if( !check->XmlFile(calibFileName) ) { 
-		Log->eWrite("[" + calibFileName + "][Decoder] calibration file is wrong");
+	  if( !check.XmlFile(calibFileName) ) { 
+		Log.eWrite("[" + calibFileName + "][Decoder] calibration file is wrong");
 		return 1;
 	  }
 	  break;
 	case 'p':
 	  pedFileName = optarg;
-	  if( !check->XmlFile(pedFileName) ) { 
-		Log->eWrite("[" + pedFileName + "][Decoder] pedestal file is wrong");
+	  if( !check.XmlFile(pedFileName) ) { 
+		Log.eWrite("[" + pedFileName + "][Decoder] pedestal file is wrong");
 		return 1;
 	  }
 	  break;
 	case 't':
 	  tdcFileName = optarg;
-	  if( !check->XmlFile(tdcFileName) ) { 
-		Log->eWrite("[" + tdcFileName + "][Decoder] TDC calibration file is wrong");
+	  if( !check.XmlFile(tdcFileName) ) { 
+		Log.eWrite("[" + tdcFileName + "][Decoder] TDC calibration file is wrong");
 		return 1;
 	  }
 	  break;
 	case 'o':
 	  outputDir = optarg; 
-	  if( !check->Dir(outputDir) ) {
-		Log->eWrite("[" + outputDir + "][Decoder]output directory is wrong");
+	  if( !check.Dir(outputDir) ) {
+		Log.eWrite("[" + outputDir + "][Decoder]output directory is wrong");
 		return 1;
 	  }
 	  break;
 	case 'r':
 	  overwrite = true;
-	  Log->Write("[" + inputFileName + "][Decoder] overwrite mode");
+	  Log.Write("[" + inputFileName + "][Decoder] overwrite mode");
 	  break;
 	case 'b':
 	  batch = true;
-	  Log->Write("[" + inputFileName + "][Decoder] batch (silent) mode");
+	  Log.Write("[" + inputFileName + "][Decoder] batch (silent) mode");
 	  break;
 	case 'h':
 	  print_help(argv[0]);
@@ -200,7 +179,7 @@ int main(int argc, char** argv) {
   }
 
   if(inputFileName == ""){
-    Log->eWrite("[Decoder] No input file");
+    Log.eWrite("[Decoder] No input file");
     exit(1);
   }
 
@@ -213,18 +192,17 @@ int main(int argc, char** argv) {
   if(tdcFileName == "") {
 	tdcFileName = confDir + "/cards/tdc_coefficient_card.xml";
   }
-  if ( (batch == true) && (Log->WhereToLog == COUT) ) {
-    Log->eWrite("Batch mode is selected but cannot open the log file");
+  if ( (batch == true) && (Log.WhereToLog == COUT) ) {
+    Log.eWrite("Batch mode is selected but cannot open the log file");
 	exit(1);
-  } else if (batch == true) Log->WhereToLog = LOGFILE;
+  } else if (batch == true) Log.WhereToLog = LOGFILE;
   
   const unsigned int maxEvt = 99999999;
-  Log->Write("Maximum number of events treated = " + to_string(maxEvt));
+  Log.Write("Maximum number of events treated = " + to_string(maxEvt));
 
   int retcode;
   if ( (retcode = Decode(inputFileName, calibFileName, pedFileName, tdcFileName, outputDir, overwrite, maxEvt)) != 0 )
-	Log->eWrite("Decoder failed with code " + to_string(retcode));
-  delete Log;
+	Log.eWrite("Decoder failed with code " + to_string(retcode));
   return 0;
 }
 
@@ -233,19 +211,21 @@ int main(int argc, char** argv) {
 int Decode(const string& inputFileName, const string& calibFileName, const string& pedFileName, const string& tdcFileName,
 		   const string& outputDir, bool overwrite, unsigned maxEvt, unsigned dif, unsigned n_chips, unsigned n_channels){
 
-  string outputTreeFileName = OptStr->GetName(inputFileName)+"_tree.root";
+  OperateString OptStr;
+  CheckExist check;
+  string outputTreeFileName = OptStr.GetName(inputFileName)+"_tree.root";
 
   // This is not the output log file but the log file that should be already
   // present in the input folder and was created together with the .raw file
-  string logfilename  = OptStr->GetName(inputFileName);
+  string logfilename  = OptStr.GetName(inputFileName);
   int pos             = logfilename.rfind("_ecal_dif_") ;
-  string logfile      = OptStr->GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
+  string logfile      = OptStr.GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
   
 #ifndef DEBUG_DECODE
-  Log->Write("[" + logfilename + "][Decoder] *****  READING FILE     :" + inputFileName      + "  *****");
-  Log->Write("[" + logfilename + "][Decoder] *****  OUTPUT TREE FILE :" + outputTreeFileName + "  *****");
-  Log->Write("[" + logfilename + "][Decoder] *****  OUTPUT DIRECTORY :" + outputDir          + "  *****");
-  Log->Write("[" + logfilename + "][Decoder] *****  LOG FILE         :" + logfilename        + "  *****");
+  Log.Write("[" + logfilename + "][Decoder] *****  READING FILE     :" + inputFileName      + "  *****");
+  Log.Write("[" + logfilename + "][Decoder] *****  OUTPUT TREE FILE :" + outputTreeFileName + "  *****");
+  Log.Write("[" + logfilename + "][Decoder] *****  OUTPUT DIRECTORY :" + outputDir          + "  *****");
+  Log.Write("[" + logfilename + "][Decoder] *****  LOG FILE         :" + logfilename        + "  *****");
 #endif
 
   TFile * outputTreeFile;
@@ -253,13 +233,13 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
   if (!overwrite){
     outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "create");
     if ( !outputTreeFile->IsOpen() ) {
-      Log->eWrite("[" + logfilename + "][Decoder] Error:" + outputDir + "/" + outputTreeFileName + " already exists!");
+      Log.eWrite("[" + logfilename + "][Decoder] Error:" + outputDir + "/" + outputTreeFileName + " already exists!");
       return 1;
     }
   }
   else outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "recreate");
 
-  Log->Write("[" + logfilename + "][Decoder] " + outputDir + "/" + outputTreeFileName + " is being created");
+  Log.Write("[" + logfilename + "][Decoder] " + outputDir + "/" + outputTreeFileName + " is being created");
 
   Raw_t rd(n_chips, n_channels);
   rd.spill      = -1;
@@ -276,7 +256,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 	  dif = 2;
 	}
 	else {
-	  Log->eWrite("[" + logfilename + "][Decoder] Error: DIF ID number not given nor found");
+	  Log.eWrite("[" + logfilename + "][Decoder] Error: DIF ID number not given nor found");
 	  return 1;
 	}
   }
@@ -322,7 +302,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 	else getcalib->Get_Gain(calibFileName, dif, rd.gain);
 	charge_calibration = true;
   } catch (const exception& e) {
-	Log->eWrite(e.what());
+	Log.eWrite(e.what());
 	charge_calibration = false;
   } catch (...) {
 	charge_calibration = false;
@@ -332,7 +312,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 	else getcalib->Get_TdcCoeff(tdcFileName, dif, rd.tdc_slope, rd.tdc_intcpt);
 	time_calibration = true;
   } catch (const exception& e) {
-	Log->eWrite(e.what());
+	Log.eWrite(e.what());
 	time_calibration = false;
   } catch (...) {
 	time_calibration = false;
@@ -368,14 +348,14 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
   ifstream inputFile;
   inputFile.open(inputFileName.c_str(), ios_base::in | ios_base::binary);
   if (!inputFile.is_open()) {
-	Log->eWrite("[" + logfilename + "][Decoder] Error:" + strerror(errno));
+	Log.eWrite("[" + logfilename + "][Decoder] Error:" + strerror(errno));
 	return 1;
   }
 
   // Move to ROOT tree
   outputTreeFile->cd();
 
-  if( check->LogFile(logfile) ) {
+  if( check.LogFile(logfile) ) {
 	// Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
 	vector<int> v_log(4,0);
     wgEditXML *Edit = new wgEditXML();
@@ -413,7 +393,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 	h_nb_data_pkts -> Write();
 	h_nb_lost_pkts -> Write();
   }
-  else Log->eWrite("LOGFILE:" + logfile + " doesn't exist!");
+  else Log.eWrite("LOGFILE:" + logfile + " doesn't exist!");
 
   // gInterpreter->GenerateDictionary("vector<float>", "vector");
   // gInterpreter->GenerateDictionary("vector<int>", "vector");
@@ -459,7 +439,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
   // =====================================================
 
   if (inputFile.is_open()) {
-    Log->Write("[" + logfilename + "][Decoder] *****  Start reading file  *****");
+    Log.Write("[" + logfilename + "][Decoder] *****  Start reading file  *****");
 
 	// Pretend that we just reached the end of a previous spill so that the
 	// first spill header is correctly recognized
@@ -490,8 +470,11 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
       if (lastFour[2] == x2020 && lastFour[1] == xFFFF) {
         endOfSpillTag = true;
       }
-     
-      // *********   SPILL_INSERT  ********* //
+
+	  // **************************************************************//
+	  // ***********************  SPILL NUMBER  ********************** //
+	  // **************************************************************//
+	  
       if (endOfSpillTag && lastFour[2] == xFFFB) {
 		// If the most significative bit in the spill flag is set to BEAM_SPILL
 		// the spill mode is set accordingly
@@ -510,7 +493,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		// gap is not that bad, if the cause is something else the problem is
 		// more serious)
         if( SPILL_GAP.to_ulong() != 0 ){
-		  Log->eWrite("[" + logfilename + "][Decoder] spill gap warning: last = " + to_string(LAST_SPILL_NUMBER) + ", current = "
+		  Log.eWrite("[" + logfilename + "][Decoder] spill gap warning: last = " + to_string(LAST_SPILL_NUMBER) + ", current = "
 					  + to_string(SPILL_NUMBER));
 
 		  bool good_spill_gap = false;
@@ -533,11 +516,14 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
         if( dataResult == xFFFC )
           spillInsertTag = true; 
 		else
-          Log->eWrite("[" + logfilename + "][Decoder] spill insert tag was inserted in wrong position, last_spill = "
+          Log.eWrite("[" + logfilename + "][Decoder] spill insert tag was inserted in wrong position, last_spill = "
 					  + to_string(LAST_SPILL_COUNT) + ", current_spill = " + to_string(SPILL_COUNT)); 
 	  }
 
-      // *********   SPILL_HEADER  ********* //
+	  // **************************************************************//
+	  // ***********************  SPILL HEADER  ********************** //
+	  // **************************************************************//
+
       if( lastFour[1] == xFFFC && endOfSpillTag ){
         if( !First_Event ) First_Event = true;
         if( endOfSpillTag ) {
@@ -566,23 +552,29 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
 		  uint32_t SPILL_COUNT_GAP = LAST_SPILL_COUNT + 1 - SPILL_COUNT;
           if( SPILL_COUNT_GAP != 0 )
-            Log->eWrite("[" + logfilename + "][Decoder] spill count gap warning: last_spill = " + to_string(LAST_SPILL_COUNT) +
+            Log.eWrite("[" + logfilename + "][Decoder] spill count gap warning: last_spill = " + to_string(LAST_SPILL_COUNT) +
 						", current_spill = " + to_string(SPILL_COUNT)); 
           
 		  endOfSpillTag=false;
         }
 		else {
-          Log->eWrite("[" + logfilename + "][Decoder] Warning : spill trailer not found: current_spill = " +
+          Log.eWrite("[" + logfilename + "][Decoder] Warning : spill trailer not found: current_spill = " +
 					  to_string(SPILL_COUNT));
 		}
 	  }
 
-	  // *********   CHIP_HEADER  ********* //
+	  // **************************************************************//
+	  // ************************  CHIP HEADER  ********************** //
+	  // **************************************************************//
+	  
 	  if (lastFour[2] == x2020 && lastFour[1] == xFFFD){
 		nChipData = 0;
 	  }
 
-	  // *********   CHIP TRAILER  ********* //
+	  // **************************************************************//
+	  // ***********************  CHIP TRAILER  ********************** //
+	  // **************************************************************//
+
 	  if (lastFour[1] == xFFFE && dataResult == x2020){
 		nChips++;
 		if (nChipData >= 74) {
@@ -592,21 +584,25 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		  // +2 +3 (header/trailer) = 79
 		  // let's replace this magic number 
 		}else{          
-		  Log->eWrite("[" + logfilename + "][Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
+		  Log.eWrite("[" + logfilename + "][Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
 					  to_string(SPILL_COUNT) + ", chip number = " + to_string(nChips + 1));
 		  rd.spill_flag--;
 		}
 	  }
 
-	  // *********   SPILL TRAILER  ********* //
+	  // **************************************************************//
+	  // **********************   SPILL TRAILER  ********************* //
+	  // **************************************************************//
+
 	  if (First_Event && lastFour[3] == x2020 && lastFour[2] == xFFFF) {
-          
+
+		// Read the number of chips from the spill trailer
 		uint16_t nbchip = ( dataResult & x00FF ).to_ulong();
-		if( nChips != nbchip ){
+		if( nChips != nbchip ) {
 		  // maybe one word was skipped
 		  nbchip = ( lastFour[0] & x00FF ).to_ulong();
 		  if( nChips != nbchip ){
-			Log->eWrite("[" + logfilename + "][Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
+			Log.eWrite("[" + logfilename + "][Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
 						", (spill trailer) nbchip = " + to_string(nbchip) + ", acq id = " + to_string(SPILL_COUNT));
 		  }
 		}
@@ -632,7 +628,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		  //             Start reading event
 		  // ============================================
 
-		  for (size_t i = 0; i < eventData.size(); i++){
+		  for (size_t i = 0; i < eventData.size(); i++) {
 			// CHIP START MARKER
 			if (eventData[i] == xFFFD) {
 			  
@@ -646,7 +642,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 			  else {
 				currentChipID = chip_count - 1;
 #ifdef DEBUG_DECODE
-				Log->eWrite("[" + logfilename + "][Decoder] Warning : one chipid_tag is missing "
+				Log.eWrite("[" + logfilename + "][Decoder] Warning : one chipid_tag is missing "
 							"(chipid_count: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");
 #endif
 				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIPID_TAG;
@@ -657,7 +653,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 			  lastChipID[0] = currentChipID;
 
 			  if( Missing_Header > 1 ) {
-				Log->eWrite("[" + logfilename + "][Decoder] Warning : part of chip header is missing (missing words: " + to_string(Missing_Header)  +
+				Log.eWrite("[" + logfilename + "][Decoder] Warning : part of chip header is missing (missing words: " + to_string(Missing_Header)  +
 							", chipid_tag: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");;
 				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIP_HEADER;
 			  }
@@ -670,7 +666,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				isValidChip = true;
 			  }
 			  else{                    
-				Log->eWrite("[" + logfilename + "][Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
+				Log.eWrite("[" + logfilename + "][Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
 							", read ChipID = " + to_string((eventData[i] & x00FF).to_ulong()) + ", acq id = " + to_string(SPILL_COUNT)); 
 				bool matchChipID = false;
 				if( lastChipID[0] + 1 < nChips && lastChipID[0] > 0 ) {
@@ -711,7 +707,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
 				if(matchChipID) {
 #ifdef DEBUG_DECODE
-				  Log->Write("[" + logfilename + "][Decoder] Debug : the order of CHIPID is OK!");  
+				  Log.Write("[" + logfilename + "][Decoder] Debug : the order of CHIPID is OK!");  
 #endif
 				  isValidChip = true;
 				  rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER;
@@ -720,7 +716,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				else {
 				  isValidChip = false;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
-				  Log->eWrite("[" + logfilename + "][Decoder] Warning : HEAD ChipID and END ChipID is wrong! (HEAD: " +
+				  Log.eWrite("[" + logfilename + "][Decoder] Warning : HEAD ChipID and END ChipID is wrong! (HEAD: " +
 							  to_string(currentChipID) + ", END: " + to_string(eventData[i].to_ulong()) + ") spill: " + to_string(rd.spill));
 				  rd.spill_flag--;
 				}
@@ -733,7 +729,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				rawDataSize = i - chipStartIndex - CHIPENDTAG;
 				nColumns    = (rawDataSize - CHIPIDSIZE) / (1 + NCHANNELS * 2);
 				if ( (rawDataSize - CHIPIDSIZE) % (1 + NCHANNELS * 2) != 0) {
-				  Log->eWrite("[" + logfilename + "][Decoder] Warning : BAD DATA SIZE! "
+				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD DATA SIZE! "
 							  "spill: " + to_string(rd.spill) + ", chip: " + to_string(currentChipID));
 				  rd.spill_flag--;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
@@ -744,7 +740,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				}
 				else if(nColumns > MEMDEPTH) {
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
-				  Log->eWrite("[" + logfilename + "][Decoder] Warning : BAD COLUMN SIZE! "
+				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD COLUMN SIZE! "
 							  "DataSize: " + to_string(rd.spill) + ", column: " + to_string(nColumns));
 				  rd.spill_flag--;
 				  last = eventData[i].to_ulong();
@@ -756,14 +752,12 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				v_chipid[currentChipID] = (eventData[i - CHIPENDTAG] & x00FF).to_ulong();
 
 				if ( !check_ChipID(v_chipid[currentChipID], n_chips) ) {
-				  Log->eWrite("[" + logfilename + "][Decoder] Warning : BAD CHIP ID! spill: " + to_string(rd.spill) +
+				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD CHIP ID! spill: " + to_string(rd.spill) +
 							  " chipid: " + to_string(v_chipid[currentChipID]));
 				  rd.spill_flag--;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
 				}
 
-				// TO-DO chipid debug
-				
 				rd.chipid[currentChipID] = v_chipid[currentChipID];
 				rd.chipid_tag[currentChipID] = currentChipID;
 
@@ -799,11 +793,11 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 					  if (charge_calibration) {
 						//extract pe
 						if( rd.chipid[currentChipID] >= 0 && rd.chipid[currentChipID] < (int) n_chips ) {
-						  if( rd.gs[currentChipID][ichan][ibc] == HIGH_GAIN ) { // High Gain
+						  if( rd.gs[currentChipID][ichan][ibc] == HIGH_GAIN_BIT ) { // High Gain
 							rd.pe[currentChipID][ichan][ibc] = HIGH_GAIN_NORM * ( rd.charge[currentChipID][ichan][ibc] - rd.pedestal[rd.chipid[currentChipID]][ichan][ibc] ) /
 							  rd.gain[rd.chipid[currentChipID]][ichan];
 						  }
-						  else if( rd.gs[currentChipID][ichan][ibc] == LOW_GAIN ) { // Low Gain
+						  else if( rd.gs[currentChipID][ichan][ibc] == LOW_GAIN_BIT ) { // Low Gain
 							rd.pe[currentChipID][ichan][ibc] = LOW_GAIN_NORM * ( rd.charge[currentChipID][ichan][ibc] - rd.pedestal[rd.chipid[currentChipID]][ichan][ibc] ) /
 							  rd.gain[rd.chipid[currentChipID]][ichan];
 						  }
@@ -811,7 +805,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 							stringstream ss;
 							ss << "[" << logfilename << "][Decoder] Warning : BAD GAIN BIT! " <<
 							  "gs[" << currentChipID << "][" << ichan << "][" << ibc << "] = " << rd.gs[currentChipID][ichan][ibc];
-							Log->eWrite(ss.str());
+							Log.eWrite(ss.str());
 							rd.pe[currentChipID][ichan][ibc] = -100.;
 						  }
 						}
@@ -821,7 +815,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 					  stringstream ss;
 					  ss << "[" << logfilename << "][Decoder] Warning : BAD CHANNEL OR COLUMN NUMBER! " <<
 						"chip = " << currentChipID << ", channel = " << ichan << ", column = " << ibc;
-					  Log->eWrite(ss.str());
+					  Log.eWrite(ss.str());
 					}
 					ichan++;  
 				  } // loop on j
@@ -851,99 +845,50 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		  if (time_calibration) {
 			int retcode = 0;
 			if ( (retcode = tdc2time(rd.time_ns, rd.time, rd.bcid, rd.tdc_slope, rd.tdc_intcpt)) != 0 )
-			  Log->eWrite("Error in tdc2time: size mismatch (retcode = " + to_string(retcode) + ")");
+			  Log.eWrite("Error in tdc2time: size mismatch (retcode = " + to_string(retcode) + ")");
 		  }
 
-		  // ***** Fill Tree ***** //
+		  // ***** Fill TTree ***** //
 
 		  tree->Fill();
 		  FILL_FLAG = false;
-		  rd.spill            = -1;
-		  rd.spill_mode       = -1;
-		  rd.spill_count      = -1;
-		  rd.spill_flag       =  1;
-		  for(unsigned ichip = 0 ; ichip < n_chips ; ichip++) {
-			v_chipid[ichip]  = -1;
-			rd.chipid[ichip] = -1;
-			rd.debug[ichip]  =  0;
-			for(unsigned icol = 0 ; icol < MEMDEPTH ; icol++) {
-			  rd.bcid[ichip][icol] = -1;
-			  for(unsigned ich = 0 ; ich < n_channels; ich++) {
-				rd.charge            [ichip][ich][icol] = -1;
-				rd.time              [ichip][ich][icol] = -1;
-				rd.gs                [ichip][ich][icol] = -1;
-				rd.hit               [ichip][ich][icol] = -1;
-				if (charge_calibration) {
-				  rd.gain            [ichip][ich]       = -100.;	  
-				  rd.pedestal        [ichip][ich][icol] = -100.;
-				  rd.ped_nohit       [ichip][ich][icol] = -100.;
-				  rd.pe              [ichip][ich][icol] = -100.;
-				}
-				if (time_calibration) {
-				  rd.time_ns         [ichip][ich][icol]   = -100.;
-				  rd.tdc_slope       [ichip][ich][icol%2] = 0;
-				  rd.tdc_intcpt      [ichip][ich][icol%2] = -100;
-				}
-			  }
-			}
-		  } // end fill tree
-		  
-		  //============= END =================//
+		  for(unsigned ichip = 0; ichip < n_chips; ichip++) v_chipid[ichip] = -1;
+		  rd_clear(rd);
 
-		  if( iEvt % 1000 == 0 ) Log->Write("Entry number ... " + to_string(iEvt));
+		  if( iEvt % 1000 == 0 ) Log.Write("Entry number ... " + to_string(iEvt));
 		  iEvt++;
 		}
 		else {
-		  Log->eWrite("[" +  logfilename + "][Decoder] Warning : number of chips less than zero : spill count = " + to_string(rd.spill_count));
+		  Log.eWrite("[" + logfilename + "][Decoder] Warning : number of chips less than zero : spill count = " + to_string(rd.spill_count));
 		}
-	  } // END of SPILL trailer
-
-	  if ( lastFour[3] == xFFFF ) { // SPILL trailer check
+	  }
+	  // SPILL trailer check
+	  if ( lastFour[3] == xFFFF ) { 
+		// Clear everything before we start again with the next event
 		packetData.clear();
 		endOfChipTag = false;
-		for(unsigned ichip = 0 ; ichip < n_chips ; ichip++){
-		  rd.chipid[ichip] = -1;
-		  for(unsigned icol = 0 ; icol < MEMDEPTH ;icol++){ 
-			rd.bcid[ichip][icol] = -1;
-			for(unsigned ich = 0 ; ich < n_channels; ich++){
-			  rd.charge[ichip][ich][icol] = -1;
-			  rd.time  [ichip][ich][icol] = -1;
-			  rd.gs    [ichip][ich][icol] = -1;
-			  rd.hit   [ichip][ich][icol] = -1;
-			  if (charge_calibration) {
-				rd.gain            [ichip][ich]       = -100.;	  
-				rd.pedestal        [ichip][ich][icol] = -100.;
-				rd.ped_nohit       [ichip][ich][icol] = -100.;
-				rd.pe              [ichip][ich][icol] = -100.;
-			  }
-			  if (time_calibration) {
-				rd.time_ns         [ichip][ich][icol]   = -100.;
-				rd.tdc_slope       [ichip][ich][icol%2] = 0;
-				rd.tdc_intcpt      [ichip][ich][icol%2] = -100;
-			  }
-			}
-		  }	
-		}
-		if(FILL_FLAG) {
-		  Log->eWrite("[" +  logfilename + "][Decoder] Warning : no data recorded : spill count = " + to_string(rd.spill_count));
+		rd_clear(rd);
+
+		// If the tree was not filled at the end of the event, fill it now with
+		// the "empty" values.
+		if (FILL_FLAG) {
+		  Log.eWrite("[" + logfilename + "][Decoder] Warning : no data recorded : spill count = " + to_string(rd.spill_count));
 		  for(unsigned ichip = 0 ; ichip < n_chips ; ichip++) {
 			rd.debug[ichip] += DEBUG_NODATA;
 		  }
 		  tree->Fill(); 
-		  for(unsigned int ichip = 0 ; ichip < n_chips ; ichip++){
+		  for(unsigned int ichip = 0; ichip < n_chips; ichip++) {
 			rd.debug[ichip] = 0;
 		  }
 		}
 		FILL_FLAG = false;
 	  }
+	  // ************************ End of SPILL TRAILER ************************** //
 
-	  // SPILL header
+	  // Unexpected spill header
 	  if (lastFour[1] == x5053 && lastFour[0] == x4C49 &&  dataResult == x2020) { 
-		// New SPILL: extract SPILL number
-		// dataResult is just before CHIP header
-		// i.e. at the end of SPILL header
 		if (endOfChipTag) {
-		  Log->eWrite("[" +  logfilename + "][Decoder] Warning : spill trailer is missing : spill number = " + to_string(rd.spill));
+		  Log.eWrite("[" + logfilename + "][Decoder] Warning : spill trailer is missing : spill number = " + to_string(rd.spill));
 		}
 		packetData.clear();
 		endOfChipTag = false;
@@ -957,14 +902,14 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 	} // while (inputFile.read(...
   } // if (fin.is_open())
 
-  Log->Write("[" + logfilename + "][Decoder] *****  Finished reading file  *****");
-  Log->Write("[" + logfilename + "][Decoder] *****  with " + to_string(iEvt) + " entries  *****");
-  Log->Write("[" + logfilename + "][Decoder] *****       BAD data : " + to_string(ineff_data) + " *****");
+  Log.Write("[" + logfilename + "][Decoder] *****  Finished reading file  *****");
+  Log.Write("[" + logfilename + "][Decoder] *****  with " + to_string(iEvt) + " entries  *****");
+  Log.Write("[" + logfilename + "][Decoder] *****       BAD data : " + to_string(ineff_data) + " *****");
 
   outputTreeFile->cd();
   tree->Write();
   outputTreeFile->Close();
-  Log->Write("[" + logfilename + "][Decoder] Decode is finished");
+  Log.Write("[" + logfilename + "][Decoder] Decode is finished");
   return 0;
 }
 
@@ -982,7 +927,7 @@ uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offs
   else {
 #ifdef DEBUG_DECODE
 	string s(Form("%#04x - %#04x - %#04x - %#04x", (int) head[offset].to_ulong(), (int) head[offset+1].to_ulong(), (int) head[offset+2].to_ulong(), (int) head[offset+3].to_ulong()));
-	Log->Write("[check_ChipHeader] Debug: chip header = " + s); 
+	Log.Write("[check_ChipHeader] Debug: chip header = " + s); 
 #endif
 	ret = 0xFFFF;
 	for (size_t i = offset + CHIPHEAD - 1; i > offset; i--) head[i] = head[i-1];
@@ -1036,3 +981,31 @@ int tdc2time(f3vector &time_ns, i3vector &time, i2vector &bcid, f3vector &slope,
   }
   return 0;
 };
+
+void rd_clear(Raw_t &rd) {
+  // Scalars
+  rd.spill            = -1;
+  rd.spill_mode       = -1;
+  rd.spill_count      = -1;
+  rd.spill_flag       =  1;
+  // Standard vectors
+  unsigned n_chips = rd.chipid.size();
+  for(unsigned ichip = 0 ; ichip < n_chips ; ichip++) {
+	rd.chipid[ichip] = -1;
+	rd.debug[ichip]  =  0;
+  }
+  // 2D contiguous vectors
+  rd.bcid.fill(-1);
+  rd.gain.fill(-100);
+  // 3D contiguous vectors
+  rd.charge.fill(-1);
+  rd.time.fill(-1);
+  rd.gs.fill(-1);
+  rd.hit.fill(-1);
+  rd.pedestal.fill(-100);
+  rd.ped_nohit.fill(-100);
+  rd.pe.fill(-100);
+  rd.time_ns.fill(-100);
+  rd.tdc_slope.fill(0);
+  rd.tdc_intcpt.fill(-100);
+}
