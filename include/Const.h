@@ -31,6 +31,16 @@
 #define MAX_NUM_INGRECON 100 // within a spill
 #define NUM_CYC          8
 
+#define NON_BEAM_SPILL 0 // non beam spill bit (spill_flag)
+#define BEAM_SPILL     1 // beam spill bit (spill_flag)
+
+#define HIT_BIT        1 // there was a hit (over threshold)
+#define NO_HIT_BIT     0 // there was no hit (under threshold)
+#define HIGH_GAIN_BIT  1 // high gain bit (gs)
+#define LOW_GAIN_BIT   0 // low gain bit (gs)
+#define HIGH_GAIN_NORM 1.08
+#define LOW_GAIN_NORM  10.8
+
 using namespace std;
 
 //#define DEBUG_DECODE
@@ -72,7 +82,6 @@ public:
   i3vector hit;              // [NumChip][NumChipChFull][NumSca];
   i3vector gs;               // [NumChip][NumChipChFull][NumSca];
   ivector debug;             // [NumChip];
-
   int view;
   i2vector pln;              // [NumChip][NumChipChFull];
   i2vector ch;               // [NumChip][NumChipChFull];
