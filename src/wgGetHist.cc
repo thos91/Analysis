@@ -20,16 +20,13 @@ TH1F* h_bcid;
 TH1F* h_pe;
 TH1F* h_spill;
 
-TFile* wgGetHist::freadhist;
-string wgGetHist::finputname;
-
 //************************************************************************
 wgGetHist::wgGetHist()
 {
 }
 
 //************************************************************************
-wgGetHist::wgGetHist(string& str){
+wgGetHist::wgGetHist(const string& str){
   this->SetHistFile(str);
 }
 
@@ -39,15 +36,18 @@ wgGetHist::~wgGetHist(){
 }
 
 //************************************************************************
-bool wgGetHist::SetHistFile(string& str){
-  CheckExist *Check = new CheckExist;
+bool wgGetHist::SetHistFile(const string& str){
+  CheckExist Check;
   wgGetHist::finputname = str;
-  if(!Check->RootFile(str)){
-    cout << "ERROR!! FAIL TO SET HISTFILE!!" <<endl;
-    return false;
+  if ( !Check.RootFile(str) ) {
+	Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file");
+	return false;
   }
-  wgGetHist::freadhist = new TFile(str.c_str(),"read");
-  delete Check;
+  try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
+  catch (const exception& e) {
+	Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + string(e.what()));
+	return false;
+  }
   return true;
 }
 

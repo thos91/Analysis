@@ -24,14 +24,14 @@ extern TH1F* h_spill;
 class wgGetHist
 {
 private:
-  static string finputname;
-  static TFile *freadhist;
+  string finputname;
+  TFile *freadhist;
   TCanvas *c1;
 public:
   wgGetHist();
-  wgGetHist(string&);
+  wgGetHist(const string&);
   ~wgGetHist();
-  bool SetHistFile(string&);
+  bool SetHistFile(const string&);
   void clear();
   void Get_charge_hit_HG(unsigned int i,unsigned int j,unsigned int k);
   void Get_charge_hit_LG(unsigned int i,unsigned int j,unsigned int k);
