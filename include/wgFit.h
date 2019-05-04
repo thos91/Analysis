@@ -15,7 +15,7 @@ class wgFit
 {
 public:
   wgFit();
-  wgFit(string&);
+  wgFit(const string&);
   ~wgFit(); 
   void clear(); 
   void swap(int,double*,double*); 
@@ -24,7 +24,7 @@ public:
   void low_pe_charge_HG(unsigned int,unsigned int,unsigned int,double*,int);
   void charge_nohit(unsigned int,unsigned int,unsigned int,double*,int);
   void GainSelect(unsigned int,unsigned int,unsigned int,double*,int);
-  void SetoutputIMGDir(string&);
+  void SetoutputIMGDir(const string&);
 
   wgGetHist *GetHist;
   string outputIMGDir;

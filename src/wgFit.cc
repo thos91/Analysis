@@ -53,7 +53,7 @@ wgFit::wgFit(){
 }
 
 //**********************************************************************
-wgFit::wgFit(string& inputfile){
+wgFit::wgFit(const string& inputfile){
   GetHist = new wgGetHist(inputfile);
 }
 
@@ -68,7 +68,7 @@ void wgFit::clear(){
 }
 
 //**********************************************************************
-void wgFit::SetoutputIMGDir(string& str){
+void wgFit::SetoutputIMGDir(const string& str){
   wgFit::outputIMGDir=str;
 }
 
