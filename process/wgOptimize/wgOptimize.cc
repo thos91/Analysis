@@ -52,10 +52,11 @@ int main(int argc, char** argv){
   int n_difs   = 0;
   int n_chips   = 0;
 
-  Logger *Log = new Logger;
+  // If a log directory different from the standard one is needed add it to the
+  // constructor
+  Logger *Log = new Logger; 
   CheckExist *check = new CheckExist;
 
-  Log->Initialize();
   Log->Write("start checking data quality...");
 
   while((opt = getopt(argc, argv, "hm:t:f:s:d:c:p:i:")) != -1 ){
@@ -158,10 +159,13 @@ int main(int argc, char** argv){
         name = Form("threshold_%d", pe);
         threshold[idif][ichip] = Edit->OPT_GetValue(name, idif + 1, ichip, inputDAC);
 		// post-calibration mode
-      }else if (mode == 1) {
+      }
+	  else if (mode == 1) {
         if ( pe < 3 ) {
-		  // s_th is the slope of the linear fit of the inputDAC (x) vs threshold(y)
-		  // i_th is the intercept of the linear fit of the inputDAC (x) vs threshold(y)
+		  // s_th is the slope of the linear fit of the inputDAC (x) vs optimal
+		  // threshold for the given p.e. equivalend (y)
+		  // i_th is the intercept of the linear fit of the inputDAC (x) vs
+		  // optimal threshold for the given p.e. equivalend (y)
           name=Form("s_th%d", pe);
           s_th[idif][ichip]=Edit->OPT_GetChipValue(name, idif + 1, ichip);
           name=Form("i_th%d", pe);
@@ -216,7 +220,7 @@ int main(int argc, char** argv){
       }
 	  
 	  // In mode 1 edit the inputDAC of each channel of each chip to the optimal value calculated from calibration_card.xml
-	  else if( mode == 1 ){
+	  else if( mode == 1 ) {
         double mean_inputDAC = 0.;
         for(int ich = 0; ich < NumChipCh; ich++) {
           double inputDAC = 0.;
@@ -226,9 +230,9 @@ int main(int argc, char** argv){
           }
 		  else {
 			// This is the inputDAC value corresponding to a Gain of 40
-            inputDAC=(40. - i_Gain[idif][ichip][ich]) / s_Gain[idif][ichip][ich];
-            if(inputDAC < 1.)   inputDAC = 1.;
-            if(inputDAC > 250.) inputDAC = 250.;
+            inputDAC = (40. - i_Gain[idif][ichip][ich]) / s_Gain[idif][ichip][ich];
+            if (inputDAC < 1.)   inputDAC = 1.;
+            if (inputDAC > 250.) inputDAC = 250.;
             mean_inputDAC += inputDAC;
           }
 		  inputDAC=round(inputDAC);
