@@ -71,4 +71,8 @@ protected:
   void SetTreeFile(Recon_t&);
   void SetTreeFile(Track_t&);
   void SetTreeFile(IngRecon_t&);
+
+  // Check if a branch exists in the tree_in TTree. Return true if it exists and
+  // false otherwise.
+  bool BranchExists(const string&);
 };

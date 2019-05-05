@@ -73,39 +73,79 @@ wgGetTree::~wgGetTree(){
   this->Close();
 }
 
+bool wgGetTree::BranchExists(const string& branch_name) {
+   size_t n = tree_in->GetListOfBranches()->GetEntries();
+   for (size_t i = 0; i < n; i++) {
+	TBranch *br = dynamic_cast<TBranch*>(tree_in->GetListOfBranches()->At(i));
+	if( br && br->GetName() == branch_name ) return true;
+   }
+   OperateString OptStr;
+   Log.Write("[" + OptStr.GetName(finputname) + "][SetTreeFile] Branch " + branch_name + " not found");
+  return false;
+}
+
 //************************************************************************
 void wgGetTree::SetTreeFile(Raw_t& rdin){
-  if(wgGetTree::finput == NULL || wgGetTree::finput->IsOpen() == kFALSE)
-    throw wgInvalidFile("TFile " + wgGetTree::finputname + " is not open!");
+
+  if(finput == NULL || finput->IsOpen() == kFALSE)
+    throw wgInvalidFile("TFile " + finputname + " is not open!");
   try {
-	tree_in->SetBranchAddress("spill",       &rdin.spill);
-	tree_in->SetBranchAddress("spill_flag",  &rdin.spill_flag);
-	tree_in->SetBranchAddress("spill_mode",  &rdin.spill_mode);
-	tree_in->SetBranchAddress("spill_count", &rdin.spill_count);
-	tree_in->SetBranchAddress("bcid",         rdin.bcid.data());
-	tree_in->SetBranchAddress("charge",       rdin.charge.data());
-	tree_in->SetBranchAddress("time",         rdin.time.data());
-	tree_in->SetBranchAddress("gs",           rdin.gs.data());
-	tree_in->SetBranchAddress("hit",          rdin.hit.data());
-	tree_in->SetBranchAddress("chipid",       rdin.chipid.data());
-	tree_in->SetBranchAddress("col",          rdin.col.data());
-	tree_in->SetBranchAddress("chipch",       rdin.chipch.data());
-	tree_in->SetBranchAddress("chip",         rdin.chip.data());
-	tree_in->SetBranchAddress("debug",        rdin.debug.data());
-	tree_in->SetBranchAddress("view",        &rdin.view);
-	tree_in->SetBranchAddress("pln",          rdin.pln.data());
-	tree_in->SetBranchAddress("ch",           rdin.ch.data());
-	tree_in->SetBranchAddress("grid",         rdin.grid.data());
-	tree_in->SetBranchAddress("x",            rdin.x.data());
-	tree_in->SetBranchAddress("y",            rdin.y.data());
-	tree_in->SetBranchAddress("z",            rdin.z.data());
-	tree_in->SetBranchAddress("time_ns",      rdin.time_ns.data());
-	tree_in->SetBranchAddress("pe",           rdin.pe.data());
-	tree_in->SetBranchAddress("gain",         rdin.gain.data());
-	tree_in->SetBranchAddress("pedestal",     rdin.pedestal.data());
-	tree_in->SetBranchAddress("ped_nohit",    rdin.ped_nohit.data());
-	tree_in->SetBranchAddress("ped_slope",    rdin.tdc_slope.data());
-	tree_in->SetBranchAddress("ped_intcpt",   rdin.tdc_intcpt.data());
+	if (BranchExists("spill"))
+	  tree_in->SetBranchAddress("spill",       &rdin.spill);
+	if (BranchExists("spill_flag"))
+	  tree_in->SetBranchAddress("spill_flag",  &rdin.spill_flag);
+	if (BranchExists("spill_mode"))
+	  tree_in->SetBranchAddress("spill_mode",  &rdin.spill_mode);
+	if (BranchExists("spill_count"))
+	  tree_in->SetBranchAddress("spill_count", &rdin.spill_count);
+	if (BranchExists("bcid"))
+	  tree_in->SetBranchAddress("bcid",         rdin.bcid.data());
+	if (BranchExists("charge"))
+	  tree_in->SetBranchAddress("charge",       rdin.charge.data());
+	if (BranchExists("time"))
+	  tree_in->SetBranchAddress("time",         rdin.time.data());
+	if (BranchExists("gs"))
+	  tree_in->SetBranchAddress("gs",           rdin.gs.data());
+	if (BranchExists("hit"))
+	  tree_in->SetBranchAddress("hit",          rdin.hit.data());
+	if (BranchExists("chipid"))
+	  tree_in->SetBranchAddress("chipid",       rdin.chipid.data());
+	if (BranchExists("col"))
+	  tree_in->SetBranchAddress("col",          rdin.col.data());
+	if (BranchExists("chipch"))
+	  tree_in->SetBranchAddress("chipch",       rdin.chipch.data());
+	if (BranchExists("chip"))
+	  tree_in->SetBranchAddress("chip",         rdin.chip.data());
+	if (BranchExists("debug"))
+	  tree_in->SetBranchAddress("debug",        rdin.debug.data());
+	if (BranchExists("view"))
+	  tree_in->SetBranchAddress("view",        &rdin.view);
+	if (BranchExists("pln"))
+	  tree_in->SetBranchAddress("pln",          rdin.pln.data());
+	if (BranchExists("ch"))
+	  tree_in->SetBranchAddress("ch",           rdin.ch.data());
+	if (BranchExists("grid"))
+	  tree_in->SetBranchAddress("grid",         rdin.grid.data());
+	if (BranchExists("x"))
+	  tree_in->SetBranchAddress("x",            rdin.x.data());
+	if (BranchExists("y"))
+	  tree_in->SetBranchAddress("y",            rdin.y.data());
+	if (BranchExists("z"))
+	  tree_in->SetBranchAddress("z",            rdin.z.data());
+	if (BranchExists("time_ns"))
+	  tree_in->SetBranchAddress("time_ns",      rdin.time_ns.data());
+	if (BranchExists("pe"))
+	  tree_in->SetBranchAddress("pe",           rdin.pe.data());
+	if (BranchExists("gain"))
+	  tree_in->SetBranchAddress("gain",         rdin.gain.data());
+	if (BranchExists("pedestal"))
+	  tree_in->SetBranchAddress("pedestal",     rdin.pedestal.data());
+	if (BranchExists("ped_nohit"))
+	  tree_in->SetBranchAddress("ped_nohit",    rdin.ped_nohit.data());
+	if (BranchExists("tdc_slope"))
+	  tree_in->SetBranchAddress("tdc_slope",    rdin.tdc_slope.data());
+	if (BranchExists("tdc_intcpt"))
+	  tree_in->SetBranchAddress("tdc_intcpt",   rdin.tdc_intcpt.data());
   }	catch (const exception &e) {
     throw wgElementNotFound( "[wgGetTree::Open] failed to get the TTree from"
 							 + wgGetTree::finputname + " : " + string(e.what()));
@@ -394,65 +434,64 @@ void wgGetTree::GetEntry(int i){
 }
 
 //************************************************************************
-float wgGetTree::GetStartTime(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("start_time");
-  float ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
+double wgGetTree::GetStartTime(){
+  TH1F* h=(TH1F*)wgGetTree::finput->Get("start_time");
+  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
 }
 
 //************************************************************************
-float wgGetTree::GetStopTime(){
+double wgGetTree::GetStopTime(){
   TH1F* h;
   h=(TH1F*)wgGetTree::finput->Get("stop_time");
-  float ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
+  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
 }
 
 //************************************************************************
-float wgGetTree::GetDataPacket(){
+double wgGetTree::GetDataPacket(){
   TH1F* h;
   h=(TH1F*)wgGetTree::finput->Get("nb_data_pkts");
-  float ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
+  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
 }
 
 //************************************************************************
-float wgGetTree::GetLostPacket(){
+double wgGetTree::GetLostPacket(){
   TH1F* h;
   h=(TH1F*)wgGetTree::finput->Get("nb_lost_pkts");
-  float ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
+  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
 }
 
 //************************************************************************
 TH1F* wgGetTree::GetHist_StartTime(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("start_time");
-  return h;
+  if (BranchExists("start_time"))
+	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("start_time"));
+  else return NULL;
 }
 
 //************************************************************************
 TH1F* wgGetTree::GetHist_StopTime(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("stop_time");
-  return h;
+  if (BranchExists("stop_time"))
+	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("stop_time"));
+  else return NULL;
 }
 
 //************************************************************************
 TH1F* wgGetTree::GetHist_DataPacket(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("nb_data_pkts");
-  return h;
+  if (BranchExists("nb_data_pkts"))
+	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("nb_data_pkts"));
+  else return NULL;
 }
 
 //************************************************************************
 TH1F* wgGetTree::GetHist_LostPacket(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("nb_lost_pkts");
-  return h;
+  if (BranchExists("nb__pktlosts"))
+	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("nb_lost_pkts"));
+  else return NULL;
 }
