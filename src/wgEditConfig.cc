@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdint>
+#include <exception>
 
 #include <bits/stdc++.h>
 #include <math.h>
@@ -13,6 +14,7 @@
 
 #include "Const.h"
 #include "wgEditConfig.h"
+#include "wgTools.h"
 
 using namespace std;
 
@@ -94,16 +96,18 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
 void wgEditConfig::Open(const string& input){
   string str;
   ifstream ifs(input.c_str());
-  getline(ifs,str);
-  if(str.size()!= 300){printf("[wgEditConfig::Open] Error! Bad word number!!"); return;}
-  wgEditConfig::hex_config = str.substr(2,298);
+  getline(ifs, str);
+  if( str.size() != BITSTREAM_HEX_STRING_LENGTH)
+	throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + to_string(input.size()));
+  wgEditConfig::hex_config = str.substr(2, BITSTREAM_HEX_STRING_LENGTH - 2);
   wgEditConfig::bi_config = this->HexToBi(wgEditConfig::hex_config);
 }
 
 //*********************************************************************************
-void wgEditConfig::SetBitstream(string& input){
-  if(input.size()!= 300-1){printf("[wgEditConfig::Open] Error! Bad word number!!"); return;}
-  wgEditConfig::hex_config = input.substr(2,297) + "0";
+void wgEditConfig::SetBitstream(const string& input){
+  if( input.size() != BITSTREAM_HEX_STRING_LENGTH - 1)
+	throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + to_string(input.size()));
+  wgEditConfig::hex_config = input.substr(2, BITSTREAM_HEX_STRING_LENGTH - 3) + "0";
   wgEditConfig::bi_config = this->HexToBi(wgEditConfig::hex_config);
 }
 
@@ -134,9 +138,10 @@ void wgEditConfig::Clear(){
 }
 
 //*********************************************************************************
-string wgEditConfig::GetValue(int ini,int length){
-  if(ini+length>1192){return NULL;}
-  return wgEditConfig::bi_config.substr(ini+6,length);
+string wgEditConfig::GetValue(int start, int length) {
+  if(start + length > BITSTREAM_BIN_STRING_LENGTH)
+	throw std::invalid_argument("[wgEditConfig::GetValue] reached the edge of the bitstring string (start = " + to_string(start) + ", length = " + to_string(length));
+  return wgEditConfig::bi_config.substr(start + VALUE_OFFSET_IN_BITS, length);
 }
 
 //*********************************************************************************
@@ -148,13 +153,13 @@ void wgEditConfig::CheckAll(){
   int ini,length;
   for(int i=0;i<85;i++){
     name = csv[i*5];
-    length = atoi(csv[i*5+1].c_str());
-    ini = atoi(csv[i*5+3].c_str()) ;
+    length = stoi(csv[i*5+1].c_str());
+    ini = stoi(csv[i*5+3].c_str()) ;
     if(length%36==0){
-      int chbit = length/36;
+      int chanbit = length/36;
       cout << name << " / ";
-      for(int ch=0;ch<36;ch++){
-        value = this->GetValue(ini+ch*chbit,chbit);
+      for(int chan=0;chan<36;chan++){
+        value = this->GetValue(ini+chan*chanbit,chanbit);
         cout << "[" << value << "],";
       }
       cout << endl;
@@ -166,35 +171,34 @@ void wgEditConfig::CheckAll(){
 }
 
 //*********************************************************************************
-string wgEditConfig::HexToBi(string& input){
+string wgEditConfig::HexToBi(const string& input){
   string output("");
-  for(unsigned int i=0;i<input.size();i++){
-    string word = input.substr(i,1); 
-    if(word=="0") output = "0000" + output;
-    if(word=="1") output = "1000" + output;
-    if(word=="2") output = "0100" + output;
-    if(word=="3") output = "1100" + output;
-    if(word=="4") output = "0010" + output;
-    if(word=="5") output = "1010" + output;
-    if(word=="6") output = "0110" + output;
-    if(word=="7") output = "1110" + output;
-    if(word=="8") output = "0001" + output;
-    if(word=="9") output = "1001" + output;
-    if(word=="A"||word=="a") output = "0101" + output;
-    if(word=="B"||word=="b") output = "1101" + output;
-    if(word=="C"||word=="c") output = "0011" + output;
-    if(word=="D"||word=="d") output = "1011" + output;
-    if(word=="E"||word=="e") output = "0111" + output;
-    if(word=="F"||word=="f") output = "1111" + output;
+  for(const char& c : input) {
+    if(c=='0')         output += "0000";
+    if(c=='1')         output += "1000";
+    if(c=='2')         output += "0100";
+    if(c=='3')         output += "1100";
+    if(c=='4')         output += "0010";
+    if(c=='5')         output += "1010";
+    if(c=='6')         output += "0110";
+    if(c=='7')         output += "1110";
+    if(c=='8')         output += "0001";
+    if(c=='9')         output += "1001";
+    if(c=='A'||c=='a') output += "0101";
+    if(c=='B'||c=='b') output += "1101";
+    if(c=='C'||c=='c') output += "0011";
+    if(c=='D'||c=='d') output += "1011";
+    if(c=='E'||c=='e') output += "0111";
+    if(c=='F'||c=='f') output += "1111";
   } 
   return output;
 }
 
 //*********************************************************************************
-string wgEditConfig::BiToHex(string& input){
+string wgEditConfig::BiToHex(const string& input){
   string output("");
-  if(input.size()%4!=0) return output;
-  for(unsigned int i=input.size();i>3;i=i-4){
+  if(input.size() % 4 != 0) return output;
+  for(unsigned i = input.size(); i > 3; i -= 4) {
     string word = input.substr(i-4,4); 
     if(word=="0000") output += "0";
     if(word=="1000") output += "1";
@@ -217,17 +221,15 @@ string wgEditConfig::BiToHex(string& input){
 }
 
 //*********************************************************************************
-string wgEditConfig::BiToDe(string& input){
-  string output("");
+string wgEditConfig::BiToDe(const string& input){
   string word;
   int decimal=0;
   
   for(unsigned int i=0; i<input.size(); i++){
     word = input.substr(input.size()-1-i,1);
-    decimal += atoi(word.c_str()) * pow(2,i);
+    decimal += stoi(word.c_str()) * pow(2,i);
   } 
-  output=Form("%d",decimal);
-  return output;
+  return to_string(decimal);
 }
 
 //*********************************************************************************
@@ -248,16 +250,16 @@ string wgEditConfig::DeToBi(const string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_inputDAC(int ch,int value,int mode){
-  if(ch <0 || ch>36){printf("WARNING! ch is out of range!\n"); return;}
+void wgEditConfig::Change_inputDAC(int chan,int value,int mode){
+  if(chan <0 || chan>36){printf("WARNING! chan is out of range!\n"); return;}
   string num;
 
   if(mode==1 && this->Read_MPPCData){
-    if(value+fine_inputDAC[ch]>255){
+    if(value+fine_inputDAC[chan]>255){
       printf("WARNING! value is out of range! set 0\n");
       num = Form("%d",255);
     }else{
-      num = Form("%d",value+this->fine_inputDAC[ch]);
+      num = Form("%d",value+this->fine_inputDAC[chan]);
     }
 
   }else if(mode==1 && !this->Read_MPPCData){
@@ -274,47 +276,47 @@ void wgEditConfig::Change_inputDAC(int ch,int value,int mode){
   }
 
   num = DeToBi(num);
-  num = Form("%08d1",atoi(num.c_str()));
-  if(ch==36){
-    for(int ich=0;ich<36;ich++){
-      this->Modify(num,37+ich*9);
+  num = Form("%08d1",stoi(num.c_str()));
+  if(chan==36){
+    for(int ichan=0;ichan<36;ichan++){
+      this->Modify(num,37+ichan*9);
     }
   }else{
-    this->Modify(num,37+ch*9);
+    this->Modify(num,37+chan*9);
   }
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_ampDAC(int ch,int value){
+void wgEditConfig::Change_ampDAC(int chan,int value){
   if(value <0 || value>63){printf("WARNING! value is out of range!\n"); return;}
-  if(ch <0 || ch>36){printf("WARNING! ch is out of range!\n"); return;}
+  if(chan <0 || chan>36){printf("WARNING! chan is out of range!\n"); return;}
   string num;
   num = Form("%d",value);
   num = DeToBi(num);
-  num = Form("%06d%06d000",atoi(num.c_str()),atoi(num.c_str()));
-  if(ch==36){
-    for(int ich=0;ich<36;ich++){
-      this->Modify(num,367+ich*15);
+  num = Form("%06d%06d000",stoi(num.c_str()),stoi(num.c_str()));
+  if(chan==36){
+    for(int ichan=0;ichan<36;ichan++){
+      this->Modify(num,367+ichan*15);
     }
   }else{
-    this->Modify(num,367+ch*15);
+    this->Modify(num,367+chan*15);
   }
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_trigadj(int ch,int value){
+void wgEditConfig::Change_trigadj(int chan,int value){
   if(value <0 || value>15){printf("WARNING! value is out of range!\n"); return;}
-  if(ch <0 || ch>36){printf("WARNING! ch is out of range!\n"); return;}
+  if(chan <0 || chan>36){printf("WARNING! chan is out of range!\n"); return;}
   string num;
   num = Form("%d",value);
   num = DeToBi(num);
-  num = Form("%04d",atoi(num.c_str()));
-  if(ch==36){
-    for(int ich=0;ich<36;ich++){
-      this->Modify(num,1006+ich*4);
+  num = Form("%04d",stoi(num.c_str()));
+  if(chan==36){
+    for(int ichan=0;ichan<36;ichan++){
+      this->Modify(num,1006+ichan*4);
     }
   }else{
-    this->Modify(num,1006+ch*4);
+    this->Modify(num,1006+chan*4);
   }
 }
 
@@ -324,7 +326,7 @@ void wgEditConfig::Change_trigth(int value){
   string num;
   num = Form("%d",value);
   num = DeToBi(num);
-  num = Form("%010d",atoi(num.c_str()));
+  num = Form("%010d",stoi(num.c_str()));
   this->Modify(num,931);
 }
 
@@ -334,51 +336,39 @@ void wgEditConfig::Change_gainth(int value){
   string num;
   num = Form("%d",value);
   num = DeToBi(num);
-  num = Form("%010d",atoi(num.c_str()));
+  num = Form("%010d",stoi(num.c_str()));
   this->Modify(num,941);
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_inputDAC(int ch){
-  if(ch <0 || ch>35){printf("WARNING! ch is out of range!\n"); return 0;}
-  string num("");
-  num = GetValue(37+ch*9,8);
-  num = BiToDe(num);
-  return atoi(num.c_str());
+int wgEditConfig::Get_inputDAC(int chan){
+  if( chan < 0 || chan >= NCHANNELS)
+	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
+  return stoi( BiToDe( GetValue(ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET, ADJ_INPUTDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_ampDAC(int ch){
-  if(ch <0 || ch>35){printf("WARNING! ch is out of range!\n"); return 0;}
-  string num("");
-  num = GetValue(367+ch*15,6);
-  num = BiToDe(num);
-  return atoi(num.c_str());
+int wgEditConfig::Get_ampDAC(int chan){
+  if( chan < 0 || chan >= NCHANNELS)
+	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
+  return stoi( BiToDe( GetValue(ADJ_AMPDAC_START + chan * ADJ_AMPDAC_OFFSET, ADJ_AMPDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_trigadj(int ch){
-  if(ch <0 || ch>35){printf("WARNING! ch is out of range!\n"); return 0;}
-  string num("");
-  num = GetValue(1006+ch*4,4);
-  num = BiToDe(num);
-  return atoi(num.c_str());
+int wgEditConfig::Get_trigadj(int chan){
+  if( chan < 0 || chan >= NCHANNELS)
+	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
+  return stoi( BiToDe( GetValue(ADJ_THRESHOLD_START + chan * ADJ_THRESHOLD_OFFSET, ADJ_THRESHOLD_LENGTH ) ) );
 }
 
 //*********************************************************************************
 int wgEditConfig::Get_trigth(){
-  string num("");
-  num = GetValue(931,10);
-  num = BiToDe(num);
-  return atoi(num.c_str());
+  return std::stoi( BiToDe ( GetValue(GLOBAL_THRESHOLD_START, GLOBAL_THRESHOLD_LENGTH ) ) );
 }
 
 //*********************************************************************************
 int wgEditConfig::Get_gainth(){
-  string num("");
-  num = GetValue(941,10);
-  num = BiToDe(num);
-  return atoi(num.c_str());
+  return stoi( BiToDe( GetValue( GLOBAL_GS_THRESHOLD_START, GLOBAL_GS_THRESHOLD_LENGTH ) ) );
 }
 
 //*********************************************************************************
@@ -386,7 +376,7 @@ void wgEditConfig::Change_1bitparam(int value,int subadd){
   string num;
   num = Form("%d",value);
   num = DeToBi(num);
-  num = Form("%d",atoi(num.c_str()));
+  num = Form("%d",stoi(num.c_str()));
   this->Modify(num,subadd);
 }
 
@@ -395,5 +385,5 @@ int wgEditConfig::Get_1bitparam(int subadd){
   string num("");
   num = GetValue(subadd,1);
   num = BiToDe(num);
-  return atoi(num.c_str());
+  return stoi(num.c_str());
 }

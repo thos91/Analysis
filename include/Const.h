@@ -34,12 +34,45 @@
 #define NON_BEAM_SPILL 0 // non beam spill bit (spill_flag)
 #define BEAM_SPILL     1 // beam spill bit (spill_flag)
 
-#define HIT_BIT        1 // there was a hit (over threshold)
-#define NO_HIT_BIT     0 // there was no hit (under threshold)
-#define HIGH_GAIN_BIT  1 // high gain bit (gs)
-#define LOW_GAIN_BIT   0 // low gain bit (gs)
-#define HIGH_GAIN_NORM 1.08
-#define LOW_GAIN_NORM  10.8
+// ============ wgEditXML MACROS ============== //
+
+#define CREATE_NEW_MODE 1
+
+// ============ SPIROC2D MACROS ============== //
+
+#define HIT_BIT        1    // there was a hit (over threshold)
+#define NO_HIT_BIT     0    // there was no hit (under threshold)
+#define HIGH_GAIN_BIT  1    // high gain bit (gs)
+#define LOW_GAIN_BIT   0    // low gain bit (gs)
+#define HIGH_GAIN_NORM 1.08 // Normalization for the high gain
+#define LOW_GAIN_NORM  10.8 // Normalization for the low gain
+
+#define BITSTREAM_HEX_STRING_LENGTH 300  // length of the bitstream hex string
+#define BITSTREAM_BIN_STRING_LENGTH 1192 // length of the bitstream bin string
+#define VALUE_OFFSET_IN_BITS 6           // offset in bits before a parameter start
+
+#define GLOBAL_THRESHOLD_INDEX      0
+#define GLOBAL_THRESHOLD_START      931  // global 10-bit threshold
+#define GLOBAL_THRESHOLD_LENGTH     10   // global 10-bit threshold
+
+#define GLOBAL_GS_INDEX             1
+#define GLOBAL_GS_THRESHOLD_START   941  // global 10-bit gain selection threshold
+#define GLOBAL_GS_THRESHOLD_LENGTH  10   // global 10-bit gain selection threshold
+
+#define ADJ_INPUTDAC_INDEX          2
+#define ADJ_INPUTDAC_START          37   // adjustable 8-bit input DAC
+#define ADJ_INPUTDAC_LENGTH         8    // adjustable 8-bit input DAC
+#define ADJ_INPUTDAC_OFFSET         9    // adjustable 8-bit input DAC
+
+#define ADJ_AMPDAC_INDEX            3
+#define ADJ_AMPDAC_START            367  // adjustable 6-bit high gain (HG) preamp
+#define ADJ_AMPDAC_LENGTH           6    // adjustable 6-bit high gain (HG) preamp
+#define ADJ_AMPDAC_OFFSET           15   // adjustable 6-bit high gain (HG) preamp
+
+#define ADJ_THRESHOLD_INDEX         4
+#define ADJ_THRESHOLD_START         1006 // adjustable 4-bit threshold
+#define ADJ_THRESHOLD_LENGTH        4    // adjustable 4-bit threshold
+#define ADJ_THRESHOLD_OFFSET        4    // adjustable 4-bit threshold
 
 using namespace std;
 
