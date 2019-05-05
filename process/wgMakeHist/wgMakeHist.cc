@@ -30,7 +30,7 @@ void print_help(const char * program_name) {
 	"usage example: " << program_name << " -f inputfile.raw -r\n"
 	"  -h         : help\n"
 	"  -f (char*) : input ROOT file (mandatory)\n"
-	"  -o (char*) : output directory (default = WAGSASCI_HISTDIR)\n"
+	"  -o (char*) : output directory (default = WAGASCI_HISTDIR)\n"
 	"  -r         : overwrite mode\n";
   exit(0);
 }
@@ -40,6 +40,7 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
 int main(int argc, char** argv) {
 
   CheckExist check;
+  OperateString OptStr;
 
   // Get environment variables
   wgConst con;
@@ -57,19 +58,18 @@ int main(int argc, char** argv) {
 	  inputFileName=optarg;
 	  if(!check.RootFile(inputFileName)){ 
 		cout<<"!!Error!! "<<inputFileName.c_str()<<"is wrong!!";
-		Log.eWrite(Form("Error!!target:%s is wrong",inputFileName.c_str()));
+		Log.eWrite(Form("Error!!target:%s is wrong",OptStr.GetName(inputFileName).c_str()));
 		return 1;
 	  }
 	  cout << "== readfile :" << inputFileName.c_str() << " ==" << endl;
-	  Log.Write(Form("[%s][wgMakeHist]start wgMakeHist",inputFileName.c_str()));
+	  Log.Write(Form("[%s][wgMakeHist] start wgMakeHist",OptStr.GetName(inputFileName).c_str()));
 	  break;
 	case 'o':
 	  outputDir = optarg;
 	  break;
 	case 'r':
 	  overwrite = true;
-	  cout << "== mode : overwrite  ==" << endl;
-	  Log.Write(Form("[%s][wgMakeHist] overwrite mode",inputFileName.c_str()));
+	  Log.Write(Form("[%s][wgMakeHist] overwrite mode",OptStr.GetName(inputFileName).c_str()));
 	  break;
 	case 'h':
 	  print_help(argv[0]);
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
   }
 
   if(inputFileName == ""){
-    Log.eWrite("[Decoder] No input file");
+    Log.eWrite("[wgMakeHist] No input file");
     exit(1);
   }
 
@@ -97,11 +97,11 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   int pos             = logfilename.rfind("_ecal_dif_") ;
   string logfile      = OptStr.GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
 
-#ifndef DEBUG_MAKEHIST
-  Log.Write("[" + logfilename + "][wgMakeHist] *****  READING FILE     :" + inputFileName      + "  *****");
-  Log.Write("[" + logfilename + "][wgMakeHist] *****  OUTPUT HIST FILE :" + outputHistFileName + "  *****");
-  Log.Write("[" + logfilename + "][wgMakeHist] *****  OUTPUT DIRECTORY :" + outputDir          + "  *****");
-  Log.Write("[" + logfilename + "][wgMakeHist] *****  LOG FILE         :" + logfilename        + "  *****");
+#ifdef DEBUG_MAKEHIST
+  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  READING FILE     : " + OptStr.GetName(inputFileName)      + "  *****");
+  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  OUTPUT HIST FILE : " + OptStr.GetName(outputHistFileName) + "  *****");
+  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  OUTPUT DIRECTORY : " + outputDir                          + "  *****");
+  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  LOG FILE         : " + OptStr.GetName(logfilename)        + "  *****");
 #endif
   
   TFile * outputHistFile;
@@ -175,7 +175,7 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
 	GetTree = new wgGetTree( inputFileName, rd ); 
   }
   catch (const exception& e) {
-	Log.eWrite("[" + inputFileName + "][wgMakeHist] failed to get the TTree : " + string(e.what()));
+	Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] failed to get the TTree : " + string(e.what()));
 	exit(1);
   }
   TH1F * start_time;
@@ -188,10 +188,10 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   nb_lost_pkts = GetTree->GetHist_LostPacket();
 
   TTree * tree = GetTree->tree_in;
-  float max_spill = tree->GetMaximum("spill");
-  float min_spill = tree->GetMinimum("spill");
+  double max_spill = tree->GetMaximum("spill");
+  double min_spill = tree->GetMinimum("spill");
   if(min_spill < 0) {
-    Log.eWrite("[" + inputFileName + "][wgMakeHist] some spill value is missed : min_spill = " + to_string(min_spill));
+    Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] some spill value is missed : min_spill = " + to_string(min_spill));
   }
 
   outputHistFile->cd();
@@ -204,7 +204,7 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
 
   for(ievent=0; ievent < n_events; ievent++){
     if ( ievent % 1000 == 0 )
-	  Log.Write("Event number = " + to_string(ievent) + " / " + to_string(n_events));
+	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] Event number = " + to_string(ievent) + " / " + to_string(n_events));
 	// Read one event
     tree->GetEntry(ievent);
 	// Fill the spill histogram with using the spill_flag as a weight.
@@ -221,7 +221,7 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
       int ichip = rd.chipid[i];
 #ifdef DEBUG_MAKEHIST
 	  if (ichip != rd.chipid[i])
-		Log.Write("[" + inputFileName + "][wgMakeHist] event " + to_string(ievent) + " : chipid[" + to_string(i) + "] = " + to_string(rd.chipid[i])); 
+		Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] event " + to_string(ievent) + " : chipid[" + to_string(i) + "] = " + to_string(rd.chipid[i])); 
 #endif
 	  // COLUMNS loop
 	  for(size_t icol = 0; icol < MEMDEPTH; icol++) {
@@ -242,7 +242,7 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
               //h_charge_hit_LG[ichip][ich][icol]->Fill(rd.charge[i][ich][icol]);
             }
 #ifdef DEBUG_MAKEHIST	
-			else Log.Write("[" + inputFileName + "][wgMakeHist] event " + to_string(ievent) + " : bad gain bit = " + to_string(rd.gs[i][ich][icol] ));
+			else Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] event " + to_string(ievent) + " : bad gain bit = " + to_string(rd.gs[i][ich][icol] ));
 #endif	  
           }
 		  // NO HIT
@@ -259,22 +259,23 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
 			
   outputHistFile->cd();
 
-  start_time   -> Write();
-  stop_time    -> Write();
-  nb_data_pkts -> Write();
-  nb_lost_pkts -> Write();
-  h_spill->Write();
+  // In some old runs the time and data packets info is not recorded
+  if (start_time != NULL) start_time-> Write();
+  if (stop_time != NULL) stop_time-> Write();
+  if (nb_data_pkts != NULL) nb_data_pkts-> Write();
+  if (nb_lost_pkts != NULL) nb_lost_pkts-> Write();
+  if (h_spill != NULL) h_spill->Write();
   for (size_t ichip = 0; ichip < n_chips; ichip++) {
     for (size_t ichan = 0; ichan < n_channels; ichan++) {
-      h_bcid_hit[ichip][ichan]->Write();
+      if (h_bcid_hit != NULL) h_bcid_hit[ichip][ichan]->Write();
       for (size_t icol = 0; icol < MEMDEPTH; icol++) {
-		h_charge_hit   [ichip][ichan][icol]->Write();
-        h_charge_hit_HG[ichip][ichan][icol]->Write();
-		h_charge_hit_LG[ichip][ichan][icol]->Write();
-		h_pe_hit       [ichip][ichan][icol]->Write();
-		h_charge_nohit [ichip][ichan][icol]->Write();
-        h_time_hit     [ichip][ichan][icol]->Write();
-        h_time_nohit   [ichip][ichan][icol]->Write();
+		if (h_charge_hit != NULL)    h_charge_hit   [ichip][ichan][icol]->Write();
+        if (h_charge_hit_HG != NULL) h_charge_hit_HG[ichip][ichan][icol]->Write();
+		if (h_charge_hit_LG != NULL) h_charge_hit_LG[ichip][ichan][icol]->Write();
+		if (h_pe_hit != NULL)        h_pe_hit       [ichip][ichan][icol]->Write();
+		if (h_charge_nohit != NULL)  h_charge_nohit [ichip][ichan][icol]->Write();
+        if (h_time_hit != NULL)      h_time_hit     [ichip][ichan][icol]->Write();
+        if (h_time_nohit != NULL)    h_time_nohit   [ichip][ichan][icol]->Write();
       }
     }
   }
