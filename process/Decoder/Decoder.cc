@@ -273,7 +273,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
   wgChannelMap *Map = new wgChannelMap();
   {
 	vector<int> pln, ch, grid;
-	vector<float> x, y, z;
+	vector<double> x, y, z;
 	for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 	  wrapArrayInVector( rd.pln [ichip].data(), rd.pln [ichip].size(), pln );
 	  wrapArrayInVector( rd.ch  [ichip].data(), rd.ch  [ichip].size(), ch  );
@@ -395,7 +395,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
   }
   else Log.eWrite("LOGFILE:" + logfile + " doesn't exist!");
 
-  // gInterpreter->GenerateDictionary("vector<float>", "vector");
+  // gInterpreter->GenerateDictionary("vector<double>", "vector");
   // gInterpreter->GenerateDictionary("vector<int>", "vector");
 
   TTree * tree = new TTree("tree", "ROOT tree containing decoded data");

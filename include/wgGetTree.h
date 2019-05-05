@@ -32,12 +32,12 @@ public:
   void GetEntry(int);
 
   // The difference between Get...(something) and GetHist...(something) is that
-  // in the former the center of the maximum bin is returned as a float while in
+  // in the former the center of the maximum bin is returned as a double while in
   // the latter the entire TH1F is returned.
-  float GetStartTime();
-  float GetStopTime();
-  float GetDataPacket();
-  float GetLostPacket();
+  double GetStartTime();
+  double GetStopTime();
+  double GetDataPacket();
+  double GetLostPacket();
   TH1F* GetHist_StartTime();
   TH1F* GetHist_StopTime();
   TH1F* GetHist_DataPacket();

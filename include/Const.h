@@ -88,10 +88,10 @@ const uint16_t NCHIPS     = NumChip;
 const uint16_t NCHIPSSMRD = NumChipSMRD;
 
 //define data fomat
-typedef vector<vector<vector<vector<float>>>> f4vector;
-typedef Contiguous3Vector<float> f3vector;
-typedef Contiguous2Vector<float> f2vector;
-typedef vector<float> fvector;
+typedef vector<vector<vector<vector<double>>>> f4vector;
+typedef Contiguous3Vector<double> f3vector;
+typedef Contiguous2Vector<double> f2vector;
+typedef vector<double> fvector;
 typedef vector<vector<vector<vector<int>>>> i4vector;
 typedef Contiguous3Vector<int> i3vector;
 typedef Contiguous2Vector<int> i2vector;
@@ -159,15 +159,15 @@ public:
   int    hit_adc         [MAX_NUM_HIT];
   int    hit_gs          [MAX_NUM_HIT];
   int    hit_tdc         [MAX_NUM_HIT];
-  float hit_pe          [MAX_NUM_HIT];
-  float hit_time        [MAX_NUM_HIT];
-  float hit_pe_permm    [MAX_NUM_HIT];
-  float hit_cos         [MAX_NUM_HIT];
-  float hit_pathlength  [MAX_NUM_HIT];
+  double hit_pe          [MAX_NUM_HIT];
+  double hit_time        [MAX_NUM_HIT];
+  double hit_pe_permm    [MAX_NUM_HIT];
+  double hit_cos         [MAX_NUM_HIT];
+  double hit_pathlength  [MAX_NUM_HIT];
   bool   hit_ontrack     [MAX_NUM_HIT];
   bool   hit_grid        [MAX_NUM_HIT];
   int    hit_numtrack    [MAX_NUM_HIT];
-  float hit_cluster_pe  [MAX_NUM_HIT];
+  double hit_cluster_pe  [MAX_NUM_HIT];
 
   void Clear();
 };

@@ -69,7 +69,7 @@ public:
   bool ChipchToMPPCch(const int chip_ch, string& mppc_ch);
   bool GetViewPlnCh(const int dif_id, const int chip_id, const int chip_ch, int& view, int& pln, int& ch, int& grid);
   bool GetMPPCPlnCh(string mppc_ch, int view, int& pln, int& ch, int& grid);
-  bool GetXYZ(int view, int pln, int ch, float& x, float& y, float& z);
+  bool GetXYZ(int view, int pln, int ch, double& x, double& y, double& z);
   bool GetChipAlloc(const int dif_id, const int chip_id, int& id_z, int& id_xy);
   bool GetMap(const int dif_id, const int chip_id, int& view, ivector& pln, ivector& ch, ivector& grid, fvector& x, fvector& y, fvector& z);
 
