@@ -10,103 +10,94 @@
 
 using namespace std;
 
-TH1F* h_charge;
-TH1F* h_charge_hit_HG;
-TH1F* h_charge_hit_LG;
-TH1F* h_charge_nohit;
-TH1F* h_time_hit;
-TH1F* h_time_nohit;
-TH1F* h_bcid;
-TH1F* h_pe;
-TH1F* h_spill;
-
 //************************************************************************
-wgGetHist::wgGetHist()
-{
-}
-
-//************************************************************************
-wgGetHist::wgGetHist(const string& str){
-  this->SetHistFile(str);
+wgGetHist::wgGetHist(const string& str) {
+  CheckExist Check;
+  if ( !Check.RootFile(str) ) throw wgInvalidFile("[" + str + "][SetHistFile] failed to set histogram file");
+    try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
+  catch (const exception& e) {
+	Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + string(e.what()));
+	throw;
+  }
 }
 
 //************************************************************************
 wgGetHist::~wgGetHist(){
+  this->clear();
   freadhist->Close();
 }
 
 //************************************************************************
-bool wgGetHist::SetHistFile(const string& str){
-  CheckExist Check;
-  wgGetHist::finputname = str;
-  if ( !Check.RootFile(str) ) {
-	Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file");
-	return false;
-  }
-  try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
-  catch (const exception& e) {
-	Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + string(e.what()));
-	return false;
-  }
-  return true;
-}
-
 void wgGetHist::clear(){  
-  if(h_charge) delete h_charge; 
+  if(h_charge_hit) delete h_charge_hit; 
   if(h_charge_hit_HG) delete h_charge_hit_HG; 
   if(h_charge_hit_LG) delete h_charge_hit_LG;  
   if(h_charge_nohit) delete h_charge_nohit;  
   if(h_time_hit) delete h_time_hit; 
   if(h_time_nohit) delete h_time_nohit;  
-  if(h_bcid) delete h_bcid;  
-  if(h_pe) delete h_pe;  
+  if(h_bcid_hit) delete h_bcid_hit;  
+  if(h_pe_hit) delete h_pe_hit;  
   if(h_spill) delete h_spill;  
   if(c1) delete c1;
-
 }
 
 //************************************************************************
 void wgGetHist::Get_charge_hit_HG(unsigned int i,unsigned int j,unsigned int k){
-  h_charge_hit_HG=(TH1F*)freadhist->Get(Form("charge_hit_HG_chip%d_ch%d_col%d",i,j,k));
+  if (h_charge_hit_HG != NULL) delete h_charge_hit_HG;
+  h_charge_hit_HG=(TH1F*)freadhist->Get(Form("charge_hit_HG_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_charge_hit_LG(unsigned int i,unsigned int j,unsigned int k){
-  h_charge_hit_LG=(TH1F*)freadhist->Get(Form("charge_hit_LG_chip%d_ch%d_col%d",i,j,k));
+  if (h_charge_hit_LG != NULL ) delete h_charge_hit_LG; 
+  h_charge_hit_LG=(TH1F*)freadhist->Get(Form("charge_hit_LG_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_charge_nohit(unsigned int i,unsigned int j,unsigned int k){
-  h_charge_nohit=(TH1F*)freadhist->Get(Form("charge_nohit_chip%d_ch%d_col%d",i,j,k));
+   if (h_charge_nohit != NULL ) delete h_charge_nohit;
+  h_charge_nohit=(TH1F*)freadhist->Get(Form("charge_nohit_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_time_hit(unsigned int i,unsigned int j,unsigned int k){
-  h_time_hit=(TH1F*)freadhist->Get(Form("time_hit_chip%d_ch%d_col%d",i,j,k));
+   if (h_time_hit != NULL ) delete h_time_hit;
+  h_time_hit=(TH1F*)freadhist->Get(Form("time_hit_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_time_nohit(unsigned int i,unsigned int j,unsigned int k){
-  h_time_nohit=(TH1F*)freadhist->Get(Form("time_nohit_chip%d_ch%d_col%d",i,j,k));
+   if (h_time_nohit != NULL ) delete h_time_nohit;
+  h_time_nohit=(TH1F*)freadhist->Get(Form("time_nohit_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
-void wgGetHist::Get_charge(unsigned int i,unsigned int j){
-  h_charge=(TH1F*)freadhist->Get(Form("charge_chip%d_ch%d",i,j));
+void wgGetHist::Get_charge_hit(unsigned int i,unsigned int j){
+   if (h_charge_hit != NULL ) delete h_charge_hit;
+  h_charge_hit = (TH1F*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col0",i,j));
+  for (unsigned k = 1; k < MEMDEPTH; k++) {
+	  h_charge_hit->Add((TH1F*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col%u",i,j,k)));
+  }
 }
 
 //************************************************************************
-void wgGetHist::Get_bcid(unsigned int i,unsigned int j){
-  h_bcid=(TH1F*)freadhist->Get(Form("bcid_chip%d_ch%d",i,j));
+void wgGetHist::Get_bcid_hit(unsigned int i,unsigned int j){
+  if (h_bcid_hit != NULL) delete h_bcid_hit;
+  h_bcid_hit=(TH1F*)freadhist->Get(Form("bcid_hit_chip%u_ch%u",i,j));
 }
 
 //************************************************************************
-void wgGetHist::Get_pe(unsigned int i,unsigned int j){
-  h_pe=(TH1F*)freadhist->Get(Form("pe_chip%d_ch%d",i,j));
+void wgGetHist::Get_pe_hit(unsigned int i,unsigned int j){
+   if (h_pe_hit != NULL ) delete h_pe_hit;
+  h_pe_hit = (TH1F*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col0",i,j));
+  for (unsigned k = 1; k < MEMDEPTH; k++) {
+	h_pe_hit->Add((TH1F*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col%u",i,j,k)));
+  }
 }
 
 //************************************************************************
 void wgGetHist::Get_spill(){
+   if (h_spill != NULL ) delete h_spill;
   h_spill=(TH1F*)freadhist->Get(Form("spill"));
 }
 
@@ -119,7 +110,7 @@ void wgGetHist::Make_Canvas(int opt=0){
 //************************************************************************
 void wgGetHist::Print_charge(const char* h_name,const char* option="", int opt=0){
   this->Make_Canvas(opt);
-  h_charge->Draw(option);
+  h_charge_hit->Draw(option);
   c1->Print(h_name); 
 }
 
@@ -161,14 +152,14 @@ void wgGetHist::Print_time_nohit(const char* h_name,const char* option="", int o
 //************************************************************************
 void wgGetHist::Print_bcid(const char* h_name,const char* option="", int opt=0){
   this->Make_Canvas(opt);
-  h_bcid->Draw(option);
+  h_bcid_hit->Draw(option);
   c1->Print(h_name); 
 }
 
 //************************************************************************
 void wgGetHist::Print_pe(const char* h_name,const char* option="", int opt=0){
   this->Make_Canvas(opt);
-  h_pe->Draw(option);
+  h_pe_hit->Draw(option);
   c1->Print(h_name); 
 }
 
