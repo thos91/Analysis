@@ -11,6 +11,7 @@
 #include "wgEditConfig.h"
 #include "wgErrorCode.h"
 #include "wgExceptions.h"
+#include "wgTools.h"
 
 using namespace std;
 using namespace tinyxml2;
@@ -24,19 +25,18 @@ void wgEditXML::Write(){
 
 //**********************************************************************
 void wgEditXML::Open(const string& filename){
-  CheckExist * Check = new CheckExist;
-  if(!Check->XmlFile(filename)){ cout << "Warning! "<< filename <<" doesn't match requirement!"<<endl; return; }
-  delete Check;
+  CheckExist Check;
+  if(!Check.XmlFile(filename)) throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
   wgEditXML::filename=filename; 
-  xml = new XMLDocument();
-  xml->LoadFile(filename.c_str());
+  wgEditXML::xml = new XMLDocument();
+  XMLError eResult = wgEditXML::xml->LoadFile(filename.c_str());
+  if (eResult != tinyxml2::XML_SUCCESS) throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
 }
 
 //**********************************************************************
 void wgEditXML::Close(){ 
   delete xml;
 }
-
 
 //**********************************************************************
 void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigned ichan){
@@ -102,56 +102,62 @@ void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigne
 }
 
 //**********************************************************************
-void wgEditXML::GetConfig(string& configxml,unsigned int n_dif,unsigned int ichip,vector<int>& v){
-  bool target=false;
-  string str("");
-  string bitstream("");
-  CheckExist *Check = new CheckExist;
-  if(!Check->XmlFile(configxml)){ cout << "Warning! "<< filename <<" doesn't match requirement!"<<endl; return; }
-  if(ichip > NCHIPS){ cout << "Error! ichip is too large!" <<endl; return; }
-  delete Check;
+bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const unsigned ichip, const unsigned n_chans, vector<vector<int>>& v) {
+  try {
+	bool found=false;
+	string bitstream("");
+	CheckExist Check;
 
-  XMLDocument *configfile = new XMLDocument();
-  configfile->LoadFile(configxml.c_str()); 
-  XMLElement* ecal = configfile->FirstChildElement("ecal");
-  XMLElement* domain = ecal->FirstChildElement("domain");
-  XMLElement* acqpc = domain->FirstChildElement("acqpc");
-  XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
-  for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif!=NULL; dif= dif->NextSiblingElement("dif")){
-    str = dif->Attribute("name");
-    if(str==Form("dif_1_1_%d",n_dif)){
-      for(XMLElement* asu = dif->FirstChildElement("asu"); asu!=NULL; asu= asu->NextSiblingElement("asu")){
-        str = asu->Attribute("name");
-        if(str==Form("asu_1_1_%d_%d",n_dif,ichip)){   
-          XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
-          for(XMLElement* param = spiroc2d->FirstChildElement("param"); param!=NULL; param= param->NextSiblingElement("param")){
-            str = param->Attribute("name");
-            if(str=="spiroc2d_bitstream"){
-              bitstream = param->GetText();
-              target=true;
-              break;
-            }
-          }
-        }else if(target){
-          break;
-        }
-      }
-    }
-  }
-  delete configfile; 
+	if(!Check.XmlFile(configxml))
+	  throw wgInvalidFile(filename + " wasn't found or is not valid");
+	if(ichip > NCHIPS)
+	  throw std::invalid_argument("ichip is greater than " + to_string(NCHIPS));
 
-  wgEditConfig *EditCon = new wgEditConfig();
-  v.clear();
-  EditCon->SetBitstream(bitstream);
-  for(int i=0;i<32;i++){
-    v.push_back(EditCon->Get_trigth());  
-    v.push_back(EditCon->Get_gainth());
-    v.push_back(EditCon->Get_inputDAC(i));
-    v.push_back(EditCon->Get_ampDAC(i));
-    v.push_back(EditCon->Get_ampDAC(i));
-    v.push_back(EditCon->Get_trigadj(i));
+	XMLDocument configfile;
+	configfile.LoadFile(configxml.c_str()); 
+	XMLElement* ecal = configfile.FirstChildElement("ecal");
+	XMLElement* domain = ecal->FirstChildElement("domain");
+	XMLElement* acqpc = domain->FirstChildElement("acqpc");
+	XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
+	// DIFs loop
+	for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
+	  if( string(dif->Attribute("name")) == "dif_1_1_" + to_string(idif) ) {
+		// ASUs loop
+		for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
+		  if( string(asu->Attribute("name")) == "asu_1_1_" + to_string(idif) + "_" + to_string(ichip) ) {
+			XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
+			// loop to find the spiroc2d_bitstream parameter
+			for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
+			  if( string(asu->Attribute("name")) == "spiroc2d_bitstream" ) {
+				bitstream = param->GetText();
+				found=true;
+				break;
+			  }
+			}
+		  }
+		  // If the bitstream was found exit the ASU loop
+		  else if (found) break;
+		}
+	  }
+	}
+	if (found == false) return false;
+
+	wgEditConfig EditCon;
+	v.clear();
+	EditCon.SetBitstream(bitstream);
+	for(unsigned i = 0; i < n_chans; i++) {
+	  v[i].push_back(EditCon.Get_trigth());  
+	  v[i].push_back(EditCon.Get_gainth());
+	  v[i].push_back(EditCon.Get_inputDAC(i));
+	  v[i].push_back(EditCon.Get_ampDAC(i));
+	  v[i].push_back(EditCon.Get_trigadj(i));
+	}
   }
-  delete EditCon;
+  catch (const exception& e) {
+	Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + to_string(idif) + ", chip = " + to_string(ichip) + " : " + string(e.what()));
+	return false;
+  }
+  return true;
 }
 
 //**********************************************************************
@@ -190,22 +196,21 @@ void wgEditXML::GetLog(const string& filename, vector<int>& v){
   }
   delete xml;
 }
+
 //**********************************************************************
-void wgEditXML::SetConfigValue(string& name,int value,int mode=0){
-  XMLElement* data = xml->FirstChildElement("data");
+void wgEditXML::SetConfigValue(const string& name, const int value, const int mode) {
+  XMLElement* data   = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
-  if(target){
-    target->SetText(Form("%d",value));
-  }else{
-    if(mode==1){
-      XMLElement* newElement = xml->NewElement(name.c_str());
-      newElement->SetText(value);
-      config->InsertEndChild(newElement);      
-    }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
-    }
+  if (target) {
+    target->SetText(to_string(value).c_str());
   }
+  else if(mode == CREATE_NEW_MODE) {
+	XMLElement* newElement = xml->NewElement(name.c_str());
+	newElement->SetText(value);
+	config->InsertEndChild(newElement);      
+  }
+  else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
 
 //**********************************************************************
