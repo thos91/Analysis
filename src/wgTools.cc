@@ -92,11 +92,6 @@ string OperateString::GetNameBeforeLastUnderBar(const string& str)
 //==================== Logger Class ====================//
 
 Logger Log;
-string Logger::m_fileName = "";
-string Logger::m_efileName = "";
-ofstream Logger::m_file;
-ofstream Logger::m_efile;
-TriState Logger::WhereToLog = BOTH;
 
 Logger::Logger() : Logger(string("")) {}
 
@@ -108,10 +103,9 @@ Logger::Logger(const string& log_dir)
 	string dir;
 	// If log_dir is empty try to infer it from the environment
 	if ( log_dir.empty() ) {
-	  wgConst *con = new wgConst();
-	  con->GetENV();
-	  dir = con->LOG_DIRECTORY;
-	  delete con;
+	  wgConst con;
+	  con.GetENV();
+	  dir = con.LOG_DIRECTORY;
 	} else dir = log_dir;
   
 	// If the log directory is not found, create it

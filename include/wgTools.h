@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 
@@ -44,7 +45,7 @@ typedef enum {
 class Logger
 {
 public:
-  static TriState WhereToLog;
+  TriState WhereToLog = BOTH;
   Logger();
   Logger(const string&);
   void Write(const string&);
@@ -52,10 +53,10 @@ public:
   ~Logger();
 protected:
   string m_printTime();
-  static string m_fileName;
-  static string m_efileName;
-  static ofstream m_file;
-  static ofstream m_efile;
+  string m_fileName;
+  string m_efileName;
+  ofstream m_file;
+  ofstream m_efile;
 };
 
 extern Logger Log;
