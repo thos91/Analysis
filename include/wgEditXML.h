@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "tinyxml2.h"
+#include "Const.h"
 
 using namespace tinyxml2;
 using namespace std;
@@ -43,6 +44,7 @@ public:
   // Opens and loads a XML file into the member "XMLDocument * xml". If an error
   // is encountered the wgInvalidFile exception is thrown.
   void Open(const string&);
+
   void Close();
   void Write();
 
@@ -69,44 +71,51 @@ public:
   // parameter called "name" to the int value "value".  If mode is
   // CREATE_NEW_MODE (=1), if the parameter name doesn't exist, it is
   // created. Otherwise a wgElementNotFound exception is thrown.
-  void SetConfigValue(const string&,int,int = 0);
-  void SetColValue(string&,int,double,int);
-  void SetChValue(string&,double,int);
-  void AddColElement(string&,int);
-  void AddChElement(string&);
-  double GetColValue(string&,int);
-  double GetChValue(string&);
-  int GetConfigValue(string&);
+  void SetConfigValue(const string& name, int value, int mode = NO_CREATE_NEW_MODE);
 
-  void SUMMARY_Make(string&,int);
-  void SUMMARY_SetGlobalConfigValue(string&,int,int);
-  void SUMMARY_SetChConfigValue(string&,int,int,int);
-  void SUMMARY_SetChFitValue(string&,double,int,int);
+  void SetColValue(const string&,int,double,int);
+  void SetChValue(const string&,double,int);
+  void AddColElement(const string&,int);
+  void AddChElement(const string&);
+  double GetColValue(const string&,int);
+
+  // wgEditXML::SetChValue
+  // insert a child element in the data/ch field with name "name" and value
+  // "value". If the mode is NO_CREATE_NEW_MODE, a new element is not
+  // created. If the mode is CREATE_NEW_MODE a new element is created if it
+  // didn't exist.
+  double GetChValue(const string& name, double value, int mode = NO_CREATE_NEW_MODE);
+  
+  int GetConfigValue(const string&);
+  void SUMMARY_Make(const string&,int);
+  void SUMMARY_SetGlobalConfigValue(const string&,int,int);
+  void SUMMARY_SetChConfigValue(const string&,int,int,int);
+  void SUMMARY_SetChFitValue(const string&,double,int,int);
   void SUMMARY_SetPedFitValue(double*,int,int);
-  void SUMMARY_AddGlobalElement(string&);
-  void SUMMARY_AddChElement(string&,int);
-  int SUMMARY_GetGlobalConfigValue(string&);
-  int SUMMARY_GetChConfigValue(string&,int);
-  double SUMMARY_GetChFitValue(string&,int);
+  void SUMMARY_AddGlobalElement(const string&);
+  void SUMMARY_AddChElement(const string&,int);
+  int SUMMARY_GetGlobalConfigValue(const string&);
+  int SUMMARY_GetChConfigValue(const string&,int);
+  double SUMMARY_GetChFitValue(const string&,int);
   void SUMMARY_GetPedFitValue(double*,int);
 
-  void SCURVE_Make(string&);
-  void SCURVE_SetValue(string&,int,double,int);
-  double SCURVE_GetValue(string&,int);
+  void SCURVE_Make(const string&);
+  void SCURVE_SetValue(const string&,int,double,int);
+  double SCURVE_GetValue(const string&,int);
 
-  void OPT_Make(string&);
-  void OPT_SetValue(string&,int,int,int,double,int);
-  double OPT_GetValue(string&,int,int,int);
-  void OPT_SetChipValue(string&,int,int,double,int);
-  double OPT_GetChipValue(string&,int,int);
+  void OPT_Make(const string&);
+  void OPT_SetValue(const string&,int,int,int,double,int);
+  double OPT_GetValue(const string&,int,int,int);
+  void OPT_SetChipValue(const string&,int,int,double,int);
+  double OPT_GetChipValue(const string&,int,int);
 
-  void PreCalib_Make(string&);
-  void PreCalib_SetValue(string&,int,int,int,double,int);
-  double PreCalib_GetValue(string&,int,int,int);
+  void PreCalib_Make(const string&);
+  void PreCalib_SetValue(const string&,int,int,int,double,int);
+  double PreCalib_GetValue(const string&,int,int,int);
 
-  void Calib_Make(string&);
-  void Calib_SetValue(string&,int,int,int,double,int);
-  double Calib_GetValue(string&,int,int,int);
+  void Calib_Make(const string&);
+  void Calib_SetValue(const string&,int,int,int,double,int);
+  double Calib_GetValue(const string&,int,int,int);
 };
 
 #endif
