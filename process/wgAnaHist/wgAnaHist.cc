@@ -1,8 +1,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <stdlib.h>
-#include <stdio.h>
+#include <bits/stdc++.h>
 
 #include <THStack.h>
 #include <TCanvas.h>
@@ -18,352 +17,339 @@
 
 using namespace std;
 
-void MakeDir(string& outputDir);
-void MakeXMLFILE(string& outputDir, bool overwrite);
-void ModeSelect(int mode);
-void PrintSelect(int print, int i);
-void ReadData(string& inputFileName, string& outputDir, string& configFileName,int mode,int ndif,int print,string& outputIMGDir,int ichip);
+// Number of flags
+#define M 8
 
-bool SELECT_CONFIG;
-bool SELECT_BCID;
-bool SELECT_CHARGE_LOW;
-bool SELECT_CHARGE_NOHIT;
-bool SELECT_CHARGE_HG_LOW;
-bool SELECT_CHARGE_HG_HIGH;
-bool PRE_SELECT_PRINT;
-int SELECT_PRINT;
-int start_time; 
-int stop_time;
-//******************************************************************
+#define SELECT_CONFIG          0
+#define SELECT_DARK_NOISE      1
+#define SELECT_CHARGE_LOW      2
+#define SELECT_PEDESTAL        3
+#define SELECT_CHARGE_HG_LOW   4
+#define SELECT_CHARGE_HG_HIGH  5
+#define PRE_SELECT_PRINT       6
+#define SELECT_PRINT           7
+
+// print_help
+// prints an help message with all the arguments taken by the program
+void print_help(const char * program_name) {
+  cout << program_name << "is used to analyze the histograms created by the \n"
+	"wgMakeHist program. The result of the analysis is stored in the outputdir.\n"
+	"usage example: " << program_name << " -f inputfile.raw -r -m 10 -d 1\n"
+	"  -h        : print this help\n"
+	"  -f (char*): input histograms file (_hist.root file)\n"
+	"  -i (char*): pyrame config file (.xml)\n"
+	"  -o (char*): outputdir (default = XML_DIRECTORY)\n"
+	"  -d (int)  : DIF number (integer starting from 1)\n"
+	"  -x (int)  : number of chips per DIF (default is 20)\n"
+	"  -y (int)  : number of channels per chip (default is 36)\n"
+	"  -m (int)  : fit mode (mandatory)\n"
+	"  -p (int)  : print mode (0: not save plots, 1: save plots) (default is 1) \n"
+	"  -r        : overwrite mode (default is false)\n\n"
+	"   =========   fit modes   ========= \n\n"
+	"   1  : only dark noise\n"
+	"   2  : only pedestal\n"
+	"   3  : only charge_hit (low range)\n"
+	"   4  : only charge_HG  (low range)\n"
+	"   5  : only charge_HG  (high range)\n"
+	"   10 : dark noise + charge_hit (low range)\n"
+	"   11 : dark noise + pedestal + charge_hit (low range)\n"
+	"   12 : dark noise + pedestal + charge_HG  (low range)\n"
+	"   13 : dark noise + pedestal + charge_HG  (high range)\n"
+	"   20 : dark noise + pedestal + charge_HG  (low range) + charge_HG (high range)\n";
+  exit(0);
+}
+
+void MakeDir(const string& outputDir, unsigned n_chips = NCHIPS);
+void MakeXMLFILE(const string& outputDir, bool overwrite, unsigned n_chips = NCHIPS, unsigned n_channels = NCHANNELS);
+void ModeSelect(int mode, bitset<M>& flag);
+// Set the SELECT_PRINT flag bit according to the print value: in particular the
+// SELECT_PRINT flag bit is set to true if:
+// flag[PRE_SELECT_PRINT] && (print == n_chips || print == ichip) && ichip < n_chips
+// else it is set to false
+void PrintSelect(unsigned print, unsigned n_chips, unsigned ichip, bitset<M>& flag);
+void AnaHist(const string& inputFileName,
+			 const string& configFileName,
+			 const string& outputDir,
+			 const string& outputIMGDir,
+			 int mode,
+			 unsigned print,
+			 bitset<M>& flag,
+			 unsigned idif,
+			 unsigned n_chips,
+			 unsigned ichip,
+			 unsigned n_chans = NCHANNELS
+);
+
+//***************************** MAIN *************************************
+
 int main(int argc, char** argv){
   int opt;
-  int mode=0;
-  int print=0;
-  int ndif=1;
+  int mode = 0;
+  unsigned print = 0; // select which chip to print (if it is equal to the
+					  // number of chips, all the chips are printed
+  unsigned idif = 1;
+  unsigned n_chans = 0, n_chips = 0;
   bool overwrite=false;
-  wgConst *con = new wgConst;
-  con->GetENV();
   string inputFileName("");
   string configFileName("");
-  string outputDir=con->XMLDATA_DIRECTORY;
-  string outputIMGDir=con->IMGDATA_DIRECTORY;
-  string logoutputDir=con->LOG_DIRECTORY;
+  bitset<M> flag;
 
-  OperateString *OpStr = new OperateString;
+  // Get the output directories from
+  wgConst con;
+  con.GetENV();
+  string outputDir    = con.XMLDATA_DIRECTORY;
+  string outputIMGDir = con.IMGDATA_DIRECTORY;
 
-  Logger *Log = new Logger;
-  CheckExist *Check = new CheckExist;
+  OperateString OptStr;
+  CheckExist Check;
 
-  Log->Initialize();
-
-  while((opt = getopt(argc,argv, "f:d:m:i:o:c:hp:r")) !=-1 ){
+  while((opt = getopt(argc,argv, "f:d:m:i:o:c:x:y:p:rh")) !=-1 ) {
     switch(opt){
-      case 'f':
-        inputFileName=optarg;
-        if(!Check->RootFile(inputFileName)){ 
-          cout<<"!!Error!! "<<inputFileName.c_str()<<" doesn't exist!!";
-          Log->eWrite(Form("[%s][wgAnaHist]Error!!target doesn't exist",inputFileName.c_str()));
-          return 1;
-        }   
-        cout << "== readfile :" << inputFileName.c_str() << " ==" << endl;
-        Log->Write(Form("[%s][wgAnaHist]start wgAnaHist",inputFileName.c_str()));
-        break;
-      case 'd':
-        ndif = atoi(optarg);
-        break;
-      case 'm':
-        mode = atoi(optarg);
-        break;
-      case 'i':
-        configFileName = optarg;
-        SELECT_CONFIG=true;
-        if(!Check->XmlFile(configFileName)){ 
-          cout<<"!!Error!! "<<configFileName.c_str()<<" doesn't exist!!";
-          Log->eWrite(Form("[%s][wgAnaHist]Error!!target doesn't exist",configFileName.c_str()));
-          return 1;
-        }   
-        cout << "== configure xmlfile :" << configFileName.c_str() << " ==" << endl;
-        Log->Write(Form("[%s][wgAnaHist]read config file:%s",inputFileName.c_str(),configFileName.c_str()));  
-        break;
-
-      case 'o':
-        outputDir = optarg; 
-        break;
-      case 'c':
-        outputIMGDir = optarg; 
-        break;
-
-      case 'p':
-        print = atoi(optarg);
-        PRE_SELECT_PRINT=true;
-        break;
-
-      case 'r':
-        overwrite = true; 
-        break;
-
-      case 'h':
-        cout <<"this program is for caliburation "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h        : help"<<endl;
-        cout <<"  -f (char*): choose inputfile(hist file)"<<endl;
-        cout <<"  -i (char*): choose config file (.xml)"<<endl;
-        cout <<"  -o (char*): outputdir (default= XML_DIRECTORY)"<<endl;
-        cout <<"  -d (int)  : choose dif number"<<endl;
-        cout <<"  -m (int)  : choose fit mode"<<endl;
-        cout <<"  -p (int)  : choose print mode"<<endl;
-        cout <<"  -r        : overwrite mode"<<endl;
-        cout <<"   ===   mode  === "<<endl;
-        cout <<"   1 : only BCID "<<endl;
-        cout <<"   2 : only charge_nohit "<<endl;
-        cout <<"   3 : only charge(low range) "<<endl;
-        cout <<"   4 : only charge_HG(low range) "<<endl;
-        cout <<"   5 : only charge_HG(high range) "<<endl;
-        cout <<"   10 : BCID + charge(low) "<<endl;
-        cout <<"   11 : BCID + charge_nohit + charge(low)"<<endl;
-        cout <<"   12 : BCID + charge_nohit + charge_HG(low) "<<endl;
-        cout <<"   13 : BCID + charge_nohit + charge_HG(high) "<<endl;
-        cout <<"   20 : BCID + charge_nohit + charge_HG(low) + charge_HG(high)"<<endl; 
-        exit(0);
-      default:
-        cout <<"this program is for fitting to _hist.root file "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h        : help"<<endl;
-        cout <<"  -f (char*): choose inputfile you wanna read(must)"<<endl;
-        cout <<"  -i (char*): choose config file (.xml)"<<endl;
-        cout <<"  -o (char*): outputdir (default= XML_DIRECTORY)"<<endl;
-        cout <<"  -d (int)  : choose dif number"<<endl;
-        cout <<"  -m (int)  : choose mode"<<endl;
-        cout <<"  -p (int)  : choose print mode"<<endl;
-        cout <<"  -r        : overwrite mode"<<endl;
-        cout <<"   ===   mode  === "<<endl;
-        cout <<"   1 : only BCID "<<endl;
-        cout <<"   2 : only charge_nohit "<<endl;
-        cout <<"   3 : only charge(low range) "<<endl;
-        cout <<"   4 : only charge_HG(low range) "<<endl;
-        cout <<"   5 : only charge_HG(high range) "<<endl;
-        cout <<"   10 : BCID + charge(low) "<<endl;
-        cout <<"   11 : BCID + charge_nohit + charge(low)"<<endl;
-        cout <<"   12 : BCID + charge_nohit + charge_HG(low) "<<endl;
-        cout <<"   13 : BCID + charge_nohit + charge_HG(high) "<<endl;
-        cout <<"   20 : BCID + charge_nohit + charge_HG(low) + charge_HG(high)"<<endl; 
-        exit(0);
+	case 'f':
+	  inputFileName=optarg;
+	  if(!Check.RootFile(inputFileName)){
+		Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] target doesn't exist");
+		return 1;
+	  }
+	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] start wgAnaHist");
+	  break;
+	case 'd':
+	  idif = atoi(optarg);
+	  break;
+	case 'm':
+	  mode = atoi(optarg);
+	  break;
+	case 'i':
+	  configFileName = optarg;
+	  flag[SELECT_CONFIG] = true;
+	  if(!Check.XmlFile(configFileName)){
+		Log.eWrite("[" + OptStr.GetName(configFileName) + "][wgAnaHist] target doesn't exist");
+		return 1;
+	  }
+	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] read config file: " + configFileName);
+	  break;
+	case 'o':
+	  outputDir = optarg;
+	  break;
+	case 'c':
+	  outputIMGDir = optarg;
+	  break;
+	case 'x':
+	  n_chips = atoi(optarg);
+	  break;
+	case 'y':
+	  n_chans = atoi(optarg);
+	  break;
+	case 'p':
+	  print = atoi(optarg);
+	  flag[PRE_SELECT_PRINT] = true;
+	  break;
+	case 'r':
+	  overwrite = true;
+	  break;
+	case 'h':
+	  print_help(argv[0]);
+	  break;
+	default:
+	  print_help(argv[0]);
+	  break;
     }   
   }
 
-  if(inputFileName==""){
-    cout << "!!ERROR!! please input filename." <<endl;
-    cout << "if you don't know how to input, please see help."<<endl;
-    cout << "help : ./wgAnaHist -h" <<endl;
+  if(inputFileName == "") {
+    Log.eWrite("[wgAnaHist] No input file");
     exit(1);
   }
 
-  string DirName = OpStr->GetNameBeforeLastUnderBar(inputFileName);
-  delete OpStr;
+  string DirName = OptStr.GetNameBeforeLastUnderBar(inputFileName);
 
-  outputDir = Form("%s/%s",outputDir.c_str(),DirName.c_str());
-  outputIMGDir = Form("%s/%s",outputIMGDir.c_str(),DirName.c_str());
-  delete Check;
+  outputDir = outputDir + "/" + DirName;
+  outputIMGDir = outputIMGDir + "/" + DirName;
 
   MakeDir(outputDir);
-  if(PRE_SELECT_PRINT)  MakeDir(outputIMGDir);
+  if(flag[PRE_SELECT_PRINT]) MakeDir(outputIMGDir);
   
-  MakeXMLFILE(outputDir,overwrite);
-  for(int ichip=0;ichip<(int)NCHIPS;ichip++){
-    ReadData(inputFileName, outputDir, configFileName, mode, ndif, print, outputIMGDir,ichip);
+  MakeXMLFILE(outputDir, overwrite, n_chips, n_chans);
+  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+    AnaHist(inputFileName,
+			outputDir,
+			outputIMGDir,
+			configFileName,
+			mode,
+			print,
+			flag,
+			idif,
+			n_chips,
+			ichip,
+			n_chans);
   }
 
-  Log->Write(Form("[%s][wgAnaHist]finish analyzing histgram",inputFileName.c_str()));
-  delete Log;  
+  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] finish analyzing histgram");
 }
 
 //******************************************************************
-void MakeDir(string& outputDir){
-  cout << " *****  OUTPUT XML FILE     :" << outputDir << "  *****" << endl;
-  system(Form("mkdir %s",outputDir.c_str()));
-  for(unsigned int i=0;i<NCHIPS;i++){
-    string outputChipDir = Form("%s/chip%d",outputDir.c_str(),i);
-    system(Form("mkdir %s",outputChipDir.c_str()));
+void MakeDir(const string& outputDir, const unsigned n_chips) {
+  system( Form("mkdir -p %s", outputDir.c_str()) );
+  for(unsigned i = 0; i < n_chips; i++)
+    system(Form("mkdir -p %s", Form("%s/chip%u", outputDir.c_str(), i)));
+}
+
+//******************************************************************
+void MakeXMLFILE(const string& outputDir, bool overwrite, const unsigned n_chips, const unsigned n_channels) {
+  wgEditXML Edit;
+  CheckExist Check;
+  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+    for(unsigned ichan = 0; ichan < n_channels; ichan++) {
+      string outputxmlfile(outputDir + "/chip" + to_string(ichip) + "/ch" + to_string(ichan) + ".xml");
+      if( !Check.XmlFile(outputxmlfile) || overwrite )
+        Edit.Make(outputxmlfile,ichip,ichan);
+    }
   }
 }
 
 //******************************************************************
-void MakeXMLFILE(string& outputDir,bool overwrite){
-  cout << " *****  MAKING XML FILE  ***** "<< endl;
-  wgEditXML *Edit = new wgEditXML();
-  CheckExist *Check = new CheckExist();
+void ModeSelect(const int mode, bitset<M>& flag){
+  if ( mode == 0 )
+	print_help("wgAnaHist");
+  if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE]    = true;
+  if ( mode == 2 || mode >= 11 )               flag[SELECT_PEDESTAL]  = true;
+  if ( mode == 3 || mode == 10 || mode == 11 ) flag[SELECT_CHARGE_LOW]    = true;
+  if ( mode == 4 || mode == 12 || mode >= 20 ) flag[SELECT_CHARGE_HG_LOW] = true;
+}
+
+//******************************************************************
+void PrintSelect(const unsigned print, const unsigned n_chips, const unsigned ichip, bitset<M>& flag){
+  if( flag[PRE_SELECT_PRINT] && (print == n_chips || print == ichip) && ichip < n_chips )
+	flag[SELECT_PRINT] = true;
+  else
+    flag[SELECT_PRINT] = false;
+}
+
+//******************************************************************
+void AnaHist(const string& inputFileName,
+			 const string& configFileName,
+			 const string& outputDir,
+			 const string& outputIMGDir,
+			 const int mode,
+			 const int print,
+			 bitset<M> flag,
+			 const unsigned idif,
+			 const unsigned n_chips,
+			 const unsigned ichip,
+			 const unsigned n_chans) {
+
+  Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
+  Log.Write("start analyzing ...");
+
+  ModeSelect(mode, flag);
+
+  wgEditXML Edit;
+  wgFit Fit(inputFileName);
+  Fit.SetoutputIMGDir(outputIMGDir);
+  string outputChipDir(outputDir + "/chip" + to_string(ichip));
   string outputxmlfile("");
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<32;j++){
-      int ich=j;
-      outputxmlfile=Form("%s/chip%d/ch%d.xml",outputDir.c_str(),ichip,ich);
-      if(!Check->XmlFile(outputxmlfile)){
-        Edit->Make(outputxmlfile,ichip,ich);
-      }else{
-        if(overwrite) Edit->Make(outputxmlfile,ichip,ich);
-      }
+
+  // v[channel][0] = global 10-bit discriminator threshold
+  // v[channel][1] = global 10-bit gain selection discriminator threshold
+  // v[channel][2] = adjustable input 8-bit DAC
+  // v[channel][3] = adjustable 6-bit high gain (HG) preamp feedback capacitance
+  // v[channel][4] = adjustable 4-bit discriminator threshold
+  vector<vector<int>> config; // n_chans * 5 parameters
+
+  Log.Write("start chip " + ichip);
+  // Read the SPIROC2D configuration parameters from the configFileName (the xml
+  // configuration file used during acquisition) into the "config" vector.
+  if( flag[SELECT_CONFIG] ) Edit.GetConfig(configFileName, idif, ichip + 1, n_chans, config);
+
+  // For the idif DIF and ichip chip, loop over all the channels
+  for(unsigned ichan = 0; ichan < n_chans; ichan++){
+	// Select what to print
+    PrintSelect(print, n_chips, ichip, flag);
+	// Open the outputxmlfile as an XML file
+	string outputxmlfile(outputChipDir + "/ch" + to_string(ichan));
+    Edit.Open(outputxmlfile);
+
+    // ******************** FILL THE XML FILES **********************//
+	int start_time;
+	int stop_time;
+    if(ichip == 0) {
+      start_time = Fit.GetHist->Get_start_time();
+      stop_time  = Fit.GetHist->Get_stop_time();
     }
-  }
-  delete Edit;
-  delete Check;
-}
+    Edit.SetConfigValue(string("start_time"), start_time);
+    Edit.SetConfigValue(string("stop_time"), stop_time);
 
-//******************************************************************
-void ModeSelect(int mode){
-  if(mode==0){
-        cout <<" ===   mode  === "<<endl;
-        cout <<" 1 : only BCID "<<endl;
-        cout <<" 2 : only charge_nohit "<<endl;
-        cout <<" 3 : only charge(low range) "<<endl;
-        cout <<" 4 : only charge_HG(low range) "<<endl;
-        cout <<" 5 : only charge_HG(high range) "<<endl;
-        cout <<" 10 : BCID + charge(low) "<<endl;
-        cout <<" 11 : BCID + charge_nohit + charge(low)"<<endl;
-        cout <<" 12 : BCID + charge_nohit + charge_HG(low) "<<endl;
-        cout <<" 13 : BCID + charge_nohit + charge_HG(high) "<<endl;
-        cout <<" 20 : BCID + charge_nohit + charge_HG(low) + charge_HG(high)"<<endl; 
-  }
-  if(mode==1||mode>=10) SELECT_BCID=true;
-  if(mode==2||mode>=11) SELECT_CHARGE_NOHIT=true;
-  if(mode==3||mode==10||mode==11) SELECT_CHARGE_LOW=true;
-  if(mode==4||mode==12||mode>=20) SELECT_CHARGE_HG_LOW=true;
+	//************ SELECT_CONFIG ************//
 
-}
-
-//******************************************************************
-void PrintSelect(int print,int i){
-  int nchip=NCHIPS;
-  if(PRE_SELECT_PRINT){
-    if(print==nchip){
-      if(i<nchip && i >= 0){ 
-        SELECT_PRINT=1;
-      }else{
-        SELECT_PRINT=0;
-      }
-    }else{
-      if(i==print){
-        SELECT_PRINT=1;
-      }else{
-        SELECT_PRINT=0;
-      }
+    if ( flag[SELECT_CONFIG] ) {
+	  // Write the parameters values contained in the config vector into the
+	  // outputxmlfile
+      Edit.SetConfigValue(string("trigth"),   config[ichan][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
+      Edit.SetConfigValue(string("gainth"),   config[ichan][GLOBAL_GS_INDEX], CREATE_NEW_MODE);
+      Edit.SetConfigValue(string("inputDAC"), config[ichan][ADJ_INPUTDAC_INDEX], CREATE_NEW_MODE);
+      Edit.SetConfigValue(string("HG"),       config[ichan][ADJ_AMPDAC_INDEX], CREATE_NEW_MODE);
+	  Edit.SetConfigValue(string("trig_adj"), config[ichan][ADJ_THRESHOLD_INDEX], CREATE_NEW_MODE);
     }
-  }else{
-    SELECT_PRINT=0;
-  }
-}
 
+	//************* SELECT_DARK_NOISE *************//
 
-//******************************************************************
-void ReadData(string& inputFileName, string& outputDir, string& configFileName,int mode,int ndif,int print, string& outputIMGDir,int ichip){
-
-  cout << " *****  READING FILE     :" << inputFileName << "  *****" << endl;
-  cout << "\nstart Analyzing..." <<endl;
-
-  ModeSelect(mode);
-
-  unsigned int i,j,k;
-  int ich;
-  wgEditXML *Edit = new wgEditXML();
-  wgFit *Fit = new wgFit(inputFileName);
-  Fit->SetoutputIMGDir(outputIMGDir);
-  string outputChipDir("");
-  string outputxmlfile("");
-  string name("");
-  vector<int> config; // 6parameters * 32 channel = 192
-
-  i=ichip;
-  cout << "start chip "<< ichip <<endl;
-  outputChipDir=Form("%s/chip%d",outputDir.c_str(),ichip);
-  if(SELECT_CONFIG) Edit->GetConfig(configFileName,ndif,ichip+1,config); 
-  for(j=0;j<32;j++){
-    ich=j;
-    PrintSelect(print,ichip);
-    outputxmlfile=Form("%s/ch%d.xml",outputChipDir.c_str(),ich);
-    Edit->Open(outputxmlfile);
-    // ***********************************
-    if(ichip==0){
-      start_time = Fit->GetHist->Get_start_time(); 
-      stop_time  = Fit->GetHist->Get_stop_time(); 
+    if ( flag[SELECT_DARK_NOISE] ) {  //for bcid
+      double x_bcid[2] = {0, 0};
+	  // calculate the dark noise rate for chip "ichip" and channel "ichan" and
+	  // save the mean and standard deviation in x_bcid[0] and x_bcid[1]
+	  // respectively.
+      Fit.NoiseRate(ichip, ichan, x_bcid, (int) flag[SELECT_PRINT]);
+	  // Save the noise rate and its standard deviation in the outputxmlfile xml
+	  // file
+      Edit.SetChValue(string("NoiseRate"),   x_bcid[0], CREATE_NEW_MODE); // mean
+      Edit.SetChValue(string("NoiseRate_e"), x_bcid[1], CREATE_NEW_MODE); // standard deviation
     }
-    name="start_time";
-    Edit->SetConfigValue(name,start_time,0);
-    name="stop_time";
-    Edit->SetConfigValue(name,stop_time,0);
-    if(SELECT_CONFIG){
-      name="trigth";
-      Edit->SetConfigValue(name,config[0+ich*6],0);
-      name="gainth";
-      Edit->SetConfigValue(name,config[1+ich*6],0);
-      name="inputDAC";
-      Edit->SetConfigValue(name,config[2+ich*6],0);
-      name="HG";
-      Edit->SetConfigValue(name,config[3+ich*6],0);
-      /*
-      name="LG";
-      Edit->SetConfigValue(name,config[4+ich*6],0);
-      name="trig_adj";
-      Edit->SetConfigValue(name,config[5+ich*6],0);
-      */
-    }
-    if(SELECT_BCID){  //for bcid
-      double x_bcid[2]={0.,0.};
-      Fit->NoiseRate(i,j,x_bcid,SELECT_PRINT);
-      name="NoiseRate";
-      Edit->SetChValue(name,x_bcid[0],1);
-      name="NoiseRate_e";
-      Edit->SetChValue(name,x_bcid[1],1);
-    }
-    // ***********************************
-    if(SELECT_CHARGE_NOHIT){  //for nohit
-      double x_nohit[3]={0.,0.,0.};
-      for(k=0;k<MEMDEPTH;k++){ 
-        Fit->charge_nohit(i,j,k,x_nohit,SELECT_PRINT);
-        name="charge_nohit";
-        Edit->SetColValue(name,k,x_nohit[0],1);
-        name="sigma_nohit";
-        Edit->SetColValue(name,k,x_nohit[2],1);
+
+	//************* SELECT_PEDESTAL *************//
+
+    if ( flag[SELECT_PEDESTAL] ) {
+      double x_nohit[3] = {0, 0, 0};
+      for(int icol = 0; icol < MEMDEPTH; icol++) {
+		// Calculate the pedestal value and its sigma
+        Fit.charge_nohit(ichip, ichan, icol, x_nohit, (int) flag[SELECT_PRINT]);
+        Edit.SetColValue(string("charge_nohit"), icol, x_nohit[0], CREATE_NEW_MODE);
+		Edit.SetColValue(string("sigma_nohit"),  icol, x_nohit[1], CREATE_NEW_MODE);
       } 
     }
-    // ***********************************
-    if(SELECT_CHARGE_LOW){  //for charge_HG (low range)
-      double x_low[3]={0.,0.,0.};
-      Fit->low_pe_charge(i,ich,x_low,SELECT_PRINT);
-      name="charge_low";
-      Edit->SetChValue(name,x_low[0],1);
-      name="sigma_low";
-      Edit->SetChValue(name,x_low[2],1);
+
+	//************* SELECT_CHARGE_LOW *************//
+
+    if ( flag[SELECT_CHARGE_LOW] ) {
+      double x_low[3] = {0, 0, 0};
+      Fit.low_pe_charge(ichip, ichan, x_low, (int) flag[SELECT_PRINT]);
+      Edit.SetChValue(string("charge_low"),x_low[0], CREATE_NEW_MODE);
+      Edit.SetChValue(string("sigma_low") ,x_low[1], CREATE_NEW_MODE);
     }
-    
-    // ***********************************
-    if(SELECT_CHARGE_HG_LOW){  //for charge_HG (low range)
-      double x_low_HG[3]={0.,0.,0.};
-      for(k=0;k<MEMDEPTH+1;k++){ 
-        Fit->low_pe_charge_HG(i,j,k,x_low_HG,SELECT_PRINT);
-        name="charge_lowHG";
-        Edit->SetColValue(name,k,x_low_HG[0],1);
-        name="sigma_lowHG";
-        Edit->SetColValue(name,k,x_low_HG[2],1);
-      } 
-    }
-    // ***********************************
-    if(SELECT_CHARGE_HG_HIGH){  //for charge_HG (high range)
-      for(k=0;k<MEMDEPTH;k++){ 
-        double x2[2]={0.,0.};
-        Fit->GainSelect(i,j,k,x2,SELECT_PRINT);
-        name="GS_eff_m";
-        Edit->SetColValue(name,k,x2[0],1);
-        name="GS_eff_e";
-        Edit->SetColValue(name,k,x2[1],1);
+
+	//************* SELECT_CHARGE_HG_LOW *************//
+
+    if ( flag[SELECT_CHARGE_HG_LOW] ) {
+      double x_low_HG[3] = {0, 0, 0};
+      for(int icol = 0; icol < MEMDEPTH; icol++) {
+        Fit.low_pe_charge_HG(ichip, ichan, icol, x_low_HG, (int) flag[SELECT_PRINT]);
+        Edit.SetColValue(string("charge_lowHG"), icol, x_low_HG[0], CREATE_NEW_MODE);
+        Edit.SetColValue(string("sigma_lowHG"),  icol, x_low_HG[1], CREATE_NEW_MODE);
       }
     }
-    Edit->Write();
-    Edit->Close();
-  }//ich
-  cout << "end Analyzing..." <<endl;
-  delete Edit;
-  delete Fit;
-  return;
+
+	//************* SELECT_CHARGE_HG_HIGH *************//
+
+    if ( flag[SELECT_CHARGE_HG_HIGH] ) {
+      for(int icol = 0; icol < MEMDEPTH; icol++) {
+        double x_high_HG[3] = {0, 0};
+        Fit.GainSelect(ichip, ichan, icol, x_high_HG, (int) flag[SELECT_PRINT]);
+		Edit.SetColValue(string("GS_eff_m"), icol, x_high_HG[0], CREATE_NEW_MODE);
+        Edit.SetColValue(string("GS_eff_e"), icol, x_high_HG[1], CREATE_NEW_MODE);
+      }
+    }
+    Edit.Write();
+    Edit.Close();
+  } //ichip
 }
 
 
