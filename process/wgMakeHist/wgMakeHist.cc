@@ -130,13 +130,12 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   TH1F* h_time_nohit    [n_chips][n_channels][MEMDEPTH]; 
 
   // h_bcid_hit: For every channel fill it with the BCID of all the columns with
-  // a hit. This way all the channels in a chip will have a copy of the same
-  // histogram
+  // a hit.
   TH1F* h_bcid_hit      [n_chips][n_channels]; 
 
   int min_bin = 0;
-  int max_bin = 4096;
-  int bin     = 4096;
+  int max_bin = MAX_12BIT_BIN;
+  int bin     = MAX_12BIT_BIN;
 
   for (size_t i = 0; i < n_chips; i++) {
     for (size_t j = 0; j < n_channels; j++) {
@@ -164,7 +163,7 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
 		h_time_nohit[i][j][k]->SetLineColor(wgColor::wgcolors[k + MEMDEPTH * 2 + 2]);
       } //end col
       // BCID
-      h_bcid_hit[i][j] = new TH1F(Form("bcid_hit_chip%lu_ch%lu",i,j), Form("bcid_hit_chip%lu_ch%lu",i,j), bin, min_bin, max_bin);
+      h_bcid_hit[i][j] = new TH1F(Form("bcid_hit_chip%lu_ch%lu",i,j), Form("bcid_hit_chip%lu_ch%lu",i,j), MAX_BCID_BIN, 0, MAX_BCID_BIN);
       h_bcid_hit[i][j]->SetLineColor(kBlack);
     } //end ch
   }   //end chip
@@ -202,13 +201,18 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   int ievent   = 0;
   int n_events = tree->GetEntries();
 
-  for(ievent=0; ievent < n_events; ievent++){
+  //=================================================================//
+  //                        EVENT LOOP                               //
+  //=================================================================//
+  
+  for (ievent=0; ievent < n_events; ievent++) {
+
     if ( ievent % 1000 == 0 )
 	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] Event number = " + to_string(ievent) + " / " + to_string(n_events));
 	// Read one event
     tree->GetEntry(ievent);
 	// Fill the spill histogram with using the spill_flag as a weight.
-	// This means that if the more chips are missing in a spill, the more that
+	// This means that the more chips are missing in a spill, the more that
 	// spill number will be suppressed.
 	// spill_flag: for each event counts the number of chips that were correctly
 	// read
@@ -226,29 +230,29 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
 	  // COLUMNS loop
 	  for(size_t icol = 0; icol < MEMDEPTH; icol++) {
 		// CHANNELS loop
-		for(size_t ich = 0; ich < n_channels; ich++) {
+		for(size_t ichan = 0; ichan < n_channels; ichan++) {
 		  // HIT
-          if ( rd.hit[i][ich][icol] == HIT_BIT ) {
-            h_bcid_hit  [ichip][ich]->       Fill(rd.bcid[i][icol]);
-            h_pe_hit    [ichip][ich][icol]-> Fill(rd.pe[i][ich][icol]);
-            h_time_hit  [ichip][ich][icol]-> Fill(rd.time[i][ich][icol]);
-			h_charge_hit[ichip][ich][icol]-> Fill(rd.charge[i][ich][icol] - rd.pedestal[ichip][ich][icol]);
+          if ( rd.hit[i][ichan][icol] == HIT_BIT ) {
+            h_bcid_hit  [ichip][ichan]->       Fill(rd.bcid[i][icol]);
+            h_pe_hit    [ichip][ichan][icol]-> Fill(rd.pe[i][ichan][icol]);
+            h_time_hit  [ichip][ichan][icol]-> Fill(rd.time[i][ichan][icol]);
+			h_charge_hit[ichip][ichan][icol]-> Fill(rd.charge[i][ichan][icol] - rd.pedestal[ichip][ichan][icol]);
 			// HIGH GAIN
-            if(rd.gs[i][ich][icol] == HIGH_GAIN_BIT) { 
-              h_charge_hit_HG[ichip][ich][icol]-> Fill(rd.charge[i][ich][icol]);
+            if(rd.gs[i][ichan][icol] == HIGH_GAIN_BIT) { 
+              h_charge_hit_HG[ichip][ichan][icol]-> Fill(rd.charge[i][ichan][icol]);
             }
 			// LOW GAIN
-			else if(rd.gs[i][ich][icol] == LOW_GAIN_BIT) {
-              //h_charge_hit_LG[ichip][ich][icol]->Fill(rd.charge[i][ich][icol]);
+			else if(rd.gs[i][ichan][icol] == LOW_GAIN_BIT) {
+              h_charge_hit_LG[ichip][ichan][icol]->Fill(rd.charge[i][ichan][icol]);
             }
 #ifdef DEBUG_MAKEHIST	
-			else Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] event " + to_string(ievent) + " : bad gain bit = " + to_string(rd.gs[i][ich][icol] ));
+			else Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] event " + to_string(ievent) + " : bad gain bit = " + to_string(rd.gs[i][ichan][icol] ));
 #endif	  
           }
 		  // NO HIT
-		  else if ( rd.hit[i][ich][icol] == NO_HIT_BIT ) {
-            h_charge_nohit[ichip][ich][icol]->Fill(rd.charge[i][ich][icol]);
-            h_time_nohit[ichip][ich][icol]->Fill(rd.time[i][ich][icol]);
+		  else if ( rd.hit[i][ichan][icol] == NO_HIT_BIT ) {
+            h_charge_nohit[ichip][ichan][icol]->Fill(rd.charge[i][ichan][icol]);
+            h_time_nohit[ichip][ichan][icol]->Fill(rd.time[i][ichan][icol]);
           }//end hit
         }//end icol
       }//end ich
