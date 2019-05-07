@@ -74,9 +74,12 @@
 #define ADJ_THRESHOLD_LENGTH        4    // adjustable 4-bit threshold
 #define ADJ_THRESHOLD_OFFSET        4    // adjustable 4-bit threshold
 
-using namespace std;
+// ============ WGMAKEHIST MACROS ============== //
 
-//#define DEBUG_DECODE
+#define MAX_BCID_BIN  12288
+#define MAX_12BIT_BIN 4096
+
+using namespace std;
 
 //row data fomat
 const uint16_t CHIPHEAD   = 4;

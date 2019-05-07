@@ -14,12 +14,18 @@ using namespace std;
 class wgFit
 {
 public:
-  wgFit();
+  // wgFit::wgFit
+  // Just call the GetHist constructor. Exceptions may be thrown.
   wgFit(const string&);
-  ~wgFit(); 
-  void clear(); 
-  void swap(int,double*,double*); 
-  void NoiseRate(unsigned int,unsigned int,double*,int);
+  // delete wgFit::GetHist;
+  ~wgFit();
+  // wgFit::GetHist->clear();
+  void clear();
+  
+  void swap(int,double*,double*);
+  // wgFit::NoiseRate
+
+  void NoiseRate(unsigned int,unsigned int, double*,int);
   void low_pe_charge(unsigned int,unsigned int,double*,int);
   void low_pe_charge_HG(unsigned int,unsigned int,unsigned int,double*,int);
   void charge_nohit(unsigned int,unsigned int,unsigned int,double*,int);
@@ -28,5 +34,7 @@ public:
 
   wgGetHist *GetHist;
   string outputIMGDir;
+
+
 };
 #endif
