@@ -36,7 +36,8 @@
 
 // ============ wgEditXML MACROS ============== //
 
-#define CREATE_NEW_MODE 1
+#define NO_CREATE_NEW_MODE 0
+#define CREATE_NEW_MODE    1
 
 // ============ SPIROC2D MACROS ============== //
 
@@ -74,7 +75,12 @@
 #define ADJ_THRESHOLD_LENGTH        4    // adjustable 4-bit threshold
 #define ADJ_THRESHOLD_OFFSET        4    // adjustable 4-bit threshold
 
-// ============ WGMAKEHIST MACROS ============== //
+// ============ wgFit MACROS ============== //
+
+#define PRINT_HIST_MODE    1
+#define NO_PRINT_HIST_MODE 0
+
+// ============ wgMakeHist MACROS ============== //
 
 #define MAX_BCID_BIN  12288
 #define MAX_12BIT_BIN 4096
