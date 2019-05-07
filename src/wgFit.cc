@@ -86,7 +86,7 @@ void wgFit::swap(int Npeaks, double* px, double* py){
 }
 
 //**********************************************************************
-void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double x[2], int mode) {
+void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) {
   GetHist->Get_bcid_hit(ichip, ichan);
   GetHist->Get_spill();
   // Number of recorded spills
@@ -130,7 +130,7 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double x[2], int mode) {
   x[0] = Sigma /((B * nEntries - Sigma) * time_bcid_bin);
   x[1] = ((B * nEntries - Sigma) * sqrt(Sigma)) / (pow(B,2) * pow(nEntries,2) * time_bcid_bin);
   
-  if ( mode == 1 ) {
+  if ( mode == PRINT_HIST_MODE ) {
     wgConst con;
     con.GetENV();
     GetHist->Print_bcid(Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan), "", 1);
@@ -141,153 +141,147 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double x[2], int mode) {
 }
 
 //**********************************************************************
-void wgFit::low_pe_charge(unsigned int i,unsigned int j,double* x,int mode=0){
+void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mode) {
 
-  wgFit::GetHist->Get_charge_hit(i,j);
+  wgFit::GetHist->Get_charge_hit(ichip, ichan);
 
   if(wgFit::GetHist->h_charge_hit->Integral(begin_low_pe,end_low_pe) < 1 )
-  {
+	{
 #ifdef DEBUG_WGFIT
-    cout<< "!Warning!!no entry (chip:"<< i <<", ch:"<< j <<", col:" << k <<")"<< endl;
+	  Log.eWrite("[wgFit::charge_hit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ")");
 #endif
-    x[0]=x[1]=x[2]=0.;
-    return;
-  } 
-  
+	  x[0]=x[1]=x[2]=0.;
+	  return;
+	} 
+  // begin_low_pe and end_low_pe are defined in wgFitConst.cc
   wgFit::GetHist->h_charge_hit->GetXaxis()->SetRange(begin_low_pe,end_low_pe);
 
-  double px[2]={(double)wgFit::GetHist->h_charge_hit->GetMaximumBin(),0.0};
-  double py[2]={(double)wgFit::GetHist->h_charge_hit->GetMaximum(),0.0};
-  
-  TF1* prefit = new TF1("gauss",gauss,px[0]-sigma*3,px[0]+sigma*3,3);
-  prefit->SetLineColor(kGreen);
-  prefit->SetNpx(500);
-  prefit->SetParameters(py[0],px[0],sigma);
-  prefit->SetParNames("Event0","mean0","sigma0");
-  prefit->SetParLimits(0,0.1*py[0],1.1*py[0]);
-  prefit->SetParLimits(1,px[0]-20,px[0]+20);
-  prefit->SetParLimits(2,min_sigma,max_sigma);
-  wgFit::GetHist->h_charge_hit->Fit(prefit,"Q","P",px[0]-sigma*2,px[0]+sigma*2.0);
-  double Event0=prefit->GetParameter(0);
-  double mean0=prefit->GetParameter(1);
-  double sigma0=prefit->GetParameter(2);
- 
-  x[0]=mean0;
-  x[1]=Event0;
-  x[2]=sigma0;
+  double mean={(double)GetHist->h_charge_hit->GetMaximumBin()};
+  double peak={(double)GetHist->h_charge_hit->GetMaximum()};
 
-  if(mode==1){ 
-    wgConst *con = new wgConst;
-    con->GetENV();
-    string output = Form("%s/chip%d/charge%d_%d.png",wgFit::outputIMGDir.c_str(),i,i,j);
-    wgFit::GetHist->Print_charge(output.c_str(),"",1);
-    delete con;
-  }
+  TF1* gaussian = new TF1("gauss", gauss, mean - 3 * sigma, mean + 3 * sigma, 3);
+  gaussian->SetLineColor(kGreen);
+  gaussian->SetNpx(500);
+  gaussian->SetParameters(peak, mean, sigma);
+  gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
+  gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
+  gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
+  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cc)
 
-  //delete ts;
-  //delete fit;
-  delete prefit;
-  delete wgFit::GetHist->h_charge_hit;
+  // Fit histogram with gaussian function.
+  // "Q": quiet mode (minimum printing)
+  // "P" : drawing option
+  // (mean - 3 * sigma, mean + 3 * sigma) : range over which to apply the fit.
+  GetHist->h_charge_hit->Fit(gaussian, "Q", "P", mean - 2 * sigma, mean + 2 * sigma);
+  x[0]=gaussian->GetParameter(1); // mean_fit
+  x[1]=gaussian->GetParameter(2); // sigma_fit
+  x[2]=gaussian->GetParameter(0); // peak_fit
+
+  if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
+    GetHist->Print_charge(Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan), "", 1);
+  delete gaussian;
+  delete GetHist->h_charge_hit;
   return;  
 }
 
 
 //**********************************************************************
-void wgFit::low_pe_charge_HG(unsigned int i,unsigned int j,unsigned int k,double* x,int mode=0){
+void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], int mode) {
 
-  wgFit::GetHist->Get_charge_hit_HG(i,j,k);
+  wgFit::GetHist->Get_charge_hit_HG(ichip,ichan,icol);
 
   if(wgFit::GetHist->h_charge_hit_HG->Integral(begin_low_pe_HG,end_low_pe_HG) < 1 )
   {
 #ifdef DEBUG_WGFIT
-    cout<< "!Warning!!no entry (chip:"<< i <<", ch:"<< j <<", col:" << k <<")"<< endl;
+	Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
 #endif
     x[0]=x[1]=x[2]=0.;
     return;
   } 
-  
+  // begin_low_pe_HG and end_low_pe_HG are defined in wgFitConst.cc
   wgFit::GetHist->h_charge_hit_HG->GetXaxis()->SetRange(begin_low_pe_HG,end_low_pe_HG);
+  double mean=(double)GetHist->h_charge_hit_HG->GetMaximumBin();
+  double peak=(double)GetHist->h_charge_hit_HG->GetMaximum();
 
-  double px[2]={ (double) wgFit::GetHist->h_charge_hit_HG->GetMaximumBin(),0.0};
-  double py[2]={ (double) wgFit::GetHist->h_charge_hit_HG->GetMaximum(),0.0};
-  
-  TF1* prefit = new TF1("gauss",gauss,px[0]-sigma*3,px[0]+sigma*3,3);
-  prefit->SetLineColor(kGreen);
-  prefit->SetNpx(500);
-  prefit->SetParameters(py[0],px[0],sigma);
-  prefit->SetParNames("Event0","mean0","sigma0");
-  prefit->SetParLimits(0,0.1*py[0],1.1*py[0]);
-  prefit->SetParLimits(1,px[0]-20,px[0]+20);
-  prefit->SetParLimits(2,min_sigma,max_sigma);
-  GetHist->h_charge_hit_HG->Fit(prefit,"Q","P",px[0]-sigma*2,px[0]+sigma*2.0);
-  double Event0=prefit->GetParameter(0);
-  double mean0=prefit->GetParameter(1);
-  double sigma0=prefit->GetParameter(2);
- 
-  x[0]=mean0;
-  x[1]=Event0;
-  x[2]=sigma0;
+  TF1* gaussian = new TF1("gauss", gauss, mean - 3 * sigma, mean + 3 * sigma, 3);
+  gaussian->SetLineColor(kGreen);
+  gaussian->SetNpx(500);
+  gaussian->SetParameters(peak, mean, sigma);
+  gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
+  gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
+  gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
+  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cc)
 
-  if(mode==1){ 
-    wgConst *con = new wgConst;
-    con->GetENV();
-    string output = Form("%s/chip%d/HG%d_%d_%d.png",wgFit::outputIMGDir.c_str(),i,i,j,k);
-    GetHist->Print_charge_hit_HG(output.c_str(),"",1);
-    delete con;
-  }
+  // Fit histogram with gaussian function.
+  // "Q": quiet mode (minimum printing)
+  // "P" : drawing option
+  // (mean - 3 * sigma, mean + 3 * sigma) : range over which to apply the fit.
+  GetHist->h_charge_hit_HG->Fit(gaussian, "Q", "P", mean - 2 * sigma, mean + 2 * sigma);
+  x[0]=gaussian->GetParameter(1); // mean_fit
+  x[1]=gaussian->GetParameter(2); // sigma_fit
+  x[2]=gaussian->GetParameter(0); // peak_fit
 
-  //delete ts;
-  //delete fit;
-  delete prefit;
+  if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
+    GetHist->Print_charge_hit_HG(Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol), "", 1);
+  delete gaussian;
   delete GetHist->h_charge_hit_HG;
-  return;  
+  return;
 }
 
 //**********************************************************************
-void wgFit::charge_nohit(unsigned int i,unsigned int j,unsigned int k,double* x,int mode=0){
-  GetHist->Get_charge_nohit(i,j,k);
+void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const int mode) {
 
-  if(GetHist->h_charge_nohit->Integral(begin_ped,end_ped) < 1 )
+  // Read the "charge_nohit" histogram for the _hist.root file
+  GetHist->Get_charge_nohit(ichip, ichan, icol);
+
+  // If the histogram is empty return a 0 vector
+  if(GetHist->h_charge_nohit->Integral(begin_ped, end_ped) < 1 )
   {
 #ifdef DEBUG_WGFIT 
-    cout<< "!Warning!!no entry (chip:"<< i <<", ch:"<< j <<", col:" << k <<")"<< endl;
+    Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
 #endif
     x[0]=x[1]=x[2]=0.;
     return;
-  } 
-  
-  GetHist->h_charge_nohit->GetXaxis()->SetRange(begin_ped,end_ped);
-  
-  double px[1]={(double)GetHist->h_charge_nohit->GetMaximumBin()};
-  double py[1]={(double)GetHist->h_charge_nohit->GetMaximum()};
-
-  TF1* prefit = new TF1("gauss",gauss,px[0]-sigma*3,px[0]+sigma*3,3);
-  prefit->SetLineColor(kViolet);
-  prefit->SetNpx(500);
-  prefit->SetParameters(py[0],px[0],sigma);
-  prefit->SetParNames("Event0","mean0","sigma0");
-  prefit->SetParLimits(0,0.9*py[0],1.1*py[0]);
-  prefit->SetParLimits(1,px[0]-20,px[0]+20);
-  prefit->SetParLimits(2,min_sigma,max_sigma);
-  GetHist->h_charge_nohit->Fit(prefit,"Q","",px[0]-sigma*2,px[0]+sigma*2.0);
-  double Event0=prefit->GetParameter(0);
-  double mean0=prefit->GetParameter(1);
-  double sigma0=prefit->GetParameter(2);
-
-  x[0]=mean0;
-  x[1]=Event0;
-  x[2]=sigma0;
-    
-  if(mode==1){ 
-    string output = Form("%s/chip%d/nohit%d_%d_%d.png",wgFit::outputIMGDir.c_str(),i,i,j,k);
-    GetHist->Print_charge_nohit(output.c_str(),"",1);
   }
-  delete prefit;
+  
+  // Set the histogram x axis range to 350 --- 700 (the pedestal lies usually in
+  // that range)
+  GetHist->h_charge_nohit->GetXaxis()->SetRange(begin_ped, end_ped);
+  
+  double mean=(double)GetHist->h_charge_nohit->GetMaximumBin();
+  double peak=(double)GetHist->h_charge_nohit->GetMaximum();
+  // Gaussian function to use when fitting
+  // Arguments:
+  // (function name, function pointer, xmin, xmax, number of parameters)
+  // Sigma is defined in wgFitConst.cc
+  TF1* gaussian = new TF1("gauss", gauss, mean - 3 * sigma, mean + 3 * sigma, 3);
+  gaussian->SetLineColor(kViolet);
+  gaussian->SetNpx(500);
+  gaussian->SetParameters(peak, mean, sigma);
+  gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
+  gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
+  gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
+  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cc)
+
+  // Fit histogram with gaussian function.
+  // "Q": quiet mode (minimum printing)
+  // "same" : when a fit is executed, the image of the function is drawn on
+  // the current pad.
+  // (mean - 3 * sigma, mean + 3 * sigma) : range over which to apply the fit.
+  GetHist->h_charge_nohit->Fit(gaussian, "Q", "same", mean - 3 * sigma, mean + 3 * sigma);
+  x[0]=gaussian->GetParameter(1); // mean_fit
+  x[1]=gaussian->GetParameter(2); // sigma_fit
+  x[2]=gaussian->GetParameter(0); // peak_fit
+    
+  if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
+    GetHist->Print_charge_nohit(Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol), "", 1);
+  delete gaussian;
   delete GetHist->h_charge_nohit;
   return;  
 }
 
 //**********************************************************************
-void wgFit::GainSelect(unsigned int i,unsigned int j,unsigned int k,double* x, int mode=0){
+void wgFit::GainSelect(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const int mode) {
+  x[0]=x[1]=x[2]=0.;
 }
 
