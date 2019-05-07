@@ -18,7 +18,7 @@ Arguments
 - [-x] : number of ASUs per DIF (default is 20)
 - [-y] : number of channels per ASU (default is 36)
 - [-m] : fit mode (mandatory)
-- [-p] : print mode (0: not save plots, 1: save plots) (default is 1) 
+- [-p] : print mode (default is true) 
 - [-r] : overwrite mode (default is false)
 
 Fit modes

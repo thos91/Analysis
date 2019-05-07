@@ -84,7 +84,7 @@ public:
   // "value". If the mode is NO_CREATE_NEW_MODE, a new element is not
   // created. If the mode is CREATE_NEW_MODE a new element is created if it
   // didn't exist.
-  double GetChValue(const string& name, double value, int mode = NO_CREATE_NEW_MODE);
+  double GetChValue(const string& name);
   
   int GetConfigValue(const string&);
   void SUMMARY_Make(const string&,int);

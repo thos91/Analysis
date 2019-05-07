@@ -18,7 +18,7 @@
 using namespace std;
 
 // Number of flags
-#define M 8
+#define M 7
 
 #define SELECT_CONFIG          0
 #define SELECT_DARK_NOISE      1
@@ -26,8 +26,7 @@ using namespace std;
 #define SELECT_PEDESTAL        3
 #define SELECT_CHARGE_HG_LOW   4
 #define SELECT_CHARGE_HG_HIGH  5
-#define PRE_SELECT_PRINT       6
-#define SELECT_PRINT           7
+#define SELECT_PRINT           6
 
 // print_help
 // prints an help message with all the arguments taken by the program
@@ -43,7 +42,7 @@ void print_help(const char * program_name) {
 	"  -x (int)  : number of chips per DIF (default is 20)\n"
 	"  -y (int)  : number of channels per chip (default is 36)\n"
 	"  -m (int)  : fit mode (mandatory)\n"
-	"  -p (int)  : print mode (0: not save plots, 1: save plots) (default is 1) \n"
+	"  -p        : print mode (default is true) \n"
 	"  -r        : overwrite mode (default is false)\n\n"
 	"   =========   fit modes   ========= \n\n"
 	"   1  : only dark noise\n"
@@ -62,31 +61,21 @@ void print_help(const char * program_name) {
 void MakeDir(const string& outputDir, unsigned n_chips = NCHIPS);
 void MakeXMLFILE(const string& outputDir, bool overwrite, unsigned n_chips = NCHIPS, unsigned n_channels = NCHANNELS);
 void ModeSelect(int mode, bitset<M>& flag);
-// Set the SELECT_PRINT flag bit according to the print value: in particular the
-// SELECT_PRINT flag bit is set to true if:
-// flag[PRE_SELECT_PRINT] && (print == n_chips || print == ichip) && ichip < n_chips
-// else it is set to false
-void PrintSelect(unsigned print, unsigned n_chips, unsigned ichip, bitset<M>& flag);
 void AnaHist(const string& inputFileName,
 			 const string& configFileName,
 			 const string& outputDir,
 			 const string& outputIMGDir,
 			 int mode,
-			 unsigned print,
 			 bitset<M>& flag,
 			 unsigned idif,
-			 unsigned n_chips,
 			 unsigned ichip,
-			 unsigned n_chans = NCHANNELS
-);
+			 unsigned n_chans = NCHANNELS);
 
 //***************************** MAIN *************************************
 
 int main(int argc, char** argv){
   int opt;
   int mode = 0;
-  unsigned print = 0; // select which chip to print (if it is equal to the
-					  // number of chips, all the chips are printed
   unsigned idif = 1;
   unsigned n_chans = 0, n_chips = 0;
   bool overwrite=false;
@@ -103,7 +92,7 @@ int main(int argc, char** argv){
   OperateString OptStr;
   CheckExist Check;
 
-  while((opt = getopt(argc,argv, "f:d:m:i:o:c:x:y:p:rh")) !=-1 ) {
+  while((opt = getopt(argc,argv, "f:d:m:i:o:c:x:y:prh")) !=-1 ) {
     switch(opt){
 	case 'f':
 	  inputFileName=optarg;
@@ -141,8 +130,7 @@ int main(int argc, char** argv){
 	  n_chans = atoi(optarg);
 	  break;
 	case 'p':
-	  print = atoi(optarg);
-	  flag[PRE_SELECT_PRINT] = true;
+	  flag[SELECT_PRINT] = true;
 	  break;
 	case 'r':
 	  overwrite = true;
@@ -167,19 +155,20 @@ int main(int argc, char** argv){
   outputIMGDir = outputIMGDir + "/" + DirName;
 
   MakeDir(outputDir);
-  if(flag[PRE_SELECT_PRINT]) MakeDir(outputIMGDir);
+  if(flag[SELECT_PRINT]) MakeDir(outputIMGDir);
   
   MakeXMLFILE(outputDir, overwrite, n_chips, n_chans);
+
+  // ============== LOOP over all the chips =============== //
+  
   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
     AnaHist(inputFileName,
+			configFileName,
 			outputDir,
 			outputIMGDir,
-			configFileName,
 			mode,
-			print,
 			flag,
 			idif,
-			n_chips,
 			ichip,
 			n_chans);
   }
@@ -218,23 +207,13 @@ void ModeSelect(const int mode, bitset<M>& flag){
 }
 
 //******************************************************************
-void PrintSelect(const unsigned print, const unsigned n_chips, const unsigned ichip, bitset<M>& flag){
-  if( flag[PRE_SELECT_PRINT] && (print == n_chips || print == ichip) && ichip < n_chips )
-	flag[SELECT_PRINT] = true;
-  else
-    flag[SELECT_PRINT] = false;
-}
-
-//******************************************************************
 void AnaHist(const string& inputFileName,
 			 const string& configFileName,
 			 const string& outputDir,
 			 const string& outputIMGDir,
 			 const int mode,
-			 const int print,
-			 bitset<M> flag,
+			 bitset<M>& flag,
 			 const unsigned idif,
-			 const unsigned n_chips,
 			 const unsigned ichip,
 			 const unsigned n_chans) {
 
@@ -263,8 +242,6 @@ void AnaHist(const string& inputFileName,
 
   // For the idif DIF and ichip chip, loop over all the channels
   for(unsigned ichan = 0; ichan < n_chans; ichan++){
-	// Select what to print
-    PrintSelect(print, n_chips, ichip, flag);
 	// Open the outputxmlfile as an XML file
 	string outputxmlfile(outputChipDir + "/ch" + to_string(ichan));
     Edit.Open(outputxmlfile);
