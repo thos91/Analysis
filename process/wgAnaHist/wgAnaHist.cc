@@ -154,6 +154,10 @@ int main(int argc, char** argv){
   outputDir = outputDir + "/" + DirName;
   outputIMGDir = outputIMGDir + "/" + DirName;
 
+  Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
+  Log.Write("start analyzing ...");
+
+
   MakeDir(outputDir);
   if(flag[SELECT_PRINT]) MakeDir(outputIMGDir);
   
@@ -184,7 +188,7 @@ void MakeDir(const string& outputDir, const unsigned n_chips) {
 }
 
 //******************************************************************
-void MakeXMLFILE(const string& outputDir, bool overwrite, const unsigned n_chips, const unsigned n_channels) {
+void MakeXMLFILE(const string& outputDir, const bool overwrite, const unsigned n_chips, const unsigned n_channels) {
   wgEditXML Edit;
   CheckExist Check;
   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
@@ -216,9 +220,6 @@ void AnaHist(const string& inputFileName,
 			 const unsigned idif,
 			 const unsigned ichip,
 			 const unsigned n_chans) {
-
-  Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
-  Log.Write("start analyzing ...");
 
   ModeSelect(mode, flag);
 
