@@ -1,6 +1,6 @@
 TARGET = wgAnaPedestal
 
-INCLUDE = -I ../../include
+INCDIR = -I ../../include
 OBJDIR = ../../obj
 SRCDIR = ../../src
 BINDIR = ../../bin
@@ -15,26 +15,29 @@ ROOTCFLAGS = $(shell root-config --cflags)
 ROOTLIBS   = $(shell root-config --libs)
 ROOTGLIBS = $(shell root-config --glibs)
 
-CXXFLAGS   = -g -MMD -MP -Wall -fPIC 
-CXXFLAGS   += $(INCLUDE) $(ROOTCFLAGS)
+CXXFLAGS   = -g -O0 -MMD -MP -Wall -fPIC
+CXXFLAGS   += $(INCDIR) $(ROOTCFLAGS)
 CXXLIBS    = -lSpectrum
-CXXLIBS    += $(INCLUDE) $(ROOTLIBS)
-DEPENDS = $(OBJS:.o=.d)
+CXXLIBS    += $(ROOTLIBS) $(ROOTGLIBS)
+DEPENDS    = $(OBJS:.o=.d)
 CC = g++
 
 all: $(BINDIR)/$(TARGET)
 
 $(BINDIR)/$(TARGET): $(OBJS)
-	$(CC) $(CXXLIBS) -o $@ $^
+	@if [ ! -d $(BINDIR) ]; \
+		then echo "mkdir -p $(BINDIR)"; mkdir -p $(BINDIR); \
+		fi
+	$(CC) -o $@ $^ $(CXXLIBS)
 
 $(OBJDIR)/%.o:$(SRCDIR)/%.cc
 	@if [ ! -d $(OBJDIR) ]; \
 		then echo "mkdir -p $(OBJDIR)"; mkdir -p $(OBJDIR); \
 		fi
-	$(CC) $(CXXFLAGS) $(INCLUDE) -o $@ -c $<
+	$(CC) $(CXXFLAGS) $(INCDIR) -o $@ -c $<
 
 clean:
-	$(RM) -f $(BINDIR)/$(TARGET) $(OBJS) $(DEPENDS)
+	$(RM) -f $(BINDIR)/$(TARGET) $(OBJS) $(DEPENDS) AutoDict*
 
 -include $(DEPENDS)
 
