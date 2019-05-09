@@ -97,12 +97,12 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) 
 	throw wgElementNotFound("BCID histogram has no entries");
   }
 
-  // Create a step function to fit the histogram and precisely find the "non
-  // zero range" for the BCID hits. We could use the value of the last non zero
-  // bin as a measure of the histogram "non zero range" but, that way, a single
-  // corrupted hit could spoil the whole measurement and we want to avoid
-  // that. Better to make the code a little slower (more computational heavy)
-  // than to make it a little more unreliable.
+  // Create a step function of unit height to fit the histogram and precisely
+  // find the "non zero range" for the BCID hits. We could use the value of the
+  // last non zero bin as a measure of the histogram "non zero range" but, that
+  // way, a single corrupted hit could spoil the whole measurement and we want
+  // to avoid that. Better to make the code a little slower (more computational
+  // heavy) than to make it a little more unreliable.
   TF1 * step_function = new TF1("step_function", "((x > 0) ? ((x < [0]) ? 1 : 0) : 0)");
   
   // Find the right-most bin that is non-zero. This value provides us with a
@@ -127,8 +127,8 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) 
   Double_t Sigma = GetHist->h_bcid_hit->Integral(0, B);
   GetHist->h_bcid_hit->GetXaxis()->SetRange(0, 2*B+10);
 
-  x[0] = Sigma /((B * nEntries - Sigma) * time_bcid_bin);
-  x[1] = ((B * nEntries - Sigma) * sqrt(Sigma)) / (pow(B,2) * pow(nEntries,2) * time_bcid_bin);
+  x[0] = Sigma /((B * nEntries - Sigma) * time_bcid_bin);  // Hertz
+  x[1] = ((B * nEntries - Sigma) * sqrt(Sigma)) / (pow(B,2) * pow(nEntries,2) * time_bcid_bin); // Hertz
   
   if ( mode == PRINT_HIST_MODE ) {
     wgConst con;
