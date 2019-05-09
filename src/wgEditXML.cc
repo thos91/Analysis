@@ -228,7 +228,7 @@ void wgEditXML::SetColValue(const string& name,const int icol,double value,int m
       newElement->SetText(value);
       col->InsertEndChild(newElement);
     }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
+      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
     }
   }
 }
@@ -280,7 +280,7 @@ double wgEditXML::GetColValue(const string& name,const int icol){
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -294,7 +294,7 @@ double wgEditXML::GetChValue(const string& name){
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -308,37 +308,35 @@ int wgEditXML::GetConfigValue(const string& name){
     string value = target->GetText();
     return atoi(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1;
   }
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_Make(const string& filename,int ichip){
+void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
 
   XMLElement* data; 
   //chip
-
   XMLElement* g_config;
   XMLElement* start_time;
   XMLElement* stop_time;
   XMLElement* gs_threshold;
   XMLElement* trigger_threshold;
-  //ch
-  XMLElement* ch[32];
-  XMLElement* fit[32];
-  XMLElement* gain[32];
-  XMLElement* noise[32];
-
-  XMLElement* config[32];
-  XMLElement* inputDAC[32];
-  XMLElement* ampDAC[32];
-  XMLElement* threshold_adjust[32];
+  //chan
+  XMLElement* ch   [n_chans];
+  XMLElement* fit  [n_chans];
+  XMLElement* gain [n_chans];
+  XMLElement* noise[n_chans];
+  XMLElement* config          [n_chans];
+  XMLElement* inputDAC        [n_chans];
+  XMLElement* ampDAC          [n_chans];
+  XMLElement* threshold_adjust[n_chans];
   //col 
-  ////XMLElement* pedestal[32][16];
+  XMLElement* pedestal[n_chans][MEMDEPTH];
 
   // **********************//
 
@@ -356,38 +354,35 @@ void wgEditXML::SUMMARY_Make(const string& filename,int ichip){
   gs_threshold = xml->NewElement("gainth");
   g_config->InsertEndChild(gs_threshold); 
 
-  for(unsigned int i=0;i<32;i++){
-    int ich = i; 
+  for(unsigned ichan = 0; ichan < n_chans; ichan++) {
     // ***** data > ch ***** //
-    ch[ich] = xml->NewElement(Form("ch_%d",ich));    
-    data->InsertEndChild(ch[ich]);
+    ch[ichan] = xml->NewElement(Form("ch_%d",ichan));    
+    data->InsertEndChild(ch[ichan]);
 
     // ***** data > ch > fit***** //
-    fit[ich] = xml->NewElement("fit");
-    ch[ich]->InsertEndChild(fit[ich]);
+    fit[ichan] = xml->NewElement("fit");
+    ch[ichan]->InsertEndChild(fit[ichan]);
 
-    gain[ich] = xml->NewElement("Gain");
-    fit[ich]->InsertEndChild(gain[ich]);
-    noise[ich] = xml->NewElement("Noise");
-    fit[ich]->InsertEndChild(noise[ich]);
-    /*
-    for(unsigned int j=0;j<16;j++){
-      int icol=j;
-      pedestal[ich][icol] = xml->NewElement(Form("ped_%d",icol));
-      fit[ich]->InsertEndChild(pedestal[ich][icol]);
+    gain[ichan] = xml->NewElement("Gain");
+    fit[ichan]->InsertEndChild(gain[ichan]);
+    noise[ichan] = xml->NewElement("Noise");
+    fit[ichan]->InsertEndChild(noise[ichan]);
+
+    for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+      pedestal[ichan][icol] = xml->NewElement(Form("ped_%d",icol));
+      fit[ichan]->InsertEndChild(pedestal[ichan][icol]);
     }
-    */
 
     // ***** data > ch > config ***** //
-    config[ich] = xml->NewElement("config");
-    ch[ich]->InsertEndChild(config[ich]);
+    config[ichan] = xml->NewElement("config");
+    ch[ichan]->InsertEndChild(config[ichan]);
 
-    inputDAC[ich] = xml->NewElement("inputDAC");
-    config[ich]->InsertEndChild(inputDAC[ich]);
-    ampDAC[ich] = xml->NewElement("ampDAC");
-    config[ich]->InsertEndChild(ampDAC[ich]);
-    threshold_adjust[ich] = xml->NewElement("adjDAC");
-    config[ich]->InsertEndChild(threshold_adjust[ich]);
+    inputDAC[ichan] = xml->NewElement("inputDAC");
+    config[ichan]->InsertEndChild(inputDAC[ichan]);
+    ampDAC[ichan] = xml->NewElement("ampDAC");
+    config[ichan]->InsertEndChild(ampDAC[ichan]);
+    threshold_adjust[ichan] = xml->NewElement("adjDAC");
+    config[ichan]->InsertEndChild(threshold_adjust[ichan]);
 
     // ***** data > ch > col ***** //
   }
@@ -396,59 +391,50 @@ void wgEditXML::SUMMARY_Make(const string& filename,int ichip){
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name,int value,int mode=0){
+void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value, const int mode){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
-  if(target){
+  if( target )
+	target->SetText(Form("%d",value));
+  else if( mode == CREATE_NEW_MODE ) {
+	XMLElement* newElement = xml->NewElement(name.c_str());
+	newElement->SetText(Form("%d",value));
+	config->InsertEndChild(newElement);
+  }
+  else throw wgElementNotFound("Element " + name + " doesn't exist");
+}
+
+//**********************************************************************
+void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, const int ichan, const int mode){
+  XMLElement* data = xml->FirstChildElement("data");
+  XMLElement* ch = data->FirstChildElement(Form("ch_%d",ichan));
+  XMLElement* config = ch->FirstChildElement("config");
+  XMLElement* target = config->FirstChildElement(name.c_str());
+  if( target )
     target->SetText(Form("%d",value));
-  }else{
-    if(mode==1){
+  else if( mode == CREATE_NEW_MODE ) {
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%d",value));
       config->InsertEndChild(newElement);
-    }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
-    }
   }
+  else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetChConfigValue(const string& name,int value,int ich,int mode=0){
+void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const int ichan, const int mode){
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
-  XMLElement* config = ch->FirstChildElement("config");
+  XMLElement* ch = data->FirstChildElement(Form("ch_%d",ichan));
+  XMLElement* config = ch->FirstChildElement("fit");
   XMLElement* target = config->FirstChildElement(name.c_str());
-  if(target){
+  if( target )
     target->SetText(Form("%d",value));
-  }else{
-    if(mode==1){
+  else if( mode == CREATE_NEW_MODE ) {
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%d",value));
-      config->InsertEndChild(newElement); 
-    }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
-    }
-  }  
-}
-
-//**********************************************************************
-void wgEditXML::SUMMARY_SetChFitValue(const string& name,double value,int ich,int mode=0){
-  XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
-  XMLElement* fit = ch->FirstChildElement("fit");
-  XMLElement* target = fit->FirstChildElement(name.c_str());
-  if(target){
-    target->SetText(Form("%.2f",value));
-  }else{
-    if(mode==1){
-      XMLElement* newElement = xml->NewElement(name.c_str());
-      newElement->SetText(Form("%.2f",value));
-      fit->InsertEndChild(newElement); 
-    }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
-    }
-  }  
+      config->InsertEndChild(newElement);
+  }
+  else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
 
 //**********************************************************************
@@ -467,7 +453,7 @@ void wgEditXML::SUMMARY_SetPedFitValue(double* value,int ich,int mode=0){
         newElement->SetText(Form("%.2f",value[icol]));
         fit->InsertEndChild(newElement); 
       }else{
-        cout <<"Warning! Element ped_"<< icol <<" doesn't exist!"<<endl;
+        Log.eWrite("Warning! Element ped_"+ to_string(icol) +" doesn't exist!");
       }
     }
   }  
@@ -497,7 +483,7 @@ int wgEditXML::SUMMARY_GetGlobalConfigValue(const string& name){
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("[SUMMARY_GetGlobalConfigValue] Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -512,7 +498,7 @@ int wgEditXML::SUMMARY_GetChConfigValue(const string& name,int ich){
     string value = target->GetText();
     return atoi(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("[SUMMARY_GetChConfigValue] Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -527,7 +513,7 @@ double wgEditXML::SUMMARY_GetChFitValue(const string& name,int ich){
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("[SUMMARY_GetChFitValue] Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -544,7 +530,7 @@ void wgEditXML::SUMMARY_GetPedFitValue(double* value,int ich){
       string temp_value = target->GetText();
       value[icol] = atof(temp_value.c_str());
     }else{
-      cout << "Error! Element: ped" << icol << " doesn't exist!" << endl;
+      Log.eWrite("Error! Element: ped" + to_string(icol) + " doesn't exist!");
     }
   }
 }
@@ -607,7 +593,7 @@ void wgEditXML::SCURVE_SetValue(const string& name,int iDAC,double value,int mod
       newElement->SetText(Form("%f",value));
       inputDAC->InsertEndChild(newElement);
     }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
+      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
     }
   }
 }
@@ -621,7 +607,7 @@ double wgEditXML::SCURVE_GetValue(const string& name,int iDAC){
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -693,7 +679,7 @@ void wgEditXML::OPT_SetValue(const string& name,int idif, int ichip, int iDAC,do
       newElement->SetText(Form("%f",value));
       inputDAC->InsertEndChild(newElement);
     }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
+      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
     }
   }
 }
@@ -709,7 +695,7 @@ double wgEditXML::OPT_GetValue(const string& name,int idif, int ichip, int iDAC)
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -729,7 +715,7 @@ void wgEditXML::OPT_SetChipValue(const string& name,int idif, int ichip,double v
       newElement->SetText(Form("%f",value));
       chip->InsertEndChild(newElement);
     }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
+      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
     }
   }
 }
@@ -744,7 +730,7 @@ double wgEditXML::OPT_GetChipValue(const string& name,int idif, int ichip){
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
@@ -807,7 +793,7 @@ void wgEditXML::PreCalib_SetValue(const string& name,int idif, int ichip, int ic
       newElement->SetText(Form("%f",value));
       ch->InsertEndChild(newElement);
     }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
+      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
     }
   }
 }
@@ -823,13 +809,13 @@ double wgEditXML::PreCalib_GetValue(const string& name,int idif, int ichip, int 
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    cout << "Error! Element:" << name << " doesn't exist!" << endl;
+    Log.eWrite("Error! Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
 
 //**********************************************************************
-void wgEditXML::Calib_Make(const string& filename){
+void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const unsigned n_chips, const unsigned n_chans){
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
@@ -845,20 +831,27 @@ void wgEditXML::Calib_Make(const string& filename){
   // **********************//
   data = xml->NewElement("data");
   xml->InsertEndChild(data);
+  XMLElement* difs = xml->NewElement("n_difs");
+  difs->SetText(to_string(n_difs).c_str());
+  data->InsertEndChild(difs);
+  XMLElement* chips = xml->NewElement("n_chips");
+  difs->SetText(to_string(n_chips).c_str());
+  data->InsertEndChild(chips);
+  XMLElement* chans = xml->NewElement("n_chans");
+  difs->SetText(to_string(n_chans).c_str());
+  data->InsertEndChild(chans);
 
-  for(unsigned int idif=0;idif<2;idif++){
+  for(unsigned idif = 0; idif < n_difs; idif++) {
     // ***** data > dif ***** //
     dif = xml->NewElement(Form("dif_%d",idif+1));    
     data->InsertEndChild(dif);
     // ***** data > dif > chip ***** //
-    for(unsigned int i=0;i<NCHIPS;i++){
-      int ichip=i;
+    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       chip = xml->NewElement(Form("chip_%d",ichip));    
       dif->InsertEndChild(chip);
       // ***** data > dif > chip > ch ***** //
-      for(unsigned int j=0;j<32;j++){
-        int ich=j;
-        ch = xml->NewElement(Form("ch_%d",ich));    
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+        ch = xml->NewElement(Form("ch_%d",ichan));    
         chip->InsertEndChild(ch);
         pe1 = xml->NewElement(Form("pe1"));    
         pe2 = xml->NewElement(Form("pe2"));    
@@ -889,7 +882,7 @@ void wgEditXML::Calib_SetValue(const string& name,int idif, int ichip, int ich,d
       newElement->SetText(Form("%f",value));
       ch->InsertEndChild(newElement);
     }else{
-      cout <<"Warning! Element "<< name <<" doesn't exist!"<<endl;
+      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
     }
   }
 }
