@@ -95,6 +95,7 @@ const uint16_t NCHANNELS  = NumChipChFull;
 const uint16_t MEMDEPTH   = NumSca;
 const uint16_t NCHIPS     = NumChip;
 const uint16_t NCHIPSSMRD = NumChipSMRD;
+const uint16_t NDIFS      = NumDif;
 
 //define data fomat
 typedef vector<vector<vector<vector<double>>>> f4vector;
