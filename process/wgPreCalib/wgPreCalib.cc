@@ -26,405 +26,411 @@
 #include "wgFitConst.h"
 #include "wgGetHist.h"
 
+#define TWIN_PEAKS      1
+#define LONELY_MOUNTAIN 0
+
+#define ONE_PE 0
+#define TWO_PE 1
+
 using namespace std;
 
-vector<string> GetIncludeFileName(string& inputDirName);
-void MakeDir(string& str);
-void AnaXML(vector<string> &inputDirName,string& outputXMLDirName,string& outputIMGDirName,int mode);
+vector<string> GetIncludeFileName(const string& inputDirName);
+void MakeDir(const string& outputDir, unsigned n_chips = NCHIPS);
 double cal_mean(vector<double>);
+void PreCalib(const vector<string>& inputDirName, const string& outputXMLDirName, const string& outputIMGDirName, int mode, unsigned n_difs = NDIFS, unsigned n_chips = NCHIPS, unsigned n_chans = NCHANNELS);
+
+void print_help(const char * program_name) {
+  cout <<  program_name << "draws the inputDAC vs Gain graph and creates the calibration_card.xml file.\n"
+	"  -h         : help\n"
+	"  -f (char*) : input directory (mandatory)\n"
+	"  -o (char*) : output directory (default: same as input directory)\n"
+	"  -i (char*) : output image directory (default: image directory)\n"
+	"  -n (int)   : number of DIFs (default is 2)\n"
+	"  -x (int)   : number of chips per DIF (default is 20)\n"
+	"  -y (int)   : number of channels per chip (default is 36)\n";
+	"  -m (int)   : 0:use only 2pe peak. 1:use 1pe and 2pe peaks (default:0)\n";
+  exit(0);
+}
+
+template < typename T>
+pair<bool, int > findInVector(const vector<T>& vecOfElements, const T& element)
+{
+  pair<bool, int > result;
+  // Find given element in vector
+  auto it = find(vecOfElements.begin(), vecOfElements.end(), element);
+  if (it != vecOfElements.end()) {
+	result.second = distance(vecOfElements.begin(), it);
+	result.first = true;
+  }
+  else {
+	result.first = false;
+	result.second = -1;
+  }
+  return result;
+}
 
 int main(int argc, char** argv){
   int opt;
-  int mode=0;
-  wgConst *con = new wgConst;
-  con->GetENV();
+  int mode = 0;
+  int n_difs = NDIFS, n_chips = NCHIPS, n_chans = NCHANNELS;
+  wgConst con;
+  con.GetENV();
   string inputDirName("");
   string outputXMLDirName("");
-  string outputIMGDirName=con->IMGDATA_DIRECTORY;
-  string logoutputDir=con->LOG_DIRECTORY;
+  string outputIMGDirName = con.IMGDATA_DIRECTORY;
+  string logoutputDir = con.LOG_DIRECTORY;
 
-  OperateString *OpStr = new OperateString;
-  Logger *Log = new Logger;
-  CheckExist *check = new CheckExist;
+  OperateString OpStr;
+  CheckExist check;
 
-  Log->Initialize();
-  Log->Write("start calibration...");
-
-  while((opt = getopt(argc,argv, "f:o:i:h:m:")) !=-1 ){
+  while((opt = getopt(argc,argv, "f:o:i:n:x:y:m:h")) !=-1 ){
     switch(opt){
-      case 'f':
-        inputDirName=optarg;
-        if(!check->Dir(inputDirName)){ 
-          cout<<"!!Error!! "<<inputDirName.c_str()<<"doesn't exist!!";
-          Log->eWrite(Form("Error!!target:%s doesn't exist",inputDirName.c_str()));
-          return 1;
-        }   
-        Log->Write(Form("target:%s",inputDirName.c_str()));
-        break;
-
-      case 'o':
-        outputXMLDirName = optarg; 
-        break;
-      case 'i':
-        outputIMGDirName = optarg; 
-        break;
-     
-      case 'm':
-        mode = atoi(optarg); 
-        break;
-
-      case 'h':
-        cout <<"this program is for calibration from the data of wgAnaHistSummary. "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h         : help"<<endl;
-        cout <<"  -f (char*) : choose input directory you wanna read(must)"<<endl;
-        cout <<"  -o (char*) : choose output directory (default: input directory) "<<endl;
-        cout <<"  -i (char*) : choose output image directory (default: image directory) "<<endl;
-        cout <<"  -m (int)   : 0:use only 2pe. 1:use 1pe and 2pe. (default:0)"<<endl;
-        exit(0);
-      default:
-        cout <<"this program is for calibration from the data of wgAnaHistSummary. "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h         : help"<<endl;
-        cout <<"  -f (char*) : choose input directory you wanna read(must)"<<endl;
-        cout <<"  -o (char*) : choose output directory (default: input directory) "<<endl;
-        cout <<"  -i (char*) : choose output image directory (default: image directory) "<<endl;
-        cout <<"  -m (int)   : 0:use only 2pe. 1:use 1pe and 2pe. (default:0)"<<endl;
-        exit(0);
+	case 'f':
+	  inputDirName=optarg;
+	  if(!check.Dir(inputDirName)){
+		Log.eWrite("[" + OpStr.GetName(inputDirName) + "][wgPreCalib] target doesn't exist");
+		return 1;
+	  }   
+	  break;
+	case 'o':
+	  outputXMLDirName = optarg; 
+	  break;
+	case 'i':
+	  outputIMGDirName = optarg; 
+	  break;
+	case 'n':
+	  n_difs = atoi(optarg);
+	  break;
+	case 'x':
+	  n_chips = atoi(optarg);
+	  break;
+	case 'y':
+	  n_chans = atoi(optarg);
+	  break;
+	case 'm':
+	  mode = atoi(optarg); 
+	  break;
+	case 'h':
+	  print_help(argv[0]);
+	  break;
+	default:
+	  print_help(argv[0]);
     }   
   }
 
-  if(inputDirName==""){
-    cout << "!!ERROR!! please input filename." <<endl;
-    cout << "if you don't know how to input, please see help."<<endl;
-    cout << "help : ./wgAnaHistSummary -h" <<endl;
+  if(inputDirName == "") {
+    Log.eWrite("[wgPreCalib] No input directory");
     exit(1);
   }
 
-  if(outputXMLDirName==""){
-    outputXMLDirName = Form("%s/%s",con->CALIBDATA_DIRECTORY,OpStr->GetName(inputDirName).c_str());
+  if(outputXMLDirName == "") {
+    outputXMLDirName = con.CALIBDATA_DIRECTORY + OpStr.GetName(inputDirName);
     MakeDir(outputXMLDirName);
   } 
-  //outputIMGDirName = Form("%s/%s/image",con->CALIBDATA_DIRECTORY,OpStr->GetName(inputDirName).c_str());
+
   MakeDir(outputIMGDirName);
-  for(int idif=0;idif<2;idif++){
-    string str("");
-    str=Form("%s/dif%d",outputIMGDirName.c_str(),idif+1);
-    MakeDir(str);
-  }
+  for(int idif = 0; idif < n_difs; idif++)
+    MakeDir( outputIMGDirName + "/dif" + to_string(idif + 1) );
 
-  Log->Write(Form("READING DIRECTORY : %s",inputDirName.c_str()));
-  Log->Write(Form("OUTPUT DIRECTORY : %s",outputXMLDirName.c_str()));
-
-  cout << " *****  READING DIRECTORY     :" << inputDirName << "  *****" << endl;
-  cout << " *****  OUTPUT XML DIRECTORY :" << outputXMLDirName << "  *****" << endl;
-  cout << " *****  OUTPUT IMAGE DIRECTORY :" << outputIMGDirName << "  *****" << endl;
-
-  delete check;
-  delete OpStr;
+  Log.Write(" *****  READING DIRECTORY      :" + OpStr.GetName(inputDirName)     + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + OpStr.GetName(outputXMLDirName) + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + OpStr.GetName(outputIMGDirName) + "  *****");
 
   vector<string> ReadFile = GetIncludeFileName(inputDirName); 
-  cout << " Finish  reading file"<<endl;
 
-  AnaXML(ReadFile,
-      outputXMLDirName,
-      outputIMGDirName,
-      mode
-      );
-  Log->Write("end summarizeing ... " );
-  delete Log;  
+  PreCalib(ReadFile, outputXMLDirName, outputIMGDirName, mode, n_difs, n_chips, n_chans);
+
+  Log.Write("[" + OpStr.GetName(inputDirName) + "][wgPreCalib] Finished");
 }
 
-
 //******************************************************************
-vector<string> GetIncludeFileName(string& inputDirName){
-  DIR *dp;
-  struct dirent *entry;
-  vector<string> openxmlfile;
-  dp = opendir(inputDirName.c_str());
-  if(dp==NULL){
-    cout << " !! WARNING !! no data is in "<< inputDirName << endl;
-    return openxmlfile;
+void PreCalib(const vector<string> &inputFileName, const string& outputXMLDirName, const string& outputIMGDirName, const int mode, const unsigned n_difs, const unsigned n_chips, const unsigned n_chans) {
+
+  OperateString OpStr;
+  size_t nFiles = inputFileName.size();
+  int inputDAC[nFiles];
+
+  // Save all the inputDAC values in the inputDAC[] array
+  wgEditXML Edit;
+  for(unsigned iFN = 0; iFN < nFiles; iFN++) {
+    Edit.Open(inputFileName[iFN] + "/Summary_chip0.xml");
+    inputDAC[iFN] = Edit.SUMMARY_GetChConfigValue(string("inputDAC"), NO_CREATE_NEW_MODE);
+    Edit.Close();
   }
 
-  while( (entry = readdir(dp))!=NULL ){
-    string name=entry->d_name;
-    if((entry->d_name[0])!='.' && name.size()>8){
-      openxmlfile.push_back(Form("%s/%s",inputDirName.c_str(),entry->d_name));
-      cout << "ReadFile : " << inputDirName << "/" << entry->d_name << endl;
-    }
-  }
-  closedir(dp);
-  return openxmlfile;
-} 
+  if ( mode != TWIN_PEAKS || mode != LONELY_MOUNTAIN )
+	throw invalid_argument("[wgPreCalib] unknown mode : " + to_string(mode));
 
-
-//******************************************************************
-void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outputIMGDirName,int mode){
-
-  int FN=inputFileName.size();
-  /*
-  if(FN%2!=0){
-    cout << "!! ERROR !! : the number of data is not enough to calbration!!" << endl;
-    return;
-  }
-  */
-  int inputDAC[FN];
-  string xmlfile("");
-  string name("");
-  wgEditXML *Edit = new wgEditXML();
-  for(int iFN=0;iFN<FN;iFN++){
-    xmlfile=Form("%s/Summary_chip%d.xml",inputFileName[iFN].c_str(),0);
-    Edit->Open(xmlfile);
-    name="inputDAC";
-    inputDAC[iFN]=Edit->SUMMARY_GetChConfigValue(name,0);
-    Edit->Close();
-  }
-
-  // ****  list up inputDAC **** //
+  // Remove duplicates and sort the list of inputDACs
   vector<int> list_inputDAC;
-  bool add_list_inputDAC=false;
+  bool add_list_inputDAC = false;
   list_inputDAC.push_back(inputDAC[0]);
-  for(int iFN=1;iFN<FN;iFN++){
-    add_list_inputDAC=true;
-    for(unsigned int l=0;l<list_inputDAC.size();l++){
-      if(list_inputDAC[l]==inputDAC[iFN]){
-        add_list_inputDAC=false;
+  for(unsigned iFN = 1; iFN < nFiles; iFN++) {
+    add_list_inputDAC = true;
+    for(unsigned l = 0; l < list_inputDAC.size(); l++) {
+      if(list_inputDAC[l] == inputDAC[iFN]) {
+        add_list_inputDAC = false;
       }
     }
     if(add_list_inputDAC)list_inputDAC.push_back(inputDAC[iFN]);
   }
   sort(list_inputDAC.begin(), list_inputDAC.end());
 
-  unsigned int size_inputDAC = list_inputDAC.size();
-  /*
-  if((int)size_inputDAC*2!=FN){
-    cout << "!! ERROR !! : the number of data is not enough to calbration!!" << endl;
-    return;
-  }
-  */
-  int ndif=0;
-  int npe=0;
-  double Gain[2][NCHIPS][32][size_inputDAC][2];
-  double Pedestal[2][NCHIPS][32][size_inputDAC][2][16];
+  unsigned size_inputDAC = list_inputDAC.size();
 
-  cout << "  ~~~ Start Reading ~~~  " <<endl;
-  //*** Read data ***
-  for(int iFN=0;iFN<FN;iFN++){
-    for(unsigned int i=0;i<NCHIPS;i++){
-      int ichip=i;
-      int pos = inputFileName[iFN].find("dif_1_1_")+8;
-      if(inputFileName[iFN][pos]=='1'){
-        ndif=0;
-      }else if(inputFileName[iFN][pos]=='2'){
-        ndif=1;
-      }
+  int ndif = 0, npe = 0;
+  double Gain[n_difs][n_chips][n_chans][size_inputDAC][2];
+  double Pedestal[n_difs][n_chips][n_chans][size_inputDAC][2][MEMDEPTH];
 
-      pos = inputFileName[iFN].find("pe")+2;
-      if(inputFileName[iFN][pos]=='1'){
-        npe=0;
-      }else if(inputFileName[iFN][pos]=='2'){
-        npe=1;
-      }
+  // ======================================================//
+  //              Read Gain and Pedestal                   //
+  // ======================================================//
+  
+  for(unsigned iFN = 0; iFN < nFiles; iFN++) {
+    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 
-      xmlfile=Form("%s/Summary_chip%d.xml",inputFileName[iFN].c_str(),ichip);
-      Edit->Open(xmlfile);
-      name="inputDAC";
-      inputDAC[iFN]=Edit->SUMMARY_GetChConfigValue(name,0);
-      int list=0;
-      for(unsigned int l=0;l<size_inputDAC;l++){
-        if(list_inputDAC[l]==inputDAC[iFN])break;
-        list++;
-      }
-      for(unsigned int j=0;j<32;j++){
-        int ich=j;
-        // TODO this gain should be twice as big as true gain.
-        name="Gain";
-        Gain[ndif][ichip][ich][list][npe]=Edit->SUMMARY_GetChFitValue(name,ich);
-        if(mode==1){
-          Edit->SUMMARY_GetPedFitValue(Pedestal[ndif][ichip][ich][list][npe],ich);
+	  // ===== DIF number ===== //
+	  
+      int pos = inputFileName[iFN].find("dif_1_1_") + 8;
+	  bool found = false;
+	  for (unsigned idif = 0; idif < n_difs; idif++) {
+		// This will not work for DIF >= 10
+		if(inputFileName[iFN][pos] == to_string(idif + 1)) ndif = idif;
+		found = true;
+		break;
+	  }
+	  if (found == false)
+		throw wgElementNotFound("failed to guess DIF number from file name: " + inputFileName[iFN]);
+
+	  // ===== P.E. number ===== //
+	  
+      pos = inputFileName[iFN].find("_pe") + 3;
+      if(inputFileName[iFN][pos] == '1') npe = 0;
+      else if(inputFileName[iFN][pos] == '2') npe = 1;
+	  else throw wgElementNotFound("failed to guess photo electrons from file name: " + inputFileName[iFN]);
+
+      Edit.Open(inputFileName[iFN] + "/Summary_chip" + to_string(ichip) + ".xml");
+	  // Read the value of the inputDAC from the Summary_chip%d.xml file
+      inputDAC[iFN] = Edit.SUMMARY_GetChConfigValue(string("inputDAC"), NO_CREATE_NEW_MODE);
+	  
+	  pair<bool, int> iDAC = findInVector(list_inputDAC, inputDAC[iFN]);
+	  if (iDAC.first == false) {
+		Log.eWrite("[" + OpStr.GetName(inputFileName[iFN]) + "][wgPreCalib] inputDAC value (" + to_string(inputDAC[iFN]) + ") not found in the list");
+		continue;
+	  }
+
+	  // ===== read Gain and Pedestal ===== //
+	  
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+        // This gain should be twice the true gain.
+        Gain[ndif][ichip][ichan][iDAC.second][npe] = Edit.SUMMARY_GetChFitValue(string("Gain"), ichan);
+        if(mode == TWIN_PEAKS){
+		  // If we use both 1pe and 2ped, get the pedestal position
+          Edit.SUMMARY_GetPedFitValue(Pedestal[ndif][ichip][ichan][iDAC.second][npe], ichan);
         }
       }
-      Edit->Close();
+      Edit.Close();
     }
   }
-  delete Edit;
 
-  double slope[2][NCHIPS][32];
-  double inter[2][NCHIPS][32];
+  // ======================================================//
+  //            Draw the inputDAC vs Gain graph            //
+  // ======================================================//
 
-  for(int idif=0;idif<2;idif++){
-    for(unsigned int i=0;i<NCHIPS;i++){
-      int ichip=i;
+  double slope[n_difs][n_chips][n_chans];
+  double inter[n_difs][n_chips][n_chans];
 
+  for(unsigned idif = 0; idif < n_difs; idif++) {
+    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       TMultiGraph * mg = new TMultiGraph();
-      TGraphErrors * g_Dist[32]; 
-      TGraph * g_Gain0[32];
-      TGraph * g_Gain1[32];
-      TGraph * g_ped[16];
+      TGraphErrors * g_Dist[n_chans]; 
+      TGraph * g_Gain0[n_chans];
+      TGraph * g_Gain1[n_chans];
+      TGraph * g_ped[MEMDEPTH];
 
+	  // ===== plot the Pedestal ===== //
+	  
       TCanvas *c1 = new TCanvas("c1","c1");
-      if(mode==1){
+      if( mode == TWIN_PEAKS ) {
         c1->Divide(4,4);
-        for(int k=0;k<16;k++){
-          int icol=k;
-          double x_ch[32*size_inputDAC];
-          double y_ped[32*size_inputDAC];
-          for(unsigned int l=0;l<size_inputDAC;l++){
-            for(int j=0;j<32;j++){
-              int ich=j;
-              x_ch[ich+32*l]=ich;
-              y_ped[ich+32*l]=Pedestal[idif][ichip][ich][l][1][icol];
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          double x_ch [n_chans * size_inputDAC];
+          double y_ped[n_chans * size_inputDAC];
+          for(unsigned int l = 0; l < size_inputDAC; l++) {
+            for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+              x_ch [ichan + n_chans * l] = ichan;
+              y_ped[ichan + n_chans * l] = Pedestal[idif][ichip][ichan][l][1][icol];
             }
           }
 
-          g_ped[k] = new TGraph(32*2*size_inputDAC,x_ch,y_ped);
-          g_ped[k]->SetMarkerColor(880+k);
-          g_ped[k]->SetMarkerSize(0.5);
-          g_ped[k]->SetMaximum(700);
-          g_ped[k]->SetMinimum(350);
-          g_ped[k]->SetTitle(Form("chip%d col%d;ch;ped",ichip,icol));
-          c1->cd(k+1);
+          g_ped[icol] = new TGraph(n_chans * 2 * size_inputDAC, x_ch, y_ped);
+          g_ped[icol]->SetMarkerColor(880+icol);
+          g_ped[icol]->SetMarkerSize(0.5);
+          g_ped[icol]->SetMaximum(700);
+          g_ped[icol]->SetMinimum(350);
+          g_ped[icol]->SetTitle(Form("chip%d col%d;ch;ped",ichip,icol));
+          c1->cd(icol+1);
           c1->SetGrid();
-          g_ped[k]->Draw("ap");
+          g_ped[icol]->Draw("ap");
         }
         c1->Print(Form("%s/dif%d/ped_chip%d.png",outputIMGDirName.c_str(),idif+1,ichip));
         delete c1;
-        for(int k=0;k<16;k++){delete g_ped[k];}
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) delete g_ped[icol];
       }
 
+	  // ===== calculate the gain average over all the channels  ===== //
+	  
       double mean_Dist[size_inputDAC];
-      for(int j=0;j<32;j++){
-        int ich=j;
-        for(unsigned int l=0;l<size_inputDAC;l++){
-          if(mode==0){
-            mean_Dist[l] += (Gain[idif][ichip][ich][l][1])/2./32.;
-          }else if(mode==1){
-            mean_Dist[l] += (Gain[idif][ichip][ich][l][1]-Gain[idif][ichip][ich][l][0])/32.;
-          }
+	  for(unsigned l = 0; l < size_inputDAC; l++) {
+		for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+          if(mode == LONELY_MOUNTAIN)
+            mean_Dist[l] += Gain[idif][ichip][ichan][l][TWO_PE];
+		  else if(mode == TWIN_PEAKS)
+            mean_Dist[l] += (Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE]);
         }
+		if(mode == LONELY_MOUNTAIN)	mean_Dist[l] /= (double) (2 * n_chans);
+		else if(mode == TWIN_PEAKS) mean_Dist[l] /= (double) n_chans;
       }
 
-      for(int j=0;j<32;j++){
-        int ich=j;
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
         double x_inputDAC[size_inputDAC];
         double ex_inputDAC[size_inputDAC];
         double y_Dist[size_inputDAC];
         double ey_Dist[size_inputDAC];
         double y_Gain0[size_inputDAC];
         double y_Gain1[size_inputDAC];
-        for(unsigned int l=0;l<size_inputDAC;l++){
-          x_inputDAC[l]=list_inputDAC[l];
-          ex_inputDAC[l]=1.;
-          if(mode==0){
-            if(mean_Dist[l]+6. > Gain[idif][ichip][ich][l][1]/2.  && mean_Dist[l]-6.<Gain[idif][ichip][ich][l][1]/2.){
-              y_Dist[l]=Gain[idif][ichip][ich][l][1]/2.;
-              ey_Dist[l]=0.5;
-            }else{
-              y_Dist[l]=Gain[idif][ichip][ich][l][1]/2.;
-              ey_Dist[l]=20.;
+        for(unsigned l = 0; l < size_inputDAC; l++) {
+          x_inputDAC[l] = list_inputDAC[l];
+          ex_inputDAC[l] = 1.;
+          if(mode == LONELY_MOUNTAIN) {
+			// If Gain lies too far from the mean_Dist, set ey_Dist as 0.5 
+            if( (mean_Dist[l] + 6. > 0.5 * Gain[idif][ichip][ichan][l][TWO_PE]) && (mean_Dist[l] - 6. < 0.5 * Gain[idif][ichip][ichan][l][TWO_PE]) ) {
+              y_Dist[l] = 0.5 * Gain[idif][ichip][ichan][l][TWO_PE];
+              ey_Dist[l] = 0.5;
             }
-          }else if(mode==1){
-            if(mean_Dist[l]+6. > Gain[idif][ichip][ich][l][1]-Gain[idif][ichip][ich][l][0]  && mean_Dist[l]-6.<Gain[idif][ichip][ich][l][1]-Gain[idif][ichip][ich][l][0]){
-              y_Dist[l]=Gain[idif][ichip][ich][l][1]-Gain[idif][ichip][ich][l][0];
-              ey_Dist[l]=0.5;
-            }else{
-              y_Dist[l]=Gain[idif][ichip][ich][l][1]-Gain[idif][ichip][ich][l][0];
-              ey_Dist[l]=20.;
+			else{
+              y_Dist[l] = 0.5* Gain[idif][ichip][ichan][l][TWO_PE];
+              ey_Dist[l] = 20;
             }
-            y_Gain0[l]=Gain[idif][ichip][ich][l][0];    
-            y_Gain1[l]=Gain[idif][ichip][ich][l][1];    
+          }
+		  else if(mode == TWIN_PEAKS) {
+            if( (mean_Dist[l] + 6. > Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE]) && (mean_Dist[l] - 6. < Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE]) ) {
+              y_Dist[l] = Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE];
+              ey_Dist[l] = 0.5;
+            }
+			else{
+              y_Dist[l] = Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE];
+              ey_Dist[l] = 20.;
+            }
+            y_Gain0[l]=Gain[idif][ichip][ichan][l][ONE_PE];    
+            y_Gain1[l]=Gain[idif][ichip][ichan][l][TWO_PE];    
           }
         }
-        g_Dist [ich] = new TGraphErrors(size_inputDAC,x_inputDAC,y_Dist,ex_inputDAC,ey_Dist);
+        g_Dist[ichan] = new TGraphErrors(size_inputDAC, x_inputDAC, y_Dist, ex_inputDAC, ey_Dist);
         TF1 *f_Dist  = new TF1("f_Dist","[0]*x+[1]");
         f_Dist->SetLineColor(kGreen);
-        g_Dist [ich]->Fit("f_Dist","Q+ E","same"); 
-        g_Dist [ich]->SetMarkerColor(632);
-        g_Dist [ich]->SetMarkerSize(1);
-        g_Dist [ich]->SetMarkerStyle(8);
-        mg->Add(g_Dist[ich]);
+        g_Dist [ichan]->Fit("f_Dist","Q+ E","same"); 
+        g_Dist [ichan]->SetMarkerColor(632);
+        g_Dist [ichan]->SetMarkerSize(1);
+        g_Dist [ichan]->SetMarkerStyle(8);
+        mg->Add(g_Dist[ichan]);
 
-        if(mode==1){
-          g_Gain0[ich] = new TGraph(size_inputDAC,x_inputDAC,y_Gain0);
-          g_Gain0[ich]->SetMarkerColor(600);
-          g_Gain0[ich]->SetMarkerSize(1);
-          g_Gain0[ich]->SetMarkerStyle(8);
-          g_Gain1[ich] = new TGraph(size_inputDAC,x_inputDAC,y_Gain1);
-          g_Gain1[ich]->SetMarkerColor(616);
-          g_Gain1[ich]->SetMarkerSize(1);
-          g_Gain1[ich]->SetMarkerStyle(8);
-          mg->Add(g_Gain0[ich]);
-          mg->Add(g_Gain1[ich]);
+        if(mode == TWIN_PEAKS) {
+          g_Gain0[ichan] = new TGraph(size_inputDAC,x_inputDAC,y_Gain0);
+          g_Gain0[ichan]->SetMarkerColor(600);
+          g_Gain0[ichan]->SetMarkerSize(1);
+          g_Gain0[ichan]->SetMarkerStyle(8);
+          g_Gain1[ichan] = new TGraph(size_inputDAC,x_inputDAC,y_Gain1);
+          g_Gain1[ichan]->SetMarkerColor(616);
+          g_Gain1[ichan]->SetMarkerSize(1);
+          g_Gain1[ichan]->SetMarkerStyle(8);
+          mg->Add(g_Gain0[ichan]);
+          mg->Add(g_Gain1[ichan]);
         }
 
-        slope[idif][ichip][ich]=f_Dist->GetParameter(0);
-        inter[idif][ichip][ich]=f_Dist->GetParameter(1);
-      }
+        slope[idif][ichip][ichan] = f_Dist->GetParameter(0);
+        inter[idif][ichip][ichan] = f_Dist->GetParameter(1);
+      } // n_chans
       c1 = new TCanvas("c1","c1");
 
       mg->SetTitle(Form("chip%d;inputDAC;gain",ichip));
       mg->Draw("ap");
       c1->Print(Form("%s/dif%d/chip%d.png",outputIMGDirName.c_str(),idif+1,ichip));
-      for(int ich=0;ich<32;ich++){
-        delete g_Dist [ich];
-        if(mode==1){
-          delete g_Gain0[ich];
-          delete g_Gain1[ich];
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+        delete g_Dist[ichan];
+        if(mode == TWIN_PEAKS) {
+          delete g_Gain0[ichan];
+          delete g_Gain1[ichan];
         }
       }
       delete mg;
       delete c1;
-    }
-  }
+    } // n_chips
+  } // n_difs
 
-  Edit = new wgEditXML();
-  xmlfile=Form("%s/calibration_card.xml",outputXMLDirName.c_str());
-  Edit->PreCalib_Make(xmlfile);
-  Edit->Open(xmlfile);
-  for(int idif=0;idif<2;idif++){
-    for(unsigned int i=0;i<NCHIPS;i++){
-      int ichip=i;
-      for(int j=0;j<32;j++){
-        int ich=j;
-        name= Form("s_Gain");
-        Edit->PreCalib_SetValue(name,idif+1,ichip,ich,slope[idif][ichip][ich],0);
-        name= Form("i_Gain");
-        Edit->PreCalib_SetValue(name,idif+1,ichip,ich,inter[idif][ichip][ich],0);
-        if(mode==1){
-          for(int k=0;k<16;k++){
+  // ======================================================//
+  //                   calibration_card.xml                //
+  // ======================================================//
+  
+  Edit.PreCalib_Make(outputXMLDirName + "/calibration_card.xml");
+  Edit.Open(outputXMLDirName + "/calibration_card.xml");
+  for(unsigned idif = 0; idif < n_difs; idif++) {
+    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+        Edit.PreCalib_SetValue(string("s_Gain"), idif+1, ichip, ichan, slope[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+        Edit.PreCalib_SetValue(string("i_Gain"), idif+1, ichip, ichan, inter[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+        if(mode == TWIN_PEAKS) {
+          for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
             vector<double> v_ped;
-            for(int pe=0;pe<1;pe++){
-              for(int l=0;l<(int)size_inputDAC;l++){
-                if( Pedestal[idif][ichip][ich][l][0][k]<350 
-                    || Pedestal[idif][ichip][ich][l][0][k]>680)continue;
-                v_ped.push_back(Pedestal[idif][ichip][ich][l][0][k]);
-              }
-            }
-            unsigned int v_ped_size=v_ped.size();
+			for(unsigned l = 0; l < size_inputDAC; l++) {
+			  // Ignore pedestals less than 350 and over 680
+			  if( Pedestal[idif][ichip][ichan][l][ONE_PE][icol] < 350 || Pedestal[idif][ichip][ichan][l][ONE_PE][icol] > 680)
+				continue;
+			  v_ped.push_back(Pedestal[idif][ichip][ichan][l][ONE_PE][icol]);
+			}
+			// take the average of the pedestal over the various inputDAC values
+            unsigned int v_ped_size = v_ped.size();
             double v_ped_sum = 0.;
-            for(unsigned int m=0;m<v_ped_size;m++){
+            for(unsigned m = 0; m < v_ped_size; m++) {
               v_ped_sum += v_ped[m];
             }
-            double v_ped_mean = v_ped_sum/v_ped_size;
-            name= Form("ped_%d",k);
-            Edit->PreCalib_SetValue(name,idif+1,ichip,ich,v_ped_mean,1);
+            double v_ped_mean = v_ped_sum / v_ped_size;
+            Edit.PreCalib_SetValue("ped_" + to_string(icol), idif+1, ichip, ichan, v_ped_mean, CREATE_NEW_MODE);
           }
         }
       }
     }
   }
-  Edit->Write();
-  Edit->Close();
-  delete Edit;
+  Edit.Write();
+  Edit.Close();
 }
 
 //******************************************************************
-void MakeDir(string& str){
-  CheckExist *check = new CheckExist;
-  if(!check->Dir(str)){
-    system(Form("mkdir %s",str.c_str()));
-  }
-  delete check;
+void MakeDir(const string& outputDir, const unsigned n_chips) {
+  system( Form("mkdir -p %s", outputDir.c_str()) );
+  for(unsigned i = 0; i < n_chips; i++)
+    system(Form("mkdir -p %s", Form("%s/chip%u", outputDir.c_str(), i)));
 }
 
+//******************************************************************
+vector<string> GetIncludeFileName(const string& inputDirName){
+  OperateString OpStr;
+  DIR *dp;
+  struct dirent *entry;
+  vector<string> openxmlfile;
+
+  // Open the input directory
+  dp = opendir(inputDirName.c_str());
+  if(dp == NULL)
+	throw wgInvalidFile("opendir: failed to open directory");
+
+  // Fill the openxmlfile vector of strings with the path of all the files and
+  // directories contained inside the input directory
+  while( (entry = readdir(dp)) != NULL ) {
+	// Ignore hidden files and directories
+    if( (entry->d_name[0]) != '.' )
+	  openxmlfile.push_back( inputDirName + "/" + string(entry->d_name) );
+  }
+  closedir(dp);
+  return openxmlfile;
+} 
