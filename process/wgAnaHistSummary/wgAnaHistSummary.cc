@@ -21,11 +21,31 @@
 
 using namespace std;
 
-void MakeDir(string& str);
+void MakeDir(const string& str);
 void ModeSelect(int mode);
-void MakeXMLFILE(string& str, bool overwrite);
-void ReadXML(string& inputDirName,string& outputXMLDirName,string& outputIMGDirName,int mode);
+void MakeSummaryXmlFile(const string& str, bool overwrite, unsigned n_chips = NCHIPS, unsigned n_chans = NCHANNELS);
+void wgAnaHistSummary(const string& inputDirName, const string& outputXMLDirName, const string& outputIMGDirName, int mode, unsigned n_chips = NCHIPS, unsigned n_chans = NCHANNELS);
+void print_help(const char * program_name) {
+  cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
+	"  -h         : help\n"
+	"  -f (char*) : input directory (mandatory)\n"
+	"  -o (char*) : output directory (default: same as input directory)\n"
+	"  -i (char*) : output directory for plots and images (default: WAGASCI_IMGDIR) "
+	"  -n (int)   : number of DIFs (default is 2)\n"
+	"  -x (int)   : number of chips per DIF (default is 20)\n"
+	"  -y (int)   : number of channels per chip (default is 36)\n"
+	"  -p         : print plots and images\n"
+	"  -r         : overwrite mode\n"
+	"  -m (int)   : mode (default:10)\n"
+	"   ===   mode  === \n"
+	"   10 : Noise Rate + Gain\n"
+	"   11 : Noise Rate + Gain + Pedestal\n"
+	"   12 : Noise Rate + Gain + Pedestal + Raw Charge\n";
+  exit(0);
+}
 
+
+  
 bool SELECT_Noise;
 bool SELECT_Gain;
 bool SELECT_Pedestal;
@@ -35,165 +55,119 @@ bool SELECT_Print;
 int main(int argc, char** argv){
 
   int opt;
-  int mode=10;
-  bool overwrite=false;
-  wgConst *con = new wgConst;
-  con->GetENV();
+  int mode = 10;
+  int n_chips = NCHIPS, n_chans = NCHANNELS;
+  bool overwrite = false;
+  wgConst con;
+  con.GetENV();
   string inputDirName("");
   string configFileName("");
-  string outputIMGDirName=con->IMGDATA_DIRECTORY;
   string outputXMLDirName("");
   string outputDirName("");
-  string logoutputDir=con->LOG_DIRECTORY;
-
-  OperateString *OpStr = new OperateString;
-  Logger *Log = new Logger;
-  CheckExist *check = new CheckExist;
-
-  Log->Initialize();
+  string logoutputDir(con.LOG_DIRECTORY);
+  string outputIMGDirName(con.IMGDATA_DIRECTORY);
+  
+  OperateString OpStr;
+  CheckExist check;
 
   while((opt = getopt(argc,argv, "f:o:i:hm:rp")) !=-1 ){
     switch(opt){
-      case 'f':
-        inputDirName=optarg;
-        if(!check->Dir(inputDirName)){ 
-          cout<<"!!Error!! "<<inputDirName.c_str()<<"doesn't exist!!";
-          Log->eWrite(Form("[%s][wgAnaHistSummary]Error!!target doesn't exist",inputDirName.c_str()));
-          return 1;
-        }   
-        Log->Write(Form("[%s][wgAnaHistSummary]start wgAnaHistSummary",inputDirName.c_str()));
-        break;
-
-      case 'o':
-        outputXMLDirName = optarg; 
-        break;
-      
-      case 'i':
-        outputIMGDirName = optarg;
-        break;
-
-      case 'm':
-        mode = atoi(optarg); 
-        break;
-
-      case 'p':
-        SELECT_Print = true; 
-        break;
-
-      case 'r':
-        overwrite = true; 
-        break;
-
-      case 'h':
-        cout <<"this program is for summarizing the wgAnaHist outputs. "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h         : help"<<endl;
-        cout <<"  -f (char*) : choose input directory you wanna read(must)"<<endl;
-        cout <<"  -o (char*) : choose output directory (default: input directory) "<<endl;
-        cout <<"  -i (char*) : choose image directory (default: WAGASCI_IMGDIR) "<<endl;
-        cout <<"  -p         : Print images." << endl;
-        cout <<"  -r         : overwrite mode"<<endl;
-        cout <<"  -m (int)   : mode (default:10)"<<endl;
-        cout <<"   ===   mode  === "<<endl;
-        cout <<"   10 : Noise Rate + Gain "<<endl;
-        cout <<"   11 : Noise Rate + Gain + Pedestal "<<endl;
-        cout <<"   12 : Noise Rate + Gain + Pedestal + Raw Charge "<<endl;
-        exit(0);
-      default:
-        cout <<"this program is for summarizing the wgAnaHist outputs. "<<endl;
-        cout <<"you can take several option..."<<endl;
-        cout <<"  -h         : help"<<endl;
-        cout <<"  -f (char*) : choose input directory you wanna read(must)"<<endl;
-        cout <<"  -o (char*) : choose output directory (default: input directory) "<<endl;
-        cout <<"  -i (char*) : choose image directory (default: WAGASCI_IMGDIR) "<<endl;
-        cout <<"  -p         : Print images." << endl;
-        cout <<"  -r         : overwrite mode"<<endl;
-        cout <<"  -m (int)   : mode (default:10)"<<endl;
-        cout <<"   ===   mode  === "<<endl;
-        cout <<"   10 : Noise Rate + Gain "<<endl;
-        cout <<"   11 : Noise Rate + Gain + Pedestal "<<endl;
-        cout <<"   12 : Noise Rate + Gain + Pedestal + Raw Charge "<<endl;
-        exit(0);
+	case 'f':
+	  inputDirName=optarg;
+	  if(!check.Dir(inputDirName)){ 
+		Log.eWrite("[" + OpStr.GetName(inputDirName) + "][wgAnaHistSummary] target doesn't exist");
+		return 1;
+	  }   
+	  break;
+	case 'o':
+	  outputXMLDirName = optarg; 
+	  break;
+	case 'i':
+	  outputIMGDirName = optarg;
+	  break;
+	case 'x':
+	  n_chips = atoi(optarg);
+	  break;
+	case 'y':
+	  n_chans = atoi(optarg);
+	  break;
+	case 'm':
+	  mode = atoi(optarg); 
+	  break;
+	case 'p':
+	  SELECT_Print = true; 
+	  break;
+	case 'r':
+	  overwrite = true; 
+	  break;
+	case 'h':
+	  print_help(argv[0]);
+	  break;
+	default:
+	  print_help(argv[0]);
     }   
   }
 
-  if(inputDirName==""){
-    cout << "!!ERROR!! please input filename." <<endl;
-    cout << "if you don't know how to input, please see help."<<endl;
-    cout << "help : ./wgAnaHistSummary -h" <<endl;
+  if(inputDirName == "") {
+    Log.eWrite("[wgAnaPedestal] No input directory");
     exit(1);
   }
 
-  if(outputXMLDirName=="")outputXMLDirName=inputDirName;
+  if(outputXMLDirName == "") outputXMLDirName = inputDirName;
 
-  outputDirName = OpStr->GetName(inputDirName);
+  outputDirName = OpStr.GetName(inputDirName);
   outputIMGDirName = Form("%s/%s",outputIMGDirName.c_str(),outputDirName.c_str());
 
-  cout << " *****  READING DIRECTORY     :" << inputDirName << "  *****" << endl;
-  cout << " *****  OUTPUT XML DIRECTORY :" << outputXMLDirName << "  *****" << endl;
-  cout << " *****  OUTPUT IMAGE DIRECTORY :" << outputIMGDirName << "  *****" << endl;
-
-  delete check;
-  delete OpStr;
-
+  Log.Write(" *****  READING DIRECTORY      :" + OpStr.GetName(inputDirName)     + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + OpStr.GetName(outputXMLDirName) + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + OpStr.GetName(outputIMGDirName) + "  *****");
+  
   if(SELECT_Print) MakeDir(outputIMGDirName);
   MakeDir(outputXMLDirName);
-  MakeXMLFILE(inputDirName,overwrite);
-  ReadXML(inputDirName,outputXMLDirName,outputIMGDirName,mode);
-
-  Log->Write(Form("[%s][wgAnaHistSummary]end wgAnaHistSummary.",inputDirName.c_str() ));
-  delete Log;  
+  MakeSummaryXmlFile(inputDirName, overwrite);
+  wgAnaHistSummary(inputDirName, outputXMLDirName, outputIMGDirName, mode, n_chips, n_chans);
+  
+  Log.Write("[" + OpStr.GetName(inputDirName) + "][wgAnaHistSummary] Finished");
 }
 
 //******************************************************************
-void ModeSelect(int mode){
-  if(mode==0){
-    cout <<"   ===   mode  === "<<endl;
-    cout <<"   1 : only Noise Rate "<<endl;
-    cout <<"   2 : only Gain       "<<endl;
-    cout <<"   3 : only Pedestal   "<<endl;
-    cout <<"   4 : only Raw Charge "<<endl;
-    cout <<"   10 : Noise Rate + Gain "<<endl;
-    cout <<"   11 : Noise Rate + Gain + Pedestal "<<endl;
-    cout <<"   12 : Noise Rate + Gain + Pedestal + Raw Charge "<<endl;
-  }
-  if(mode==1||mode>=10) SELECT_Noise  =true;
-  if(mode==2||mode>=10) SELECT_Gain   =true;
-  if(mode==3||mode>=11) SELECT_Pedestal=true;
-  if(mode==4||mode==12) SELECT_RawCharge=true;
+void ModeSelect(int mode) {
+  if(mode==0) print_help("wgAnaHistSummary");
+  if(mode == 1 || mode >= 10) SELECT_Noise     = true;
+  if(mode == 2 || mode >= 10) SELECT_Gain      = true;
+  if(mode == 3 || mode >= 11) SELECT_Pedestal  = true;
+  if(mode == 4 || mode == 12) SELECT_RawCharge = true;
 }
 
 //******************************************************************
-void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDirName,int mode){
-
+void wgAnaHistSummary(const string& inputDirName, const string& outputXMLDirName, const string& outputIMGDirName, const int mode, const unsigned n_chips, const unsigned n_chans) {
   ModeSelect(mode);
 
   wgEditXML *Edit = new wgEditXML();
   string xmlfile("");
   int start_time,stop_time;
-  int trig_th[NCHIPS];
-  int gain_th[NCHIPS];
-  int inputDAC[NCHIPS][32];
-  int ampDAC[NCHIPS][32];
-  //int adjDAC[NCHIPS][32];
-  double charge[NCHIPS][32];
-  double rawcharge[NCHIPS][32][MEMDEPTH][2];
-  double e_rawcharge[NCHIPS][32][MEMDEPTH][2];
-  double Noise[NCHIPS][32][2];
+  int trig_th[n_chips];
+  int gain_th[n_chips];
+  int inputDAC[n_chips][n_chans];
+  int ampDAC[n_chips][n_chans];
+  //int adjDAC[n_chips][n_chans];
+  double charge[n_chips][n_chans];
+  double rawcharge[n_chips][n_chans][MEMDEPTH][2];
+  double e_rawcharge[n_chips][n_chans][MEMDEPTH][2];
+  double Noise[n_chips][n_chans][2];
 
   wgColor wgColor;
 
-  TH1F *h_Pedestal[NCHIPS];
-  TH1F *h_Gain[NCHIPS];
-  TH1F *h_rawcharge[NCHIPS];
-  TH1F *h_Noise[NCHIPS];
+  TH1F *h_Pedestal[n_chips];
+  TH1F *h_Gain[n_chips];
+  TH1F *h_rawcharge[n_chips];
+  TH1F *h_Noise[n_chips];
 
   //*** Define histgram ***//
   if(SELECT_Print){
-    for(unsigned int i=0;i<NCHIPS;i++){
-      int ichip=i;
+	for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       if(SELECT_Pedestal){ 
-        h_Pedestal[ichip]=new TH1F(Form("h_pedestal_chip%d",ichip),Form("h_pedestal_chip%d",ichip),32*26+10,-5,32*26+5);
+        h_Pedestal[ichip]=new TH1F(Form("h_pedestal_chip%d",ichip),Form("h_pedestal_chip%d",ichip),n_chans*26+10,-5,n_chans*26+5);
         h_Pedestal[ichip]->SetTitle(Form("pedestal chip:%d;ch*26+col;ADC count",ichip));
         h_Pedestal[ichip]->SetMarkerStyle(8);
         h_Pedestal[ichip]->SetMarkerSize(0.3);
@@ -202,7 +176,7 @@ void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDir
       }
 
       if(SELECT_RawCharge){ 
-        h_rawcharge[ichip]=new TH1F(Form("h_rawcharge__chip%d",ichip),Form("h_rawcharge_chip%d",ichip),32*26+10,-5,32*26+5);
+        h_rawcharge[ichip]=new TH1F(Form("h_rawcharge__chip%d",ichip),Form("h_rawcharge_chip%d",ichip),n_chans*26+10,-5,n_chans*26+5);
         h_rawcharge[ichip]->SetTitle(Form("Gain chip:%d;ch*26+col;ADC count",ichip));
         h_rawcharge[ichip]->SetMarkerStyle(8);
         h_rawcharge[ichip]->SetMarkerSize(0.3);
@@ -231,59 +205,39 @@ void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDir
   }
 
   //*** Read data ***//
-  string name("");
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    for(unsigned int j=0;j<32;j++){
-      int ich=j;
-      xmlfile=Form("%s/chip%d/ch%d.xml",inputDirName.c_str(),ichip,ich);
+  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+    for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+      xmlfile=Form("%s/chip%d/ch%d.xml",inputDirName.c_str(),ichip,ichan);
       Edit->Open(xmlfile);
-      if(ich==0){
-        if(ichip==0){
-          name="start_time";
-          start_time=Edit->GetConfigValue(name);
-          name="stop_time";
-          stop_time=Edit->GetConfigValue(name);
+      if(ichan ==0 ) {
+        if(ichip == 0) {
+          start_time=Edit->GetConfigValue(string("start_time"));
+          stop_time=Edit->GetConfigValue(string("stop_time"));
         }
-        name="trigth";
-        trig_th[ichip]=Edit->GetConfigValue(name);
-        name="gainth";
-        gain_th[ichip]=Edit->GetConfigValue(name);
+        trig_th[ichip]=Edit->GetConfigValue(string("trigth"));
+        gain_th[ichip]=Edit->GetConfigValue(string("gainth"));
       }
-      name="inputDAC";
-      inputDAC[ichip][ich]=Edit->GetConfigValue(name);
-      name="HG";
-      ampDAC[ichip][ich]=Edit->GetConfigValue(name);
-      /*
-      name="trig_adj";
-      adjDAC[ichip][ich]=Edit->GetConfigValue(name);
-      */
+      inputDAC[ichip][ichan]=Edit->GetConfigValue(string("inputDAC"));
+      ampDAC[ichip][ichan]=Edit->GetConfigValue(string("HG"));
+	  // adjDAC[ichip][ichan]=Edit->GetConfigValue(string("trig_adj"));
       if(SELECT_Noise){ 
-        name="NoiseRate";
-        Noise[ichip][ich][0]=Edit->GetChValue(name);
-        name="NoiseRate_e";
-        Noise[ichip][ich][1]=Edit->GetChValue(name);
+        Noise[ichip][ichan][0]=Edit->GetChValue(string("NoiseRate"));
+        Noise[ichip][ichan][1]=Edit->GetChValue(string("NoiseRate_e"));
       }
 
       if(SELECT_Gain){ 
-        name="charge_low";
-        charge[ichip][ich]=Edit->GetChValue(name);
+        charge[ichip][ichan]=Edit->GetChValue(string("charge_low"));
       }
 
-      for(unsigned int k=0;k<MEMDEPTH;k++){
-        int icol=k;
+      for(unsigned icol = 0; icol < MEMDEPTH; icol++){
         if(SELECT_Pedestal){ 
-          name="charge_nohit";
-          rawcharge[ichip][ich][icol][0]=Edit->GetColValue(name,icol); 
-          name="sigma_nohit";
-          e_rawcharge[ichip][ich][icol][0]=Edit->GetColValue(name,icol); 
+          rawcharge[ichip][ichan][icol][0]=Edit->GetColValue(string("charge_nohit"),icol); 
+          e_rawcharge[ichip][ichan][icol][0]=Edit->GetColValue(string("sigma_nohit"),icol); 
         }
 
         if(SELECT_RawCharge){ 
-          name="charge_lowHG";
-          rawcharge[ichip][ich][icol][1]=Edit->GetColValue(name,icol); 
-          name="sigma_lowHG";
-          e_rawcharge[ichip][ich][icol][1]=Edit->GetColValue(name,icol); 
+          rawcharge[ichip][ichan][icol][1]=Edit->GetColValue(string("charge_lowHG"),icol); 
+          e_rawcharge[ichip][ichan][icol][1]=Edit->GetColValue(string("sigma_lowHG"),icol); 
         }
       }
       Edit->Close();
@@ -291,57 +245,41 @@ void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDir
   }
 
   //*** Fill data ***//
-  for(unsigned int i=0;i<NCHIPS;i++){
-    int ichip=i;
-    xmlfile=Form("%s/Summary_chip%d.xml",outputXMLDirName.c_str(),ichip);
-    Edit->Open(xmlfile);
-    name="start_time";
-    Edit->SUMMARY_SetGlobalConfigValue(name,start_time,0);
-    name="stop_time";
-    Edit->SUMMARY_SetGlobalConfigValue(name,stop_time,0);
-    name="trigth";
-    Edit->SUMMARY_SetGlobalConfigValue(name,trig_th[ichip],0);
-    name="gainth";
-    Edit->SUMMARY_SetGlobalConfigValue(name,gain_th[ichip],0);
-    for(unsigned int j=0;j<32;j++){
-      int ich=j;
-      name="inputDAC";
-      Edit->SUMMARY_SetChConfigValue(name,inputDAC[ichip][ich],ich,0);
-      name="ampDAC";
-      Edit->SUMMARY_SetChConfigValue(name,ampDAC[ichip][ich],ich,0);
+  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+    Edit->Open(outputXMLDirName + "/Summary_chip" + to_string(ichip) + ".xml");
+    Edit->SUMMARY_SetGlobalConfigValue(string("start_time"),start_time,0);
+    Edit->SUMMARY_SetGlobalConfigValue(string("stop_time"),stop_time,0);
+    Edit->SUMMARY_SetGlobalConfigValue(string("trigth"),trig_th[ichip],0);
+    Edit->SUMMARY_SetGlobalConfigValue(string("gainth"),gain_th[ichip],0);
+    for(unsigned ichan = 0; ichan < n_chans; ichan++){
+      Edit->SUMMARY_SetChConfigValue(string("inputDAC"),inputDAC[ichip][ichan],ichan,0);
+      Edit->SUMMARY_SetChConfigValue(string("ampDAC"),ampDAC[ichip][ichan],ichan,0);
       /*
-      name="adjDAC";
-      Edit->SUMMARY_SetChConfigValue(name,adjDAC[ichip][ich],ich,0);
+		name="adjDAC";
+		Edit->SUMMARY_SetChConfigValue(string(),adjDAC[ichip][ichan],ichan,0);
       */
       if(SELECT_Gain){
-        name="Gain";
-        double Gain = charge[ichip][ich];  
-        Edit->SUMMARY_SetChFitValue(name,Gain,ich,0);
-        if(SELECT_Print) h_Gain[ichip]->Fill(ich,Gain);
+        double Gain = charge[ichip][ichan];  
+        Edit->SUMMARY_SetChFitValue(string("Gain"), Gain, ichan, NO_CREATE_NEW_MODE);
+        if(SELECT_Print) h_Gain[ichip]->Fill(ichan, Gain);
       }
 
       if(SELECT_Noise){
-        name="Noise";
-        Edit->SUMMARY_SetChFitValue(name,Noise[ichip][ich][0],ich,0); 
-        if(SELECT_Print) h_Noise[ichip]->Fill(ich,Noise[ichip][ich][0]);
+        Edit->SUMMARY_SetChFitValue(string("Noise"), Noise[ichip][ichan][0], ichan, NO_CREATE_NEW_MODE); 
+        if(SELECT_Print) h_Noise[ichip]->Fill(ichan, Noise[ichip][ichan][0]);
       }
 
-      for(unsigned int k=0;k<MEMDEPTH+1;k++){
-        int icol=k;
+      for(unsigned icol = 0; icol < MEMDEPTH; icol++){
         if(SELECT_Pedestal){
-          name=Form("ped_%d",icol);
-          Edit->SUMMARY_SetChFitValue(name,rawcharge[ichip][ich][icol][0],ich,1);
-          name=Form("eped_%d",icol);
-          Edit->SUMMARY_SetChFitValue(name,e_rawcharge[ichip][ich][icol][0],ich,1);
-          if(SELECT_Print) h_Pedestal[ichip]->Fill(ich*26+icol,rawcharge[ichip][ich][icol][0]);
+          Edit->SUMMARY_SetChFitValue("ped_" + to_string(icol), rawcharge[ichip][ichan][icol][0], ichan, CREATE_NEW_MODE);
+          Edit->SUMMARY_SetChFitValue("eped_" + to_string(icol), e_rawcharge[ichip][ichan][icol][0], ichan, CREATE_NEW_MODE);
+          if(SELECT_Print) h_Pedestal[ichip]->Fill(ichan*26+icol, rawcharge[ichip][ichan][icol][0]);
         }
 
         if(SELECT_RawCharge){
-          name=Form("raw_%d",icol);
-          Edit->SUMMARY_SetChFitValue(name,rawcharge[ichip][ich][icol][1],ich,1);
-          name=Form("eraw_%d",icol);
-          Edit->SUMMARY_SetChFitValue(name,e_rawcharge[ichip][ich][icol][1],ich,1);
-          if(SELECT_Print) h_rawcharge[ichip]->Fill(ich*26+icol,rawcharge[ichip][ich][icol][1]);
+          Edit->SUMMARY_SetChFitValue("raw_" + to_string(icol), rawcharge[ichip][ichan][icol][1], ichan, CREATE_NEW_MODE);
+          Edit->SUMMARY_SetChFitValue("eraw_" + to_string(icol), e_rawcharge[ichip][ichan][icol][1], ichan, CREATE_NEW_MODE);
+          if(SELECT_Print) h_rawcharge[ichip]->Fill(ichan*26+icol, rawcharge[ichip][ichan][icol][1]);
         }
       }
     }
@@ -351,11 +289,11 @@ void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDir
 
   if(SELECT_Print){
     TCanvas *c1 = new TCanvas("c1","c1");
-    TLegend *l_Noise[NCHIPS];
-    TLegend *l_Gain[NCHIPS];
-    TLegend *l_rawcharge[NCHIPS];
-    TLegend *l_Pedestal[NCHIPS];
-    for(unsigned int i=0;i<NCHIPS;i++){
+    TLegend *l_Noise[n_chips];
+    TLegend *l_Gain[n_chips];
+    TLegend *l_rawcharge[n_chips];
+    TLegend *l_Pedestal[n_chips];
+    for(unsigned int i=0;i<n_chips;i++){
       int ichip = i;
       if(SELECT_Noise){
         l_Noise[ichip]=new TLegend(0.75,0.84,0.90,0.90,Form("chip:%d",ichip));
@@ -398,7 +336,7 @@ void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDir
         l_Pedestal[ichip]->SetBorderSize(0);
         l_Pedestal[ichip]->SetFillStyle(0);
         l_Pedestal[ichip]->AddEntry(h_Pedestal[ichip],Form("Pedestal \n\t chip:%d",ichip),"p");
-        c1->DrawFrame(-5,begin_ped,32*26+5,end_ped);
+        c1->DrawFrame(-5,begin_ped,n_chans*26+5,end_ped);
         h_Pedestal[ichip]->Draw("same P HIST");
         l_Pedestal[ichip]->Draw();
         c1->Print(Form("%s/Summary_Pedestal_chip%d.png",outputIMGDirName.c_str(),ichip));
@@ -410,37 +348,22 @@ void ReadXML(string& inputDirName, string& outputXMLDirName,string& outputIMGDir
 }
 
 //******************************************************************
-void MakeDir(string& str){
-  CheckExist *check = new CheckExist;
-  if(!check->Dir(str)){
-    system(Form("mkdir %s",str.c_str()));
-  }
-  delete check;
+void MakeDir(const string& str){
+  CheckExist check;
+  if(!check.Dir(str)) system(("mkdir -p " + str).c_str());
 }
 
 //******************************************************************
-void MakeXMLFILE(string& str,bool overwrite){
-  cout << " *****  MAKING XML FILE  ***** "<< endl;
-  wgEditXML *Edit = new wgEditXML();
-  CheckExist *check = new CheckExist();
+void MakeSummaryXmlFile(const string& str, const bool overwrite, const unsigned n_chips, const unsigned n_chans) {
+  wgEditXML Edit;
+  CheckExist check;
   string outputxmlfile("");
-  for(unsigned int i=0; i<NCHIPS; i++){
-    int ichip = i;
-    outputxmlfile = Form("%s/Summary_chip%d.xml",str.c_str(),ichip);
-    if(check->XmlFile(outputxmlfile)){
-      if(overwrite){
-        Edit->SUMMARY_Make(outputxmlfile,ichip);
-        cout << "     making " << outputxmlfile.c_str() << " ..." << endl;
-      }
-    }else{
-      Edit->SUMMARY_Make(outputxmlfile,ichip);
-      cout << "     making " << outputxmlfile.c_str() << " ..." << endl;
-    }
-  } 
-  delete Edit;
-  delete check;
+  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+	outputxmlfile = str + "/Summary_chip" + to_string(ichip) + ".xml";
+    if( (check.XmlFile(outputxmlfile) && overwrite) || !check.XmlFile(outputxmlfile) )
+	  Edit.SUMMARY_Make(outputxmlfile, n_chans);
+	else
+	  throw wgInvalidFile("File " + str + " already exists and overwrite mode is not set");
+  }
 }
-
-
-
 
