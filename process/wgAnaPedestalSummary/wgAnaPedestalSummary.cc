@@ -57,7 +57,7 @@ int main(int argc, char** argv){
   OperateString OpStr;
   CheckExist check;
 
-  while((opt = getopt(argc,argv, "f:o:h")) !=-1 ){
+  while((opt = getopt(argc,argv, "f:o:n:x:y:h")) !=-1 ){
     switch(opt){
 	case 'f':
 	  inputDirName=optarg;
