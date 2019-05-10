@@ -9,6 +9,34 @@
 using namespace tinyxml2;
 using namespace std;
 
+//=======================================================================//
+//                                                                       //
+//                         wgEditXML class                               //
+//                                                                       //
+//=======================================================================//
+
+// The purpose of this class is to open, close, read and write XML files. Each
+// object of the wgEditXML class refers to a single XML file at a time. After
+// the object has been created and before anything else, the file needs to be
+// opened with the Open method There are generic methods and method used only
+// for a specific type of XML files.
+
+// In general all the "Get*" methods read something from the XML file and the
+// "Set*" methods write something. The "Make*" methods create an default
+// template for the type of XML file they refer to.
+// So the logical progression is:
+//    create wgEditXML object -> Open -> Make* -> Set* -> Close -> delete object
+// to set a value;
+//    create wgEditXML object -> Open -> Get* -> Close -> delete object
+// to get a value.
+
+// All the Get* and Set* methods throw a wgElementNotFound exception if the
+// element that they refer to is not found.
+
+// All the Set* methods can be called in one of the following two modes:
+// NO_CREATE_NEW_MODE : don't create an element if it is not found
+// CREATE_NEW_MODE    : create the element if it is not found
+
 class wgEditXML
 {
 private:
@@ -76,24 +104,38 @@ public:
 </data>
 -------------------------------------------------------------------------------- */
   void Make(const string& filename, unsigned ichip, unsigned ichan);
+
   // wgEditXML::SetConfigValue
-  // In the XML file created by the wgEditXML::Make method set the configuration
-  // parameter called "name" to the int value "value".  If mode is
-  // CREATE_NEW_MODE (=1), if the parameter name doesn't exist, it is
-  // created. Otherwise a wgElementNotFound exception is thrown.
+  // data -> config -> name
   void SetConfigValue(const string& name, int value, int mode = NO_CREATE_NEW_MODE);
-  void SetColValue(const string&,int,double,int);
-  void SetChValue(const string&,double,int);
-  void AddColElement(const string&,int);
-  void AddChElement(const string&);
-  double GetColValue(const string&,int);
+
+  // wgEditXML::SetColValue
+  // data -> ch -> col_%d -> name
+  void SetColValue(const string& name, int icol, double value, int mode = NO_CREATE_NEW_MODE);
+
   // wgEditXML::SetChValue
-  // insert a child element in the data/ch field with name "name" and value
-  // "value". If the mode is NO_CREATE_NEW_MODE, a new element is not
-  // created. If the mode is CREATE_NEW_MODE a new element is created if it
-  // didn't exist.
+  // data -> ch -> name
+  void SetChValue(const string& name, double value, int = NO_CREATE_NEW_MODE);
+
+  // wgEditXML::AddColElement
+  // data -> ch -> col_%d -> name
+  void AddColElement(const string& name, int icol);
+
+  // wgEditXML::AddChElement
+  // data -> ch -> name
+  void AddChElement(const string& name);
+
+  // wgEditXML::GetColValue
+  // data -> ch -> col_%d -> name
+  double GetColValue(const string& name, int icol);
+
+  // wgEditXML::GetChValue
+  // data -> ch -> name
   double GetChValue(const string& name);
-  int GetConfigValue(const string&);
+
+  // wgEditXML::GetConfigValue
+  // data -> config -> name
+  int GetConfigValue(const string& name);
 
   //=======================================================================//
   //                         SUMMARY XML files                             //
@@ -128,33 +170,46 @@ public:
 </data>
 ----------------------------------------------------------------------------- */
   void SUMMARY_Make(const string& filename, unsigned n_chans);
+
   // wgEditXML::SUMMARY_SetGlobalConfigValue
   // data -> config -> name
-  // In the XML file created by the wgEditXML::SUMMARY_Make method set the
-  // configuration parameter called "name" to the int value "value".  If mode is
-  // CREATE_NEW_MODE (=1), if the parameter name doesn't exist, it is
-  // created. Otherwise a wgElementNotFound exception is thrown.
   void SUMMARY_SetGlobalConfigValue(const string& name, int value, int mode = NO_CREATE_NEW_MODE);
+
   // wgEditXML::SUMMARY_SetChConfigValue
   // data -> ch_%d -> config -> name
-  // Same as above but set a parameter for a specific channel
   void SUMMARY_SetChConfigValue(const string& name, int value, int ichan, int mode = NO_CREATE_NEW_MODE);
+
   // wgEditXML::SUMMARY_SetChFitValue
   // data -> ch_%d -> fit -> name
   void SUMMARY_SetChFitValue(const string& name, int value, int ichan, int mode = NO_CREATE_NEW_MODE);
-  void SUMMARY_SetPedFitValue(double*,int,int);
-  void SUMMARY_AddGlobalElement(const string&);
-  void SUMMARY_AddChElement(const string&,int);
+
+  // wgEditXML::SUMMARY_SetPedFitValue
+  // data -> ch_%d -> fit -> ped_%d
+  void SUMMARY_SetPedFitValue(double* value, int ichan, int = NO_CREATE_NEW_MODE);
+
+  // wgEditXML::SUMMARY_AddGlobalElement
+  // data -> name
+  void SUMMARY_AddGlobalElement(const string& name);
+
+  // wgEditXML::SUMMARY_AddChElement
+  // data -> ch_%d -> name
+  void SUMMARY_AddChElement(const string& name, int ich);
+
   // wgEditXML::SUMMARY_GetChConfigValue
   // data -> config -> name
-  int SUMMARY_GetGlobalConfigValue(const string&);
+  int SUMMARY_GetGlobalConfigValue(const string& name);
+
   // wgEditXML::SUMMARY_GetChConfigValue
   // data -> ch_%d -> config -> name
-  int SUMMARY_GetChConfigValue(const string&,int);
+  int SUMMARY_GetChConfigValue(const string& name, int ich);
+
   // wgEditXML::SUMMARY_GetChFitValue
   // data -> ch_%d -> fit -> name
-  double SUMMARY_GetChFitValue(const string&,int);
-  void SUMMARY_GetPedFitValue(double*,int);
+  double SUMMARY_GetChFitValue(const string& name, int ich);
+
+  // wgEditXML::SUMMARY_GetPedFitValue
+  // data -> ch_%d -> fit -> -> ped_%d
+  void SUMMARY_GetPedFitValue(double* value, int ich);
 
   //=======================================================================//
   //                         S-curve XML files                             //
@@ -211,8 +266,14 @@ public:
 </data>
 -------------------------------------------------------------------------------- */
   void Calib_Make(const string& filename, unsigned n_difs = NDIFS, unsigned n_chips = NCHIPS, unsigned n_chans = NCHANNELS);
-  void Calib_SetValue(const string&,int,int,int,double,int);
-  double Calib_GetValue(const string&,int,int,int);
+
+  // wgEditXML::Calib_SetValue
+  // data -> dif_%d -> chip_%d -> ch_%d -> name
+  void Calib_SetValue(const string& name, int idif, int ichip, int ich, double value, int mode = NO_CREATE_NEW_MODE);
+
+  // wgEditXML::Calib_GetValue
+  // data -> dif_%d -> chip_%d -> ch_%d -> name
+  double Calib_GetValue(const string& name,int idif, int ichip, int ich);
 };
 
 #endif

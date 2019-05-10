@@ -214,21 +214,21 @@ void wgEditXML::SetConfigValue(const string& name, const int value, const int mo
 }
 
 //**********************************************************************
-void wgEditXML::SetColValue(const string& name,const int icol,double value,int mode=0){
-  if(icol<0 || icol>16) return;
+void wgEditXML::SetColValue(const string& name, const int icol, const double value, const int mode) {
+  if(icol<0 || icol>MEMDEPTH) return;
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* col = ch->FirstChildElement(Form("col_%d",icol));
   XMLElement* target = col->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     target->SetText(Form("%.2f",value));
   }else{
-    if(mode==1){
+    if(mode == CREATE_NEW_MODE){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(value);
       col->InsertEndChild(newElement);
     }else{
-      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
+      throw wgElementNotFound("Element " + name + " doesn't exist");
     }
   }
 }
@@ -238,7 +238,7 @@ void wgEditXML::SetChValue(const string& name, const double value, const int mod
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* target = ch->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     target->SetText(Form("%.2f",value));
   }else{
     if(mode == CREATE_NEW_MODE){
@@ -253,7 +253,7 @@ void wgEditXML::SetChValue(const string& name, const double value, const int mod
 
 
 //**********************************************************************
-void wgEditXML::AddColElement(const string& name,const int icol){
+void wgEditXML::AddColElement(const string& name, const int icol) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* col = ch->FirstChildElement(Form("col_%d",icol));
@@ -262,7 +262,7 @@ void wgEditXML::AddColElement(const string& name,const int icol){
 }
 
 //**********************************************************************
-void wgEditXML::AddChElement(const string& name){
+void wgEditXML::AddChElement(const string& name) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* newElement = xml->NewElement(name.c_str());
@@ -271,16 +271,16 @@ void wgEditXML::AddChElement(const string& name){
 
 //**********************************************************************
 double wgEditXML::GetColValue(const string& name,const int icol){
-  if(icol<0 || icol>16) return 0.0;
+  if(icol<0 || icol>MEMDEPTH) return 0.0;
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* col = ch->FirstChildElement(Form("col_%d",icol));
   XMLElement* target = col->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1.;
   }
 }
@@ -290,11 +290,11 @@ double wgEditXML::GetChValue(const string& name){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* target = ch->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1.;
   }
 }
@@ -304,11 +304,11 @@ int wgEditXML::GetConfigValue(const string& name){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atoi(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1;
   }
 }
@@ -414,9 +414,9 @@ void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, co
   if( target )
     target->SetText(Form("%d",value));
   else if( mode == CREATE_NEW_MODE ) {
-      XMLElement* newElement = xml->NewElement(name.c_str());
-      newElement->SetText(Form("%d",value));
-      config->InsertEndChild(newElement);
+	XMLElement* newElement = xml->NewElement(name.c_str());
+	newElement->SetText(Form("%d",value));
+	config->InsertEndChild(newElement);
   }
   else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
@@ -430,30 +430,30 @@ void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const
   if( target )
     target->SetText(Form("%d",value));
   else if( mode == CREATE_NEW_MODE ) {
-      XMLElement* newElement = xml->NewElement(name.c_str());
-      newElement->SetText(Form("%d",value));
-      config->InsertEndChild(newElement);
+	XMLElement* newElement = xml->NewElement(name.c_str());
+	newElement->SetText(Form("%d",value));
+	config->InsertEndChild(newElement);
   }
   else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetPedFitValue(double* value,int ich,int mode=0){
+void wgEditXML::SUMMARY_SetPedFitValue(double* value, const int ichan, const int mode){
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
+  XMLElement* ch = data->FirstChildElement(Form("ch_%d",ichan));
   XMLElement* fit = ch->FirstChildElement("fit");
   for(unsigned int i=0;i<MEMDEPTH;i++){
     int icol=i;
     XMLElement* target = fit->FirstChildElement(Form("ped_%d",icol));
-    if(target){
+	if ( target ) {
       target->SetText(Form("%.2f",value[icol]));
     }else{
-      if(mode==1){
+      if(mode == CREATE_NEW_MODE){
         XMLElement* newElement = xml->NewElement(Form("ped_%d",icol));
         newElement->SetText(Form("%.2f",value[icol]));
         fit->InsertEndChild(newElement); 
       }else{
-        Log.eWrite("Warning! Element ped_"+ to_string(icol) +" doesn't exist!");
+        throw wgElementNotFound("Element ped_"+ to_string(icol) +" doesn't exist!");
       }
     }
   }  
@@ -467,7 +467,7 @@ void wgEditXML::SUMMARY_AddGlobalElement(const string& name){
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_AddChElement(const string& name,int ich){
+void wgEditXML::SUMMARY_AddChElement(const string& name, const int ich){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
   XMLElement* newElement = xml->NewElement(name.c_str());
@@ -479,58 +479,58 @@ int wgEditXML::SUMMARY_GetGlobalConfigValue(const string& name){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("[SUMMARY_GetGlobalConfigValue] Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("[SUMMARY_GetGlobalConfigValue] Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
 
 //**********************************************************************
-int wgEditXML::SUMMARY_GetChConfigValue(const string& name,int ich){
+int wgEditXML::SUMMARY_GetChConfigValue(const string& name, const int ich){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
   XMLElement* config = ch->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atoi(value.c_str());
   }else{
-    Log.eWrite("[SUMMARY_GetChConfigValue] Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("[SUMMARY_GetChConfigValue] Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
 
 //**********************************************************************
-double wgEditXML::SUMMARY_GetChFitValue(const string& name,int ich){
+double wgEditXML::SUMMARY_GetChFitValue(const string& name, const int ich){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
   XMLElement* fit = ch->FirstChildElement("fit");
   XMLElement* target = fit->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("[SUMMARY_GetChFitValue] Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("[SUMMARY_GetChFitValue] Element:" + name + " doesn't exist!");
     return -1.;
   }
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_GetPedFitValue(double* value,int ich){
+void wgEditXML::SUMMARY_GetPedFitValue(double* value, const int ich){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement(Form("ch_%d",ich));
   XMLElement* config = ch->FirstChildElement("fit");
   for(unsigned int i=0;i<MEMDEPTH;i++){
     int icol=i;
     XMLElement* target = config->FirstChildElement(Form("ped_%d",icol));
-    if(target){
+	if ( target ) {
       string temp_value = target->GetText();
       value[icol] = atof(temp_value.c_str());
     }else{
-      Log.eWrite("Error! Element: ped" + to_string(icol) + " doesn't exist!");
+      throw wgElementNotFound("Element: ped" + to_string(icol) + " doesn't exist!");
     }
   }
 }
@@ -585,15 +585,15 @@ void wgEditXML::SCURVE_SetValue(const string& name,int iDAC,double value,int mod
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* inputDAC = data->FirstChildElement(Form("inputDAC_%d",iDAC));
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode==1){
+    if(mode == CREATE_NEW_MODE){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       inputDAC->InsertEndChild(newElement);
     }else{
-      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
+      throw wgElementNotFound("Element " + name + " doesn't exist");
     }
   }
 }
@@ -603,11 +603,11 @@ double wgEditXML::SCURVE_GetValue(const string& name,int iDAC){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* inputDAC = data->FirstChildElement(Form("inputDAC_%d",iDAC));
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1.;
   }
 }
@@ -671,15 +671,15 @@ void wgEditXML::OPT_SetValue(const string& name,int idif, int ichip, int iDAC,do
   XMLElement* inputDAC = chip->FirstChildElement(Form("inputDAC_%d",iDAC));
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
 
-  if(target){
+  if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode==1){
+    if(mode == CREATE_NEW_MODE){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       inputDAC->InsertEndChild(newElement);
     }else{
-      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
+      throw wgElementNotFound("Element " + name + " doesn't exist");
     }
   }
 }
@@ -691,11 +691,11 @@ double wgEditXML::OPT_GetValue(const string& name,int idif, int ichip, int iDAC)
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
   XMLElement* inputDAC = chip->FirstChildElement(Form("inputDAC_%d",iDAC));
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1.;
   }
 }
@@ -707,15 +707,15 @@ void wgEditXML::OPT_SetChipValue(const string& name,int idif, int ichip,double v
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
   XMLElement* target = chip->FirstChildElement(name.c_str());
 
-  if(target){
+  if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode==1){
+    if(mode == CREATE_NEW_MODE){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       chip->InsertEndChild(newElement);
     }else{
-      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
+      throw wgElementNotFound("Element " + name + " doesn't exist");
     }
   }
 }
@@ -726,11 +726,11 @@ double wgEditXML::OPT_GetChipValue(const string& name,int idif, int ichip){
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
   XMLElement* target = chip->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1.;
   }
 }
@@ -785,15 +785,15 @@ void wgEditXML::PreCalib_SetValue(const string& name,int idif, int ichip, int ic
   XMLElement* ch = chip->FirstChildElement(Form("ch_%d",ich));
   XMLElement* target = ch->FirstChildElement(name.c_str());
 
-  if(target){
+  if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode==1){
+    if(mode == CREATE_NEW_MODE){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       ch->InsertEndChild(newElement);
     }else{
-      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
+      throw wgElementNotFound("Element " + name + " doesn't exist");
     }
   }
 }
@@ -805,11 +805,11 @@ double wgEditXML::PreCalib_GetValue(const string& name,int idif, int ichip, int 
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
   XMLElement* ch   = chip->FirstChildElement(Form("ch_%d",ich));
   XMLElement* target = ch->FirstChildElement(name.c_str());
-  if(target){
+  if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
   }else{
-    Log.eWrite("Error! Element:" + name + " doesn't exist!");
+    throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1.;
   }
 }
@@ -867,22 +867,22 @@ void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const 
 }
 
 //**********************************************************************
-void wgEditXML::Calib_SetValue(const string& name,int idif, int ichip, int ich,double value,int mode=0){
+void wgEditXML::Calib_SetValue(const string& name, const int idif, const int ichip, const int ich, const double value, const int mode){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
   XMLElement* ch = chip->FirstChildElement(Form("ch_%d",ich));
   XMLElement* target = ch->FirstChildElement(name.c_str());
 
-  if(target){
+  if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode==1){
+    if(mode == CREATE_NEW_MODE){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       ch->InsertEndChild(newElement);
     }else{
-      Log.eWrite("Warning! Element "+ name +" doesn't exist!");
+      throw wgElementNotFound("Element " + name + " doesn't exist");
     }
   }
 }
@@ -897,9 +897,8 @@ double wgEditXML::Calib_GetValue(const string& name,int idif, int ichip, int ich
   string value;
   if (target) {
     value = target->GetText();
-  }
-  else {
-    throw wgElementNotFound(Form("Element: %s doesn't exist!", name.c_str()));
+  } else {
+    throw wgElementNotFound("Element: " + name + " doesn't exist!");
   }
   return atof(value.c_str());
 }
