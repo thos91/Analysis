@@ -23,6 +23,7 @@ public:
   bool RootFile(const string& filename);   //check the existence of root file.
   bool RawFile(const string& filename);    //check the existence of raw file.
   bool TxtFile(const string& filename);    //check the existence of txt file.
+  bool CsvFile(const string& filename);    //check the existence of csv file.
   bool XmlFile(const string& filename);    //check the existence of xml file.
   bool LogFile(const string& filename);    //check the existence of log file.
   bool Dir(const string& filename);        //check the existence of dir.
