@@ -7,8 +7,8 @@
 // flags
 #define EDIT_FLAG      0
 #define OVERWRITE_FLAG 1
-#define CHECKOPT_FLAG  2
-#define MPPC_DATA_FLAG 3
+#define MPPC_DATA_FLAG 2
+#define CHECKOPT_FLAG  3
 
 // error codes
 #define EC_SUCCESS                 0
