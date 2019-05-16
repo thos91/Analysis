@@ -1,215 +1,50 @@
+// system C++ includes
+#include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <vector>
-#include <string>
 #include <limits>
 
+// system C includes
+#include "unistd.h"
+#include <bits/stdc++.h>
+
+// ROOT includes
 #include "TDirectory.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TTree.h"
 #include "TInterpreter.h"
-#include "unistd.h"
-#include <bits/stdc++.h>
 
+// user includes
 #include "Const.h"
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgExceptions.h"
 #include "wgGetCalibData.h"
 #include "wgChannelMap.h"
-
-// #define DEBUG_DECODE
-
-// Debug macros that will fill the debug histogram
-#define DEBUG_NODATA 1
-#define DEBUG_GOOD_SPILLGAP 2
-#define DEBUG_BAD_SPILLGAP 4
-#define DEBUG_BAD_CHIPNUM 8
-#define DEBUG_BAD_CHIPDATA_SIZE 16
-#define DEBUG_MISSING_CHIPID_TAG 32
-#define DEBUG_MISSING_CHIP_HEADER 64
-#define DEBUG_MISSING_CHIP_TRAILER 128
-#define DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP 256
-
-// bitset macros
-#define M 16
-#define x00FF bitset<M>(0x00FF)
-#define x0FFF bitset<M>(0x0FFF)
-#define xF000 bitset<M>(0xF000)
-#define x2020 bitset<M>(0x2020)
-#define x5053 bitset<M>(0x5053)
-#define x4C49 bitset<M>(0x4C49)
-#define x4843 bitset<M>(0x4843)
-#define x5049 bitset<M>(0x5049)
-#define xFFFF bitset<M>(0xFFFF)
-#define xFFFE bitset<M>(0xFFFE)
-#define xFFFD bitset<M>(0xFFFD)
-#define xFFFC bitset<M>(0xFFFC)
-#define xFFFB bitset<M>(0xFFFB)
+#include "wgDecoder.hpp"
 
 using namespace std;
 
-// print_help
-// prints an help message with all the arguments taken by the program
-void print_help(const char * program_name);
+int wgDecoder(const char * x_inputFileName,
+			  const char * x_calibFileName,
+			  const char * x_pedFileName,
+			  const char * x_tdcFileName,
+			  const char * x_outputDir,
+			  const bool overwrite,
+			  const unsigned maxEvt,
+			  unsigned dif,
+			  unsigned n_chips,
+			  unsigned n_channels) {
 
-// Decode
-// Main decoder function (here is were all the fun happens)
-int Decode(const string& inputFileName,
-		   const string& calibFileName,
-		   const string& pedFileName,
-		   const string& tdcFileName,
-		   const string& outputDir,
-		   bool overwrite,
-		   unsigned maxEvt,
-		   unsigned dif = 0,
-		   unsigned n_chips = NCHIPS,
-		   unsigned n_channels = NCHANNELS);
-
-// check_ChipHeader
-/* Checks if the ChipHeader is well formed. If the number of chip is greater
-   than "n_chips" or if the size of "head" vector is less than offset + 4, the
-   0xFFFF value is returned and the "checkid_exist" flag is set to
-   false. Otherwise, if there are other missing 2Bytes in the header, the
-   "Missing_Header" counter is increased for any 2Bytes that are missing. */
-uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offset, bool& checkid_exist, int& Missing_Header);
-
-// check_ChipID
-/* Check that the chip id is not less that zero and greater than 40 */ 
-bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
-
-// tdc2time
-/* If the detector is calibrated (if the TDC coefficient file is present) this
-   function converts the raw TDC into an absolute time in nanoseconds */
-int tdc2time(f3vector &time_ns, i3vector &time, i2vector &bcid, f3vector &slope, f3vector &intcpt);
-
-// rd_clear
-// Clear the Raw_t rd arrays
-void rd_clear(Raw_t &rd);
-
-void print_help(const char * program_name) {
-  cout << "this program decodes a .raw file into a .root file\n"
-	"usage example: " << program_name << " -f inputfile.raw -r\n"
-	"  -h         : help\n"
-	"  -f (char*) : input .raw file that you want to read (mandatory)\n"
-	"  -i (char*) : calibration card file\n"
-	"  -p (char*) : pedestal card file\n"
-	"  -t (char*) : tdc card file\n"
-	"  -o (char*) : output directory (default = WAGASCI_DECODEDIR)\n"
-	"  -r         : overwrite mode\n"
-	"  -b         : batch (silent) mode\n";
-}
-
-int main(int argc, char** argv) {
-  // object used to check if various files exist or not 
-  CheckExist check;
-
-  // Get environment variables
-  wgConst con;
-  con.GetENV();
-
-  int opt;
-  string inputFileName("");
-  string calibFileName("");
-  string pedFileName("");
-  string tdcFileName("");
-  string outputFile("");
-  const string confDir(con.CONF_DIRECTORY);
-  string outputDir(con.DECODE_DIRECTORY);
-  bool overwrite = false;
-  bool batch = false;
-
-  while((opt = getopt(argc,argv, "hf:i:p:t:o:rb")) !=-1 ){
-    switch(opt){
-	case 'f':
-	  inputFileName = optarg;
-	  if( !check.RawFile(inputFileName) ) { 
-		Log.eWrite("[" + inputFileName + "][Decoder] target is wrong");
-		return 1;
-	  }
-	  Log.Write("[" + inputFileName + "][Decoder] start decoding");
-	  break;
-	case 'i':
-	  calibFileName = optarg;
-	  if( !check.XmlFile(calibFileName) ) { 
-		Log.eWrite("[" + calibFileName + "][Decoder] calibration file is wrong");
-		return 1;
-	  }
-	  break;
-	case 'p':
-	  pedFileName = optarg;
-	  if( !check.XmlFile(pedFileName) ) { 
-		Log.eWrite("[" + pedFileName + "][Decoder] pedestal file is wrong");
-		return 1;
-	  }
-	  break;
-	case 't':
-	  tdcFileName = optarg;
-	  if( !check.XmlFile(tdcFileName) ) { 
-		Log.eWrite("[" + tdcFileName + "][Decoder] TDC calibration file is wrong");
-		return 1;
-	  }
-	  break;
-	case 'o':
-	  outputDir = optarg; 
-	  if( !check.Dir(outputDir) ) {
-		Log.eWrite("[" + outputDir + "][Decoder]output directory is wrong");
-		return 1;
-	  }
-	  break;
-	case 'r':
-	  overwrite = true;
-	  Log.Write("[" + inputFileName + "][Decoder] overwrite mode");
-	  break;
-	case 'b':
-	  batch = true;
-	  Log.Write("[" + inputFileName + "][Decoder] batch (silent) mode");
-	  break;
-	case 'h':
-	  print_help(argv[0]);
-	  exit(0);
-	  break;
-	default:
-	  print_help(argv[0]);
-	  exit(0);
-    }
-  }
-
-  if(inputFileName == ""){
-    Log.eWrite("[Decoder] No input file");
-    exit(1);
-  }
-
-  if(calibFileName == "") {
-	calibFileName = confDir + "/cards/calibration_card.xml";
-  }
-  if(pedFileName == "") {
-	pedFileName = confDir + "/cards/pedestal_card.xml";
-  }
-  if(tdcFileName == "") {
-	tdcFileName = confDir + "/cards/tdc_coefficient_card.xml";
-  }
-  if ( (batch == true) && (Log.WhereToLog == COUT) ) {
-    Log.eWrite("Batch mode is selected but cannot open the log file");
-	exit(1);
-  } else if (batch == true) Log.WhereToLog = LOGFILE;
-  
-  const unsigned int maxEvt = 99999999;
-  Log.Write("Maximum number of events treated = " + to_string(maxEvt));
-
-  int retcode;
-  if ( (retcode = Decode(inputFileName, calibFileName, pedFileName, tdcFileName, outputDir, overwrite, maxEvt)) != 0 )
-	Log.eWrite("Decoder failed with code " + to_string(retcode));
-  return 0;
-}
-
-//******************************************************************************
-
-int Decode(const string& inputFileName, const string& calibFileName, const string& pedFileName, const string& tdcFileName,
-		   const string& outputDir, bool overwrite, unsigned maxEvt, unsigned dif, unsigned n_chips, unsigned n_channels){
+  string inputFileName(x_inputFileName);
+  string calibFileName(x_calibFileName);
+  string pedFileName(x_pedFileName);
+  string tdcFileName(x_tdcFileName);
+  string outputDir(x_outputDir);
 
   OperateString OptStr;
   CheckExist check;
@@ -494,7 +329,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		// more serious)
         if( SPILL_GAP.to_ulong() != 0 ){
 		  Log.eWrite("[" + logfilename + "][Decoder] spill gap warning: last = " + to_string(LAST_SPILL_NUMBER) + ", current = "
-					  + to_string(SPILL_NUMBER));
+					 + to_string(SPILL_NUMBER));
 
 		  bool good_spill_gap = false;
 		  for (size_t i = 0; i < SPILL_GAP.size(); ++i)
@@ -517,7 +352,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
           spillInsertTag = true; 
 		else
           Log.eWrite("[" + logfilename + "][Decoder] spill insert tag was inserted in wrong position, last_spill = "
-					  + to_string(LAST_SPILL_COUNT) + ", current_spill = " + to_string(SPILL_COUNT)); 
+					 + to_string(LAST_SPILL_COUNT) + ", current_spill = " + to_string(SPILL_COUNT)); 
 	  }
 
 	  // **************************************************************//
@@ -553,13 +388,13 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		  uint32_t SPILL_COUNT_GAP = LAST_SPILL_COUNT + 1 - SPILL_COUNT;
           if( SPILL_COUNT_GAP != 0 )
             Log.eWrite("[" + logfilename + "][Decoder] spill count gap warning: last_spill = " + to_string(LAST_SPILL_COUNT) +
-						", current_spill = " + to_string(SPILL_COUNT)); 
+					   ", current_spill = " + to_string(SPILL_COUNT)); 
           
 		  endOfSpillTag=false;
         }
 		else {
           Log.eWrite("[" + logfilename + "][Decoder] Warning : spill trailer not found: current_spill = " +
-					  to_string(SPILL_COUNT));
+					 to_string(SPILL_COUNT));
 		}
 	  }
 
@@ -585,7 +420,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		  // let's replace this magic number 
 		}else{          
 		  Log.eWrite("[" + logfilename + "][Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
-					  to_string(SPILL_COUNT) + ", chip number = " + to_string(nChips + 1));
+					 to_string(SPILL_COUNT) + ", chip number = " + to_string(nChips + 1));
 		  rd.spill_flag--;
 		}
 	  }
@@ -603,7 +438,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 		  nbchip = ( lastFour[0] & x00FF ).to_ulong();
 		  if( nChips != nbchip ){
 			Log.eWrite("[" + logfilename + "][Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
-						", (spill trailer) nbchip = " + to_string(nbchip) + ", acq id = " + to_string(SPILL_COUNT));
+					   ", (spill trailer) nbchip = " + to_string(nbchip) + ", acq id = " + to_string(SPILL_COUNT));
 		  }
 		}
 		if (nChips > 0) {
@@ -643,7 +478,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				currentChipID = chip_count - 1;
 #ifdef DEBUG_DECODE
 				Log.eWrite("[" + logfilename + "][Decoder] Warning : one chipid_tag is missing "
-							"(chipid_count: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");
+						   "(chipid_count: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");
 #endif
 				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIPID_TAG;
 			  }
@@ -654,7 +489,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
 			  if( Missing_Header > 1 ) {
 				Log.eWrite("[" + logfilename + "][Decoder] Warning : part of chip header is missing (missing words: " + to_string(Missing_Header)  +
-							", chipid_tag: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");;
+						   ", chipid_tag: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");;
 				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIP_HEADER;
 			  }
 			  chipStartIndex = i + CHIPHEAD - Missing_Header;
@@ -667,7 +502,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 			  }
 			  else{                    
 				Log.eWrite("[" + logfilename + "][Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
-							", read ChipID = " + to_string((eventData[i] & x00FF).to_ulong()) + ", acq id = " + to_string(SPILL_COUNT)); 
+						   ", read ChipID = " + to_string((eventData[i] & x00FF).to_ulong()) + ", acq id = " + to_string(SPILL_COUNT)); 
 				bool matchChipID = false;
 				if( lastChipID[0] + 1 < nChips && lastChipID[0] > 0 ) {
 				  if( currentChipID == lastChipID[1] + 1) {
@@ -717,7 +552,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				  isValidChip = false;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
 				  Log.eWrite("[" + logfilename + "][Decoder] Warning : HEAD ChipID and END ChipID is wrong! (HEAD: " +
-							  to_string(currentChipID) + ", END: " + to_string(eventData[i].to_ulong()) + ") spill: " + to_string(rd.spill));
+							 to_string(currentChipID) + ", END: " + to_string(eventData[i].to_ulong()) + ") spill: " + to_string(rd.spill));
 				  rd.spill_flag--;
 				}
 			  }
@@ -730,7 +565,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				nColumns    = (rawDataSize - CHIPIDSIZE) / (1 + NCHANNELS * 2);
 				if ( (rawDataSize - CHIPIDSIZE) % (1 + NCHANNELS * 2) != 0) {
 				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD DATA SIZE! "
-							  "spill: " + to_string(rd.spill) + ", chip: " + to_string(currentChipID));
+							 "spill: " + to_string(rd.spill) + ", chip: " + to_string(currentChipID));
 				  rd.spill_flag--;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
 				  last = eventData[i].to_ulong();
@@ -741,7 +576,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				else if(nColumns > MEMDEPTH) {
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
 				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD COLUMN SIZE! "
-							  "DataSize: " + to_string(rd.spill) + ", column: " + to_string(nColumns));
+							 "DataSize: " + to_string(rd.spill) + ", column: " + to_string(nColumns));
 				  rd.spill_flag--;
 				  last = eventData[i].to_ulong();
 				  isValidChip=false;
@@ -753,7 +588,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 
 				if ( !check_ChipID(v_chipid[currentChipID], n_chips) ) {
 				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD CHIP ID! spill: " + to_string(rd.spill) +
-							  " chipid: " + to_string(v_chipid[currentChipID]));
+							 " chipid: " + to_string(v_chipid[currentChipID]));
 				  rd.spill_flag--;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
 				}
@@ -783,7 +618,7 @@ int Decode(const string& inputFileName, const string& calibFileName, const strin
 				  else if( loopBCID == 2) { bcid_slope=  1;  bcid_inter = 2 * 4096; } /*  this one /\/   */
 				  else if( loopBCID == 3) { bcid_slope= -1;  bcid_inter = 4 * 4096; } /*  this one /\/\   */
 				  else Log.eWrite("[" + logfilename + "][Decoder] bad loopBCID value: " + to_string(loopBCID) +
-							  " chipid: " + to_string(v_chipid[currentChipID]) + " column:" + to_string(ibc));
+								  " chipid: " + to_string(v_chipid[currentChipID]) + " column:" + to_string(ibc));
 
 				  // In case of error the rd.bcid will be 0 + (-1) * 1 = -1 (just like the default/empty value)
 				  rd.bcid[currentChipID][ibc] = bcid_inter + rd.bcid[currentChipID][ibc] * bcid_slope;
