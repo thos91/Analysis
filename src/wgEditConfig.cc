@@ -1,94 +1,128 @@
+// system C++ includes
 #include <fstream>
 #include <string>
 #include <sstream>
-#include <iostream>
 #include <vector>
-#include <cstdint>
 #include <exception>
 
+// system C includes
 #include <bits/stdc++.h>
-#include <math.h>
+
+// boost includes
+#include <boost/algorithm/string.hpp>
+
+// ROOT includes
 #include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
 
+// user includes
 #include "Const.h"
 #include "wgEditConfig.h"
+#include "wgErrorCode.h"
+#include "wgExceptions.h"
 #include "wgTools.h"
+
+//#define DEBUG_WG_EDIT_CONFIG
 
 using namespace std;
 
 //*********************************************************************************
-vector<string> wgEditConfig::split(string& input, char delimiter)
-{
-  istringstream stream(input);
-  string field;
-  vector<string> result;
-  while (getline(stream, field, delimiter)) {
-    result.push_back(field);
-  }
-  return result;
+wgEditConfig::wgEditConfig(const string& input, bool bitstream_string){
+  this->Clear();
+  if (bitstream_string) this->SetBitstream(input);
+  else this->Open(input);
 }
-
+  
 //*********************************************************************************
-vector<string> wgEditConfig::GetCSV(){
-  wgConst *con = new wgConst();
-  con->GetENV();
-  char* map_csv=Form("%s/src/spiroc2d.csv",con->MAIN_DIRECTORY.c_str());
-  ifstream ifs(map_csv);
-  string line;
-  vector<string> output;
-  vector<string> strvec;  
-  for(unsigned int i=0;i<85;i++){
-    getline(ifs, line);
-    strvec = this->split(line, ',');
-    for(unsigned int j=0;j<5;j++){
-      output.push_back(strvec[j]);
-    }
+vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
+  CheckExist check;
+  if (spiroc2d_csv.empty()) {
+	wgConst con;
+	con.GetENV();
+	spiroc2d_csv = string(con.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
-  ifs.close();
+  if (!check.CsvFile(spiroc2d_csv))
+	throw wgInvalidFile("[wgEditConfig::GetCSV][" + spiroc2d_csv + "] file not found");
+  ifstream ifs(spiroc2d_csv.c_str());
+	  
+  string line;
+  vector<vector<string>> output;
+  vector<string> strvec;
+  try {
+	while (getline(ifs, line)) {
+	  boost::split(strvec, line, boost::is_any_of(","));
+	  output.push_back(strvec);
+	}
+  } catch(...) {
+	ifs.close();
+	throw;
+  }
+  
+#ifdef DEBUG_WG_EDIT_CONFIG
+  for(const vector<string> line: output) {
+	for(string field: line) {
+	  cout << field ;
+	  cout << ",\t";
+	}
+	cout << endl;
+  }
+#endif
+  
   return output;
 }
 
 //*********************************************************************************
 void wgEditConfig::Get_MPPCinfo(int ichip){ 
-  wgConst *con = new wgConst();
-  con->GetENV();
-  const char* mppc_csv= Form("%s/config/spiroc2d/mppc_map.csv",con->CALICOES_DIRECTORY.c_str());
-  ifstream ifs(mppc_csv);
+  wgConst con;
+  con.GetENV();
+  
+  CheckExist check;
+  string mppc_csv(con.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
   string line;
   vector<string> tmp_mppc_map;
   float tmp_bdv;
   int tmp_serial,tmp_ch;
   int mppc_map[NCHIPS];
 
-  for(unsigned int i=0;i<NCHIPS;i++){
+  if ( !check.CsvFile(mppc_csv) )
+	throw wgInvalidFile("[Get_MPPCinfo][" + mppc_csv + "] mppc_csv file not found");
+  ifstream ifs(mppc_csv);
+  
+  for(unsigned i = 0; i < NCHIPS; i++){
     getline(ifs,line);
-    tmp_mppc_map = this->split(line,',');
-    mppc_map[atoi(tmp_mppc_map[0].c_str())]=atoi(tmp_mppc_map[1].c_str());
+    boost::split(tmp_mppc_map, line, boost::is_any_of(","));
+    mppc_map[stoi(tmp_mppc_map[0])] = stoi(tmp_mppc_map[1]);
   }
 
-  TFile *fmppc = new TFile( Form("%s/config/spiroc2d/arraymppc_data.root",con->CALICOES_DIRECTORY.c_str()),"read");
+  string mppc_root(con.CALICOES_DIRECTORY + "/config/spiroc2d/arraymppc_data.root");
+  if ( !check.RootFile(mppc_root) )
+	throw wgInvalidFile("[Get_MPPCinfo][" + mppc_root + "] arraymppc_data.root file not found");
+  TFile *fmppc = new TFile(mppc_root.c_str(), "read");
   TTree *mppc = (TTree*)fmppc->Get("mppc");
 
-  mppc->SetBranchAddress("BDV",&tmp_bdv);
-  mppc->SetBranchAddress("serial",&tmp_serial);
-  mppc->SetBranchAddress("ch",&tmp_ch);
+  mppc->SetBranchAddress("BDV",    &tmp_bdv);
+  mppc->SetBranchAddress("serial", &tmp_serial);
+  mppc->SetBranchAddress("ch",     &tmp_ch);
 
   //set 51V to inputDAC=0, and 53.5V to inputDAC=255
   //if break down = A, over voltage = V-53.5
-  for(int i=0;i<mppc->GetEntries();i++){
+  for(unsigned i = 0; i < mppc->GetEntries(); i++) {
     mppc->GetEntry(i);
-    if(mppc_map[ichip]==tmp_serial){
-      this->fine_inputDAC[tmp_ch]=(tmp_bdv-51.0)*256.0/2.5;
-      this->BDV[tmp_ch]=tmp_bdv;
+    if(mppc_map[ichip] == tmp_serial){
+      this->fine_inputDAC[tmp_ch] = (tmp_bdv - 51.0) * 256 / 2.5;
+      this->BDV[tmp_ch] = tmp_bdv;
 #ifdef DEBUG_CHANGECONFIG
-      cout <<ichip << " / " << tmp_serial << " / " << tmp_ch << " / "<< fine_inputDAC[tmp_ch] << endl;
+	  stringstream ss;
+	  ss << ichip << " / " << tmp_serial << " / " << tmp_ch << " / "<< fine_inputDAC[tmp_ch];
+	  Log.Write(ss.str());
 #endif
     }
   }
   ifs.close();
   fmppc->Close();
+  delete mppc;
+  delete fmppc;
   Read_MPPCData=true; 
 }
 
@@ -97,8 +131,11 @@ void wgEditConfig::Open(const string& input){
   string str;
   ifstream ifs(input.c_str());
   getline(ifs, str);
-  if( str.size() != BITSTREAM_HEX_STRING_LENGTH)
+  if( str.size() != BITSTREAM_HEX_STRING_LENGTH) {
+	ifs.close();
 	throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + to_string(input.size()));
+  }
+  ifs.close();
   wgEditConfig::hex_config = str.substr(2, BITSTREAM_HEX_STRING_LENGTH - 2);
   wgEditConfig::bi_config = this->HexToBi(wgEditConfig::hex_config);
 }
@@ -112,22 +149,25 @@ void wgEditConfig::SetBitstream(const string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Modify(string& input,int ini){
+void wgEditConfig::Modify(const string& input, const int start) {
   unsigned int length = input.size();
-  if(length+ini>1192){ printf("Error! Bad Data Size!"); return;} 
-  wgEditConfig::bi_config.replace(ini+6,length,input.c_str());
+  if(length + start > BITSTREAM_BIN_STRING_LENGTH) {
+	throw std::invalid_argument("[wgEditConfig::Modify] bad data size : length = " + to_string(length) + ", start = " + to_string(start));
+  } 
+  wgEditConfig::bi_config.replace(start + VALUE_OFFSET_IN_BITS, length, input.c_str());
 }
 
 //*********************************************************************************
-void wgEditConfig::Write(string& output){
-  if(wgEditConfig::bi_config.size()!=1192){ printf("Error!\n"); return;}
+void wgEditConfig::Write(const string& output){
+  if(wgEditConfig::bi_config.size() != BITSTREAM_BIN_STRING_LENGTH) {
+	throw runtime_error("[wgEditConfig::Write] wrong length for binary configuration string (bi_config) : " + to_string(bi_config.size()) + " != " + to_string(BITSTREAM_BIN_STRING_LENGTH));
+  }
   string str("0x");
   str += this->BiToHex(wgEditConfig::bi_config);
   ofstream outputfile(output);
-  outputfile<<str.c_str();
+  outputfile << str.c_str();
   outputfile.close();  
-  cout << "  Write :: " << output.c_str() << endl;
-  wgEditConfig::Read_MPPCData=false;
+  wgEditConfig::Read_MPPCData = false;
 }
 
 //*********************************************************************************
@@ -145,51 +185,57 @@ string wgEditConfig::GetValue(int start, int length) {
 }
 
 //*********************************************************************************
-void wgEditConfig::CheckAll(){
-  vector<string> csv;
-  csv = this->GetCSV();
+void wgEditConfig::CheckAll() {
+  vector<vector<string>> csv(this->GetCSV());
   string name;
   string value;
-  int ini,length;
-  for(int i=0;i<85;i++){
-    name = csv[i*5];
-    length = stoi(csv[i*5+1].c_str());
-    ini = stoi(csv[i*5+3].c_str()) ;
-    if(length%36==0){
-      int chanbit = length/36;
-      cout << name << " / ";
-      for(int chan=0;chan<36;chan++){
-        value = this->GetValue(ini+chan*chanbit,chanbit);
-        cout << "[" << value << "],";
-      }
-      cout << endl;
-    }else{
-      value = this->GetValue(ini,length);
-      cout << name << " / " << value << endl;
-    }
-  }  
+  int start,length;
+  stringstream ss;
+
+  for(const vector<string> line: csv) {
+	name = line[0];         // Name of the parameter
+	length = stoi(line[1]); // Length in bits of the field
+	start = stoi(line[3]);  // Starting bit of the field
+	// If the length is a multiple of the number of channels it means that we
+	// are dealing with a parameter that can be set individually for each
+	// channel
+	if (length % NCHANNELS == 0) {
+	  int chanbit = length / NCHANNELS;
+	  ss  << "name = " << name << " | values = ";
+	  for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+		value = this->GetValue(start + ichan * chanbit, chanbit);
+		ss << "[" << value << "],";
+	  }
+	  ss << endl;
+	}
+	else {
+	  value = this->GetValue(start, length);
+	  ss << "name = " << name << " | value = [" << value << "]" << endl;
+	}
+  }
+  Log.Write("[wgEditConfig::CheckAll] " + ss.str());
 }
 
 //*********************************************************************************
 string wgEditConfig::HexToBi(const string& input){
   string output("");
   for(const char& c : input) {
-    if(c=='0')         output += "0000";
-    if(c=='1')         output += "1000";
-    if(c=='2')         output += "0100";
-    if(c=='3')         output += "1100";
-    if(c=='4')         output += "0010";
-    if(c=='5')         output += "1010";
-    if(c=='6')         output += "0110";
-    if(c=='7')         output += "1110";
-    if(c=='8')         output += "0001";
-    if(c=='9')         output += "1001";
-    if(c=='A'||c=='a') output += "0101";
-    if(c=='B'||c=='b') output += "1101";
-    if(c=='C'||c=='c') output += "0011";
-    if(c=='D'||c=='d') output += "1011";
-    if(c=='E'||c=='e') output += "0111";
-    if(c=='F'||c=='f') output += "1111";
+    if(c=='0')         output = "0000" + output;
+    if(c=='1')         output = "1000" + output;
+    if(c=='2')         output = "0100" + output;
+    if(c=='3')         output = "1100" + output;
+    if(c=='4')         output = "0010" + output;
+    if(c=='5')         output = "1010" + output;
+    if(c=='6')         output = "0110" + output;
+    if(c=='7')         output = "1110" + output;
+    if(c=='8')         output = "0001" + output;
+    if(c=='9')         output = "1001" + output;
+    if(c=='A'||c=='a') output = "0101" + output;
+    if(c=='B'||c=='b') output = "1101" + output;
+    if(c=='C'||c=='c') output = "0011" + output;
+    if(c=='D'||c=='d') output = "1011" + output;
+    if(c=='E'||c=='e') output = "0111" + output;
+    if(c=='F'||c=='f') output = "1111" + output;
   } 
   return output;
 }
@@ -199,7 +245,7 @@ string wgEditConfig::BiToHex(const string& input){
   string output("");
   if(input.size() % 4 != 0) return output;
   for(unsigned i = input.size(); i > 3; i -= 4) {
-    string word = input.substr(i-4,4); 
+    string word = input.substr(i - 4, 4); 
     if(word=="0000") output += "0";
     if(word=="1000") output += "1";
     if(word=="0100") output += "2";
@@ -237,8 +283,8 @@ string wgEditConfig::DeToBi(const string& input){
   int decimal = std::stoi(input);
   if ( decimal < 0 )
 	throw std::invalid_argument("DeToBi: cannot convert negative numbers");
-  if ( decimal > (int) UINT32_MAX )
-	throw std::invalid_argument("DeToBi: input greater than UINT32_MAX");
+  if ( decimal > INT_MAX )
+	throw std::invalid_argument("DeToBi: input greater than INT_MAX");
   std::stringstream ss;
   bitset<32> binary((uint32_t) decimal);
   for (int i = 31; i >= 0; i--) {
@@ -250,112 +296,109 @@ string wgEditConfig::DeToBi(const string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_inputDAC(int chan,int value,int mode){
-  if(chan <0 || chan>36){printf("WARNING! chan is out of range!\n"); return;}
-  string num;
-
-  if(mode==1 && this->Read_MPPCData){
-    if(value+fine_inputDAC[chan]>255){
-      printf("WARNING! value is out of range! set 0\n");
-      num = Form("%d",255);
-    }else{
-      num = Form("%d",value+this->fine_inputDAC[chan]);
-    }
-
-  }else if(mode==1 && !this->Read_MPPCData){
-    printf(" [wgEditConfig] WARNING! Read MPPC data before change inputDAC! set 0 \n");
-    num = Form("%d",0);
- 
-  }else{
-    if(value <0 || value>255){
-      printf("WARNING! value is out of range! set 0\n");
-      num = Form("%d",0);
-    }else{
-      num = Form("%d",value);
-    }
+void wgEditConfig::Change_inputDAC(const int chan, int value) {
+  if(chan < 0 || chan > NCHANNELS) {
+	throw invalid_argument("channel is out of range : " + to_string(chan));
+  }
+  if(value + fine_inputDAC[chan] > MAX_VALUE_8BITS) {
+	throw invalid_argument("value is out of range : " + to_string(value + fine_inputDAC[chan]));
   }
 
-  num = DeToBi(num);
-  num = Form("%08d1",stoi(num.c_str()));
-  if(chan==36){
-    for(int ichan=0;ichan<36;ichan++){
-      this->Modify(num,37+ichan*9);
+  if(this->Read_MPPCData) {
+	value += this->fine_inputDAC[chan];
+  }
+
+  stringstream num;
+  num << setfill('0') << setw(ADJ_INPUTDAC_LENGTH) << DeToBi(to_string(value)) << '1';
+
+  if(chan == NCHANNELS) {
+    for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+      this->Modify(num.str(), ADJ_INPUTDAC_START + ichan * ADJ_INPUTDAC_OFFSET);
     }
-  }else{
-    this->Modify(num,37+chan*9);
+  }
+  else {
+    this->Modify(num.str(), ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET);
   }
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_ampDAC(int chan,int value){
-  if(value <0 || value>63){printf("WARNING! value is out of range!\n"); return;}
-  if(chan <0 || chan>36){printf("WARNING! chan is out of range!\n"); return;}
-  string num;
-  num = Form("%d",value);
-  num = DeToBi(num);
-  num = Form("%06d%06d000",stoi(num.c_str()),stoi(num.c_str()));
-  if(chan==36){
-    for(int ichan=0;ichan<36;ichan++){
-      this->Modify(num,367+ichan*15);
+void wgEditConfig::Change_ampDAC(const int chan, const int value) {
+  if(value < 0 || value > MAX_VALUE_6BITS) {
+	throw invalid_argument("value is out of range : " + to_string(value));
+  }
+  if(chan < 0 || chan > NCHANNELS) {
+	throw invalid_argument("channel is out of range : " + to_string(chan));
+  }
+  stringstream num;
+  num << setfill('0') << setw(ADJ_AMPDAC_LENGTH) << DeToBi(to_string(value)) << setfill('0') << setw(ADJ_AMPDAC_LENGTH) << DeToBi(to_string(value)) << "000";
+
+  if(chan == NCHANNELS) {
+    for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+      this->Modify(num.str(), ADJ_AMPDAC_START + ichan * ADJ_AMPDAC_OFFSET);
     }
-  }else{
-    this->Modify(num,367+chan*15);
+  }
+  else {
+	this->Modify(num.str(), ADJ_AMPDAC_START + chan * ADJ_AMPDAC_OFFSET);
   }
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_trigadj(int chan,int value){
-  if(value <0 || value>15){printf("WARNING! value is out of range!\n"); return;}
-  if(chan <0 || chan>36){printf("WARNING! chan is out of range!\n"); return;}
-  string num;
-  num = Form("%d",value);
-  num = DeToBi(num);
-  num = Form("%04d",stoi(num.c_str()));
-  if(chan==36){
-    for(int ichan=0;ichan<36;ichan++){
-      this->Modify(num,1006+ichan*4);
+void wgEditConfig::Change_trigadj(const int chan, const int value) {
+  if(value < 0 || value > MAX_VALUE_4BITS) {
+	throw invalid_argument("value is out of range : " + to_string(value));
+  }
+  if(chan < 0 || chan > NCHANNELS) {
+	throw invalid_argument("channel is out of range : " + to_string(chan));
+  }
+  stringstream num;
+  num << setfill('0') << setw(ADJ_THRESHOLD_LENGTH) << DeToBi(to_string(value));
+
+  if(chan == NCHANNELS) {
+    for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+      this->Modify(num.str(), ADJ_THRESHOLD_START + ichan * ADJ_THRESHOLD_OFFSET);
     }
-  }else{
-    this->Modify(num,1006+chan*4);
+  }
+  else {
+	this->Modify(num.str(), ADJ_THRESHOLD_START + chan * ADJ_THRESHOLD_OFFSET);
   }
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_trigth(int value){
-  if(value <0 || value>1023){printf("WARNING! value is out of range!\n"); return;}
-  string num;
-  num = Form("%d",value);
-  num = DeToBi(num);
-  num = Form("%010d",stoi(num.c_str()));
-  this->Modify(num,931);
+void wgEditConfig::Change_trigth(const int value){
+  if(value < 0 || value > MAX_VALUE_10BITS) {
+	throw invalid_argument("value is out of range : " + to_string(value));
+  }
+  stringstream num;
+  num << setfill('0') << setw(GLOBAL_THRESHOLD_LENGTH) << DeToBi(to_string(value));
+  this->Modify(num.str(), GLOBAL_THRESHOLD_START);
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_gainth(int value){
-  if(value <0 || value>1023){printf("WARNING! value is out of range!\n"); return;}
-  string num;
-  num = Form("%d",value);
-  num = DeToBi(num);
-  num = Form("%010d",stoi(num.c_str()));
-  this->Modify(num,941);
+void wgEditConfig::Change_gainth(const int value){
+  if(value < 0 || value > MAX_VALUE_10BITS) {
+	throw invalid_argument("value is out of range : " + to_string(value));
+  }
+  stringstream num;
+  num << setfill('0') << setw(GLOBAL_GS_THRESHOLD_LENGTH) << DeToBi(to_string(value));
+  this->Modify(num.str(), GLOBAL_GS_THRESHOLD_START);
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_inputDAC(int chan){
+int wgEditConfig::Get_inputDAC(const int chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET, ADJ_INPUTDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_ampDAC(int chan){
+int wgEditConfig::Get_ampDAC(const int chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_AMPDAC_START + chan * ADJ_AMPDAC_OFFSET, ADJ_AMPDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_trigadj(int chan){
+int wgEditConfig::Get_trigadj(const int chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_THRESHOLD_START + chan * ADJ_THRESHOLD_OFFSET, ADJ_THRESHOLD_LENGTH ) ) );
@@ -373,17 +416,13 @@ int wgEditConfig::Get_gainth(){
 
 //*********************************************************************************
 void wgEditConfig::Change_1bitparam(int value,int subadd){
-  string num;
-  num = Form("%d",value);
-  num = DeToBi(num);
-  num = Form("%d",stoi(num.c_str()));
-  this->Modify(num,subadd);
+  if(value != 0 && value != 1) {
+	throw invalid_argument("value is out of range : " + to_string(value));
+  }
+  this->Modify(to_string(value),subadd);
 }
 
 //*********************************************************************************
 int wgEditConfig::Get_1bitparam(int subadd){
-  string num("");
-  num = GetValue(subadd,1);
-  num = BiToDe(num);
-  return stoi(num.c_str());
+  return stoi(GetValue(subadd,1));
 }

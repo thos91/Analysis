@@ -1,0 +1,85 @@
+GC : Sel Temp sensor to ADC,1,,0,0
+   : NC,1,,1,
+EC : Trig Ext (OR36),1, Enable external trig_ext (OR36),2,0
+EC : Flag TDC Ext,1, Enable external flag_tdc_ext signal,3,0
+EC : Start Ramp ADC Ext,1, Enable external startb_ramp_adc signal,4,0
+EC : Start Ramp TDC Ext,1, Enable external start_ramp_tdc signal,5,0
+GC : ADC Gray (12 bits),12, ADC Gray counter resolution register (from LSB to MSB),6,0
+GC : Chip ID (8 bits),8, Chip ID (from LSB to MSB),18,0
+EN : Probe OTAq,1, Enable Probe OTA,26,0
+EN : Analog OTAq,1, Enable Analogue Output OTA,27,0
+PP : Analogue Output OTAq,1, Disable Analogue Output OTA power pulsing mode (force ON),28,0
+   : NC,1,,29,0
+EN : OR36,1, Enable digital OR36 output [active low],30,0
+GC : ADC Ramp Slope,2, ADC ramp slope (ramp slope 12-bit [00]  10-bit [10] or 8-bit [11]),31,0
+PP : ADC Ramp Current Source,1, Enable adc ramp current source power pulsing,33,0
+PP : ADC Ramp Integrator,1, Enable adc ramp integrator power pulsing,34,0
+EN : input_dac,1, Enable 32 input 8-bit DACs,35,1
+GC : 8-bit DAC reference,1, 8-bit input DAC Voltage Reference (1 = internal 4 5V   0 = internal 2 5V),36,1
+ID : Input 8-bit DAC,324, Input 8-bit DAC Data from channel 0 to 35   (DAC7...DAC0 + DAC ON),37, 8 x (00000000 0) 
+GC : LG PA bias,1, Low Gain PreAmp bias ( 1 = weak bias  0 = normal bias),361,0
+PP : High Gain PreAmplifier,1, Disable High Gain preamp power pulsing mode (force ON),362,0
+EN : High_Gain_PA,1, Enable High Gain preamp,363,1
+PP : Low Gain PreAmplifier,1, Disable Low Gain preamp power pulsing mode (force ON),364,0
+EN : Low_Gain_PA,1, Enable Low Gain preamp,365,1
+GC : Fast Shaper on LG,1, Select LG PA to send to Fast Shaper,366,0
+   : Channel 0 to 35 PA,540, Ch0 to 35 PreAmp config (HG gain[0..5]  LG gain [0..5]  CtestHG  CtestLG  PA disabled),367,36 x (000000 + 000000 + 000 )
+PP : Low Gain Slow Shaper,1, Disable low gain slow shaper power pulsing mode (force ON),907,0
+EN : Low_Gain_Slow Shaper,1, Enable Low Gain Slow Shaper,908,1
+GC : Time Constant LG Shaper,3, Low gain shaper time constant commands (2...0)  [active low],909,10
+PP : High Gain Slow Shaper,1, Disable high gain slow shaper power pulsing mode (force ON),912,0
+EN : High_Gain_Slow Shaper,1, Enable high gain Slow Shaper,913,1
+GC : Time Constant HG Shaper,3, High gain shaper time constant commands (2...0)  [active low],914,0
+PP : Fast Shapers Follower,1, Enable fast shaper follower power pulsing,917,0
+EN : FS,1, Enable Fast Shaper,918,1
+PP : Fast Shaper,1, Disable fast shaper power pulsing mode (force ON),919,0
+GC : backup SCA,1, Select backup SCA,920,1
+PP : SCA,1, Enable SCA power pulsing,921,0
+GC : Temp sensor high current,1, Enable High current for temp sensor to drive the 36 ADC comparators,922,0
+PP : Temp,1, Disable Temperature Sensor power pulsing mode (force ON),923,0
+EN : Temp,1, Enable Temperature Sensor,924,1
+PP : BandGap,1, Disable BandGap power pulsing mode (force ON),925,0
+EN : BandGap,1, Enable BandGap,926,1
+EN : DAC1,1, Enable DAC Threshold,927,1
+PP : DAC1,1, Disable DAC Threshold power pulsing mode (force ON),928,0
+EN : DAC2,1, Enable DAC GS,929,1
+PP : DAC2,1, Disable DAC GS power pulsing mode (force ON),930,0
+GC : DAC 1 : Trigger,10, 10-bit DAC (MSB-LSB) discri_trigger_threshold,931,0000 0000 00
+GC : DAC 2 : Gain Sel.,10, 10-bit DAC (MSB-LSB) discri_gs_threshold,941,0000 0000 00
+GC : TDC Ramp Slope,1, TDC ramp slope (fast = 0 or slow = 1),951,0
+EN : TDC Ramp,1, Enable TDC ramp,952,1
+PP : TDC Ramp,1, Enable TDC ramp power pulsing,953,0
+PP : ADC Discri,1, Enable ADC discri power pulsing,954,0
+PP : Gain Select Discri,1, Enable gain selection discri power pulsing,955,0
+GC : Auto Gain,1, Auto gain selection (active low),956,0
+GC : Gain Select,1, Forces the gain value when auto gain selection is OFF,957,0
+EC : ADC Ext Input,1, External ADC signal input,958,0 (internal data to ADC)
+GC : Switch TDC On,1, Switch for time signal charge signal readout / high gain and low gain charge,959,0
+DM : Discriminator Mask,36, Allows to Mask Discriminator (channel 35 to 0),960,36x 0 (all triggers active)
+EN : Discri Delay Vref  + I source (Trigger),1,,996,0
+PP : Discri Delay Vref  + I source (Trigger),1, Enable reference voltage of discri delay + current source power pulsing,997,0
+GC : Delay (Trigger),8, Delay for the trigger signals ( From MSB to LSB),998,0010 1010
+DD : Discri 4-bit DAC Threshold Adjust,144, Discri 4-bit DAC   from LSB to MSB - from channel 35 to 0,1006,36 x 0000
+PP : Trigger Discriminator,1, Enable trigger discri power pulsing,1150,0
+PP : 4-bit DAC,1, Enable 4 bit dac power pulsing,1151,0
+PP : Discri Delay (Trigger),1, Enable Delay (Trigger) discriminator power pulsing,1152,0
+   : NC,4,,1153,0
+PP : Delay (ValidHold),1, Enable Delay cell power pulsing for the ValidHold signal,1157,0
+GC : Delay (ValidHold),6, Delay for the ValidHold signal ( From MSB to LSB),1158,000 000
+PP : Delay (RstColumn),1, Enable Delay cell power pulsing for the RstColumn signal,1164,0
+GC : Delay (RstColumn),6, Delay for the RstColumn signal ( From MSB to LSB),1165,000 000
+EN : LVDS receiver NoTrig,1, Enable LVDS Receivers NoTrig,1171,1
+PP : LVDS receiver NoTrig,1, Enable LVDS Receivers Power Pulsing NoTrig,1172,0
+EN : LVDS receiver ValEvt,1, Enable LVDS Receivers ValEvt,1173,1
+PP : LVDS receiver ValEvt,1, Enable LVDS Receivers Power Pulsing ValEvt,1174,0
+EN : LVDS receiver TrigExt,1, Enable LVDS Receivers TrigExt,1175,1
+PP : LVDS receiver TrigExt,1, Enable LVDS Receivers Power Pulsing TrigExt,1176,0
+PP : 40MHz & 10MHz Clock LVDS,1, Enable LVDS Receivers Power Pulsing,1177,0
+GC : POD bypass,1, Bypass POD command,1178,0
+EC : End_ReadOut,1, Enable End_ReadOut1 ('1') or End_ReadOut2 ('0'),1179,1
+EC : Start_ReadOut,1, Select Start_ReadOut1 ('1') or Start_ReadOut2 ('0'),1180,1
+EC : ChipSat,1, Enable Opened collector ChipSat signal,1181,1
+EC : TransmitOn2,1, Enable Opened collector TransmitOn2 signal,1182,1
+EC : TransmitOn1,1, Enable Opened collector TransmitOn1 signal,1183,1
+EC : Dout2,1, Enable Opened collector Dout2 signal,1184,1
+EC : Dout1,1, Enable Opened collector Dout1 signal,1185,1
