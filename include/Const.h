@@ -48,32 +48,59 @@
 #define HIGH_GAIN_NORM 1.08 // Normalization for the high gain
 #define LOW_GAIN_NORM  10.8 // Normalization for the low gain
 
+#define MAX_VALUE_10BITS 1023
+#define MAX_VALUE_8BITS  255
+#define MAX_VALUE_6BITS  63
+#define MAX_VALUE_4BITS  15
+
+// The SPIROC2D bitstream is 1192 bits long. It contains all the parameters that
+// can be set on the SPIROC2D chip. These parameters are listed in the
+// spiroc2d.csv file.
+//  - The _INDEX macros are just for sorting the parameters
+//  - The _START macros are the start bit of the parameter(s) they refer to
+//  - the _LENGTH macros are the length in bits of the parameter
+//  - the _OFFSET macros are the length in bits of a single channel parameter
+//    (when the parameter can be set for each channel individually)
+
 #define BITSTREAM_HEX_STRING_LENGTH 300  // length of the bitstream hex string
 #define BITSTREAM_BIN_STRING_LENGTH 1192 // length of the bitstream bin string
 #define VALUE_OFFSET_IN_BITS 6           // offset in bits before a parameter start
 
+// global 10-bit threshold
 #define GLOBAL_THRESHOLD_INDEX      0
-#define GLOBAL_THRESHOLD_START      931  // global 10-bit threshold
-#define GLOBAL_THRESHOLD_LENGTH     10   // global 10-bit threshold
+#define GLOBAL_THRESHOLD_START      931
+#define GLOBAL_THRESHOLD_LENGTH     10 // 4 bits (most significant bits) +
+                                       // 4 bits (least significant bits) +
+                                       // 2 bits (??)
 
+// global 10-bit gain selection threshold
 #define GLOBAL_GS_INDEX             1
-#define GLOBAL_GS_THRESHOLD_START   941  // global 10-bit gain selection threshold
-#define GLOBAL_GS_THRESHOLD_LENGTH  10   // global 10-bit gain selection threshold
+#define GLOBAL_GS_THRESHOLD_START   941
+#define GLOBAL_GS_THRESHOLD_LENGTH  10 // 4 bits (most significant bits) +
+                                       // 4 bits (least significant bits) +
+                                       // 2 bits (??)
 
+// Input 8-bit DAC Data from channel 0 to 35 
 #define ADJ_INPUTDAC_INDEX          2
-#define ADJ_INPUTDAC_START          37   // adjustable 8-bit input DAC
-#define ADJ_INPUTDAC_LENGTH         8    // adjustable 8-bit input DAC
-#define ADJ_INPUTDAC_OFFSET         9    // adjustable 8-bit input DAC
+#define ADJ_INPUTDAC_START          37
+#define ADJ_INPUTDAC_LENGTH         8
+#define ADJ_INPUTDAC_OFFSET         9 // 8 bits (DAC7...DAC0) + 1 bit (DAC ON)
 
+// adjustable 6-bit high gain (HG) preamp
 #define ADJ_AMPDAC_INDEX            3
-#define ADJ_AMPDAC_START            367  // adjustable 6-bit high gain (HG) preamp
-#define ADJ_AMPDAC_LENGTH           6    // adjustable 6-bit high gain (HG) preamp
-#define ADJ_AMPDAC_OFFSET           15   // adjustable 6-bit high gain (HG) preamp
+#define ADJ_AMPDAC_START            367  
+#define ADJ_AMPDAC_LENGTH           6
+#define ADJ_AMPDAC_OFFSET           15 // 6 bits (HG) + 6 bits (LG) + 3 bits '000'
 
+// adjustable 4-bit threshold
 #define ADJ_THRESHOLD_INDEX         4
-#define ADJ_THRESHOLD_START         1006 // adjustable 4-bit threshold
-#define ADJ_THRESHOLD_LENGTH        4    // adjustable 4-bit threshold
-#define ADJ_THRESHOLD_OFFSET        4    // adjustable 4-bit threshold
+#define ADJ_THRESHOLD_START         1006
+#define ADJ_THRESHOLD_LENGTH        4
+#define ADJ_THRESHOLD_OFFSET        4 // 4 bits
+
+// 1-bit input DAC Voltage Reference (1 = internal 4.5V   0 = internal 2.5V)
+#define GLOBAL_INPUT_DAC_REF_INDEX  5
+#define GLOBAL_INPUT_DAC_REF_START  36
 
 // ============ wgFit MACROS ============== //
 
