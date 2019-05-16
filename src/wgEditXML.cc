@@ -142,9 +142,8 @@ bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const un
 	}
 	if (found == false) return false;
 
-	wgEditConfig EditCon;
+	wgEditConfig EditCon(bitstream, true);
 	v.clear();
-	EditCon.SetBitstream(bitstream);
 	for(unsigned i = 0; i < n_chans; i++) {
 	  v[i].push_back(EditCon.Get_trigth());  
 	  v[i].push_back(EditCon.Get_gainth());

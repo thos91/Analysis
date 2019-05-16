@@ -40,7 +40,7 @@ double cal_mean(vector<double>);
 void PreCalib(const vector<string>& inputDirName, const string& outputXMLDirName, const string& outputIMGDirName, int mode, unsigned n_difs = NDIFS, unsigned n_chips = NCHIPS, unsigned n_chans = NCHANNELS);
 
 void print_help(const char * program_name) {
-  cout <<  program_name << "draws the inputDAC vs Gain graph and creates the calibration_card.xml file.\n"
+  cout <<  program_name << " draws the inputDAC vs Gain graph and creates the calibration_card.xml file.\n"
 	"  -h         : help\n"
 	"  -f (char*) : input directory (mandatory)\n"
 	"  -o (char*) : output directory (default: same as input directory)\n"
