@@ -18,3 +18,6 @@ GRTAGS
 GTAGS
 bin/*
 *.a
+*.root
+.#*
+test_contiguous_vectors
