@@ -2,6 +2,7 @@
 #define CONST_H_INCLUDE
 
 #include <string>
+#include <vector>
 #include "ContiguousVectors.h"
 #include <memory>
 #include <TROOT.h>
