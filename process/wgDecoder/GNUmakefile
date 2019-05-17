@@ -1,6 +1,6 @@
 TARGET = wgDecoder
 
-TARGET_LIB = lib$(TARGET).so
+TARGET_LIB = lib$(TARGET)
 
 CURRENT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 INCDIR = ../../include
@@ -11,9 +11,9 @@ BINDIR = ../../bin
 SRCS = $(shell ls $(SRCDIR)/*.cc)
 OBJS = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.cc=.o))	
 
-LIB_SRC    = $(TARGET_LIB:.so=.cc)
-LIB_OBJ    = $(TARGET_LIB:.so=.o)
-HEADER     = $(TARGET).hpp
+LIB_SRC    = $(TARGET_LIB).cc
+LIB_OBJ    = $(TARGET_LIB).o
+HEADER     = $(INCDIR)/$(TARGET).hpp
 TARGET_SRC = $(TARGET).cc
 TARGET_OBJ = $(TARGET).o 
 
@@ -22,10 +22,11 @@ ROOTLIBS   = $(shell root-config --libs)
 
 CXXFLAGS   = -g -O0 -MMD -MP -Wall -fPIC
 CXXFLAGS   += -I$(INCDIR) $(ROOTCFLAGS)
-CXXLIBS    = -L$(BINDIR) -lSpectrum
+CXXLIBS    = -L$(BINDIR) -lSpectrum -lboost_system -lboost_filesystem
 CXXLIBS    += $(ROOTLIBS)
 DEPENDS    = $(OBJS:.o=.d)
 CC = g++
+AR = ar
 
 all: $(BINDIR)/$(TARGET_LIB) $(BINDIR)/$(TARGET)
 
@@ -36,7 +37,8 @@ $(BINDIR)/$(TARGET): $(OBJS) $(TARGET_OBJ)
 	$(CC) -o $@ $^ -Wl,-rpath,$(CURRENT_DIR)/$(BINDIR) $(CXXLIBS) -l$(TARGET)
 
 $(BINDIR)/$(TARGET_LIB): $(OBJS) $(LIB_OBJ)
-	$(CC) -shared -Wl,-soname,$(TARGET_LIB) -o $@ $^ $(CXXLIBS)
+	$(CC) -shared -Wl,-soname,$(TARGET_LIB).so -o $@.so $^ $(CXXLIBS)
+	$(AR) rcs $(BINDIR)/$(TARGET_LIB).a $(OBJS) $(LIB_OBJ)
 
 $(LIB_OBJ): $(LIB_SRC) $(HEADER)
 	$(CC) $(CXXFLAGS) -o $@ -c $<
@@ -51,7 +53,7 @@ $(OBJDIR)/%.o:$(SRCDIR)/%.cc
 	$(CC) $(CXXFLAGS) -o $@ -c $<
 
 clean:
-	$(RM) -f $(BINDIR)/$(TARGET) $(BINDIR)/$(TARGET_LIB) $(OBJS) $(DEPENDS) *.o
+	$(RM) -f $(BINDIR)/$(TARGET) $(BINDIR)/$(TARGET_LIB)* $(OBJS) $(DEPENDS) *.o
 
 -include $(DEPENDS)
 
