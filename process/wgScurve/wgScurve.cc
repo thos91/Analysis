@@ -11,8 +11,8 @@
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TF1.h>
@@ -293,14 +293,14 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
   }
 
   //*** Define histgram ***//
-  TH1F *h_Gain[size_inputDAC][2];
-  TH1F *h_Noise_classfied[size_inputDAC][2][10];
+  TH1D *h_Gain[size_inputDAC][2];
+  TH1D *h_Noise_classfied[size_inputDAC][2][10];
 
   cout << "  ~~~ Start defining histgram ~~~  " <<endl;
   for(unsigned int l=0;l<size_inputDAC;l++){
     for(int idif=0;idif<2;idif++){
       //* Histgram of Gain per inputDAC *//
-      h_Gain[l][idif]=new TH1F(Form("h_Gain_dif%d_chip%d_inputDAC%d",idif,ichip,list_inputDAC[l]),Form("h_Gain_dif%d_chip%d_inputDAC%d",idif,ichip,list_inputDAC[l]),120,-40,200);
+      h_Gain[l][idif]=new TH1D(Form("h_Gain_dif%d_chip%d_inputDAC%d",idif,ichip,list_inputDAC[l]),Form("h_Gain_dif%d_chip%d_inputDAC%d",idif,ichip,list_inputDAC[l]),120,-40,200);
       h_Gain[l][idif]->SetTitle(Form("Gain chip:%d,inputDAC:%d;Gain;Entry",ichip,list_inputDAC[l]));
       h_Gain[l][idif]->SetMarkerStyle(8);
       h_Gain[l][idif]->SetMarkerSize(1);
@@ -309,7 +309,7 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
 
       //* Scurve of Noise classified by Gain * //
       for(int n=0;n<10;n++){
-        h_Noise_classfied[l][idif][n]=new TH1F(Form("h_Noise_iDAC%d_dif%d_chip%d_class%d",list_inputDAC[l],idif,ichip,n),Form("h_Noise_iDAC%d_dif%d_chip%d",list_inputDAC[l],idif,ichip),90,85,175);
+        h_Noise_classfied[l][idif][n]=new TH1D(Form("h_Noise_iDAC%d_dif%d_chip%d_class%d",list_inputDAC[l],idif,ichip,n),Form("h_Noise_iDAC%d_dif%d_chip%d",list_inputDAC[l],idif,ichip),90,85,175);
         h_Noise_classfied[l][idif][n]->SetTitle(Form("Noise dif:%d, chip:%d,(inputDAC:%d);trig_th;Noise Rate[Hz]",idif, ichip,list_inputDAC[l]));
         h_Noise_classfied[l][idif][n]->SetMarkerStyle(8);
         h_Noise_classfied[l][idif][n]->SetMarkerSize(0.8);

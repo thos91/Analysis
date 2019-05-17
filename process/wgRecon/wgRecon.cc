@@ -100,18 +100,18 @@ int main(int argc, char* argv[]){
   }
 
   TTree* tree[NumDif];
-  TH1F * start_time;
-  TH1F * stop_time;
-  TH1F * nb_data_pkts;
-  TH1F * nb_lost_pkts;
+  TH1D * start_time;
+  TH1D * stop_time;
+  TH1D * nb_data_pkts;
+  TH1D * nb_lost_pkts;
   for(int i=0;i<NumDif;i++){
     if(i==0){
       datafile1->cd();
       tree[i] = (TTree *)datafile1->Get("tree");
-      start_time   = (TH1F*) datafile1->Get("start_time");
-      stop_time    = (TH1F*) datafile1->Get("stop_time");
-      nb_data_pkts = (TH1F*) datafile1->Get("nb_data_pkts");
-      nb_lost_pkts = (TH1F*) datafile1->Get("nb_lost_pkts");
+      start_time   = (TH1D*) datafile1->Get("start_time");
+      stop_time    = (TH1D*) datafile1->Get("stop_time");
+      nb_data_pkts = (TH1D*) datafile1->Get("nb_data_pkts");
+      nb_lost_pkts = (TH1D*) datafile1->Get("nb_lost_pkts");
     } 
     if(i==1){
       datafile2->cd();

@@ -10,8 +10,8 @@
 #include <TROOT.h>
 #include <TFile.h>
 #include <TF1.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraphAsymmErrors.h>
 #include <TCanvas.h>
 
@@ -713,7 +713,7 @@ bool wgRecon::findClusterPair(int axis)
               if(diff_reconpln>0) diff_reconpln=1;
               else if(diff_reconpln<0) diff_reconpln=-1;
             }
-            if(fabs(diff_cluster_pos) < (float)MAX_DIFF_CLUSTER_POS[abs(diff_reconpln)-1]){
+            if(fabs(diff_cluster_pos) < (double)MAX_DIFF_CLUSTER_POS[abs(diff_reconpln)-1]){
               //TODO
               //Another criteria should be incremented? 
               //1. ignored if there is a hit ch on the cell

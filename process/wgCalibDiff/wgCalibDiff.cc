@@ -13,8 +13,8 @@
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TBox.h>
 #include <TGraphErrors.h>
@@ -171,9 +171,9 @@ void AnaXML(string& inputFileName1, string& inputFileName2,string& outputXMLDirN
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2);
-  TH2F * h_Gain[2];
+  TH2D * h_Gain[2];
   for(int idif=0;idif<2;idif++){
-    h_Gain[idif]= new TH2F(Form("h_Gain_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1),20,0,20,20,-0.2,0.2);
+    h_Gain[idif]= new TH2D(Form("h_Gain_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1),20,0,20,20,-0.2,0.2);
     h_Gain[idif]->SetTitle(Form("Difference of Gain DIF%d;chip;Differential",idif+1));
     h_Gain[idif]->SetStats(0);
   }

@@ -43,8 +43,8 @@ public:
   int   GetPlnMax(int mod, int view, int pln, int axis);
   bool  GetPos_TwoDimRecon(int mod, int view, int reconpln, int reconch, int axis,
 	   		                                double* posxy, double* posz);
-  float GetScintiWidth(int mod, int view, int reconpln, int reconch, int axis);
-  float GetScintiThick(int mod, int view, int reconpln, int reconch, int axis);
+  double GetScintiWidth(int mod, int view, int reconpln, int reconch, int axis);
+  double GetScintiThick(int mod, int view, int reconpln, int reconch, int axis);
 
 };
 #endif

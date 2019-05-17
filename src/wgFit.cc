@@ -1,5 +1,5 @@
 #include <TFile.h>
-#include <TH1F.h>
+#include <TH1D.h>
 #include <TText.h>
 #include <TF1.h>
 #include <TTree.h>

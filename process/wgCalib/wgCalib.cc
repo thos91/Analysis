@@ -13,8 +13,8 @@
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TF1.h>
@@ -187,12 +187,12 @@ void Calib(const vector<string> &inputFileName, const string& outputXMLDirName, 
 
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(2,2);
-  TH1F * h_Gain[n_difs];    // one dimensional (x: Gain)
-  TH2F * h_Gain2[n_difs];   // two dimensional (x: chip, y: Gain)
+  TH1D * h_Gain[n_difs];    // one dimensional (x: Gain)
+  TH2D * h_Gain2[n_difs];   // two dimensional (x: chip, y: Gain)
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    h_Gain[idif]= new TH1F(Form("h_Gain_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1),80,20,60);
+    h_Gain[idif]= new TH1D(Form("h_Gain_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1),80,20,60);
     h_Gain[idif]->SetTitle(Form("Gain DIF%d;Gain;nEntry",idif+1));
-    h_Gain2[idif]= new TH2F(Form("h_Gain2_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1),20,0,20,40,0,80);
+    h_Gain2[idif]= new TH2D(Form("h_Gain2_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1),20,0,20,40,0,80);
     h_Gain2[idif]->SetTitle(Form("Gain DIF%d;chip;Gain",idif+1));
     h_Gain2[idif]->SetStats(0);
   }

@@ -81,7 +81,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
   string mppc_csv(con.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
   string line;
   vector<string> tmp_mppc_map;
-  float tmp_bdv;
+  double tmp_bdv;
   int tmp_serial,tmp_ch;
   int mppc_map[NCHIPS];
 

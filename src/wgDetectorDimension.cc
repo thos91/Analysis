@@ -766,7 +766,7 @@ bool wgDetectorDimension::GetPos_TwoDimRecon(int mod, int view, int reconpln, in
 }
 
 
-float wgDetectorDimension::GetScintiWidth(int mod, int view, int reconpln, int reconch, int axis){
+double wgDetectorDimension::GetScintiWidth(int mod, int view, int reconpln, int reconch, int axis){
   int gridch=-1;
   int grid=-1;
   int pln=-1;
@@ -790,7 +790,7 @@ float wgDetectorDimension::GetScintiWidth(int mod, int view, int reconpln, int r
 }
 
 
-float wgDetectorDimension::GetScintiThick(int mod, int view, int reconpln, int reconch, int axis){
+double wgDetectorDimension::GetScintiThick(int mod, int view, int reconpln, int reconch, int axis){
   int gridch=-1;
   int grid=-1;
   int pln=-1;

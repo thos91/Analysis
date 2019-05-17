@@ -9,8 +9,8 @@
 
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TLegend.h>
 #include <TBox.h>
@@ -214,18 +214,18 @@ void AnaDQ(string inputDirName, vector<time_t> &TimeList, string& outputDir,bool
   else             { step = 56;}
 
   // ================ define histgram ================== //
-  TH2F *h_Gain[40];
-  TH2F *h_diffGain[40];
-  TH2F *h_diffGain2[40];
+  TH2D *h_Gain[40];
+  TH2D *h_diffGain[40];
+  TH2D *h_diffGain2[40];
   if(!chipmode){
     for(int ichip=0;ichip<40;ichip++){
       string name;
       name = Form("gain_chip%d",ichip);
-      h_Gain[ichip]      = new TH2F(name.c_str(),name.c_str(),nbin,0,nbin,80,20,60);
+      h_Gain[ichip]      = new TH2D(name.c_str(),name.c_str(),nbin,0,nbin,80,20,60);
       name = Form("gain_diff_chip%d",ichip);
-      h_diffGain[ichip]  = new TH2F(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
+      h_diffGain[ichip]  = new TH2D(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
       name = Form("gain_diff2_chip%d",ichip);
-      h_diffGain2[ichip] = new TH2F(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
+      h_diffGain2[ichip] = new TH2D(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
 
       h_Gain     [ichip]->SetTitle(Form("Gain History chip%d;time;Gain"                     ,ichip));
       h_diffGain [ichip]->SetTitle(Form("diff Gain History chip%d;time;diff Gain"           ,ichip));
@@ -251,11 +251,11 @@ void AnaDQ(string inputDirName, vector<time_t> &TimeList, string& outputDir,bool
     for(int ichipch=0;ichipch<32;ichipch++){
       string name;
       name = Form("gain_chip%d_chipch%d",targetchip,ichipch);
-      h_Gain[ichipch]      = new TH2F(name.c_str(),name.c_str(),nbin,0,nbin,80,20,60);
+      h_Gain[ichipch]      = new TH2D(name.c_str(),name.c_str(),nbin,0,nbin,80,20,60);
       name = Form("gain_diff_chip%d_chipch%d",targetchip,ichipch);
-      h_diffGain[ichipch]  = new TH2F(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
+      h_diffGain[ichipch]  = new TH2D(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
       name = Form("gain_diff2_chip%d_chipch%d",targetchip,ichipch);
-      h_diffGain2[ichipch] = new TH2F(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
+      h_diffGain2[ichipch] = new TH2D(name.c_str(),name.c_str(),nbin,0,nbin,80,-20,20);
 
       h_Gain     [ichipch]->SetTitle(Form("Gain History chip%d chipch%d;time;Gain"                     ,targetchip,ichipch));
       h_diffGain [ichipch]->SetTitle(Form("diff Gain History chip%d chipch%d;time;diff Gain"           ,targetchip,ichipch));

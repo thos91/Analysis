@@ -8,8 +8,8 @@
 
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TLegend.h>
 #include <TBox.h>
@@ -104,19 +104,19 @@ void AnaRecon(string &filename,string &outfilename){
 
   fout = new TFile(outfilename.c_str(),"recreate");
 
-  TH1F *h_time1    = new TH1F("HitTime","HitTime",50,-100.,100.);
-  TH1F *h_time2    = new TH1F("HitTime_Wide","HitTime_Wide",120,-1200.,1200.);
-  TH1F *h_time3    = new TH1F("HitTime_SameBcid","HitTime_SameBcid",120,-1200.,1200.);
-  TH1F *h_bcid     = new TH1F("HitBcid","HitBcid",12,-6.,6.);
-  TH2F *h_tdctime  = new TH2F("TdcVsTime","TdcVsTime",4096,0,4096,580,0,580);
-  TH2F *h_timebcid = new TH2F("HitTimeBcid","HitTimeBcid",12,-6,6,120,-1200,1200);
-  TH1F *h_pe       = new TH1F("Pe","Pe",1000,0,100);
-  TH2F *h_peadc    = new TH2F("AdcVsPe","AdcVsPe",4096,0,4096,1000,0,100);
-  TH1F *h_slopezy  = new TH1F("SlopZY","SlopeZY",1000,0,1000.);
-  TH1F *h_slopezx  = new TH1F("SlopZX","SlopeZX",1000,0,1000.);
-  TH1F *h_angle    = new TH1F("Angle","Angle",90,0,90.);
-  TH1F *h_angle_zy = new TH1F("AngleZY","AngleZY",180,0,180.);
-  TH1F *h_angle_zx = new TH1F("AngleZX","AngleZX",180,0,180.);
+  TH1D *h_time1    = new TH1D("HitTime","HitTime",50,-100.,100.);
+  TH1D *h_time2    = new TH1D("HitTime_Wide","HitTime_Wide",120,-1200.,1200.);
+  TH1D *h_time3    = new TH1D("HitTime_SameBcid","HitTime_SameBcid",120,-1200.,1200.);
+  TH1D *h_bcid     = new TH1D("HitBcid","HitBcid",12,-6.,6.);
+  TH2D *h_tdctime  = new TH2D("TdcVsTime","TdcVsTime",4096,0,4096,580,0,580);
+  TH2D *h_timebcid = new TH2D("HitTimeBcid","HitTimeBcid",12,-6,6,120,-1200,1200);
+  TH1D *h_pe       = new TH1D("Pe","Pe",1000,0,100);
+  TH2D *h_peadc    = new TH2D("AdcVsPe","AdcVsPe",4096,0,4096,1000,0,100);
+  TH1D *h_slopezy  = new TH1D("SlopZY","SlopeZY",1000,0,1000.);
+  TH1D *h_slopezx  = new TH1D("SlopZX","SlopeZX",1000,0,1000.);
+  TH1D *h_angle    = new TH1D("Angle","Angle",90,0,90.);
+  TH1D *h_angle_zy = new TH1D("AngleZY","AngleZY",180,0,180.);
+  TH1D *h_angle_zx = new TH1D("AngleZX","AngleZX",180,0,180.);
 
   int neve = wgGetTree::tree->GetEntries();
   for(int ieve=0; ieve < neve; ieve++){

@@ -8,8 +8,8 @@
 #include <THStack.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 
 #include "wgTools.h"
 #include "wgErrorCode.h"
@@ -120,35 +120,35 @@ void AnaPedestal(const string& inputDirName, const string& outputXMLDirName, con
 
   wgColor wgColor;
 
-  TH1F *h_Pedestal[n_chips];
-  TH1F *h_Gain    [n_chips];
-  TH1F *h_Gain_all[n_chips];
-  TH1F *h_Noise   [n_chips];
+  TH1D *h_Pedestal[n_chips];
+  TH1D *h_Gain    [n_chips];
+  TH1D *h_Gain_all[n_chips];
+  TH1D *h_Noise   [n_chips];
 
   //*** Define histgram ***//
   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-    h_Pedestal[ichip]=new TH1F(Form("h_pedestal_chip%d", ichip), Form("h_pedestal_chip%d", ichip), n_chans * 26 + 10, -5, n_chans * 26 + 5);
+    h_Pedestal[ichip]=new TH1D(Form("h_pedestal_chip%d", ichip), Form("h_pedestal_chip%d", ichip), n_chans * 26 + 10, -5, n_chans * 26 + 5);
     h_Pedestal[ichip]->SetTitle(Form("pedestal chip:%d;ch*26+col;ADC count",ichip));
     h_Pedestal[ichip]->SetMarkerStyle(8);
     h_Pedestal[ichip]->SetMarkerSize(0.3);
     h_Pedestal[ichip]->SetMarkerColor(wgColor::wgcolors[ichip]);
     h_Pedestal[ichip]->SetStats(0);
     
-    h_Gain_all[ichip]=new TH1F(Form("h_Gain_all_chip%d", ichip), Form("h_Gain_all_chip%d", ichip), n_chans * 26 + 10, -5, 32 * 26 + 5);
+    h_Gain_all[ichip]=new TH1D(Form("h_Gain_all_chip%d", ichip), Form("h_Gain_all_chip%d", ichip), n_chans * 26 + 10, -5, 32 * 26 + 5);
     h_Gain_all[ichip]->SetTitle(Form("Gain chip:%d;ch*26+col;ADC count",ichip));
     h_Gain_all[ichip]->SetMarkerStyle(8);
     h_Gain_all[ichip]->SetMarkerSize(0.3);
     h_Gain_all[ichip]->SetStats(0);
     h_Gain_all[ichip]->SetMarkerColor(wgColor::wgcolors[ichip]);
 
-    h_Gain[ichip]=new TH1F(Form("h_Gain_chip%d", ichip), Form("h_Gain_chip%d", ichip), 34, -1, 33);
+    h_Gain[ichip]=new TH1D(Form("h_Gain_chip%d", ichip), Form("h_Gain_chip%d", ichip), 34, -1, 33);
     h_Gain[ichip]->SetTitle(Form("Gain chip:%d;ch;ADC count", ichip));
     h_Gain[ichip]->SetMarkerStyle(8);
     h_Gain[ichip]->SetMarkerSize(0.3);
     h_Gain[ichip]->SetMarkerColor(wgColor::wgcolors[ichip]);
     h_Gain[ichip]->SetStats(0);
     
-    h_Noise[ichip]=new TH1F(Form("h_Noise_chip%d", ichip) ,Form("h_Noise_chip%d", ichip), 34, -1, 33);
+    h_Noise[ichip]=new TH1D(Form("h_Noise_chip%d", ichip) ,Form("h_Noise_chip%d", ichip), 34, -1, 33);
     h_Noise[ichip]->SetTitle(Form("Noise chip:%d;ch;Noise Rate[Hz]",ichip));
     h_Noise[ichip]->SetMarkerStyle(8);
     h_Noise[ichip]->SetMarkerSize(0.3);

@@ -3,7 +3,7 @@
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "Const.h"
-#include "TH1F.h"
+#include "TH1D.h"
 
 using namespace std;
 
@@ -435,7 +435,7 @@ void wgGetTree::GetEntry(int i){
 
 //************************************************************************
 double wgGetTree::GetStartTime(){
-  TH1F* h=(TH1F*)wgGetTree::finput->Get("start_time");
+  TH1D* h=(TH1D*)wgGetTree::finput->Get("start_time");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
@@ -443,8 +443,8 @@ double wgGetTree::GetStartTime(){
 
 //************************************************************************
 double wgGetTree::GetStopTime(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("stop_time");
+  TH1D* h;
+  h=(TH1D*)wgGetTree::finput->Get("stop_time");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
@@ -452,8 +452,8 @@ double wgGetTree::GetStopTime(){
 
 //************************************************************************
 double wgGetTree::GetDataPacket(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("nb_data_pkts");
+  TH1D* h;
+  h=(TH1D*)wgGetTree::finput->Get("nb_data_pkts");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
@@ -461,37 +461,37 @@ double wgGetTree::GetDataPacket(){
 
 //************************************************************************
 double wgGetTree::GetLostPacket(){
-  TH1F* h;
-  h=(TH1F*)wgGetTree::finput->Get("nb_lost_pkts");
+  TH1D* h;
+  h=(TH1D*)wgGetTree::finput->Get("nb_lost_pkts");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
 }
 
 //************************************************************************
-TH1F* wgGetTree::GetHist_StartTime(){
+TH1D* wgGetTree::GetHist_StartTime(){
   if (BranchExists("start_time"))
-	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("start_time"));
+	return dynamic_cast<TH1D*>(wgGetTree::finput->Get("start_time"));
   else return NULL;
 }
 
 //************************************************************************
-TH1F* wgGetTree::GetHist_StopTime(){
+TH1D* wgGetTree::GetHist_StopTime(){
   if (BranchExists("stop_time"))
-	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("stop_time"));
+	return dynamic_cast<TH1D*>(wgGetTree::finput->Get("stop_time"));
   else return NULL;
 }
 
 //************************************************************************
-TH1F* wgGetTree::GetHist_DataPacket(){
+TH1D* wgGetTree::GetHist_DataPacket(){
   if (BranchExists("nb_data_pkts"))
-	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("nb_data_pkts"));
+	return dynamic_cast<TH1D*>(wgGetTree::finput->Get("nb_data_pkts"));
   else return NULL;
 }
 
 //************************************************************************
-TH1F* wgGetTree::GetHist_LostPacket(){
+TH1D* wgGetTree::GetHist_LostPacket(){
   if (BranchExists("nb__pktlosts"))
-	return dynamic_cast<TH1F*>(wgGetTree::finput->Get("nb_lost_pkts"));
+	return dynamic_cast<TH1D*>(wgGetTree::finput->Get("nb_lost_pkts"));
   else return NULL;
 }

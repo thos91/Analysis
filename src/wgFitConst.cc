@@ -1,11 +1,11 @@
 #include "wgFitConst.h"
-const float sigma          = 8.;     // pre-gaussian-fit value of sigma
-const float max_sigma      = 20.;    // max value (upper limit for sigma)
-const float min_sigma      = 1.;     // min value (lower limit for sigma)
+const double sigma          = 8.;     // pre-gaussian-fit value of sigma
+const double max_sigma      = 20.;    // max value (upper limit for sigma)
+const double min_sigma      = 1.;     // min value (lower limit for sigma)
 
-const float threshold      = 0.03;   //initial threshold value
-const float max_threshold  = 0.05;   
-const float min_threshold  = 0.01;    
+const double threshold      = 0.03;   //initial threshold value
+const double max_threshold  = 0.05;   
+const double min_threshold  = 0.01;    
 
 const int N_low_pe         = 5;    // pre-gaussian-fit value of the peak for low_pe.
 const int begin_low_pe     = 10;   // begining value of fitting range for low_pe.
@@ -34,9 +34,9 @@ const double u_limit_1pe = 160000;  // upper limit for dark noise with 0.5 p.e. 
 const int begin_LED        = 400;    //begining value of fitting range for dark noise
 const int end_LED          = 1000;    //ending value of fitting range for dark noise
 
-const float Gain           = 25;     //estimate Gain
+const double Gain           = 25;     //estimate Gain
 
-const float GSthreshold    = 2510;     //estimate Gain Select Threshold
-const float GSthreshold_0  = 2730;     //estimate Gain Select Threshold for column 0.
+const double GSthreshold    = 2510;     //estimate Gain Select Threshold
+const double GSthreshold_0  = 2730;     //estimate Gain Select Threshold for column 0.
 
-const float time_bcid_bin = 580e-9;    // BCID (slow clock) period in seconds (580 ns)
+const double time_bcid_bin = 580e-9;    // BCID (slow clock) period in seconds (580 ns)

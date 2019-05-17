@@ -1,11 +1,11 @@
 #include <TROOT.h>
 #include <TApplication.h>
 #include <TFile.h>
-#include <TH1F.h>
+#include <TH1D.h>
 #include <TF1.h>
 #include <TGraph.h>
 #include <TGraphAsymmErrors.h>
-#include <TH2F.h>
+#include <TH2D.h>
 #include <TStyle.h>
 #include <TString.h>
 #include <TSystem.h>
@@ -318,9 +318,9 @@ int main(int argc, char **argv)
   // Get start/stop information
   //
   cout << "Getting time information...." << std::endl;
-  TH1F *h_start_time = (TH1F*) wggettree->finput->Get("start_time");
+  TH1D *h_start_time = (TH1D*) wggettree->finput->Get("start_time");
   int wg_start_time = h_start_time->GetMean();
-  TH1F *h_stop_time = (TH1F*) wggettree->finput->Get("stop_time");
+  TH1D *h_stop_time = (TH1D*) wggettree->finput->Get("stop_time");
   int wg_stop_time = h_stop_time->GetMean();
   delete h_start_time;
   delete h_stop_time;
@@ -597,7 +597,7 @@ void DrawModule()
     Double_t FrameMargin2 = -100.;
     Double_t FrameMargin3 = -400.;
     Double_t FrameMargin4 =    0.;
-    TH1F *frame = gPad->DrawFrame(
+    TH1D *frame = gPad->DrawFrame(
         -FrameX+FrameMargin1, 
         -FrameY+FrameMargin2,
         FrameX +FrameMargin3,

@@ -1,5 +1,5 @@
 #include <iostream>
-#include <TH2F.h>
+#include <TH2D.h>
 #include <TCanvas.h>
 #include <TROOT.h>
 #include <TApplication.h>
@@ -211,9 +211,9 @@ int main(int argc, char* argv[]){
         c1->Divide(2);
         for(int i=0;i<wg_rec.type_hit.num_bcid_cluster;i++){
           int timecluster_size = (int)wg_rec.type_recon.time_cluster_hitid[i].size();
-          TH2F *h[2];
+          TH2D *h[2];
           for(int iview=0;iview<2;iview++){
-            h[iview] = new TH2F(Form("h%d",iview),"h",314.,0.,3.15,1000.,-500.,500.);
+            h[iview] = new TH2D(Form("h%d",iview),"h",314.,0.,3.15,1000.,-500.,500.);
           }
           for(int j=0;j<timecluster_size;j++){
             int hitid  = wg_rec.type_recon.time_cluster_hitid[i][j];

@@ -19,15 +19,15 @@ private:
   string finputname;
   TFile *freadhist;
   TCanvas *c1;
-  TH1F* h_spill;
-  TH1F* h_charge_hit;    // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_charge_hit_HG; // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_charge_hit_LG; // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_pe_hit;        // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_charge_nohit;  // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_time_hit;      // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_time_nohit;    // [n_chips][n_channels][MEMDEPTH];
-  TH1F* h_bcid_hit;      // [n_chips][n_channels];
+  TH1D* h_spill;
+  TH1D* h_charge_hit;    // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_charge_hit_HG; // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_charge_hit_LG; // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_pe_hit;        // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_charge_nohit;  // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_time_hit;      // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_time_nohit;    // [n_chips][n_channels][MEMDEPTH];
+  TH1D* h_bcid_hit;      // [n_chips][n_channels];
 
 public:
   //wgGetHist::wgGetHist

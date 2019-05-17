@@ -11,8 +11,8 @@
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TF1.h>
@@ -202,13 +202,13 @@ void AnaPedestalSummary(const vector<string> &inputFileName, const string& outpu
   // Define the histograms
   TCanvas *c1 = new TCanvas("c1","c1");
   c1->Divide(n_difs,2);
-  TH1F * h_Gain[n_difs];
-  TH2F * h_Gain2[n_difs];
+  TH1D * h_Gain[n_difs];
+  TH2D * h_Gain2[n_difs];
   for(unsigned idif = 0; idif < n_difs; idif++) {
 	// xbins = 80, xlow = 20, xup = 60 
-    h_Gain [idif]= new TH1F(Form("h_Gain_DIF%d", idif+1),Form("h_Gain_DIF%d",idif+1), 80, 20, 60);
+    h_Gain [idif]= new TH1D(Form("h_Gain_DIF%d", idif+1),Form("h_Gain_DIF%d",idif+1), 80, 20, 60);
 	// xbins = 20, xlow = 0, xup = 20, ybins = 40, ylow = 0, yup = 80
-    h_Gain2[idif]= new TH2F(Form("h_Gain2_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1), 20, 0, 20, 40, 0, 80);
+    h_Gain2[idif]= new TH2D(Form("h_Gain2_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1), 20, 0, 20, 40, 0, 80);
   }
 
   // Fill the histograms
@@ -236,16 +236,16 @@ void AnaPedestalSummary(const vector<string> &inputFileName, const string& outpu
   }
   c1->Print(Form("%s/Gain.png",outputIMGDirName.c_str()));
 
-  TH1F *h1[MEMDEPTH];
-  TH1F *h2[MEMDEPTH];
+  TH1D *h1[MEMDEPTH];
+  TH1D *h2[MEMDEPTH];
   // xbins = 60, xlow = -50, xup = 10
-  TH1F *h3 = new TH1F("h3","h1", 60, -50, 10);
+  TH1D *h3 = new TH1D("h3","h1", 60, -50, 10);
   h3->SetTitle("pedestal shift;adc count;nEntry");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 	// xbins = 300, xlow = 400, xup = 700
-    h1[icol] = new TH1F(Form("h1_%d",icol), "h1", 300, 400, 700);
+    h1[icol] = new TH1D(Form("h1_%d",icol), "h1", 300, 400, 700);
 	// xbins = 100, xlow = -50, xup = 50
-    h2[icol] = new TH1F(Form("h2_%d",icol), "h2", 100, -50, 50);
+    h2[icol] = new TH1D(Form("h2_%d",icol), "h2", 100, -50, 50);
     h1[icol]->SetLineColor(kBlue);
     h2[icol]->SetLineColor(kRed); 
     h2[icol]->SetTitle(Form("pedestal shift col%d;adc count;nEntry",icol));

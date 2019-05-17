@@ -11,8 +11,8 @@
 #include <TMultiGraph.h>
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TF1.h>

@@ -9,8 +9,8 @@
 
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TLegend.h>
 #include <TBox.h>
@@ -106,9 +106,9 @@ int main(int argc, char** argv){
 void SpillCheck(string inputDir, string& outputDir, int runid, int acqid)
 {
   int nbin = 0x8000;
-  TH1F *h_spill     = new TH1F("spillnb"     ,"spillnb"     ,nbin,0,nbin);
-  TH1F *h_spill2    = new TH1F("spillnb_cor" ,"spillnb_cor" ,nbin,0,nbin);
-  TH1F *h_dspillcnt = new TH1F("dspillcnt"   ,"dspillcnt"   ,31  ,-1,30);
+  TH1D *h_spill     = new TH1D("spillnb"     ,"spillnb"     ,nbin,0,nbin);
+  TH1D *h_spill2    = new TH1D("spillnb_cor" ,"spillnb_cor" ,nbin,0,nbin);
+  TH1D *h_dspillcnt = new TH1D("dspillcnt"   ,"dspillcnt"   ,31  ,-1,30);
   int last_spill[2]={-1,-1};
   int last_spillcnt[2]={-1,-1};
   int dspill[2]={-1,-1};
@@ -146,8 +146,8 @@ void SpillCheck(string inputDir, string& outputDir, int runid, int acqid)
   int nevt = tree->GetEntries();
   int ievt=0;
   int iievt=0;
-  int starttime = ((TH1F*)file->Get("start_time"))->GetMean();
-  int stoptime  = ((TH1F*)file->Get("stop_time")) ->GetMean();
+  int starttime = ((TH1D*)file->Get("start_time"))->GetMean();
+  int stoptime  = ((TH1D*)file->Get("stop_time")) ->GetMean();
 
   while(ievt<nevt){
     tree->GetEntry(ievt);

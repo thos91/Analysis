@@ -15,7 +15,7 @@
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TBox.h>
-#include <TH2F.h>
+#include <TH2D.h>
 
 #include "wgTools.h"
 #include "wgErrorCode.h"
@@ -88,23 +88,23 @@ int main(int argc, char **argv)
   // =============================================== //
   // ================= INITIALIZE ================== //
   // =============================================== //
-  TH1F *h_track_side_cosmic_angleZ  = new TH1F("Cosmic_Track_Side_AngleZ" ,"Cosmic_Track_Side_AngleZ" ,90,0,90);
-  TH1F *h_track_side_cosmic_angleXY = new TH1F("Cosmic_Track_Side_AngleXY","Cosmic_Track_Side_AngleXY",90,0,90);
-  TH1F *h_track_side_sandmu_angleZ  = new TH1F("Sandmu_Track_Side_AngleZ" ,"Sandmu_Track_Side_AngleZ" ,90,0,90);
-  TH1F *h_track_side_sandmu_angleXY = new TH1F("Sandmu_Track_Side_AngleXY","Sandmu_Track_Side_AngleXY",90,0,90);
-  TH1F *h_track_top_cosmic_angleZ   = new TH1F("Cosmic_Track_Top_AngleZ"  ,"Cosmic_Track_Top_AngleZ"  ,90,0,90);
-  TH1F *h_track_top_cosmic_angleXY  = new TH1F("Cosmic_Track_Top_AngleXY" ,"Cosmic_Track_Top_AngleXY" ,90,0,90);
-  TH1F *h_track_top_sandmu_angleZ   = new TH1F("Sandmu_Track_Top_AngleZ"  ,"Sandmu_Track_Top_AngleZ"  ,90,0,90);
-  TH1F *h_track_top_sandmu_angleXY  = new TH1F("Sandmu_Track_Top_AngleXY" ,"Sandmu_Track_Top_AngleXY" ,90,0,90);
+  TH1D *h_track_side_cosmic_angleZ  = new TH1D("Cosmic_Track_Side_AngleZ" ,"Cosmic_Track_Side_AngleZ" ,90,0,90);
+  TH1D *h_track_side_cosmic_angleXY = new TH1D("Cosmic_Track_Side_AngleXY","Cosmic_Track_Side_AngleXY",90,0,90);
+  TH1D *h_track_side_sandmu_angleZ  = new TH1D("Sandmu_Track_Side_AngleZ" ,"Sandmu_Track_Side_AngleZ" ,90,0,90);
+  TH1D *h_track_side_sandmu_angleXY = new TH1D("Sandmu_Track_Side_AngleXY","Sandmu_Track_Side_AngleXY",90,0,90);
+  TH1D *h_track_top_cosmic_angleZ   = new TH1D("Cosmic_Track_Top_AngleZ"  ,"Cosmic_Track_Top_AngleZ"  ,90,0,90);
+  TH1D *h_track_top_cosmic_angleXY  = new TH1D("Cosmic_Track_Top_AngleXY" ,"Cosmic_Track_Top_AngleXY" ,90,0,90);
+  TH1D *h_track_top_sandmu_angleZ   = new TH1D("Sandmu_Track_Top_AngleZ"  ,"Sandmu_Track_Top_AngleZ"  ,90,0,90);
+  TH1D *h_track_top_sandmu_angleXY  = new TH1D("Sandmu_Track_Top_AngleXY" ,"Sandmu_Track_Top_AngleXY" ,90,0,90);
 
-  TH1F *h_hit_expected_cosmic_angleZ  = new TH1F("Cosmic_Hit_Expected_AngleZ" ,"Cosmic_Hit_Expected_AngleZ" ,90,0,90);
-  TH1F *h_hit_expected_cosmic_angleXY = new TH1F("Cosmic_Hit_Expected_AngleXY","Cosmic_Hit_Expected_AngleXY",90,0,90);
-  TH1F *h_hit_expected_sandmu_angleZ  = new TH1F("Sandmu_Hit_Expected_AngleZ" ,"Sandmu_Hit_Expected_AngleZ" ,90,0,90);
-  TH1F *h_hit_expected_sandmu_angleXY = new TH1F("Sandmu_Hit_Expected_AngleXY","Sandmu_Hit_Expected_AngleXY",90,0,90);
-  TH1F *h_hit_measured_cosmic_angleZ  = new TH1F("Cosmic_Hit_Measured_AngleZ" ,"Cosmic_Hit_Measured_AngleZ" ,90,0,90);
-  TH1F *h_hit_measured_cosmic_angleXY = new TH1F("Cosmic_Hit_Measured_AngleXY","Cosmic_Hit_Measured_AngleXY",90,0,90);
-  TH1F *h_hit_measured_sandmu_angleZ  = new TH1F("Sandmu_Hit_Measured_AngleZ" ,"Sandmu_Hit_Measured_AngleZ" ,90,0,90);
-  TH1F *h_hit_measured_sandmu_angleXY = new TH1F("Sandmu_Hit_Measured_AngleXY","Sandmu_Hit_Measured_AngleXY",90,0,90);
+  TH1D *h_hit_expected_cosmic_angleZ  = new TH1D("Cosmic_Hit_Expected_AngleZ" ,"Cosmic_Hit_Expected_AngleZ" ,90,0,90);
+  TH1D *h_hit_expected_cosmic_angleXY = new TH1D("Cosmic_Hit_Expected_AngleXY","Cosmic_Hit_Expected_AngleXY",90,0,90);
+  TH1D *h_hit_expected_sandmu_angleZ  = new TH1D("Sandmu_Hit_Expected_AngleZ" ,"Sandmu_Hit_Expected_AngleZ" ,90,0,90);
+  TH1D *h_hit_expected_sandmu_angleXY = new TH1D("Sandmu_Hit_Expected_AngleXY","Sandmu_Hit_Expected_AngleXY",90,0,90);
+  TH1D *h_hit_measured_cosmic_angleZ  = new TH1D("Cosmic_Hit_Measured_AngleZ" ,"Cosmic_Hit_Measured_AngleZ" ,90,0,90);
+  TH1D *h_hit_measured_cosmic_angleXY = new TH1D("Cosmic_Hit_Measured_AngleXY","Cosmic_Hit_Measured_AngleXY",90,0,90);
+  TH1D *h_hit_measured_sandmu_angleZ  = new TH1D("Sandmu_Hit_Measured_AngleZ" ,"Sandmu_Hit_Measured_AngleZ" ,90,0,90);
+  TH1D *h_hit_measured_sandmu_angleXY = new TH1D("Sandmu_Hit_Measured_AngleXY","Sandmu_Hit_Measured_AngleXY",90,0,90);
 
   Hit_t t_hit;
   Recon_t t_recon;

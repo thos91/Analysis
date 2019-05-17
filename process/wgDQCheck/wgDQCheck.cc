@@ -8,8 +8,8 @@
 
 #include <TCanvas.h>
 #include <TLegend.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1D.h>
+#include <TH2D.h>
 #include <TGraph.h>
 #include <TLegend.h>
 #include <TBox.h>
@@ -204,34 +204,34 @@ void AnaXML(vector<string> &inputFileName, string& outputDir , string& calibFile
   delete Map;
 
   // ================ define histgram ================== //
-  TH1F *h_Gain = new TH1F("gain","gain",80,20,60);
+  TH1D *h_Gain = new TH1D("gain","gain",80,20,60);
   h_Gain->SetFillColor(kRed);
   h_Gain->SetTitle("Gain;gain (~40);nEntry");
-  TH1F *h_diffGain = new TH1F("diff_gain","diff_gain",80,-20,20);
+  TH1D *h_diffGain = new TH1D("diff_gain","diff_gain",80,-20,20);
   h_diffGain->SetFillColor(kViolet);
   h_diffGain->SetTitle("diff Gain;diff gain(-4~4);nEntry");
-  TH1F *h_diffPedestal = new TH1F("diff_pedestal","diff_pedestal",80,-20,20);
+  TH1D *h_diffPedestal = new TH1D("diff_pedestal","diff_pedestal",80,-20,20);
   h_diffPedestal->SetFillColor(kBlue);
   h_diffPedestal->SetTitle("diff Pedestal ;diff Pedestal;nEntry");
-  TH1F *h_Pedestal_w = new TH1F("pedestal_w","pedestal_w",100,1,10);
+  TH1D *h_Pedestal_w = new TH1D("pedestal_w","pedestal_w",100,1,10);
   h_Pedestal_w->SetFillColor(kBlue);
   h_Pedestal_w->SetTitle("Pedestal width;Pedestal;nEntry");
-  TH1F *h_Noise = new TH1F("noise","noise",100,0,200);
+  TH1D *h_Noise = new TH1D("noise","noise",100,0,200);
   h_Noise->SetFillColor(kGreen);
   h_Noise->SetTitle("Noise;Noise Rate[Hz];nEntry");
-  TH2F * gain_map = new TH2F("gain_map", "gain_map", 17,0,17,80,0,80);  
+  TH2D * gain_map = new TH2D("gain_map", "gain_map", 17,0,17,80,0,80);  
   gain_map -> SetStats(0);
   gain_map -> SetMinimum(20.);
   gain_map -> SetMaximum(60.);
-  TH2F * noise_map = new TH2F("noise_map", "noise_map", 17,0,17,80,0,80);  
+  TH2D * noise_map = new TH2D("noise_map", "noise_map", 17,0,17,80,0,80);  
   noise_map -> SetStats(0);
   noise_map -> SetMinimum(0.);
   noise_map -> SetMaximum(200.);
-  TH2F * ped_map = new TH2F("pedestal_map", "pedestal_map", 17,0,17,80,0,80);  
+  TH2D * ped_map = new TH2D("pedestal_map", "pedestal_map", 17,0,17,80,0,80);  
   ped_map -> SetStats(0);
   ped_map -> SetMinimum(350.);
   ped_map -> SetMaximum(650.);
-  TH2F * pedw_map = new TH2F("pedestal_width_map", "pedestal_width_map", 17,0,17,80,0,80);  
+  TH2D * pedw_map = new TH2D("pedestal_width_map", "pedestal_width_map", 17,0,17,80,0,80);  
   pedw_map -> SetStats(0);
   pedw_map -> SetMinimum(1.);
   pedw_map -> SetMaximum(10.);
@@ -421,45 +421,45 @@ void AnaRecon(string &filename,string& outputDir, string& s_time){
   //============ Define histgram ==============//
   
   //Basic Hit Histgram 
-  TH1F * spillnb   = new TH1F("spillnb","spillnb",0x10000,0,0x10000);
-  TH2F * pe_map    = new TH2F("pe_map", "pe_map", 17,0,17,80,0,80);  
-  TH2F * pe_permm_map  = new TH2F("pe_permm_map", "pe_permm_map", 17,0,17,80,0,80);  
-  TH2F * nhit_map    = new TH2F("nhit_map", "nhit_map", 17,0,17,80,0,80);  
-  TH1F * hittiming = new TH1F("hit_timing","hit_timing",60000,0,60000);
-  TH1F * hitbcid   = new TH1F("hit_bcid","hit_bcid",20,20,40);
-  TH1F * pe_onbeam  ;
-  TH1F * pe_offbeam ;
-  TH2F * pe_chip_onbeam ;
-  TH2F * pe_chip_offbeam;
-  TH1F * pe_permm_onbeam  ;
-  TH1F * pe_permm_offbeam ;
-  TH2F * pe_permm_chip_onbeam ;
-  TH2F * pe_permm_chip_offbeam;
+  TH1D * spillnb   = new TH1D("spillnb","spillnb",0x10000,0,0x10000);
+  TH2D * pe_map    = new TH2D("pe_map", "pe_map", 17,0,17,80,0,80);  
+  TH2D * pe_permm_map  = new TH2D("pe_permm_map", "pe_permm_map", 17,0,17,80,0,80);  
+  TH2D * nhit_map    = new TH2D("nhit_map", "nhit_map", 17,0,17,80,0,80);  
+  TH1D * hittiming = new TH1D("hit_timing","hit_timing",60000,0,60000);
+  TH1D * hitbcid   = new TH1D("hit_bcid","hit_bcid",20,20,40);
+  TH1D * pe_onbeam  ;
+  TH1D * pe_offbeam ;
+  TH2D * pe_chip_onbeam ;
+  TH2D * pe_chip_offbeam;
+  TH1D * pe_permm_onbeam  ;
+  TH1D * pe_permm_offbeam ;
+  TH2D * pe_permm_chip_onbeam ;
+  TH2D * pe_permm_chip_offbeam;
 
-  TH1F * bcid_onbeam     ;
-  TH1F * bcid_offbeam    ;
-  TH2F * bcid_chip_onbeam ;
-  TH2F * bcid_chip_offbeam;
+  TH1D * bcid_onbeam     ;
+  TH1D * bcid_offbeam    ;
+  TH2D * bcid_chip_onbeam ;
+  TH2D * bcid_chip_offbeam;
 
-  TH1F * hittime_onbeam  ;
-  TH1F * hittime_offbeam ;
-  TH2F * hittime_chip_onbeam ;
-  TH2F * hittime_chip_offbeam;
-  TH2F * diff_hittime_chip_onbeam ;
-  TH2F * diff_hittime_chip_offbeam;
-  TH2F * diff_hittime_diff_chip_onbeam ;
-  TH2F * diff_hittime_diff_chip_offbeam;
-  TH2F * diff_hittime_diff_chip_onbeam2 ;
-  TH2F * diff_hittime_diff_chip_offbeam2;
+  TH1D * hittime_onbeam  ;
+  TH1D * hittime_offbeam ;
+  TH2D * hittime_chip_onbeam ;
+  TH2D * hittime_chip_offbeam;
+  TH2D * diff_hittime_chip_onbeam ;
+  TH2D * diff_hittime_chip_offbeam;
+  TH2D * diff_hittime_diff_chip_onbeam ;
+  TH2D * diff_hittime_diff_chip_offbeam;
+  TH2D * diff_hittime_diff_chip_onbeam2 ;
+  TH2D * diff_hittime_diff_chip_offbeam2;
   
-  pe_onbeam       = new TH1F(Form("pe_onbeam"),"a"      ,100,0,50);
-  pe_offbeam      = new TH1F(Form("pe_offbeam"),"a"     ,100,0,50);
-  pe_permm_onbeam       = new TH1F(Form("pe_permm_onbeam"),"a"      ,100,0,50);
-  pe_permm_offbeam      = new TH1F(Form("pe_permm_offbeam"),"a"     ,100,0,50);
-  hittime_onbeam  = new TH1F(Form ("hittime_onbeam"),"a", time_onbeam_bin+2000, time_onbeam_start-1000, time_onbeam_end+1000);
-  hittime_offbeam = new TH1F(Form ("hittime_offbeam"),"a",time_offbeam_bin+2000,time_offbeam_start-1000,time_offbeam_end+1000);
-  bcid_onbeam     = new TH1F( Form("bcid_onbeam"),"a"   , bcid_onbeam_bin+10, bcid_onbeam_start-5, bcid_onbeam_end+5);
-  bcid_offbeam    = new TH1F( Form("bcid_offbeam"),"a"  ,bcid_offbeam_bin+10,bcid_offbeam_start-5,bcid_offbeam_end+5);
+  pe_onbeam       = new TH1D(Form("pe_onbeam"),"a"      ,100,0,50);
+  pe_offbeam      = new TH1D(Form("pe_offbeam"),"a"     ,100,0,50);
+  pe_permm_onbeam       = new TH1D(Form("pe_permm_onbeam"),"a"      ,100,0,50);
+  pe_permm_offbeam      = new TH1D(Form("pe_permm_offbeam"),"a"     ,100,0,50);
+  hittime_onbeam  = new TH1D(Form ("hittime_onbeam"),"a", time_onbeam_bin+2000, time_onbeam_start-1000, time_onbeam_end+1000);
+  hittime_offbeam = new TH1D(Form ("hittime_offbeam"),"a",time_offbeam_bin+2000,time_offbeam_start-1000,time_offbeam_end+1000);
+  bcid_onbeam     = new TH1D( Form("bcid_onbeam"),"a"   , bcid_onbeam_bin+10, bcid_onbeam_start-5, bcid_onbeam_end+5);
+  bcid_offbeam    = new TH1D( Form("bcid_offbeam"),"a"  ,bcid_offbeam_bin+10,bcid_offbeam_start-5,bcid_offbeam_end+5);
   pe_permm_onbeam       -> SetTitle(Form("pe per3mm onbeampe;nEntry"));
   pe_permm_offbeam      -> SetTitle(Form("pe per3mm offbeam;pe;nEntry"));
   pe_onbeam       -> SetTitle(Form("pe onbeampe;nEntry"));
@@ -469,20 +469,20 @@ void AnaRecon(string &filename,string& outputDir, string& s_time){
   bcid_onbeam     -> SetTitle(Form("bcid onbeam;bcid;nEntry"));
   bcid_offbeam    -> SetTitle(Form("bcid offbeam;bcid;nEntry"));
 
-  pe_chip_onbeam         = new TH2F(Form("pe_onbeam_chip"),"a",41,0,41,100,0,50);
-  pe_chip_offbeam        = new TH2F(Form("pe_offbeam_chip"),"a",41,0,41,100,0,50);
-  pe_permm_chip_onbeam         = new TH2F(Form("pe_permm_onbeam_chip"),"a",41,0,41,100,0,50);
-  pe_permm_chip_offbeam        = new TH2F(Form("pe_permm_offbeam_chip"),"a",41,0,41,100,0,50);
-  hittime_chip_onbeam    = new TH2F(Form("hittime_onbeam_chip"),"a" ,41,0,41, time_onbeam_bin+2000, time_onbeam_start-1000, time_onbeam_end+1000);
-  hittime_chip_offbeam   = new TH2F(Form("hittime_offbeam_chip"),"a",41,0,41,time_offbeam_bin+2000,time_offbeam_start-1000,time_offbeam_end+1000);
-  bcid_chip_onbeam       = new TH2F(Form("bcid_onbeam_chip"),"a"    ,41,0,41, bcid_onbeam_bin+10, bcid_onbeam_start-5, bcid_onbeam_end+5);
-  bcid_chip_offbeam      = new TH2F(Form("bcid_offbeam_chip"),"a"   ,41,0,41,bcid_offbeam_bin+10,bcid_offbeam_start-5,bcid_offbeam_end+5);
-  diff_hittime_chip_onbeam    = new TH2F(Form("diff_hittime_onbeam_chip"),"a" ,41,0,41, 580*2, -580, 580);
-  diff_hittime_chip_offbeam   = new TH2F(Form("diff_hittime_offbeam_chip"),"a",41,0,41, 580*2, -580, 580);
-  diff_hittime_diff_chip_onbeam    = new TH2F(Form("diff_hittime_onbeam_diff_chip"),"a" ,41,0,41, 580*2, -580, 580);
-  diff_hittime_diff_chip_offbeam   = new TH2F(Form("diff_hittime_offbeam_diff_chip"),"a",41,0,41, 580*2, -580, 580);
-  diff_hittime_diff_chip_onbeam2   = new TH2F(Form("diff_hittime_onbeam_diff_chip2"),"a" ,41,0,41, 580*2, -580, 580);
-  diff_hittime_diff_chip_offbeam2  = new TH2F(Form("diff_hittime_offbeam_diff_chip2"),"a",41,0,41, 580*2, -580, 580);
+  pe_chip_onbeam         = new TH2D(Form("pe_onbeam_chip"),"a",41,0,41,100,0,50);
+  pe_chip_offbeam        = new TH2D(Form("pe_offbeam_chip"),"a",41,0,41,100,0,50);
+  pe_permm_chip_onbeam         = new TH2D(Form("pe_permm_onbeam_chip"),"a",41,0,41,100,0,50);
+  pe_permm_chip_offbeam        = new TH2D(Form("pe_permm_offbeam_chip"),"a",41,0,41,100,0,50);
+  hittime_chip_onbeam    = new TH2D(Form("hittime_onbeam_chip"),"a" ,41,0,41, time_onbeam_bin+2000, time_onbeam_start-1000, time_onbeam_end+1000);
+  hittime_chip_offbeam   = new TH2D(Form("hittime_offbeam_chip"),"a",41,0,41,time_offbeam_bin+2000,time_offbeam_start-1000,time_offbeam_end+1000);
+  bcid_chip_onbeam       = new TH2D(Form("bcid_onbeam_chip"),"a"    ,41,0,41, bcid_onbeam_bin+10, bcid_onbeam_start-5, bcid_onbeam_end+5);
+  bcid_chip_offbeam      = new TH2D(Form("bcid_offbeam_chip"),"a"   ,41,0,41,bcid_offbeam_bin+10,bcid_offbeam_start-5,bcid_offbeam_end+5);
+  diff_hittime_chip_onbeam    = new TH2D(Form("diff_hittime_onbeam_chip"),"a" ,41,0,41, 580*2, -580, 580);
+  diff_hittime_chip_offbeam   = new TH2D(Form("diff_hittime_offbeam_chip"),"a",41,0,41, 580*2, -580, 580);
+  diff_hittime_diff_chip_onbeam    = new TH2D(Form("diff_hittime_onbeam_diff_chip"),"a" ,41,0,41, 580*2, -580, 580);
+  diff_hittime_diff_chip_offbeam   = new TH2D(Form("diff_hittime_offbeam_diff_chip"),"a",41,0,41, 580*2, -580, 580);
+  diff_hittime_diff_chip_onbeam2   = new TH2D(Form("diff_hittime_onbeam_diff_chip2"),"a" ,41,0,41, 580*2, -580, 580);
+  diff_hittime_diff_chip_offbeam2  = new TH2D(Form("diff_hittime_offbeam_diff_chip2"),"a",41,0,41, 580*2, -580, 580);
   pe_chip_onbeam         ->SetTitle(Form("pe onbeam chip;chip:pe"));
   pe_chip_offbeam        ->SetTitle(Form("pe offbeam chip;chip;pe"));
   pe_permm_chip_onbeam         ->SetTitle(Form("pe permm onbeam chip;chip:pe"));
@@ -499,38 +499,38 @@ void AnaRecon(string &filename,string& outputDir, string& s_time){
   diff_hittime_diff_chip_offbeam2   ->SetTitle(Form("diff hittime offbeam diff chip;chip;time"));
 
   // Classify view and grid plot
-  TH1F * pe[2][2];
-  TH1F * pe_permm[2][2];
-  TH1F * pathlength[2][2];
-  TH1F * cos_zen   [2][2];
-  TH1F * cos_azi   [2][2];
-  TH2F * cos_p_zen   [2][2];
-  TH2F * cos_p_azi   [2][2];
-  TH2F * pe_permm_p  [2][2];
-  TH2F * pe_permm_cz  [2][2];
-  TH2F * pe_permm_ca  [2][2];
+  TH1D * pe[2][2];
+  TH1D * pe_permm[2][2];
+  TH1D * pathlength[2][2];
+  TH1D * cos_zen   [2][2];
+  TH1D * cos_azi   [2][2];
+  TH2D * cos_p_zen   [2][2];
+  TH2D * cos_p_azi   [2][2];
+  TH2D * pe_permm_p  [2][2];
+  TH2D * pe_permm_cz  [2][2];
+  TH2D * pe_permm_ca  [2][2];
 
   for(int i=0;i<2;i++){
     for(int j=0;j<2;j++){
-      pe[i][j] = new TH1F(Form("pe_view%d_grid%d",i,j),"a",100,0,50);
+      pe[i][j] = new TH1D(Form("pe_view%d_grid%d",i,j),"a",100,0,50);
       pe[i][j] -> SetTitle(Form("pe view=%d grid=%d;pe;nEntry",i,j));
-      pe_permm[i][j] = new TH1F(Form("pe_permm_view%d_grid%d",i,j),"a",100,0,50);
+      pe_permm[i][j] = new TH1D(Form("pe_permm_view%d_grid%d",i,j),"a",100,0,50);
       pe_permm[i][j] -> SetTitle(Form("pe per3mm view=%d grid=%d;pe;nEntry",i,j));
-      pathlength[i][j] = new TH1F(Form("path_view%d_grid%d",i,j),"a",100,0,50);
+      pathlength[i][j] = new TH1D(Form("path_view%d_grid%d",i,j),"a",100,0,50);
       pathlength[i][j] -> SetTitle(Form("pathlength view=%d grid=%d;pathlength;nEntry",i,j));
-      cos_zen[i][j] = new TH1F(Form("cos_z_view%d_grid%d",i,j),"a",100,-1,1);
+      cos_zen[i][j] = new TH1D(Form("cos_z_view%d_grid%d",i,j),"a",100,-1,1);
       cos_zen[i][j] -> SetTitle(Form("cos zenith view=%d grid=%d;cos;nEntry",i,j));
-      cos_azi[i][j] = new TH1F(Form("cos_azi_view%d_grid%d",i,j),"a",100,-1,1);
+      cos_azi[i][j] = new TH1D(Form("cos_azi_view%d_grid%d",i,j),"a",100,-1,1);
       cos_azi[i][j] -> SetTitle(Form("cos azimuth view=%d grid=%d;cos;nEntry",i,j));
-      cos_p_zen[i][j] = new TH2F(Form("cos_path_z_view%d_grid%d",i,j),"a",100,-1,1,100,0,50);
+      cos_p_zen[i][j] = new TH2D(Form("cos_path_z_view%d_grid%d",i,j),"a",100,-1,1,100,0,50);
       cos_p_zen[i][j] -> SetTitle(Form("path vs cos zenith view=%d grid=%d;cos;pathlength",i,j));
-      cos_p_azi[i][j] = new TH2F(Form("cos_path_azi_view%d_grid%d",i,j),"a",100,-1,1,100,0,50);
+      cos_p_azi[i][j] = new TH2D(Form("cos_path_azi_view%d_grid%d",i,j),"a",100,-1,1,100,0,50);
       cos_p_azi[i][j] -> SetTitle(Form("path vs cos azimuth view=%d grid=%d;cos;pathlength",i,j));
-      pe_permm_p[i][j] = new TH2F(Form("pe_permm_path_view%d_grid%d",i,j),"a",100,0,50,100,0,50);
+      pe_permm_p[i][j] = new TH2D(Form("pe_permm_path_view%d_grid%d",i,j),"a",100,0,50,100,0,50);
       pe_permm_p[i][j] -> SetTitle(Form("path vs pe per3mm view=%d grid=%d;pathlength;pe per3mm",i,j));
-      pe_permm_cz[i][j] = new TH2F(Form("pe_permm_zen_%d_%d",i,j),"a",100,-1,1,100,0,50);
+      pe_permm_cz[i][j] = new TH2D(Form("pe_permm_zen_%d_%d",i,j),"a",100,-1,1,100,0,50);
       pe_permm_cz[i][j] -> SetTitle(Form("cos zenith vs pe per3mm view=%d grid=%d;cos;pe per3mm",i,j));
-      pe_permm_ca[i][j] = new TH2F(Form("pe_permm_azi_%d_%d",i,j),"a",100,-1,1,100,0,50);
+      pe_permm_ca[i][j] = new TH2D(Form("pe_permm_azi_%d_%d",i,j),"a",100,-1,1,100,0,50);
       pe_permm_ca[i][j] -> SetTitle(Form("cos azimuth vs pe per3mm view=%d grid=%d;cos;pe per3mm",i,j));
     }
   }

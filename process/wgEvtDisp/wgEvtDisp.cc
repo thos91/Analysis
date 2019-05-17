@@ -1,10 +1,10 @@
 #include "TApplication.h"
 #include "TFile.h"
-#include "TH1F.h"
+#include "TH1D.h"
 #include "TF1.h"
 #include "TGraph.h"
 #include "TGraphAsymmErrors.h"
-#include "TH2F.h"
+#include "TH2D.h"
 #include "TStyle.h"
 #include "TString.h"
 #include "TSystem.h"
@@ -158,7 +158,7 @@ int main(int argc, char** argv){
   for(int i=0;i<2;i++){
     pad[i]->cd();
     Double_t FrameMargin = 10.;
-    TH1F *frame = gPad->DrawFrame(
+    TH1D *frame = gPad->DrawFrame(
         -WATERTANK_X/2.-FrameMargin, 
         -WATERTANK_Y/2.-FrameMargin+120,
         -WATERTANK_X/2. +FrameMargin+120,

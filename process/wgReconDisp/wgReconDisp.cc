@@ -15,7 +15,7 @@
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TBox.h>
-#include <TH2F.h>
+#include <TH2D.h>
 
 #include "wgTools.h"
 #include "wgErrorCode.h"
@@ -55,8 +55,8 @@ Map_t    mapping;
 MapInv_t mapping_inv;
 TCanvas *canvas;
 TCanvas *canvas_time;
-TH2F    *h_time[3];
-TH2F    *h_hitbcid;
+TH2D    *h_time[3];
+TH2D    *h_hitbcid;
 bool veto_cut = false;
 
 vector<int> v_recon_hit(0);
@@ -202,9 +202,9 @@ int main(int argc, char **argv)
 
   canvas_time = new TCanvas("canvas_time","canvas_time",1500,0,300,800);
   canvas_time->Divide(1,2);
-  h_hitbcid      = new TH2F(Form("bcid"),"bcid",41,0,41,6,-1,5);
+  h_hitbcid      = new TH2D(Form("bcid"),"bcid",41,0,41,6,-1,5);
   for(int i=0;i<3;i++){
-    h_time[i]      = new TH2F(Form("tdc%d",i),"tdc",41,0,41,43,-100,4200);
+    h_time[i]      = new TH2D(Form("tdc%d",i),"tdc",41,0,41,43,-100,4200);
   }
 
   Hit_t t_hit;
@@ -292,10 +292,10 @@ int main(int argc, char **argv)
 // ==================================================================
 void DrawHit(int i_bcid,Hit_t t_hit, Recon_t t_recon, Track_t t_track){
 
-  h_time[0] = new TH2F("time_hit","time_hit",41,0,41,4300,-100,4200);
+  h_time[0] = new TH2D("time_hit","time_hit",41,0,41,4300,-100,4200);
   h_time[0] -> SetFillColor(kBlack);
-  h_hitbcid = new TH2F("bcid","bcid",41,0,41,11,-1,10);
-  //h_hitbcid = new TH2F("bcid","bcid",41,0,41,410,0,4100);
+  h_hitbcid = new TH2D("bcid","bcid",41,0,41,11,-1,10);
+  //h_hitbcid = new TH2D("bcid","bcid",41,0,41,410,0,4100);
   double x_min=0.,x_max=0;
   //for(int i=0;i<t_hit.num_bcid_hits[i_bcid];i++){
   for(int i=0;i<t_hit.num_hits;i++){
@@ -470,8 +470,8 @@ void DrawRecon(int current_bcid,Hit_t t_hit, Recon_t t_recon, Track_t t_track){
 
 // ==================================================================
 void DrawTrack(int current_bcid,Hit_t t_hit, Recon_t t_recon, Track_t t_track){
-  h_time[1] = new TH2F("time_track_lowpe","time_track_lowpe",41,0,41,43,-100,4200);
-  h_time[2] = new TH2F("time_track","time_recon",41,0,41,43,-100,4200);
+  h_time[1] = new TH2D("time_track_lowpe","time_track_lowpe",41,0,41,43,-100,4200);
+  h_time[2] = new TH2D("time_track","time_recon",41,0,41,43,-100,4200);
   h_time[1] -> SetFillColor(kGreen);
   h_time[1] -> SetLineColor(kGreen);
   h_time[2] -> SetFillColor(kRed);
@@ -649,7 +649,7 @@ void DrawModule(int dif_id)
 
   pad[dif_id]->cd();
   Double_t FrameMargin = 10.;
-  TH1F *frame = gPad->DrawFrame(
+  TH1D *frame = gPad->DrawFrame(
       -WATERTANK_X/2.-FrameMargin, 
       -WATERTANK_Y/2.-FrameMargin,
       WATERTANK_X/2. +FrameMargin,

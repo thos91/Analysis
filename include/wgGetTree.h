@@ -2,7 +2,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "Const.h"
-#include "TH1F.h"
+#include "TH1D.h"
 #include <string>
 
 using namespace std;
@@ -33,15 +33,15 @@ public:
 
   // The difference between Get...(something) and GetHist...(something) is that
   // in the former the center of the maximum bin is returned as a double while in
-  // the latter the entire TH1F is returned.
+  // the latter the entire TH1D is returned.
   double GetStartTime();
   double GetStopTime();
   double GetDataPacket();
   double GetLostPacket();
-  TH1F* GetHist_StartTime();
-  TH1F* GetHist_StopTime();
-  TH1F* GetHist_DataPacket();
-  TH1F* GetHist_LostPacket();
+  TH1D* GetHist_StartTime();
+  TH1D* GetHist_StopTime();
+  TH1D* GetHist_DataPacket();
+  TH1D* GetHist_LostPacket();
 
 protected:
 

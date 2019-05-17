@@ -1,11 +1,11 @@
 #include "TROOT.h"
 #include "TApplication.h"
 #include "TFile.h"
-#include "TH1F.h"
+#include "TH1D.h"
 #include "TF1.h"
 #include "TGraph.h"
 #include "TGraphAsymmErrors.h"
-#include "TH2F.h"
+#include "TH2D.h"
 #include "TStyle.h"
 #include "TString.h"
 #include "TSystem.h"
@@ -190,8 +190,8 @@ int main(int argc, char** argv){
     HistLeft  = C_PMMotherPosZ   - C_PMSizeZ + 500;
     HistRight = C_INGHMotherPosZ + C_INGSizeZ - 500;
 
-    TH1F *h = new TH1F("","Side View",HistBin,HistLeft,HistRight);
-    TH1F *v = new TH1F("","Top View" ,HistBin,HistLeft,HistRight);
+    TH1D *h = new TH1D("","Side View",HistBin,HistLeft,HistRight);
+    TH1D *v = new TH1D("","Top View" ,HistBin,HistLeft,HistRight);
     h->SetMinimum(-C_INGSizeY);
     h->SetMaximum( C_INGSizeY);
     h->GetXaxis()->SetLabelSize(0);
@@ -431,13 +431,13 @@ int main(int argc, char** argv){
         int hitmod   = reconsum->hitmod;
         int startpln = reconsum->startpln;
         int endpln   = reconsum->endpln;
-        float startz = reconsum->startz;
-        float endz   = reconsum->endz;
-        float startxy= reconsum->startxy;
-        float endxy  = reconsum->endxy;
-        float angle  = reconsum->angle*PI/180.;
-        float intcpt = reconsum->intcpt;
-        float slope  = reconsum->slope;
+        double startz = reconsum->startz;
+        double endz   = reconsum->endz;
+        double startxy= reconsum->startxy;
+        double endxy  = reconsum->endxy;
+        double angle  = reconsum->angle*PI/180.;
+        double intcpt = reconsum->intcpt;
+        double slope  = reconsum->slope;
         std::cout << "  / track" << irecon+1 << ":"
           << " view is " << view
           << " hitmod # is " << hitmod 
@@ -534,15 +534,15 @@ int main(int argc, char** argv){
           int   endmod    = anasum->ing_endmod[itrack];
           int   startxpln = anasum->startxpln[itrack];
           int   startypln = anasum->startypln[itrack];
-          float startxch  = anasum->startxch[itrack];
-          float startych  = anasum->startych[itrack];
+          double startxch  = anasum->startxch[itrack];
+          double startych  = anasum->startych[itrack];
           int   ingendpln = anasum->ing_endpln[itrack];
           int   endxpln   = anasum->endxpln[itrack];
           int   endypln   = anasum->endypln[itrack];
-          float endxch    = anasum->endxch[itrack];
-          float endych    = anasum->endych[itrack];
-          float thetax    = anasum->thetax[itrack]*PI/180.;
-          float thetay    = anasum->thetay[itrack]*PI/180.;
+          double endxch    = anasum->endxch[itrack];
+          double endych    = anasum->endych[itrack];
+          double thetax    = anasum->thetax[itrack]*PI/180.;
+          double thetay    = anasum->thetay[itrack]*PI/180.;
 
           //DEBUG
           //if(ingendpln!=0) goto ENDEVENT;

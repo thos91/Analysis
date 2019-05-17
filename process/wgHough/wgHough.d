@@ -1,4 +1,4 @@
-wgHough.o: wgHough.cc /opt/root-6.08.00/include/TH2F.h \
+wgHough.o: wgHough.cc /opt/root-6.08.00/include/TH2D.h \
  /opt/root-6.08.00/include/TH2.h /opt/root-6.08.00/include/TH1.h \
  /opt/root-6.08.00/include/TAxis.h /opt/root-6.08.00/include/TNamed.h \
  /opt/root-6.08.00/include/TObject.h \
@@ -66,13 +66,13 @@ wgHough.o: wgHough.cc /opt/root-6.08.00/include/TH2F.h \
  /opt/root-6.08.00/include/TObjString.h \
  /opt/root-6.08.00/include/ThreadLocalStorage.h \
  /opt/root-6.08.00/include/TVirtualTreePlayer.h ../../include/Const.h \
- /opt/root-6.08.00/include/TNamed.h /opt/root-6.08.00/include/TH1F.h \
+ /opt/root-6.08.00/include/TNamed.h /opt/root-6.08.00/include/TH1D.h \
  ../../include/wgErrorCode.h ../../include/wgTools.h \
  ../../include/Const.h ../../include/DetectorConst.h \
  ../../include/wgReconClass.h ../../include/wgChannelMap.h \
  ../../include/DetectorConst.h
 
-/opt/root-6.08.00/include/TH2F.h:
+/opt/root-6.08.00/include/TH2D.h:
 
 /opt/root-6.08.00/include/TH2.h:
 
@@ -248,7 +248,7 @@ wgHough.o: wgHough.cc /opt/root-6.08.00/include/TH2F.h \
 
 /opt/root-6.08.00/include/TNamed.h:
 
-/opt/root-6.08.00/include/TH1F.h:
+/opt/root-6.08.00/include/TH1D.h:
 
 ../../include/wgErrorCode.h:
 

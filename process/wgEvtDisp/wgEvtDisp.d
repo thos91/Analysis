@@ -34,7 +34,7 @@ wgEvtDisp.o: wgEvtDisp.cc /opt/root-6.08.00/include/TApplication.h \
  /opt/root-6.08.00/include/TBuffer.h /opt/root-6.08.00/include/TDatime.h \
  /opt/root-6.08.00/include/TUUID.h /opt/root-6.08.00/include/TMap.h \
  /opt/root-6.08.00/include/THashTable.h /opt/root-6.08.00/include/TUrl.h \
- /opt/root-6.08.00/include/TH1F.h /opt/root-6.08.00/include/TH1.h \
+ /opt/root-6.08.00/include/TH1D.h /opt/root-6.08.00/include/TH1.h \
  /opt/root-6.08.00/include/TAxis.h /opt/root-6.08.00/include/TAttAxis.h \
  /opt/root-6.08.00/include/TArrayD.h /opt/root-6.08.00/include/TArray.h \
  /opt/root-6.08.00/include/TAttLine.h \
@@ -52,7 +52,7 @@ wgEvtDisp.o: wgEvtDisp.cc /opt/root-6.08.00/include/TApplication.h \
  /opt/root-6.08.00/include/Math/ParamFunctor.h \
  /opt/root-6.08.00/include/TGraph.h \
  /opt/root-6.08.00/include/TGraphAsymmErrors.h \
- /opt/root-6.08.00/include/TH2F.h /opt/root-6.08.00/include/TH2.h \
+ /opt/root-6.08.00/include/TH2D.h /opt/root-6.08.00/include/TH2.h \
  /opt/root-6.08.00/include/TMatrixFBasefwd.h \
  /opt/root-6.08.00/include/TMatrixDBasefwd.h \
  /opt/root-6.08.00/include/TStyle.h /opt/root-6.08.00/include/TAttText.h \
@@ -175,7 +175,7 @@ wgEvtDisp.o: wgEvtDisp.cc /opt/root-6.08.00/include/TApplication.h \
 
 /opt/root-6.08.00/include/TUrl.h:
 
-/opt/root-6.08.00/include/TH1F.h:
+/opt/root-6.08.00/include/TH1D.h:
 
 /opt/root-6.08.00/include/TH1.h:
 
@@ -225,7 +225,7 @@ wgEvtDisp.o: wgEvtDisp.cc /opt/root-6.08.00/include/TApplication.h \
 
 /opt/root-6.08.00/include/TGraphAsymmErrors.h:
 
-/opt/root-6.08.00/include/TH2F.h:
+/opt/root-6.08.00/include/TH2D.h:
 
 /opt/root-6.08.00/include/TH2.h:
 

@@ -44,61 +44,61 @@ void wgGetHist::clear(){
 //************************************************************************
 void wgGetHist::Get_charge_hit_HG(unsigned int i,unsigned int j,unsigned int k){
   if (h_charge_hit_HG != NULL) delete h_charge_hit_HG;
-  h_charge_hit_HG=(TH1F*)freadhist->Get(Form("charge_hit_HG_chip%u_ch%u_col%u",i,j,k));
+  h_charge_hit_HG=(TH1D*)freadhist->Get(Form("charge_hit_HG_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_charge_hit_LG(unsigned int i,unsigned int j,unsigned int k){
   if (h_charge_hit_LG != NULL ) delete h_charge_hit_LG; 
-  h_charge_hit_LG=(TH1F*)freadhist->Get(Form("charge_hit_LG_chip%u_ch%u_col%u",i,j,k));
+  h_charge_hit_LG=(TH1D*)freadhist->Get(Form("charge_hit_LG_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_charge_nohit(unsigned int i,unsigned int j,unsigned int k){
    if (h_charge_nohit != NULL ) delete h_charge_nohit;
-  h_charge_nohit=(TH1F*)freadhist->Get(Form("charge_nohit_chip%u_ch%u_col%u",i,j,k));
+  h_charge_nohit=(TH1D*)freadhist->Get(Form("charge_nohit_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_time_hit(unsigned int i,unsigned int j,unsigned int k){
    if (h_time_hit != NULL ) delete h_time_hit;
-  h_time_hit=(TH1F*)freadhist->Get(Form("time_hit_chip%u_ch%u_col%u",i,j,k));
+  h_time_hit=(TH1D*)freadhist->Get(Form("time_hit_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_time_nohit(unsigned int i,unsigned int j,unsigned int k){
    if (h_time_nohit != NULL ) delete h_time_nohit;
-  h_time_nohit=(TH1F*)freadhist->Get(Form("time_nohit_chip%u_ch%u_col%u",i,j,k));
+  h_time_nohit=(TH1D*)freadhist->Get(Form("time_nohit_chip%u_ch%u_col%u",i,j,k));
 }
 
 //************************************************************************
 void wgGetHist::Get_charge_hit(unsigned int i,unsigned int j){
    if (h_charge_hit != NULL ) delete h_charge_hit;
-  h_charge_hit = (TH1F*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col0",i,j));
+  h_charge_hit = (TH1D*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col0",i,j));
   for (unsigned k = 1; k < MEMDEPTH; k++) {
-	  h_charge_hit->Add((TH1F*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col%u",i,j,k)));
+	  h_charge_hit->Add((TH1D*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col%u",i,j,k)));
   }
 }
 
 //************************************************************************
 void wgGetHist::Get_bcid_hit(unsigned int i,unsigned int j){
   if (h_bcid_hit != NULL) delete h_bcid_hit;
-  h_bcid_hit=(TH1F*)freadhist->Get(Form("bcid_hit_chip%u_ch%u",i,j));
+  h_bcid_hit=(TH1D*)freadhist->Get(Form("bcid_hit_chip%u_ch%u",i,j));
 }
 
 //************************************************************************
 void wgGetHist::Get_pe_hit(unsigned int i,unsigned int j){
    if (h_pe_hit != NULL ) delete h_pe_hit;
-  h_pe_hit = (TH1F*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col0",i,j));
+  h_pe_hit = (TH1D*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col0",i,j));
   for (unsigned k = 1; k < MEMDEPTH; k++) {
-	h_pe_hit->Add((TH1F*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col%u",i,j,k)));
+	h_pe_hit->Add((TH1D*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col%u",i,j,k)));
   }
 }
 
 //************************************************************************
 void wgGetHist::Get_spill(){
    if (h_spill != NULL ) delete h_spill;
-  h_spill=(TH1F*)freadhist->Get(Form("spill"));
+  h_spill=(TH1D*)freadhist->Get(Form("spill"));
 }
 
 //************************************************************************
@@ -172,15 +172,15 @@ void wgGetHist::Print_spill(const char* h_name,const char* option="", int opt=0)
 
 //************************************************************************
 int wgGetHist::Get_start_time(){
-  TH1F *h;
-  h=(TH1F*)freadhist->Get("start_time");
+  TH1D *h;
+  h=(TH1D*)freadhist->Get("start_time");
   return h->GetBinLowEdge(h->GetMinimumBin())-1; 
 }
 
 //************************************************************************
 int wgGetHist::Get_stop_time(){
-  TH1F *h;
-  h=(TH1F*)freadhist->Get("stop_time");
+  TH1D *h;
+  h=(TH1D*)freadhist->Get("stop_time");
   return h->GetBinLowEdge(h->GetMaximumBin()); 
 }
 

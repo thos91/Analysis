@@ -2,13 +2,13 @@
 #define WGFITCONST_H_INCLUDE
 
 
-extern const float sigma;         //initial sigma of gaussian value
-extern const float max_sigma;     //max value
-extern const float min_sigma;     //min value
+extern const double sigma;         //initial sigma of gaussian value
+extern const double max_sigma;     //max value
+extern const double min_sigma;     //min value
 
-extern const float threshold;     //initial threshold value
-extern const float max_threshold;   
-extern const float min_threshold;    
+extern const double threshold;     //initial threshold value
+extern const double max_threshold;   
+extern const double min_threshold;    
 
 extern const int N_low_pe;     //maximum number of peak search for low pe
 extern const int begin_low_pe; //begining value of fitting range for low pe
@@ -38,12 +38,12 @@ extern const int begin_BCID;    //begining value of fitting range for LED
 extern const int end_BCID;    //ending value of fitting range for LED
 extern const int limit_BCID;    //ending value of fitting range for LED
 
-extern const float Gain ;     //estimate Gain
+extern const double Gain ;     //estimate Gain
 
-extern const float GSthreshold ;     //estimate Gain
-extern const float GSthreshold_0 ;     //estimate Gain
+extern const double GSthreshold ;     //estimate Gain
+extern const double GSthreshold_0 ;     //estimate Gain
 
-extern const float time_bcid_bin ;   // bcid 1bin time[s]
+extern const double time_bcid_bin ;   // bcid 1bin time[s]
 
 
 

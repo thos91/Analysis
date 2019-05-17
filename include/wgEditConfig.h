@@ -36,7 +36,7 @@ private:
 
 public:
   int fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
-  float BDV[NCHANNELS] = {};         // breakdown voltage
+  double BDV[NCHANNELS] = {};         // breakdown voltage
   bool Read_MPPCData;
 
   // constructor
