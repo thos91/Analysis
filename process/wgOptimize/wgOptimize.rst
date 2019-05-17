@@ -70,6 +70,16 @@ the chip channels.
 -----------------
 In this case, the threshold is just read from the threshold card file.
 
+Bitstream files
+===============
+
+This program assumes that the bitstream files for each chip are already present and gathered together in a folder. The pattern for the names of the bitstream files is fixed and changing it will almost certainly result in a error, or worse a misbehavior. The files must be in the same folder and named:
+
+   wagasci_config_dif%d_chip%d.txt
+
+where the dif and chip numbers start from 1 and not from 0.
+
+
 Arguments
 =========
 

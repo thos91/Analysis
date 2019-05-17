@@ -33,11 +33,11 @@ int wgOptimize(const char * x_threshold_card, const char * x_calibration_card, c
   s_th.fill(0);
   i_th.fill(-1);
 
-  if ( threshold_card.empty() || check.XmlFile(threshold_card) ) {
+  if ( threshold_card.empty() || !check.XmlFile(threshold_card) ) {
 	Log.eWrite("[wgOptimize] Threshold card not found");
 	return ERR_THRESHOLD_CARD_NOT_FOUND;
   }
-  if ( (mode == OP_INPUTDAC_MODE) && (calibration_card.empty() || check.XmlFile(calibration_card)) ) {
+  if ( (mode == OP_INPUTDAC_MODE) && (calibration_card.empty() || !check.XmlFile(calibration_card)) ) {
 	Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
     return ERR_CALIBRATION_CARD_NOT_FOUND;
   }
