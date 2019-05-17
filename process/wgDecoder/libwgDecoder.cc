@@ -209,18 +209,18 @@ int wgDecoder(const char * x_inputFileName,
 	int DATETIME_BIN = DATETIME_END - DATETIME_STR;
 
 	// Start time of the acquisition that produced the .raw file
-	TH1F * h_start_time = new TH1F("start_time", "Time the acquisition started", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	TH1D * h_start_time = new TH1D("start_time", "Time the acquisition started", DATETIME_BIN, DATETIME_STR, DATETIME_END);
 	h_start_time -> Fill(v_log[0], v_log[0]);
 	h_start_time -> Fill(v_log[0] + 1, v_log[0] - DATETIME_END);
 	// Stop time of the acquisition that produced the .raw file
-	TH1F * h_stop_time = new TH1F("stop_time","Time the acquisition stopped", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	TH1D * h_stop_time = new TH1D("stop_time","Time the acquisition stopped", DATETIME_BIN, DATETIME_STR, DATETIME_END);
 	h_stop_time -> Fill(v_log[1], v_log[1]);
 	h_stop_time -> Fill(v_log[1] + 1, v_log[1] - DATETIME_END);
 	// Number of data packets acquired as reported by Pyrame in the acquisition log file
-	TH1F * h_nb_data_pkts = new TH1F("nb_data_pkts","Number of data packets", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	TH1D * h_nb_data_pkts = new TH1D("nb_data_pkts","Number of data packets", DATETIME_BIN, DATETIME_STR, DATETIME_END);
 	h_nb_data_pkts -> Fill(v_log[2]);
 	// Number of lost packets acquired as reported by Pyrame in the acquisition log file
-	TH1F * h_nb_lost_pkts = new TH1F("nb_lost_pkts","Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+	TH1D * h_nb_lost_pkts = new TH1D("nb_lost_pkts","Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
 	h_nb_lost_pkts -> Fill(v_log[3]);
 
 	h_start_time   -> Write();
@@ -253,19 +253,19 @@ int wgDecoder(const char * x_inputFileName,
   tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, n_channels           ));
   tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, n_channels           ));
   tree->Branch("grid"        ,rd.grid.data()       ,Form("grid[%d][%d]/I"           ,n_chips, n_channels           ));
-  tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/F"              ,n_chips, n_channels           ));
-  tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/F"              ,n_chips, n_channels           ));
-  tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/F"              ,n_chips, n_channels           ));
+  tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, n_channels           ));
+  tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, n_channels           ));
+  tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, n_channels           ));
   if (charge_calibration) {
-	tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/F"         ,n_chips, n_channels, MEMDEPTH ));
-	tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d]/F"           ,n_chips, n_channels           ));
-	tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/F"   ,n_chips, n_channels, MEMDEPTH ));
-	tree->Branch("ped_nohit" ,rd.ped_nohit.data()  ,Form("ped_nohit[%d][%d][%d]/F"  ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d]/D"           ,n_chips, n_channels           ));
+	tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("ped_nohit" ,rd.ped_nohit.data()  ,Form("ped_nohit[%d][%d][%d]/D"  ,n_chips, n_channels, MEMDEPTH ));
   }
   if (time_calibration) {
-	tree->Branch("time_ns"   ,rd.time_ns.data()    ,Form("time_ns[%d][%d][%d]/F"    ,n_chips, n_channels, MEMDEPTH ));
-	tree->Branch("tdc_slope" ,rd.tdc_slope.data()  ,Form("tdc_slope[%d][%d][%d]/F"  ,n_chips, n_channels, 2        ));
-	tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/F" ,n_chips, n_channels, 2        ));
+	tree->Branch("time_ns"   ,rd.time_ns.data()    ,Form("time_ns[%d][%d][%d]/D"    ,n_chips, n_channels, MEMDEPTH ));
+	tree->Branch("tdc_slope" ,rd.tdc_slope.data()  ,Form("tdc_slope[%d][%d][%d]/D"  ,n_chips, n_channels, 2        ));
+	tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/D" ,n_chips, n_channels, 2        ));
   }
   // =====================================================
   //     ============================================
@@ -816,7 +816,7 @@ bool check_ChipID(int16_t v_chipid, uint16_t n_chips) {
 
 //******************************************************************************
 
-int tdc2time(f3vector &time_ns, i3vector &time, i2vector &bcid, f3vector &slope, f3vector &intcpt) {
+int tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt) {
   int Parity;
   for(size_t ichip = 0; ichip < time.size(); ichip++){
 	for(size_t ich = 0; ich < time[ichip].size(); ich++){

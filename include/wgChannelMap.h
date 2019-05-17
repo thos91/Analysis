@@ -20,9 +20,9 @@ typedef struct Map
   i3vector pln;  // [NumDif][NumChip][NumChipCh];
   i3vector ch;   // [NumDif][NumChip][NumChipCh];
   i3vector grid; // [NumDif][NumChip][NumChipCh];
-  f3vector x;    // [NumDif][NumChip][NumChipCh];
-  f3vector y;    // [NumDif][NumChip][NumChipCh];
-  f3vector z;    // [NumDif][NumChip][NumChipCh];
+  d3vector x;    // [NumDif][NumChip][NumChipCh];
+  d3vector y;    // [NumDif][NumChip][NumChipCh];
+  d3vector z;    // [NumDif][NumChip][NumChipCh];
 } Map_t;
 
 typedef struct MapInv
@@ -32,9 +32,9 @@ typedef struct MapInv
   i3vector dif;    // [NumView][NumPln][NumCh];
   i3vector chip;   // [NumView][NumPln][NumCh];
   i3vector chipch; // [NumView][NumPln][NumCh];
-  f3vector x;      // [NumView][NumPln][NumCh];
-  f3vector y;      // [NumView][NumPln][NumCh];
-  f3vector z;      // [NumView][NumPln][NumCh];
+  d3vector x;      // [NumView][NumPln][NumCh];
+  d3vector y;      // [NumView][NumPln][NumCh];
+  d3vector z;      // [NumView][NumPln][NumCh];
 } MapInv_t;
 
 typedef struct ReconMap

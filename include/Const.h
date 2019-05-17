@@ -125,9 +125,9 @@ const uint16_t NCHIPSSMRD = NumChipSMRD;
 const uint16_t NDIFS      = NumDif;
 
 //define data fomat
-typedef vector<vector<vector<vector<double>>>> f4vector;
-typedef Contiguous3Vector<double> f3vector;
-typedef Contiguous2Vector<double> f2vector;
+typedef vector<vector<vector<vector<double>>>> d4vector;
+typedef Contiguous3Vector<double> d3vector;
+typedef Contiguous2Vector<double> d2vector;
 typedef vector<double> fvector;
 typedef vector<vector<vector<vector<int>>>> i4vector;
 typedef Contiguous3Vector<int> i3vector;
@@ -156,16 +156,16 @@ public:
   i2vector pln;              // [NumChip][NumChipChFull];
   i2vector ch;               // [NumChip][NumChipChFull];
   i2vector grid;             // [NumChip][NumChipChFull];
-  f2vector x;                // [NumChip][NumChipChFull];
-  f2vector y;                // [NumChip][NumChipChFull];
-  f2vector z;                // [NumChip][NumChipChFull];
-  f3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
-  f3vector ped_nohit;        // [NumChip][NumChipChFull][NumSca];
-  f3vector pe;               // [NumChip][NumChipChFull][NumSca];
-  f3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
-  f2vector gain;             // [NumChip][NumChipChFull];
-  f3vector tdc_slope;        // [NumChip][NumChipChFull][2];
-  f3vector tdc_intcpt;       // [NumChip][NumChipChFull][2];
+  d2vector x;                // [NumChip][NumChipChFull];
+  d2vector y;                // [NumChip][NumChipChFull];
+  d2vector z;                // [NumChip][NumChipChFull];
+  d3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
+  d3vector ped_nohit;        // [NumChip][NumChipChFull][NumSca];
+  d3vector pe;               // [NumChip][NumChipChFull][NumSca];
+  d3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
+  d2vector gain;             // [NumChip][NumChipChFull];
+  d3vector tdc_slope;        // [NumChip][NumChipChFull][2];
+  d3vector tdc_intcpt;       // [NumChip][NumChipChFull][2];
 
   int n_chips;
   int n_chans;

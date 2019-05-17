@@ -128,7 +128,7 @@ int main(int argc, char** argv){
   int result;
   if ( (result = wgOptimize(threshold_card.c_str(), calibration_card.c_str(), wagasci_config_dif_dir.c_str(),
 							mode, inputDAC, pe, n_difs, n_chips, n_channels)) != OP_SUCCESS ) {
-	Log.eWrite("[wgOptimize] wgOptimeze returned error " + to_string(result));
+	Log.eWrite("[wgOptimize] wgOptimize returned error " + to_string(result));
     exit(1);
   }
   exit(0);

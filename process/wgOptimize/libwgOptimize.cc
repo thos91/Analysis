@@ -26,9 +26,9 @@ int wgOptimize(const char * x_threshold_card, const char * x_calibration_card, c
   if (x_wagasci_config_dif_dir != NULL) wagasci_config_dif_dir = x_wagasci_config_dif_dir;
   else wagasci_config_dif_dir = "";
 
-  f2vector threshold(n_difs, n_chips);
-  f2vector s_th(n_difs, n_chips);
-  f2vector i_th(n_difs, n_chips);
+  d2vector threshold(n_difs, n_chips);
+  d2vector s_th(n_difs, n_chips);
+  d2vector i_th(n_difs, n_chips);
   threshold.fill(-1);
   s_th.fill(0);
   i_th.fill(-1);
@@ -102,8 +102,8 @@ int wgOptimize(const char * x_threshold_card, const char * x_calibration_card, c
 
   // ================ Read the calibration card ================= //
 
-  f3vector s_Gain(n_difs, n_chips, n_channels);
-  f3vector i_Gain(n_difs, n_chips, n_channels);
+  d3vector s_Gain(n_difs, n_chips, n_channels);
+  d3vector i_Gain(n_difs, n_chips, n_channels);
   s_Gain.fill(0);
   i_Gain.fill(-1);
   try {
