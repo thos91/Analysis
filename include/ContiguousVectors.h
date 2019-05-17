@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <exception>
 #include <stdexcept>
+#include <iostream>
+#include <cstdbool>
 #include "wgExceptions.h"
 
 /****************************** WRAP VECTORS ********************************/
@@ -35,21 +37,25 @@ protected:
   std::size_t m_size_outer;
   std::size_t m_size_middle;
   std::size_t m_size_inner;
-
+  bool initialized;
+  
 public:
   Contiguous3Vector() {
 	m_array_outer = NULL;
 	m_size_outer = 0;
 	m_size_middle = 0;
 	m_size_inner = 0;
+	initialized = false;
   }
 
   Contiguous3Vector(std::size_t x_size_outer, std::size_t x_size_middle, std::size_t x_size_inner) {
+	m_array_outer = NULL;
+	initialized = false;
 	this->Initialize(x_size_outer, x_size_middle, x_size_inner);
   }
 
   void Initialize(std::size_t x_size_outer, std::size_t x_size_middle, std::size_t x_size_inner) {
-	if (m_array_outer == NULL) {
+	if ( initialized == false ) {
 	  if ( x_size_outer * x_size_middle * x_size_inner == 0 )
 		throw std::invalid_argument("minimum dimension is 1");
 	  m_size_outer = x_size_outer;
@@ -67,6 +73,7 @@ public:
 		  m_array_outer[i][j] = m_array_outer[i][j-1] + x_size_inner;
 		}
 	  }
+	  initialized = true;
 	}
 	else throw std::runtime_error("contiguous vector already initialized");
   }
@@ -148,7 +155,7 @@ public:
   /**********************************************************************************/
 
   ProxyMiddle operator[](std::size_t index) {
-	if (m_array_outer == NULL)
+	if ( (m_array_outer == NULL) || (initialized == false) )
 	  throw wgNotInitialized("outer array not initialized");
 	else if (index >= m_size_outer)
 	  throw std::out_of_range("outer index " + std::to_string(index) +
@@ -157,7 +164,7 @@ public:
   }
 
   void fill(T value) {
-	if (m_array_outer == NULL)
+	if ( (m_array_outer == NULL) || (initialized == false) )
 	  throw wgNotInitialized("outer array not initialized");
 	else {
 	  for (std::size_t i = 0; i < m_size_outer; i++) {
@@ -175,11 +182,12 @@ public:
   }
 
   std::size_t size() {
+	if ( (m_array_outer == NULL) || (initialized == false) ) return 0;
 	return m_size_outer;
   }
 
   T * data() {
-	if (m_array_outer == NULL) return NULL;
+	if ( (m_array_outer == NULL) || (initialized == false) ) return NULL;
 	else if (m_array_outer[0] == NULL) return NULL;
 	else return m_array_outer[0][0];
   }
@@ -200,20 +208,24 @@ protected:
   T** m_array_outer;
   std::size_t m_size_outer;
   std::size_t m_size_inner;
-
+  bool initialized;
+  
 public:
   Contiguous2Vector() {
   	m_array_outer = NULL;
 	m_size_outer = 0;
 	m_size_inner = 0;
+	initialized = false;
   }
 
   Contiguous2Vector(std::size_t x_size_outer, std::size_t x_size_inner) {
+	m_array_outer = NULL;
+	initialized = false;
 	this->Initialize(x_size_outer, x_size_inner);
   }
 
   void Initialize(std::size_t x_size_outer, std::size_t x_size_inner) {
-	if (m_array_outer == NULL) {
+	if (initialized == false) {
 	  if ( x_size_outer * x_size_inner == 0 )
 		throw std::invalid_argument("minimum dimension is 1");
 	  m_size_outer = x_size_outer;
@@ -223,6 +235,7 @@ public:
 	  for (std::size_t i = 1; i < x_size_outer;  i++) {
 		m_array_outer[i] = m_array_outer[i-1] + x_size_inner;
 	  }
+	  initialized = true;
 	}
 	else throw std::runtime_error("contiguous vector already initialized");
   }
@@ -270,7 +283,7 @@ public:
   /******************************************************************/
 
   Proxy operator[](std::size_t index) {
-	if (m_array_outer == NULL)
+	if ( (m_array_outer == NULL) || (initialized == false) )
 	  throw wgNotInitialized("outer array not initialized");
 	else if (index >= m_size_outer)
 	  throw std::out_of_range("outer index " + std::to_string(index) +
@@ -279,16 +292,17 @@ public:
   }
 
   std::size_t size() {
+	if ( (m_array_outer == NULL) || (initialized == false) ) return 0;
 	return m_size_outer;
   }
 
   T * data() {
-	if (m_array_outer == NULL) return NULL;
+	if ( (m_array_outer == NULL) || (initialized == false) ) return NULL;
 	return m_array_outer[0];
   }
 
   void fill(T value) {
-	if (m_array_outer == NULL)
+	if ( (m_array_outer == NULL) || (initialized == false) )
 	  throw wgNotInitialized("outer array not initialized");
 	else {
 	  for (std::size_t i = 0; i < m_size_outer; i++) {
