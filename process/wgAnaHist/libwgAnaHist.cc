@@ -34,18 +34,24 @@ void ModeSelect(const int mode, bitset<M>& flag){
 }
 
 //******************************************************************
-int AnaHist(const string& inputFileName,
-			const string& configFileName,
-			const string& outputDir,
-			const string& outputIMGDir,
+int AnaHist(const char * x_inputFileName,
+			const char * x_configFileName,
+			const char * x_outputDir,
+			const char * x_outputIMGDir,
 			const int mode,
-			bitset<M>& flags,
+			const unsigned long flags_ulong,
 			const unsigned idif,
 			const unsigned n_chips,
 			const unsigned n_chans) {
 
+  string inputFileName(x_inputFileName);
+  string configFileName(x_configFileName);
+  string outputDir(x_outputDir);
+  string outputIMGDir(x_outputIMGDir);
   wgEditXML Edit;
   CheckExist Check;
+
+  bitset<M> flags(flags_ulong);
   
   // Set the correct flags according to the mode
   try {

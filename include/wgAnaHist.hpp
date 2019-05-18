@@ -38,16 +38,16 @@ using namespace std;
 extern "C" {
 #endif
 
-void ModeSelect(int mode, bitset<M>& flag);
-int AnaHist(const string& inputFileName,
-			 const string& configFileName,
-			 const string& outputDir,
-			 const string& outputIMGDir,
-			 int mode,
-			 bitset<M>& flag,
-			 unsigned idif,
-			 unsigned ichip,
-			 unsigned n_chans = NCHANNELS);
+  void ModeSelect(int mode, bitset<M>& flag);
+  int AnaHist(const char * inputFileName,
+			  const char * configFileName,
+			  const char * outputDir,
+			  const char * outputIMGDir,
+			  int mode,
+			  unsigned long flags_ulong,
+			  unsigned idif    = 1,
+			  unsigned n_chips = NCHIPS,
+			  unsigned n_chans = NCHANNELS);
 
 #ifdef __cplusplus
 }

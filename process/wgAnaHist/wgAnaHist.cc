@@ -126,12 +126,12 @@ int main(int argc, char** argv){
   Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
   Log.Write("start analyzing ...");
   
-  AnaHist(inputFileName,
-		  configFileName,
-		  outputDir,
-		  outputIMGDir,
+  AnaHist(inputFileName.c_str(),
+		  configFileName.c_str(),
+		  outputDir.c_str(),
+		  outputIMGDir.c_str(),
 		  mode,
-		  flags,
+		  flags.to_ulong(),
 		  idif,
 		  n_chips,
 		  n_chans);
