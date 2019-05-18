@@ -59,11 +59,6 @@ wgFit::~wgFit(){
 }
 
 //**********************************************************************
-void wgFit::clear(){
-  wgFit::GetHist->clear();
-}
-
-//**********************************************************************
 void wgFit::SetoutputIMGDir(const string& str){
   wgFit::outputIMGDir=str;
 }
@@ -87,8 +82,12 @@ void wgFit::swap(int Npeaks, double* px, double* py){
 
 //**********************************************************************
 void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) {
-  GetHist->Get_bcid_hit(ichip, ichan);
-  GetHist->Get_spill();
+  if ( (! GetHist->Get_bcid_hit(ichip, ichan)) || (! GetHist->Get_spill()) ) {
+	x[0] = NAN;
+	x[1] = NAN;
+	return;
+  }
+
   // Number of recorded spills
   Int_t nEntries = GetHist->h_spill->GetEntries();
   if( nEntries == 0 ) {
@@ -136,14 +135,17 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) 
     GetHist->Print_bcid(Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan), "", 1);
   }
   delete step_function;
-  delete GetHist->h_bcid_hit;
-  delete GetHist->h_spill;
 }
 
 //**********************************************************************
 void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mode) {
 
-  wgFit::GetHist->Get_charge_hit(ichip, ichan);
+  if ( ! wgFit::GetHist->Get_charge_hit(ichip, ichan) ) {
+	x[0] = NAN;
+	x[1] = NAN;
+	x[2] = NAN;
+	return;
+  }
 
   if(wgFit::GetHist->h_charge_hit->Integral(begin_low_pe,end_low_pe) < 1 )
 	{
@@ -180,7 +182,6 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mo
   if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
     GetHist->Print_charge(Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan), "", 1);
   delete gaussian;
-  delete GetHist->h_charge_hit;
   return;  
 }
 
@@ -188,8 +189,13 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mo
 //**********************************************************************
 void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], int mode) {
 
-  wgFit::GetHist->Get_charge_hit_HG(ichip,ichan,icol);
-
+  if ( ! wgFit::GetHist->Get_charge_hit_HG(ichip,ichan,icol) ) {
+	x[0] = NAN;
+	x[1] = NAN;
+	x[2] = NAN;
+	return;
+  }
+  
   if(wgFit::GetHist->h_charge_hit_HG->Integral(begin_low_pe_HG,end_low_pe_HG) < 1 )
   {
 #ifdef DEBUG_WGFIT
@@ -224,7 +230,6 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
   if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
     GetHist->Print_charge_hit_HG(Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol), "", 1);
   delete gaussian;
-  delete GetHist->h_charge_hit_HG;
   return;
 }
 
@@ -232,7 +237,12 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
 void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const int mode) {
 
   // Read the "charge_nohit" histogram for the _hist.root file
-  GetHist->Get_charge_nohit(ichip, ichan, icol);
+  if ( ! GetHist->Get_charge_nohit(ichip, ichan, icol) ) {
+	x[0] = NAN;
+	x[1] = NAN;
+	x[2] = NAN;
+	return;
+  }
 
   // If the histogram is empty return a 0 vector
   if(GetHist->h_charge_nohit->Integral(begin_ped, end_ped) < 1 )
@@ -276,12 +286,11 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
     GetHist->Print_charge_nohit(Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol), "", 1);
   delete gaussian;
-  delete GetHist->h_charge_nohit;
   return;  
 }
 
 //**********************************************************************
 void wgFit::GainSelect(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const int mode) {
-  x[0]=x[1]=x[2]=0.;
+  x[0]=x[1]=x[2]=NAN;
 }
 

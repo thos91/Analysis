@@ -26,8 +26,6 @@ public:
   wgFit(const string& inputfile);
   // delete wgFit::GetHist;
   ~wgFit();
-  // wgFit::GetHist->clear();
-  void clear();
   
   void swap(int,double*,double*);
   // wgFit::NoiseRate
