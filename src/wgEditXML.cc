@@ -109,7 +109,7 @@ bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const un
 	CheckExist Check;
 
 	if(!Check.XmlFile(configxml))
-	  throw wgInvalidFile(filename + " wasn't found or is not valid");
+	  throw wgInvalidFile(configxml + " wasn't found or is not valid");
 	if(ichip > NCHIPS)
 	  throw std::invalid_argument("ichip is greater than " + to_string(NCHIPS));
 
@@ -128,7 +128,7 @@ bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const un
 			XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
 			// loop to find the spiroc2d_bitstream parameter
 			for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-			  if( string(asu->Attribute("name")) == "spiroc2d_bitstream" ) {
+			  if( string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
 				bitstream = param->GetText();
 				found=true;
 				break;
@@ -144,6 +144,7 @@ bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const un
 
 	wgEditConfig EditCon(bitstream, true);
 	v.clear();
+	v.resize(n_chans);
 	for(unsigned i = 0; i < n_chans; i++) {
 	  v[i].push_back(EditCon.Get_trigth());  
 	  v[i].push_back(EditCon.Get_gainth());
