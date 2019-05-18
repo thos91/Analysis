@@ -1,8 +1,13 @@
+// system includes
+#include <cstdbool>
+
+// ROOT includes
 #include "TH1.h"
 #include "TH2.h"
-#include "TROOT.h"
-#include "TFile.h"
 #include "TCanvas.h"
+#include "TFile.h"
+
+// user includes
 #include "wgErrorCode.h"
 #include "Const.h"
 #include "wgTools.h"
@@ -14,7 +19,7 @@ using namespace std;
 wgGetHist::wgGetHist(const string& str) {
   CheckExist Check;
   if ( !Check.RootFile(str) ) throw wgInvalidFile("[" + str + "][SetHistFile] failed to set histogram file");
-    try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
+  try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
   catch (const exception& e) {
 	Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + string(e.what()));
 	throw;
@@ -23,82 +28,138 @@ wgGetHist::wgGetHist(const string& str) {
 
 //************************************************************************
 wgGetHist::~wgGetHist(){
-  this->clear();
   freadhist->Close();
 }
 
 //************************************************************************
-void wgGetHist::clear(){  
-  if(h_charge_hit) delete h_charge_hit; 
-  if(h_charge_hit_HG) delete h_charge_hit_HG; 
-  if(h_charge_hit_LG) delete h_charge_hit_LG;  
-  if(h_charge_nohit) delete h_charge_nohit;  
-  if(h_time_hit) delete h_time_hit; 
-  if(h_time_nohit) delete h_time_nohit;  
-  if(h_bcid_hit) delete h_bcid_hit;  
-  if(h_pe_hit) delete h_pe_hit;  
-  if(h_spill) delete h_spill;  
-  if(c1) delete c1;
-}
-
-//************************************************************************
-void wgGetHist::Get_charge_hit_HG(unsigned int i,unsigned int j,unsigned int k){
-  if (h_charge_hit_HG != NULL) delete h_charge_hit_HG;
-  h_charge_hit_HG=(TH1D*)freadhist->Get(Form("charge_hit_HG_chip%u_ch%u_col%u",i,j,k));
-}
-
-//************************************************************************
-void wgGetHist::Get_charge_hit_LG(unsigned int i,unsigned int j,unsigned int k){
-  if (h_charge_hit_LG != NULL ) delete h_charge_hit_LG; 
-  h_charge_hit_LG=(TH1D*)freadhist->Get(Form("charge_hit_LG_chip%u_ch%u_col%u",i,j,k));
-}
-
-//************************************************************************
-void wgGetHist::Get_charge_nohit(unsigned int i,unsigned int j,unsigned int k){
-   if (h_charge_nohit != NULL ) delete h_charge_nohit;
-  h_charge_nohit=(TH1D*)freadhist->Get(Form("charge_nohit_chip%u_ch%u_col%u",i,j,k));
-}
-
-//************************************************************************
-void wgGetHist::Get_time_hit(unsigned int i,unsigned int j,unsigned int k){
-   if (h_time_hit != NULL ) delete h_time_hit;
-  h_time_hit=(TH1D*)freadhist->Get(Form("time_hit_chip%u_ch%u_col%u",i,j,k));
-}
-
-//************************************************************************
-void wgGetHist::Get_time_nohit(unsigned int i,unsigned int j,unsigned int k){
-   if (h_time_nohit != NULL ) delete h_time_nohit;
-  h_time_nohit=(TH1D*)freadhist->Get(Form("time_nohit_chip%u_ch%u_col%u",i,j,k));
-}
-
-//************************************************************************
-void wgGetHist::Get_charge_hit(unsigned int i,unsigned int j){
-   if (h_charge_hit != NULL ) delete h_charge_hit;
-  h_charge_hit = (TH1D*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col0",i,j));
-  for (unsigned k = 1; k < MEMDEPTH; k++) {
-	  h_charge_hit->Add((TH1D*) freadhist->Get(Form("charge_hit_chip%u_ch%u_col%u",i,j,k)));
+bool wgGetHist::Get_charge_hit_HG(unsigned int i,unsigned int j,unsigned int k){
+  TString charge_hit_HG;
+  charge_hit_HG.Form("charge_hit_HG_chip%u_ch%u_col%u",i,j,k);
+  if ( freadhist->GetListOfKeys()->Contains(charge_hit_HG) ) {
+	h_charge_hit_HG = (TH1D*)freadhist->Get(charge_hit_HG);
+	return true;
   }
+  else return false;
 }
 
 //************************************************************************
-void wgGetHist::Get_bcid_hit(unsigned int i,unsigned int j){
-  if (h_bcid_hit != NULL) delete h_bcid_hit;
-  h_bcid_hit=(TH1D*)freadhist->Get(Form("bcid_hit_chip%u_ch%u",i,j));
-}
-
-//************************************************************************
-void wgGetHist::Get_pe_hit(unsigned int i,unsigned int j){
-   if (h_pe_hit != NULL ) delete h_pe_hit;
-  h_pe_hit = (TH1D*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col0",i,j));
-  for (unsigned k = 1; k < MEMDEPTH; k++) {
-	h_pe_hit->Add((TH1D*) freadhist->Get(Form("pe_hit_chip%u_ch%u_col%u",i,j,k)));
+bool wgGetHist::Get_charge_hit_LG(unsigned int i,unsigned int j,unsigned int k){
+  TString charge_hit_LG;
+  charge_hit_LG.Form("charge_hit_LG_chip%u_ch%u_col%u",i,j,k);
+  if ( freadhist->GetListOfKeys()->Contains(charge_hit_LG) ) {
+	h_charge_hit_LG = (TH1D*)freadhist->Get(charge_hit_LG);
+  	return true;
   }
+  else return false;
 }
 
 //************************************************************************
-void wgGetHist::Get_spill(){
-   if (h_spill != NULL ) delete h_spill;
-  h_spill=(TH1D*)freadhist->Get(Form("spill"));
+bool wgGetHist::Get_charge_nohit(unsigned int i,unsigned int j,unsigned int k){
+  TString charge_nohit;
+  charge_nohit.Form("charge_nohit_chip%u_ch%u_col%u",i,j,k);
+  if ( freadhist->GetListOfKeys()->Contains(charge_nohit) ) {
+	h_charge_nohit = (TH1D*)freadhist->Get(charge_nohit);
+	return true;
+  }
+  else return false;
+}
+
+//************************************************************************
+bool wgGetHist::Get_time_hit(unsigned int i,unsigned int j,unsigned int k){
+  TString time_hit;
+  time_hit.Form("time_hit_chip%u_ch%u_col%u",i,j,k);
+  if ( freadhist->GetListOfKeys()->Contains(time_hit) ) {
+	h_time_hit = (TH1D*)freadhist->Get(time_hit);
+  	return true;
+  }
+  else return false;
+}
+
+//************************************************************************
+bool wgGetHist::Get_time_nohit(unsigned int i,unsigned int j,unsigned int k){
+  TString time_nohit;
+  time_nohit.Form("time_nohit_chip%u_ch%u_col%u",i,j,k);
+  if ( freadhist->GetListOfKeys()->Contains(time_nohit) ) {
+	h_time_nohit = (TH1D*)freadhist->Get(time_nohit);
+	return true;
+  }
+  else return false;
+}
+
+//************************************************************************
+bool wgGetHist::Get_charge_hit(unsigned int i,unsigned int j){
+  TString charge_hit_0;
+  charge_hit_0.Form("charge_hit_chip%u_ch%u_col0",i,j);
+  if ( freadhist->GetListOfKeys()->Contains(charge_hit_0) ) {
+	h_charge_hit = (TH1D*) freadhist->Get(charge_hit_0);
+  }
+  else return false;
+  TString charge_hit;
+  for (unsigned k = 1; k < MEMDEPTH; k++) {
+	charge_hit.Form("charge_hit_chip%u_ch%u_col%u",i,j,k);
+	if ( freadhist->GetListOfKeys()->Contains(charge_hit) ) {
+	  h_charge_hit->Add((TH1D*) freadhist->Get(charge_hit));
+	}
+	else return false;
+  }
+  return true;
+}
+
+//************************************************************************
+bool wgGetHist::Get_bcid_hit(unsigned int i,unsigned int j){
+  TString bcid_hit;
+  bcid_hit.Form("bcid_hit_chip%u_ch%u",i,j);
+  if ( freadhist->GetListOfKeys()->Contains(bcid_hit) ) {
+	h_bcid_hit = (TH1D*)freadhist->Get(bcid_hit);
+	return true;
+  }
+  else return false;
+}
+
+//************************************************************************
+bool wgGetHist::Get_pe_hit(unsigned int i,unsigned int j){
+  TString pe_hit_0;
+  pe_hit_0.Form("pe_hit_chip%u_ch%u_col0",i,j);
+  if ( freadhist->GetListOfKeys()->Contains(pe_hit_0) ) {
+	h_pe_hit = (TH1D*) freadhist->Get(pe_hit_0);
+  }
+  else return false;
+  TString pe_hit;
+  for (unsigned k = 1; k < MEMDEPTH; k++) {
+	pe_hit.Form("pe_hit_chip%u_ch%u_col%u",i,j,k);
+	if ( freadhist->GetListOfKeys()->Contains(pe_hit) ) {
+	  h_pe_hit->Add((TH1D*) freadhist->Get(pe_hit));
+	}
+	else return false;	
+  }
+  return true;
+}
+
+//************************************************************************
+bool wgGetHist::Get_spill(){
+  if ( freadhist->GetListOfKeys()->Contains("spill") ) {
+	h_spill=(TH1D*)freadhist->Get("spill");
+ 	return true;
+  }
+  else return false; 
+}
+
+//************************************************************************
+int wgGetHist::Get_start_time(){
+  if ( freadhist->GetListOfKeys()->Contains("start_time") ) {
+	TH1D * h = (TH1D*) freadhist->Get("start_time");
+	return h->GetBinLowEdge(h->GetMinimumBin())-1;
+  }
+  else return -1;
+}
+
+//************************************************************************
+int wgGetHist::Get_stop_time(){
+  if ( freadhist->GetListOfKeys()->Contains("stop_time") ) {
+	TH1D * h = (TH1D*)freadhist->Get("stop_time");
+	return h->GetBinLowEdge(h->GetMaximumBin());
+  }
+  else return -1;
 }
 
 //************************************************************************
@@ -169,18 +230,3 @@ void wgGetHist::Print_spill(const char* h_name,const char* option="", int opt=0)
   h_spill->Draw(option);
   c1->Print(h_name); 
 }
-
-//************************************************************************
-int wgGetHist::Get_start_time(){
-  TH1D *h;
-  h=(TH1D*)freadhist->Get("start_time");
-  return h->GetBinLowEdge(h->GetMinimumBin())-1; 
-}
-
-//************************************************************************
-int wgGetHist::Get_stop_time(){
-  TH1D *h;
-  h=(TH1D*)freadhist->Get("stop_time");
-  return h->GetBinLowEdge(h->GetMaximumBin()); 
-}
-

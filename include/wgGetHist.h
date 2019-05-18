@@ -1,10 +1,16 @@
 #ifndef WG_GETHIST_H_INCLUDE
 #define WG_GETHIST_H_INCLUDE
 
+// system includes
+#include <cstdbool>
+
+// ROOT includes
 #include "TH1.h"
 #include "TH2.h"
-#include "TROOT.h"
+#include "TCanvas.h"
 #include "TFile.h"
+
+// user includes
 #include "wgErrorCode.h"
 #include "Const.h"
 #include "wgTools.h"
@@ -37,34 +43,34 @@ public:
   // Calls the clear method and then closes the ROOT file freadhist
   ~wgGetHist();
 
-  // wgGetHist::clear
-  // free all the memory allocated for the histograms
-  void clear();
-
-  // wgGetHist::Get methods
-  // They just read an histogram into the correspondent member
-  void Get_charge_hit_HG(unsigned int i,unsigned int j,unsigned int k);
-  void Get_charge_hit_LG(unsigned int i,unsigned int j,unsigned int k);
-  void Get_charge_nohit(unsigned int i,unsigned int j,unsigned int k);
-  void Get_time_hit(unsigned int i,unsigned int j,unsigned int k);
-  void Get_time_nohit(unsigned int i,unsigned int j,unsigned int k);
-  void Get_charge_hit(unsigned int i,unsigned int j);
-  void Get_bcid_hit(unsigned int i,unsigned int j);
-  void Get_pe_hit(unsigned int i,unsigned int j);
-  void Get_spill();
-
-  void Make_Canvas(int opt);
-  void Print_charge(const char*, const char*,int);
-  void Print_charge_hit_HG(const char*, const char*,int);
-  void Print_charge_hit_LG(const char*, const char*,int);
-  void Print_charge_nohit(const char*, const char*,int);
-  void Print_time_hit(const char*, const char*,int);
-  void Print_time_nohit(const char*, const char*,int);
-  void Print_bcid(const char*, const char*,int);
-  void Print_pe(const char*, const char*,int);
-  void Print_spill(const char*, const char*,int);
+  // wgGetHist::Get methods 
+  // They just read an histogram into the correspondent member. If the histogram
+  // could not be found they return false, otherwise they return true.
+  bool Get_charge_hit_HG(unsigned int i, unsigned int j, unsigned int k);
+  bool Get_charge_hit_LG(unsigned int i, unsigned int j, unsigned int k);
+  bool Get_charge_nohit (unsigned int i, unsigned int j, unsigned int k);
+  bool Get_time_hit     (unsigned int i, unsigned int j, unsigned int k);
+  bool Get_time_nohit   (unsigned int i, unsigned int j, unsigned int k);
+  bool Get_charge_hit   (unsigned int i, unsigned int j);
+  bool Get_bcid_hit     (unsigned int i, unsigned int j);
+  bool Get_pe_hit       (unsigned int i, unsigned int j);
+  bool Get_spill();
+  // Return the value of the start_time or stop_time. These values are read from
+  // the corresponding histograms. If the histograms could not be found they
+  // return a negative value.
   int  Get_start_time();
   int  Get_stop_time();
+
+  void Make_Canvas(int opt);
+  void Print_charge       (const char*, const char*, int);
+  void Print_charge_hit_HG(const char*, const char*, int);
+  void Print_charge_hit_LG(const char*, const char*, int);
+  void Print_charge_nohit (const char*, const char*, int);
+  void Print_time_hit     (const char*, const char*, int);
+  void Print_time_nohit   (const char*, const char*, int);
+  void Print_bcid         (const char*, const char*, int);
+  void Print_pe           (const char*, const char*, int);
+  void Print_spill        (const char*, const char*, int);
 };
 
 #endif
