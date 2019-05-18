@@ -129,14 +129,13 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   h_spill = new TH1D("spill", "Spill number weighted by the number of chips read", (int) max_spill - min_spill + 200, (int) min_spill - 100, (int) max_spill + 100);
 
   GetTree->finput->cd();
-  int ievent   = 0;
   int n_events = tree->GetEntries();
 
   //=================================================================//
   //                        EVENT LOOP                               //
   //=================================================================//
   
-  for (ievent=0; ievent < n_events; ievent++) {
+  for (int ievent = 0; ievent < n_events; ievent++) {
 
     if ( ievent % 1000 == 0 )
 	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] Event number = " + to_string(ievent) + " / " + to_string(n_events));

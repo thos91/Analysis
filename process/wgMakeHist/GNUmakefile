@@ -17,8 +17,8 @@ HEADER     = $(INCDIR)/$(TARGET).hpp
 TARGET_SRC = $(TARGET).cc
 TARGET_OBJ = $(TARGET).o 
 
-ROOTCFLAGS = $(shell root-config --cflags)
-ROOTLIBS   = $(shell root-config --libs)
+ROOTCFLAGS := $(shell root-config --cflags)
+ROOTLIBS   := $(shell root-config --libs)
 
 CXXFLAGS   = -g -O0 -MMD -MP -Wall -fPIC
 CXXFLAGS   += -I$(INCDIR) $(ROOTCFLAGS)
