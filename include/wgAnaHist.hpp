@@ -15,14 +15,16 @@ using namespace std;
 // Number of flags
 #define M 8
 
-#define SELECT_CONFIG          0
-#define SELECT_DARK_NOISE      1
-#define SELECT_CHARGE_LOW      2
-#define SELECT_PEDESTAL        3
-#define SELECT_CHARGE_HG_LOW   4
-#define SELECT_CHARGE_HG_HIGH  5
-#define SELECT_PRINT           6
-#define OVERWRITE              7
+#define OVERWRITE              0
+#define SELECT_CONFIG          1
+#define SELECT_PRINT           2
+#define SELECT_DARK_NOISE      3
+#define SELECT_CHARGE_LOW      4
+#define SELECT_PEDESTAL        5
+#define SELECT_CHARGE_HG_LOW   6
+#define SELECT_CHARGE_HG_HIGH  7
+
+
 
 // Errors
 #define AH_SUCCESS                  0
