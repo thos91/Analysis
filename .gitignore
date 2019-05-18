@@ -21,3 +21,4 @@ bin/*
 *.root
 .#*
 test_contiguous_vectors
+ch*.xml

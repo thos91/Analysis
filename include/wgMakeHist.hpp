@@ -4,7 +4,7 @@
 // user includes
 #include "Const.h"
 
-#define DEBUG_MAKEHIST
+// #define DEBUG_MAKEHIST
 
 #define MH_SUCCESS                       0
 #define ERR_CANNOT_OVERWRITE_OUTPUT_FILE 1
