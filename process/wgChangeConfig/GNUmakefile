@@ -17,8 +17,8 @@ HEADER     = $(INCDIR)/$(TARGET).hpp
 TARGET_SRC = $(TARGET).cc
 TARGET_OBJ = $(TARGET).o 
 
-ROOTCFLAGS = $(shell root-config --cflags)
-ROOTLIBS   = $(shell root-config --libs)
+ROOTCFLAGS := $(shell root-config --cflags)
+ROOTLIBS   := $(shell root-config --libs)
 
 CXXFLAGS   = -g -O0 -MMD -MP -Wall -fPIC
 CXXFLAGS   += -I$(INCDIR) $(ROOTCFLAGS)
@@ -30,11 +30,11 @@ AR = ar
 
 all: $(BINDIR)/$(TARGET_LIB) $(BINDIR)/$(TARGET)
 
-$(BINDIR)/$(TARGET): $(OBJS) $(TARGET_OBJ)
+$(BINDIR)/$(TARGET): $(OBJS) $(LIB_OBJ) $(TARGET_OBJ)
 	@if [ ! -d $(BINDIR) ]; \
 		then echo "mkdir -p $(BINDIR)"; mkdir -p $(BINDIR); \
 	fi
-	$(CC) -o $@ $^ -Wl,-rpath,$(CURRENT_DIR)/$(BINDIR) $(CXXLIBS) -l$(TARGET)
+	$(CC) -o $@ $^ $(CXXLIBS)
 
 $(BINDIR)/$(TARGET_LIB): $(OBJS) $(LIB_OBJ)
 	$(CC) -shared -Wl,-soname,$(TARGET_LIB).so -o $@.so $^ $(CXXLIBS)
