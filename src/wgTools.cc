@@ -117,9 +117,9 @@ Logger::Logger(const string& log_dir)
 		throw wgInvalidFile(error_message);
 	  }
 	}
- 
-	m_fileName  = Form("%s/log%d_%d_%d.txt",      dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday); 
-	m_efileName = Form("%s/e_log%d_%d_%d.txt", dir.c_str(), t_st->tm_year + 1900, t_st->tm_mon + 1, t_st->tm_mday);
+
+	m_fileName  = dir + "/log" + to_string(t_st->tm_year + 1900) + "_" + to_string(t_st->tm_mon + 1) + "_" + to_string(t_st->tm_mday);
+	m_efileName = dir + "/e_log" + to_string(t_st->tm_year + 1900) + "_" + to_string(t_st->tm_mon + 1) + "_" + to_string(t_st->tm_mday);
 
 	m_file.open(m_fileName, ofstream::out | ofstream::app);
 	// After this attempt to open a file, we can safely use strerror() only  
