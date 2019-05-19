@@ -12,17 +12,20 @@ Arguments
 - [-f] : input directory with xml files to read (mandatory)
 - [-o] : output directory for the xml summary files (default: same as input directory)
 - [-i] : output directory for plots and images (default: WAGASCI_IMGDIR)
-- [-n] : number of DIFs (default is 2)
 - [-x] : number of chips per DIF (default is 20)
 - [-y] : number of channels per chip (default is 36)
 - [-p] : print plots and images
 - [-r] : overwrite mode (default is false)
 - [-m] : mode (default:10)
-	
+
 Modes
 =====
 
 The -m parameter can take one of the following integer values:
+- 1  : Noise Rate
+- 2  : Gain
+- 3  : Pedestal
+- 4  : Raw Charge
 - 10 : Noise Rate + Gain
 - 11 : Noise Rate + Gain + Pedestal
 - 12 : Noise Rate + Gain + Pedestal + Raw Charge
