@@ -40,7 +40,7 @@ using namespace std;
 class wgEditXML
 {
 private:
-  static string filename;
+  string filename;
 public:
   XMLDocument *xml;
 
