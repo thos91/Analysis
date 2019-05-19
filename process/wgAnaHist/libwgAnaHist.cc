@@ -26,11 +26,13 @@
 
 //******************************************************************
 void ModeSelect(const int mode, bitset<M>& flag){
-  if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE]    = true;
-  if ( mode == 2 || mode >= 11 )               flag[SELECT_PEDESTAL]      = true;
-  if ( mode == 3 || mode == 10 || mode == 11 ) flag[SELECT_CHARGE_LOW]    = true;
-  if ( mode == 4 || mode == 12 || mode >= 20 ) flag[SELECT_CHARGE_HG_LOW] = true;
-  else throw invalid_argument("Mode " + to_string(mode) + " not recognized"); 
+  if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE]     = true;
+  if ( mode == 2 || mode >= 11 )               flag[SELECT_PEDESTAL]       = true;
+  if ( mode == 3 || mode == 10 || mode >= 20 ) flag[SELECT_CHARGE_LOW]     = true;
+  if ( mode == 4 || mode == 12 || mode >= 20 ) flag[SELECT_CHARGE_HG_LOW]  = true;
+  if ( mode == 5 || mode == 13 || mode >= 20 ) flag[SELECT_CHARGE_HG_HIGH] = true;
+  if ( mode < 0  || mode > 20 )
+	throw invalid_argument("Mode " + to_string(mode) + " not recognized"); 
 }
 
 //******************************************************************
@@ -62,7 +64,7 @@ int AnaHist(const char * x_inputFileName,
 	return ERR_WRONG_MODE;
   }
 
-  // ============ Create outputIMGDir ============ //
+  // ============ Create outputDir ============ //
   if( !Check.Dir(outputDir) ) {
 	boost::filesystem::path dir(outputDir);
 	if( !boost::filesystem::create_directory(dir) ) {

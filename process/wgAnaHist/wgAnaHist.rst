@@ -34,7 +34,7 @@ The -m parameter can take one of the following integer values:
 11 : dark noise + pedestal + charge_hit (low range)
 12 : dark noise + pedestal + charge_HG  (low range)
 13 : dark noise + pedestal + charge_HG  (high range)
-20 : dark noise + pedestal + charge_HG  (low range) + charge_HG (high range)
+20 : everything
 
 - dark noise mode : calculate the dark noise rate and its standard deviation for
   each chip and each channel.

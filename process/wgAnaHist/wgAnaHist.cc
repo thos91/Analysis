@@ -37,7 +37,8 @@ void print_help(const char * program_name) {
 	"   11 : dark noise + pedestal + charge_hit (low range)\n"
 	"   12 : dark noise + pedestal + charge_HG  (low range)\n"
 	"   13 : dark noise + pedestal + charge_HG  (high range)\n"
-	"   20 : dark noise + pedestal + charge_HG  (low range) + charge_HG (high range)\n";
+	"   14 : dark noise + pedestal + charge_HG  (low range) + charge_HG (high range)\n"
+	"   20 : everything\n";
   exit(0);
 }
 
@@ -125,16 +126,22 @@ int main(int argc, char** argv){
 
   Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
   Log.Write("start analyzing ...");
-  
-  AnaHist(inputFileName.c_str(),
-		  configFileName.c_str(),
-		  outputDir.c_str(),
-		  outputIMGDir.c_str(),
-		  mode,
-		  flags.to_ulong(),
-		  idif,
-		  n_chips,
-		  n_chans);
 
-  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] finished analyzing histograms");
+  
+  int result;
+  if ( (result = AnaHist(inputFileName.c_str(),
+						 configFileName.c_str(),
+						 outputDir.c_str(),
+						 outputIMGDir.c_str(),
+						 mode,
+						 flags.to_ulong(),
+						 idif,
+						 n_chips,
+						 n_chans)) != AH_SUCCESS ) {
+	Log.eWrite("[" +OptStr.GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
+	exit(1);
+  }
+
+  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] finished");
+  exit(0);
 }
