@@ -43,7 +43,7 @@ void wgEditXML::Close(){
 
 //**********************************************************************
 void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigned ichan){
-  char name[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
@@ -56,13 +56,13 @@ void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigne
 
   XMLElement* chipid = xml->NewElement("chipid");
   config->InsertEndChild(chipid);
-  snprintf( name, 32, "%d", ichip );
-  chipid->InsertEndChild(chipid->GetDocument()->NewText(name));
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", ichip );
+  chipid->InsertEndChild(chipid->GetDocument()->NewText(str));
 
   XMLElement* chanid = xml->NewElement("chanid");
   config->InsertEndChild(chanid);
-  snprintf( name, 32, "%d", ichan );
-  chanid->InsertEndChild(chanid->GetDocument()->NewText(name));
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", ichan );
+  chanid->InsertEndChild(chanid->GetDocument()->NewText(str));
 
   XMLElement* start_time = xml->NewElement("start_time");
   config->InsertEndChild(start_time);
@@ -100,8 +100,8 @@ void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigne
   data->InsertEndChild(ch);
 
   for(unsigned int k=0; k<MEMDEPTH; k++){
-	snprintf( name, 32, "col_%d", k );
-    XMLElement* col = xml->NewElement(name);
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", k );
+    XMLElement* col = xml->NewElement(str);
     ch->InsertEndChild(col);
   }
   xml->SaveFile(filename.c_str());
@@ -223,14 +223,14 @@ void wgEditXML::SetConfigValue(const string& name, const int value, const int mo
 //**********************************************************************
 void wgEditXML::SetColValue(const string& name, const int icol, const double value, const int mode) {
   if(icol<0 || icol>MEMDEPTH) return;
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
-  snprintf( str, 32, "col_%d", icol );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol );
   XMLElement* col = ch->FirstChildElement(str);
   XMLElement* target = col->FirstChildElement(name.c_str());
   if ( target ) {
-	snprintf( str, 32, "%.2f", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
     target->SetText(str);
   }else{
     if(mode == CREATE_NEW_MODE){
@@ -245,12 +245,12 @@ void wgEditXML::SetColValue(const string& name, const int icol, const double val
 
 //**********************************************************************
 void wgEditXML::SetChValue(const string& name, const double value, const int mode){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* target = ch->FirstChildElement(name.c_str());
   if ( target ) {
-	snprintf( str, 32, "%.2f", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
     target->SetText(str);
   }else{
     if(mode == CREATE_NEW_MODE){
@@ -266,10 +266,10 @@ void wgEditXML::SetChValue(const string& name, const double value, const int mod
 
 //**********************************************************************
 void wgEditXML::AddColElement(const string& name, const int icol) {
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
-  snprintf( str, 32, "col_%d", icol );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol );
   XMLElement* col = ch->FirstChildElement(str);
   XMLElement* newElement = xml->NewElement(name.c_str());
   col->InsertEndChild(newElement);
@@ -286,10 +286,10 @@ void wgEditXML::AddChElement(const string& name) {
 //**********************************************************************
 double wgEditXML::GetColValue(const string& name,const int icol){
   if(icol<0 || icol>MEMDEPTH) return 0.0;
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
-  snprintf( str, 32, "col_%d", icol );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol );
   XMLElement* col = ch->FirstChildElement(str);
   XMLElement* target = col->FirstChildElement(name.c_str());
   if ( target ) {
@@ -332,7 +332,7 @@ int wgEditXML::GetConfigValue(const string& name){
 //**********************************************************************
 void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   xml = new XMLDocument();
-  char name[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
 
@@ -344,17 +344,18 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   XMLElement* gs_threshold;
   XMLElement* trigger_threshold;
   //chan
-  XMLElement* ch   [n_chans];
-  XMLElement* fit  [n_chans];
-  XMLElement* gain [n_chans];
-  XMLElement* noise[n_chans];
+  XMLElement* ch              [n_chans];
+  XMLElement* fit             [n_chans];
+  XMLElement* noise           [n_chans];
   XMLElement* config          [n_chans];
   XMLElement* inputDAC        [n_chans];
   XMLElement* ampDAC          [n_chans];
   XMLElement* threshold_adjust[n_chans];
-  //col 
+  //col
+  XMLElement* gain [n_chans][MEMDEPTH];
   XMLElement* pedestal[n_chans][MEMDEPTH];
-
+  XMLElement* pedestal_reference[n_chans][MEMDEPTH];
+  
   // **********************//
 
   data = xml->NewElement("data");
@@ -373,25 +374,35 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
 
   for(unsigned ichan = 0; ichan < n_chans; ichan++) {
     // ***** data > ch ***** //
-	snprintf( name, 32, "ch_%d", ichan );
-    ch[ichan] = xml->NewElement(name);    
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
+    ch[ichan] = xml->NewElement(str);    
     data->InsertEndChild(ch[ichan]);
 
     // ***** data > ch > fit***** //
     fit[ichan] = xml->NewElement("fit");
     ch[ichan]->InsertEndChild(fit[ichan]);
 
-    gain[ichan] = xml->NewElement("Gain");
-    fit[ichan]->InsertEndChild(gain[ichan]);
     noise[ichan] = xml->NewElement("Noise");
+    fit[ichan]->InsertEndChild(noise[ichan]);
+    noise[ichan] = xml->NewElement("pe_level");
     fit[ichan]->InsertEndChild(noise[ichan]);
 
     for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-	  snprintf( name, 32, "ped_%d", icol );
-      pedestal[ichan][icol] = xml->NewElement(name);
+	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+      pedestal[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(pedestal[ichan][icol]);
     }
-
+    for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_ref_%d", icol );
+      pedestal_reference[ichan][icol] = xml->NewElement(str);
+      fit[ichan]->InsertEndChild(pedestal_reference[ichan][icol]);
+    }
+	for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
+	  gain[ichan][icol] = xml->NewElement(str);
+	  fit[ichan]->InsertEndChild(gain[ichan][icol]);
+    }
+  
     // ***** data > ch > config ***** //
     config[ichan] = xml->NewElement("config");
     ch[ichan]->InsertEndChild(config[ichan]);
@@ -411,17 +422,17 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
 
 //**********************************************************************
 void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value, const int mode){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
-	snprintf( str, 32, "%d", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	target->SetText(str);
   }
   else if( mode == CREATE_NEW_MODE ) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
-	snprintf( str, 32, "%d", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	newElement->SetText(str);
 	config->InsertEndChild(newElement);
   }
@@ -430,19 +441,19 @@ void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value
 
 //**********************************************************************
 void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, const int ichan, const int mode){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ichan );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* config = ch->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
-	snprintf( str, 32, "%d", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	target->SetText(str);
   }
   else if( mode == CREATE_NEW_MODE ) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
-	snprintf( str, 32, "%d", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	newElement->SetText(str);
 	config->InsertEndChild(newElement);
   }
@@ -451,19 +462,19 @@ void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, co
 
 //**********************************************************************
 void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const int ichan, const int mode){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ichan );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* config = ch->FirstChildElement("fit");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
-	snprintf( str, 32, "%d", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
     target->SetText(str);
   }
   else if( mode == CREATE_NEW_MODE ) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
-	snprintf( str, 32, "%d", value );
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	newElement->SetText(str);
 	config->InsertEndChild(newElement);
   }
@@ -471,24 +482,23 @@ void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetPedFitValue(double* value, const int ichan, const int mode){
-  char str[32];
+void wgEditXML::SUMMARY_SetPedFitValue(double value[MEMDEPTH], const int ichan, const int mode){
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ichan );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* fit = ch->FirstChildElement("fit");
-  for(unsigned int i=0;i<MEMDEPTH;i++){
-    int icol=i;
-	snprintf( str, 32, "ped_%d", icol );
+  for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
     XMLElement* target = fit->FirstChildElement(str);
 	if ( target ) {
-	  snprintf( str, 32, "%.2f", value[icol] );
+	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
       target->SetText(str);
     }else{
       if(mode == CREATE_NEW_MODE){
-		snprintf( str, 32, "ped_%d", icol );
+		snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
         XMLElement* newElement = xml->NewElement(str);
-		snprintf( str, 32, "%.2f", value[icol] );
+		snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
         newElement->SetText(str);
         fit->InsertEndChild(newElement); 
       }else{
@@ -507,9 +517,9 @@ void wgEditXML::SUMMARY_AddGlobalElement(const string& name){
 
 //**********************************************************************
 void wgEditXML::SUMMARY_AddChElement(const string& name, const int ich){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ich );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ich );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* newElement = xml->NewElement(name.c_str());
   ch->InsertEndChild(newElement);
@@ -531,9 +541,9 @@ int wgEditXML::SUMMARY_GetGlobalConfigValue(const string& name){
 
 //**********************************************************************
 int wgEditXML::SUMMARY_GetChConfigValue(const string& name, const int ich){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ich );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ich );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* config = ch->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
@@ -548,9 +558,9 @@ int wgEditXML::SUMMARY_GetChConfigValue(const string& name, const int ich){
 
 //**********************************************************************
 double wgEditXML::SUMMARY_GetChFitValue(const string& name, const int ich){
-  char str[32];
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ich );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ich );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* fit = ch->FirstChildElement("fit");
   XMLElement* target = fit->FirstChildElement(name.c_str());
@@ -564,15 +574,14 @@ double wgEditXML::SUMMARY_GetChFitValue(const string& name, const int ich){
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_GetPedFitValue(double* value, const int ich){
-  char str[32];
+void wgEditXML::SUMMARY_GetPedFitValue(double value[MEMDEPTH], const int ich){
+  char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  snprintf( str, 32, "ch_%d", ich );
+  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ich );
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* config = ch->FirstChildElement("fit");
-  for(unsigned int i=0;i<MEMDEPTH;i++){
-    int icol=i;
-	snprintf( str, 32, "ped_%d", icol );
+  for(unsigned icol = 0; icol < MEMDEPTH; icol++){
+	snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
     XMLElement* target = config->FirstChildElement(str);
 	if ( target ) {
       string temp_value = target->GetText();
@@ -805,14 +814,12 @@ void wgEditXML::PreCalib_Make(const string& filename){
     dif = xml->NewElement(Form("dif_%d",idif+1));    
     data->InsertEndChild(dif);
     // ***** data > dif > chip ***** //
-    for(unsigned int i=0;i<NCHIPS;i++){
-      int ichip=i;
+    for(unsigned ichip = 0; ichip < NCHIPS; ichip++) {
       chip = xml->NewElement(Form("chip_%d",ichip));    
       dif->InsertEndChild(chip);
       // ***** data > dif > chip > ch ***** //
-      for(unsigned int j=0;j<32;j++){
-        int ich=j;
-        ch = xml->NewElement(Form("ch_%d",ich));    
+      for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+        ch = xml->NewElement(Form("ch_%d", ichan));    
         chip->InsertEndChild(ch);
         s_Gain = xml->NewElement("s_Gain");    
         i_Gain = xml->NewElement("i_Gain");    

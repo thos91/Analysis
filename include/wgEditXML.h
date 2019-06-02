@@ -6,6 +6,8 @@
 #include "tinyxml2.h"
 #include "Const.h"
 
+#define XML_ELEMENT_STRING_LENGTH 32
+
 using namespace tinyxml2;
 using namespace std;
 
@@ -185,7 +187,7 @@ public:
 
   // wgEditXML::SUMMARY_SetPedFitValue
   // data -> ch_%d -> fit -> ped_%d
-  void SUMMARY_SetPedFitValue(double* value, int ichan, int = NO_CREATE_NEW_MODE);
+  void SUMMARY_SetPedFitValue(double value[MEMDEPTH], int ichan, int = NO_CREATE_NEW_MODE);
 
   // wgEditXML::SUMMARY_AddGlobalElement
   // data -> name
@@ -209,7 +211,7 @@ public:
 
   // wgEditXML::SUMMARY_GetPedFitValue
   // data -> ch_%d -> fit -> -> ped_%d
-  void SUMMARY_GetPedFitValue(double* value, int ich);
+  void SUMMARY_GetPedFitValue(double value[MEMDEPTH], int ich);
 
   //=======================================================================//
   //                         S-curve XML files                             //
