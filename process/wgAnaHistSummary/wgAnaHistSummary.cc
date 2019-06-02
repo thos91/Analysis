@@ -93,11 +93,6 @@ int main(int argc, char** argv){
     exit(1);
   }
 
-  if(outputXMLDirName == "") outputXMLDirName = inputDirName;
-
-  outputDirName = OpStr.GetName(inputDirName);
-  outputIMGDirName = outputIMGDirName + "/" + outputDirName;
-
   Log.Write(" *****  READING DIRECTORY      :" + OpStr.GetName(inputDirName)     + "  *****");
   Log.Write(" *****  OUTPUT XML DIRECTORY   :" + OpStr.GetName(outputXMLDirName) + "  *****");
   Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + OpStr.GetName(outputIMGDirName) + "  *****");

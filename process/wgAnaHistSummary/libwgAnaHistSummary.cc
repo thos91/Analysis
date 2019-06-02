@@ -68,21 +68,28 @@ int wgAnaHistSummary(const char * x_inputDir, const char * x_outputXMLDir, const
 	return ERR_WRONG_MODE;
   }
 
+  
+  if(outputXMLDir == "") outputXMLDir = inputDir;
+
   // ============ Create outputXMLDir ============ //
   CheckExist Check;
   if( !Check.Dir(outputXMLDir) ) {
 	boost::filesystem::path dir(outputXMLDir);
-	if( !boost::filesystem::create_directory(dir) ) {
+	if( !boost::filesystem::create_directories(dir) ) {
 	  Log.eWrite("[wgAnaHist][" + outputXMLDir + "] failed to create directory");
 	  return ERR_CANNOT_CREATE_DIRECTORY;
 	}
   }
   // ============ Create outputIMGDir ============ //
-  if( flags[SELECT_PRINT] && !Check.Dir(outputIMGDir) ) {
-	boost::filesystem::path dir(outputIMGDir);
-	if( !boost::filesystem::create_directory(dir) ) {
-	  Log.eWrite("[wgAnaHist][" + outputIMGDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
+  if( flags[SELECT_PRINT] ) {
+	OperateString OpStr;
+	outputIMGDir += "/" + OpStr.GetName(inputDir);
+	if ( !Check.Dir(outputIMGDir) ) {
+	  boost::filesystem::path dir(outputIMGDir);
+	  if( !boost::filesystem::create_directories(dir) ) {
+		Log.eWrite("[wgAnaHist][" + outputIMGDir + "] failed to create directory");
+		return ERR_CANNOT_CREATE_DIRECTORY;
+	  }
 	}
   }
 
@@ -99,7 +106,7 @@ int wgAnaHistSummary(const char * x_inputDir, const char * x_outputXMLDir, const
 	int gain_th[n_chips];
 	int inputDAC[n_chips][n_chans];
 	int ampDAC[n_chips][n_chans];
-	//int adjDAC[n_chips][n_chans];
+	int adjDAC[n_chips][n_chans];
 	double charge[n_chips][n_chans];
 	double rawcharge[n_chips][n_chans][MEMDEPTH][2];
 	double e_rawcharge[n_chips][n_chans][MEMDEPTH][2];
@@ -171,19 +178,19 @@ int wgAnaHistSummary(const char * x_inputDir, const char * x_outputXMLDir, const
 		wgEditXML Edit;
 		xmlfile = inputDir + "/chip" + to_string(ichip) + "/ch" + to_string(ichan) + ".xml";
 		Edit.Open(xmlfile);
-		if(ichan ==0 ) {
+		if(ichan == 0 ) {
 		  if(ichip == 0) {
-			start_time=Edit.GetConfigValue(string("start_time"));
-			stop_time=Edit.GetConfigValue(string("stop_time"));
+			start_time   = Edit.GetConfigValue(string("start_time"));
+			stop_time    = Edit.GetConfigValue(string("stop_time"));
 		  }
-		  trig_th[ichip]=Edit.GetConfigValue(string("trigth"));
-		  gain_th[ichip]=Edit.GetConfigValue(string("gainth"));
+		  trig_th[ichip] = Edit.GetConfigValue(string("trigth"));
+		  gain_th[ichip] = Edit.GetConfigValue(string("gainth"));
 		}
-		inputDAC[ichip][ichan]=Edit.GetConfigValue(string("inputDAC"));
-		ampDAC[ichip][ichan]=Edit.GetConfigValue(string("HG"));
-		// adjDAC[ichip][ichan]=Edit.GetConfigValue(string("trig_adj"));
+		inputDAC[ichip][ichan] = Edit.GetConfigValue(string("inputDAC"));
+		ampDAC[ichip][ichan]   = Edit.GetConfigValue(string("HG"));
+		adjDAC[ichip][ichan]   = Edit.GetConfigValue(string("trig_adj"));
 		if(flags[SELECT_NOISE]){ 
-		  Noise[ichip][ichan][0]=Edit.GetChValue(string("NoiseRate"));
+		  Noise[ichip][ichan][0] =Edit.GetChValue(string("NoiseRate"));
 		  Noise[ichip][ichan][1]=Edit.GetChValue(string("NoiseRate_e"));
 		}
 
@@ -217,10 +224,7 @@ int wgAnaHistSummary(const char * x_inputDir, const char * x_outputXMLDir, const
 	  for(unsigned ichan = 0; ichan < n_chans; ichan++){
 		Edit.SUMMARY_SetChConfigValue(string("inputDAC"),inputDAC[ichip][ichan],ichan,0);
 		Edit.SUMMARY_SetChConfigValue(string("ampDAC"),ampDAC[ichip][ichan],ichan,0);
-		/*
-		  name="adjDAC";
-		  Edit.SUMMARY_SetChConfigValue(string(),adjDAC[ichip][ichan],ichan,0);
-		*/
+		Edit.SUMMARY_SetChConfigValue(string("adjDAC"),adjDAC[ichip][ichan],ichan,0);
 		if(flags[SELECT_GAIN]){
 		  double Gain = charge[ichip][ichan];  
 		  Edit.SUMMARY_SetChFitValue(string("Gain"), Gain, ichan, NO_CREATE_NEW_MODE);

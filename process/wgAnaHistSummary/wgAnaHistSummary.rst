@@ -34,3 +34,4 @@ The -m parameter can take one of the following integer values:
 - gain mode       : record the gain
 - pedestal        : record the pedestal position and its sigma
 - raw charge      : record the 1 p.e. peak or 2 p.e. peak and its sigma
+
