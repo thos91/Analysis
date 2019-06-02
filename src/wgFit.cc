@@ -1,3 +1,14 @@
+// system includes
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+
+// boost includes
+#include <boost/filesystem.hpp>
+
+// ROOT includes
 #include <TFile.h>
 #include <TH1D.h>
 #include <TText.h>
@@ -12,17 +23,11 @@
 #include <TSystem.h>
 #include <TSpectrum.h>
 
-#include <iostream>
-#include <fstream>
-#include <math.h>
-#include <sstream>
-#include <vector>
-#include <stdlib.h>
-#include <string>
-
+// user includes
 #include "Const.h"
 #include "wgTools.h"
 #include "wgErrorCode.h"
+#include "wgExceptions.h"
 #include "wgGetHist.h"
 #include "wgFit.h"
 #include "wgFitConst.h"
@@ -49,8 +54,31 @@ Double_t double_gauss_2(Double_t *x, Double_t *p){
 }//double gaussian(different distortion)
 
 //**********************************************************************
-wgFit::wgFit(const string& inputfile) {
-  wgFit::GetHist = new wgGetHist(inputfile);
+wgFit::wgFit(const string& x_inputfile, const string& x_outputIMGDir) {
+  wgFit::GetHist = new wgGetHist(x_inputfile);
+  CheckExist Check;
+  if( !Check.Dir(x_outputIMGDir) ) {
+	boost::filesystem::path dir(x_outputIMGDir);
+	if( !boost::filesystem::create_directories(dir) ) {
+	  throw wgInvalidFile("[wgFit][" + x_outputIMGDir + "] failed to create directory");
+	}
+  }
+  wgFit::outputIMGDir = x_outputIMGDir;
+}
+
+//**********************************************************************
+wgFit::wgFit(const string& x_inputfile) {
+  wgFit::GetHist = new wgGetHist(x_inputfile);
+  wgConst con;
+  con.GetENV();
+  CheckExist Check;
+  if( !Check.Dir(con.IMGDATA_DIRECTORY) ) {
+	boost::filesystem::path dir(con.IMGDATA_DIRECTORY);
+	if( !boost::filesystem::create_directories(dir) ) {
+	  throw wgInvalidFile("[wgFit][" + con.IMGDATA_DIRECTORY + "] failed to create directory");
+	}
+  }
+  wgFit::outputIMGDir = con.IMGDATA_DIRECTORY;
 }
 
 //**********************************************************************
@@ -60,7 +88,7 @@ wgFit::~wgFit(){
 
 //**********************************************************************
 void wgFit::SetoutputIMGDir(const string& str){
-  wgFit::outputIMGDir=str;
+  wgFit::outputIMGDir = str;
 }
 
 //**********************************************************************
@@ -81,7 +109,7 @@ void wgFit::swap(int Npeaks, double* px, double* py){
 }
 
 //**********************************************************************
-void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) {
+void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
   if ( (! GetHist->Get_bcid_hit(ichip, ichan)) || (! GetHist->Get_spill()) ) {
 	x[0] = NAN;
 	x[1] = NAN;
@@ -129,16 +157,16 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode) 
   x[0] = Sigma /((B * nEntries - Sigma) * time_bcid_bin);  // Hertz
   x[1] = ((B * nEntries - Sigma) * sqrt(Sigma)) / (pow(B,2) * pow(nEntries,2) * time_bcid_bin); // Hertz
   
-  if ( mode == PRINT_HIST_MODE ) {
-    wgConst con;
-    con.GetENV();
-    GetHist->Print_bcid(Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan), "", 1);
+  if ( print_flag ) {
+	TString image;
+	image.Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
+    GetHist->Print_bcid(image);
   }
   delete step_function;
 }
 
 //**********************************************************************
-void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mode) {
+void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool print_flag) {
 
   if ( ! wgFit::GetHist->Get_charge_hit(ichip, ichan) ) {
 	x[0] = NAN;
@@ -179,15 +207,18 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mo
   x[1]=gaussian->GetParameter(2); // sigma_fit
   x[2]=gaussian->GetParameter(0); // peak_fit
 
-  if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
-    GetHist->Print_charge(Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan), "", 1);
+  if( print_flag && (!outputIMGDir.empty()) ) {
+	TString image;
+	image.Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
+    GetHist->Print_charge(image);
+  }
   delete gaussian;
   return;  
 }
 
 
 //**********************************************************************
-void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], int mode) {
+void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag) {
 
   if ( ! wgFit::GetHist->Get_charge_hit_HG(ichip,ichan,icol) ) {
 	x[0] = NAN;
@@ -227,14 +258,17 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
   x[1]=gaussian->GetParameter(2); // sigma_fit
   x[2]=gaussian->GetParameter(0); // peak_fit
 
-  if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
-    GetHist->Print_charge_hit_HG(Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol), "", 1);
+  if( print_flag && (!outputIMGDir.empty()) ) {
+	TString image;
+	image.Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
+    GetHist->Print_charge_hit_HG(image);
+  }
   delete gaussian;
   return;
 }
 
 //**********************************************************************
-void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const int mode) {
+void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const bool print_flag) {
 
   // Read the "charge_nohit" histogram for the _hist.root file
   if ( ! GetHist->Get_charge_nohit(ichip, ichan, icol) ) {
@@ -283,14 +317,18 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   x[1]=gaussian->GetParameter(2); // sigma_fit
   x[2]=gaussian->GetParameter(0); // peak_fit
     
-  if( (mode == PRINT_HIST_MODE) && (!outputIMGDir.empty()) )
-    GetHist->Print_charge_nohit(Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol), "", 1);
+  if( print_flag && (!outputIMGDir.empty()) ) {
+	TString image;
+	image.Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
+    GetHist->Print_charge_nohit(image);
+  }
+  
   delete gaussian;
   return;  
 }
 
 //**********************************************************************
-void wgFit::GainSelect(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const int mode) {
+void wgFit::GainSelect(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const bool print_flag) {
   x[0]=x[1]=x[2]=NAN;
 }
 

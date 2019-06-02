@@ -24,6 +24,7 @@ public:
   // wgFit::wgFit
   // Just call the GetHist constructor. Exceptions may be thrown.
   wgFit(const string& inputfile);
+  wgFit(const string& inputfile, const string& outputIMGDir);
   // delete wgFit::GetHist;
   ~wgFit();
   
@@ -33,7 +34,7 @@ public:
   // dark noise rate mean value is saved in x[0] and its variance in x[1].  If
   // the mode is PRINT_HIST_MODE, an image of the fitted histogram is saved in
   // the default WAGASCI_IMGDATADIR directory.
-  void NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], int mode = NO_PRINT_HIST_MODE);
+  void NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag = false);
 
   // wgFit::low_pe_charge
   // Calculate the charge (ADC count) peak value for chip "ichip" and channel
@@ -45,12 +46,12 @@ public:
   // the least interesting parameter, the gaussian peak value is store in the
   // x[3] element. If the mode is PRINT_HIST_MODE, an image of the fitted
   // histogram is saved in the default WAGASCI_IMGDATADIR directory.
-  void low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], int mode = NO_PRINT_HIST_MODE);
+  void low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool print_flag = false);
 
   // wgFit::low_pe_charge
   // Same as above but uses the charge_hit_HG histogram (only the hits from the
   // high gain preamp are considered)
-  void low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], int mode = NO_PRINT_HIST_MODE);
+  void low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
   // wgFit::charge_nohit
   // Calculate the pedestal value for chip "ichip", channel "ichan" and column
@@ -61,11 +62,11 @@ public:
   // gaussian peak value is store in the x[3] element. If the mode is
   // PRINT_HIST_MODE, an image of the fitted histogram is saved in the default
   // WAGASCI_IMGDATADIR directory.
-  void charge_nohit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], int mode = NO_PRINT_HIST_MODE);
+  void charge_nohit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
   // wgFit::GainSelect
   // Not implemented yet
-  void GainSelect(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], int mode = NO_PRINT_HIST_MODE);
+  void GainSelect(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
   // Copy the passed string into the outputIMGDir private member 
   void SetoutputIMGDir(const string&);
