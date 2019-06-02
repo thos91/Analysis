@@ -103,11 +103,6 @@
 #define GLOBAL_INPUT_DAC_REF_INDEX  5
 #define GLOBAL_INPUT_DAC_REF_START  36
 
-// ============ wgFit MACROS ============== //
-
-#define PRINT_HIST_MODE    1
-#define NO_PRINT_HIST_MODE 0
-
 // ============ wgMakeHist MACROS ============== //
 
 #define MAX_BCID_BIN  12288
