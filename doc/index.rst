@@ -10,12 +10,16 @@ Welcome to WAGASCI analysis software's documentation!
    :maxdepth: 4
    :caption: Contents:
 
+   CLI
    wgDecoder		 
    wgOptimize
    wgChangeConfig
    wgAnaPedestal
+   wgAnaPedestalSummary
    wgAnaHist
    wgAnaHistSummary
+   wgMakeHist
+   wgPreCalib
 
 
 Indices and tables
