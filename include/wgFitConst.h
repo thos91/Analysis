@@ -38,7 +38,7 @@ extern const int begin_BCID;    //begining value of fitting range for LED
 extern const int end_BCID;    //ending value of fitting range for LED
 extern const int limit_BCID;    //ending value of fitting range for LED
 
-extern const double Gain ;     //estimate Gain
+extern const double est_Gain ;     //estimate Gain
 
 extern const double GSthreshold ;     //estimate Gain
 extern const double GSthreshold_0 ;     //estimate Gain

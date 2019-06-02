@@ -34,7 +34,7 @@ const double u_limit_1pe = 160000;  // upper limit for dark noise with 0.5 p.e. 
 const int begin_LED        = 400;    //begining value of fitting range for dark noise
 const int end_LED          = 1000;    //ending value of fitting range for dark noise
 
-const double Gain           = 25;     //estimate Gain
+const double est_Gain      = 40;     //estimate Gain
 
 const double GSthreshold    = 2510;     //estimate Gain Select Threshold
 const double GSthreshold_0  = 2730;     //estimate Gain Select Threshold for column 0.
