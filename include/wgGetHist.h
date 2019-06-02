@@ -61,16 +61,16 @@ public:
   int  Get_start_time();
   int  Get_stop_time();
 
-  void Make_Canvas(int opt);
-  void Print_charge       (const char*, const char*, int);
-  void Print_charge_hit_HG(const char*, const char*, int);
-  void Print_charge_hit_LG(const char*, const char*, int);
-  void Print_charge_nohit (const char*, const char*, int);
-  void Print_time_hit     (const char*, const char*, int);
-  void Print_time_nohit   (const char*, const char*, int);
-  void Print_bcid         (const char*, const char*, int);
-  void Print_pe           (const char*, const char*, int);
-  void Print_spill        (const char*, const char*, int);
+  TCanvas * Make_Canvas(const char * name, bool y_logscale);
+  void Print_charge       (const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_charge_hit_HG(const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_charge_hit_LG(const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_charge_nohit (const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_time_hit     (const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_time_nohit   (const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_bcid         (const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_pe           (const TString& h_name, const char* option="", bool y_logscale = false);
+  void Print_spill        (const TString& h_name, const char* option="", bool y_logscale = false);
 };
 
 #endif

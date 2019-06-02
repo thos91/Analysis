@@ -163,70 +163,81 @@ int wgGetHist::Get_stop_time(){
 }
 
 //************************************************************************
-void wgGetHist::Make_Canvas(int opt=0){
-  c1 = new TCanvas("c1","c1");
-  if(opt!=0) c1->SetLogy();
+TCanvas * wgGetHist::Make_Canvas(const char * name, bool y_logscale) {
+  TCanvas * canvas = new TCanvas(name, name);
+  canvas->SetCanvasSize(1024,768);
+  if(y_logscale) canvas->SetLogy();
+  return canvas;
 }
 
 //************************************************************************
-void wgGetHist::Print_charge(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_charge(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_charge_hit->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas;
 }
 
 //************************************************************************
-void wgGetHist::Print_charge_hit_HG(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_charge_hit_HG(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_charge_hit_HG->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_charge_hit_LG(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_charge_hit_LG(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_charge_hit_LG->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_charge_nohit(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_charge_nohit(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_charge_nohit->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_time_hit(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_time_hit(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_time_hit->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_time_nohit(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_time_nohit(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_time_nohit->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_bcid(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_bcid(const TString& h_name, const char* option, bool y_logscale) {
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_bcid_hit->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_pe(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_pe(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_pe_hit->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
 
 //************************************************************************
-void wgGetHist::Print_spill(const char* h_name,const char* option="", int opt=0){
-  this->Make_Canvas(opt);
+void wgGetHist::Print_spill(const TString& h_name, const char* option, bool y_logscale){
+  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
   h_spill->Draw(option);
-  c1->Print(h_name); 
+  canvas->Print(h_name);
+  delete canvas; 
 }
