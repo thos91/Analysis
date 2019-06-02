@@ -20,7 +20,8 @@ void print_help(const char * program_name) {
 	"  -h        : print this help\n"
 	"  -f (char*): input histograms file (_hist.root file)\n"
 	"  -i (char*): pyrame config file (.xml)\n"
-	"  -o (char*): outputdir (default = XML_DIRECTORY)\n"
+	"  -o (char*): outputXMLdir (default = WAGASCI_XMLDATADIR)\n"
+	"  -q (char*): outputIMGdir (default = WAGASCI_IMGDATADIR)\n"
 	"  -d (int)  : DIF number (integer starting from 1)\n"
 	"  -x (int)  : number of chips per DIF (default is 20)\n"
 	"  -y (int)  : number of channels per chip (default is 36)\n"
@@ -56,13 +57,13 @@ int main(int argc, char** argv){
   // Get the output directories from
   wgConst con;
   con.GetENV();
-  string outputDir    = con.XMLDATA_DIRECTORY;
+  string outputXMLDir = con.XMLDATA_DIRECTORY;
   string outputIMGDir = con.IMGDATA_DIRECTORY;
 
   OperateString OptStr;
   CheckExist Check;
 
-  while((opt = getopt(argc,argv, "f:d:m:i:o:c:x:y:prh")) !=-1 ) {
+  while((opt = getopt(argc,argv, "f:d:m:i:o:q:x:y:prh")) !=-1 ) {
     switch(opt) {
 	case 'f':
 	  inputFileName=optarg;
@@ -88,9 +89,9 @@ int main(int argc, char** argv){
 	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] read config file: " + configFileName);
 	  break;
 	case 'o':
-	  outputDir = optarg;
+	  outputXMLDir = optarg;
 	  break;
-	case 'c':
+	case 'q':
 	  outputIMGDir = optarg;
 	  break;
 	case 'x':
@@ -103,7 +104,7 @@ int main(int argc, char** argv){
 	  flags[SELECT_PRINT] = true;
 	  break;
 	case 'r':
-	  flags[OVERWRITE] = true;
+	  flags[SELECT_OVERWRITE] = true;
 	  break;
 	case 'h':
 	  print_help(argv[0]);
@@ -119,21 +120,23 @@ int main(int argc, char** argv){
     exit(1);
   }
 
-  string DirName = OptStr.GetNameBeforeLastUnderBar(inputFileName);
-
-  outputDir = outputDir + "/" + DirName;
-  outputIMGDir = outputIMGDir + "/" + DirName;
-
   Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
   Log.Write("start analyzing ...");
 
+  // Set the correct flags according to the mode
+  try {
+	ModeSelect(mode, flags);
+  }
+  catch (const exception& e) {
+	Log.eWrite("[wgAnaHist][" + outputXMLDir + "] " + string(e.what()));
+	exit(1);
+  }
   
   int result;
   if ( (result = AnaHist(inputFileName.c_str(),
 						 configFileName.c_str(),
-						 outputDir.c_str(),
+						 outputXMLDir.c_str(),
 						 outputIMGDir.c_str(),
-						 mode,
 						 flags.to_ulong(),
 						 idif,
 						 n_chips,

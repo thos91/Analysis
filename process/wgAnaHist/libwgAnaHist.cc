@@ -40,7 +40,6 @@ int AnaHist(const char * x_inputFileName,
 			const char * x_configFileName,
 			const char * x_outputDir,
 			const char * x_outputIMGDir,
-			const int mode,
 			const unsigned long flags_ulong,
 			const unsigned idif,
 			const unsigned n_chips,
@@ -52,22 +51,38 @@ int AnaHist(const char * x_inputFileName,
   string outputIMGDir(x_outputIMGDir);
   wgEditXML Edit;
   CheckExist Check;
+  OperateString OptStr;
 
+  if ( idif <= 0 || idif > NDIFS ) {
+	Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif) );
+	return ERR_WRONG_DIF_VALUE;
+  }
+  if ( n_chips <= 0 || n_chips > NCHIPS ) {
+	Log.eWrite("[wgAnaHist] wrong number of chips : " + to_string(n_chips) );
+	return ERR_WRONG_CHIP_VALUE;
+  }
+  if ( n_chans <= 0 || n_chans > NCHANNELS ) {
+	Log.eWrite("[wgAnaHist] wrong number of channels : " + to_string(n_chans) );
+	return ERR_WRONG_CHANNEL_VALUE;
+  }
+
+  // =========== FLAGS decoding =========== //
   bitset<M> flags(flags_ulong);
   
-  // Set the correct flags according to the mode
-  try {
-	ModeSelect(mode, flags);
+  if ( flags[SELECT_CHARGE_HG_HIGH] ) {
+	Log.eWrite("[wgAnaHist] the SELECT_CHARGE_HG_HIGH mode is not implemented yet");
+	flags[SELECT_CHARGE_HG_HIGH] = false;
   }
-  catch (const exception& e) {
-	Log.eWrite("[wgAnaHist][" + outputDir + "] " + string(e.what()));
-	return ERR_WRONG_MODE;
-  }
+  
+  string DirName = OptStr.GetNameBeforeLastUnderBar(inputFileName);
+
+  outputDir = outputDir + "/" + DirName;
+  outputIMGDir = outputIMGDir + "/" + DirName;
 
   // ============ Create outputDir ============ //
   if( !Check.Dir(outputDir) ) {
 	boost::filesystem::path dir(outputDir);
-	if( !boost::filesystem::create_directory(dir) ) {
+	if( !boost::filesystem::create_directories(dir) ) {
 	  Log.eWrite("[wgAnaHist][" + outputDir + "] failed to create directory");
 	  return ERR_CANNOT_CREATE_DIRECTORY;
 	}
@@ -75,17 +90,23 @@ int AnaHist(const char * x_inputFileName,
   // ============ Create outputIMGDir ============ //
   if( flags[SELECT_PRINT] && !Check.Dir(outputIMGDir) ) {
 	boost::filesystem::path dir(outputIMGDir);
-	if( !boost::filesystem::create_directory(dir) ) {
+	if( !boost::filesystem::create_directories(dir) ) {
 	  Log.eWrite("[wgAnaHist][" + outputIMGDir + "] failed to create directory");
 	  return ERR_CANNOT_CREATE_DIRECTORY;
 	}
   }
+
+  // ======================================================== //
+  //                                                          //
+  //                        MAIN LOOP                         //
+  //                                                          //
+  // ======================================================== //
+  
   try {
-	wgFit Fit(inputFileName);
-	if( flags[SELECT_PRINT] )
-	  Fit.SetoutputIMGDir(outputIMGDir);
+	wgFit Fit(inputFileName, outputIMGDir);
 
 	for (unsigned ichip = 0; ichip < n_chips; ichip++) {
+	  
 	  // ============ Create outputChipDir ============ //
 	  string outputChipDir(outputDir + "/chip" + to_string(ichip));
 	  if ( !Check.Dir(outputChipDir) ) {
@@ -118,7 +139,7 @@ int AnaHist(const char * x_inputFileName,
 		// Open the outputxmlfile as an XML file
 		string outputxmlfile(outputChipDir + "/ch" + to_string(ichan) + ".xml");
 		try {
-		  if( !Check.XmlFile(outputxmlfile) || flags[OVERWRITE] )
+		  if( !Check.XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
 			Edit.Make(outputxmlfile, ichip, ichan);
 		  Edit.Open(outputxmlfile);
 		}
@@ -127,7 +148,7 @@ int AnaHist(const char * x_inputFileName,
 		  return ERR_FAILED_OPEN_XML_FILE;
 		}
 	  
-		// ******************** FILL THE XML FILES **********************//
+		// ******************* FILL THE XML FILES ********************//
 
 		try {
 		  int start_time;
@@ -158,7 +179,7 @@ int AnaHist(const char * x_inputFileName,
 			// calculate the dark noise rate for chip "ichip" and channel "ichan" and
 			// save the mean and standard deviation in x_bcid[0] and x_bcid[1]
 			// respectively.
-			Fit.NoiseRate(ichip, ichan, x_bcid, (int) flags[SELECT_PRINT]);
+			Fit.NoiseRate(ichip, ichan, x_bcid, flags[SELECT_PRINT]);
 			// Save the noise rate and its standard deviation in the outputxmlfile xml
 			// file
 			Edit.SetChValue(string("NoiseRate"),   x_bcid[0], CREATE_NEW_MODE); // mean
@@ -171,7 +192,7 @@ int AnaHist(const char * x_inputFileName,
 			double x_nohit[3] = {0, 0, 0};
 			for(int icol = 0; icol < MEMDEPTH; icol++) {
 			  // Calculate the pedestal value and its sigma
-			  Fit.charge_nohit(ichip, ichan, icol, x_nohit, (int) flags[SELECT_PRINT]);
+			  Fit.charge_nohit(ichip, ichan, icol, x_nohit, flags[SELECT_PRINT]);
 			  Edit.SetColValue(string("charge_nohit"), icol, x_nohit[0], CREATE_NEW_MODE);
 			  Edit.SetColValue(string("sigma_nohit"),  icol, x_nohit[1], CREATE_NEW_MODE);
 			} 
@@ -181,7 +202,7 @@ int AnaHist(const char * x_inputFileName,
 
 		  if ( flags[SELECT_CHARGE_LOW] ) {
 			double x_low[3] = {0, 0, 0};
-			Fit.low_pe_charge(ichip, ichan, x_low, (int) flags[SELECT_PRINT]);
+			Fit.low_pe_charge(ichip, ichan, x_low, flags[SELECT_PRINT]);
 			Edit.SetChValue(string("charge_low"),x_low[0], CREATE_NEW_MODE);
 			Edit.SetChValue(string("sigma_low") ,x_low[1], CREATE_NEW_MODE);
 		  }
@@ -191,7 +212,7 @@ int AnaHist(const char * x_inputFileName,
 		  if ( flags[SELECT_CHARGE_HG_LOW] ) {
 			double x_low_HG[3] = {0, 0, 0};
 			for(int icol = 0; icol < MEMDEPTH; icol++) {
-			  Fit.low_pe_charge_HG(ichip, ichan, icol, x_low_HG, (int) flags[SELECT_PRINT]);
+			  Fit.low_pe_charge_HG(ichip, ichan, icol, x_low_HG, flags[SELECT_PRINT]);
 			  Edit.SetColValue(string("charge_lowHG"), icol, x_low_HG[0], CREATE_NEW_MODE);
 			  Edit.SetColValue(string("sigma_lowHG"),  icol, x_low_HG[1], CREATE_NEW_MODE);
 			}
@@ -202,7 +223,7 @@ int AnaHist(const char * x_inputFileName,
 		  if ( flags[SELECT_CHARGE_HG_HIGH] ) {
 			for(int icol = 0; icol < MEMDEPTH; icol++) {
 			  double x_high_HG[3] = {0, 0};
-			  Fit.GainSelect(ichip, ichan, icol, x_high_HG, (int) flags[SELECT_PRINT]);
+			  Fit.GainSelect(ichip, ichan, icol, x_high_HG, flags[SELECT_PRINT]);
 			  Edit.SetColValue(string("GS_eff_m"), icol, x_high_HG[0], CREATE_NEW_MODE);
 			  Edit.SetColValue(string("GS_eff_e"), icol, x_high_HG[1], CREATE_NEW_MODE);
 			}
