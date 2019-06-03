@@ -58,7 +58,6 @@ vector<string> GetIncludeFileName(const string& inputDir){
   return openxmlfile;
 } 
 
-
 //******************************************************************
 int AnaPedestalSummary(const char * x_inputDir,
 					   const char * x_outputXMLDir,
@@ -78,8 +77,15 @@ int AnaPedestalSummary(const char * x_inputDir,
     outputXMLDir = con.CALIBDATA_DIRECTORY;
   }
 
-  // ============ Create outputIMGDir ============ //
-  outputIMGDir = outputIMGDir + "/" + OpStr.GetName(inputDir);
+  // ============ Create outputXMLDir ============ //
+  if ( !Check.Dir(outputXMLDir) ) {
+	boost::filesystem::path dir(outputXMLDir);
+	if( !boost::filesystem::create_directories(dir) ) {
+	  Log.eWrite("[wgAnaHist][" + outputXMLDir + "] failed to create directory");
+	  return ERR_CANNOT_CREATE_DIRECTORY;
+	}
+  }
+    // ============ Create outputIMGDir ============ //
   if ( !Check.Dir(outputIMGDir) ) {
 	boost::filesystem::path dir(outputIMGDir);
 	if( !boost::filesystem::create_directories(dir) ) {
@@ -105,45 +111,35 @@ int AnaPedestalSummary(const char * x_inputDir,
   }
   
   string xmlfile("");
-  string name("");
   wgEditXML Edit;
-  int ndif = 0;
-  int npe  = ONE_PE;
-  // Peak[][][][ONE_PE] is the position of the 1 p.e. peak relative to the pedestal
-  // Peak[][][][TWO_PE] is the position of the 2 p.e. peak relative to the pedestal
-  double Peak   [n_difs][n_chips][n_chans][2];
-  double ped    [n_difs][n_chips][n_chans][MEMDEPTH];
-  double ped_ref[n_difs][n_chips][n_chans][MEMDEPTH];
+  unsigned dif = 0;
+  unsigned npe = ONE_PE;
+  // Gain[][][][ONE_PE] is the position of the 1 p.e. peak relative to the pedestal
+  // Gain[][][][TWO_PE] is the position of the 2 p.e. peak relative to the pedestal
+  double Gain   [n_difs][n_chips][n_chans][MEMDEPTH][2] = {};
+  double ped    [n_difs][n_chips][n_chans][MEMDEPTH] = {};
+  double ped_ref[n_difs][n_chips][n_chans][MEMDEPTH] = {};
 
-  //*** Read data ***
+  /********************************************************************************
+   *                              Read XML files                                  *
+   ********************************************************************************/
+	
   for(int iFN = 0; iFN < nFiles; iFN++) {
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 
 	  // Guess the dif number from the file name
       int pos = inputFile[iFN].find("dif_1_1_") + 8;
-	  bool found = false;
-	  // Loop over all the possible DIF numbers (from 1 to n_difs) and set the
-	  // "found" flag to true if the dif character is one of them
-	  for (unsigned idif = 1; idif <= n_difs; idif++) {
-		// This will not work for DIF >= 10
-		unsigned ndif = inputFile[iFN][pos] - '0';
-		if( ndif == idif) ndif--;
-		found = true;
-		break;
-	  }
-	  if (found == false) {
-		Log.eWrite("failed to guess DIF number from file name: " + inputFile[iFN]);
-		return ERR_WRONG_DIF_VALUE;
-	  }
+	  dif = inputFile[iFN][pos] - '0';
+	  if( dif <= n_difs)
+		dif--;
+	  else
+		{
+		  Log.eWrite("failed to guess DIF number from file name: " + inputFile[iFN]);
+		  return ERR_WRONG_DIF_VALUE;
+		}
 
-      pos = inputFile[iFN].find("_pe") + 3;
-      if      (inputFile[iFN][pos] == '1') npe = ONE_PE;
-      else if (inputFile[iFN][pos] == '2') npe = TWO_PE;
-	  else {
-		Log.eWrite("failed to guess photo electrons from file name: " + inputFile[iFN]);
-		return ERR_WRONG_PE_VALUE;
-	  }
-
+	  // ************* Open XML file ************* //
+	  
 	  string xmlfile(inputFile[iFN] + "/Pedestal_chip" + to_string(ichip) + ".xml");
 	  try {
 		Edit.Open(xmlfile);
@@ -152,54 +148,74 @@ int AnaPedestalSummary(const char * x_inputDir,
 		Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
 		return ERR_FAILED_OPEN_XML_FILE;
 	  }
+
+	  // ************* Read XML file ************* //
+	  
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
-		// Position of the npe p.e. peak relative to the charge_nohit value
-		Peak[ndif][ichip][ichan][npe] = Edit.SUMMARY_GetChFitValue(string("Gain"), ichan);
-        if( npe == TWO_PE ) {
-          for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-			// Pedestal position
-            ped    [ndif][ichip][ichan][icol] = Edit.SUMMARY_GetChFitValue("ped_" + to_string(icol), ichan);
-			// 1 p.e. peak position for high gain preamp
-            ped_ref[ndif][ichip][ichan][icol] = Edit.SUMMARY_GetChFitValue("ped_ref_" + to_string(icol), ichan);
-          }
-        }
-      }
-      Edit.Close();
-    }
+		try { npe = Edit.SUMMARY_GetChFitValue(string("pe_level"), ichan); }
+		catch (...) {
+		  Log.eWrite("failed to read photo electrons equivalent threshold from XML file");
+		  pos = inputFile[iFN].find("_pe") + 3;
+		  npe = inputFile[iFN][pos] - '0';
+		}
+		// pe_level and dif_1_1_ start from 1 while the local variable npe starts from 0
+		npe--;
+		if ( npe > TWO_PE ) {
+		  Log.eWrite("failed to guess photo electrons equivalent threshold");
+		  return ERR_WRONG_PE_VALUE;
+		}
+		  
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  // charge_nohit peak
+		  ped    [dif][ichip][ichan][icol] = Edit.SUMMARY_GetChFitValue("ped_" + to_string(icol), ichan);
+		  // charge_HG peak (npe p.e. peak for high gain preamp)
+		  ped_ref[dif][ichip][ichan][icol] = Edit.SUMMARY_GetChFitValue("ped_ref_" + to_string(icol), ichan);
+		  // Position of the npe p.e. peak relative to the charge_nohit value (charge_HG - charge_nohit)
+		  Gain[dif][ichip][ichan][icol][npe] = Edit.SUMMARY_GetChFitValue("gain_" + to_string(icol), ichan);
+		}
+	  }
+	  Edit.Close();
+	}
   }
 
   /*************************************************************************
    *                                 GAIN                                  *
    *************************************************************************/
 
-  TCanvas *c1 = new TCanvas("c1","c1");
-  c1->Divide(n_difs,2);
+  TCanvas *c1 = new TCanvas("c1", "c1", 1280, 720);
+  c1->Divide(n_difs, 2);
   
   // Define the histograms
 
   TH1D * h_Gain[n_difs];
-  TH2D * h_Gain2[n_difs];
+  TH2D * h_Gain2D[n_difs];
+  TString name;
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
 	// xbins = 80, xlow = 20, xup = 60 
-	h_Gain [idif]= new TH1D(Form("h_Gain_DIF%d", idif+1),Form("h_Gain_DIF%d",idif+1), 80, 20, 60);
+	name.Form("h_Gain_DIF%d", idif + 1);
+	h_Gain [idif] = new TH1D(name, name, 80, 20, 60);
 	// xbins = 20, xlow = 0, xup = 20, ybins = 40, ylow = 0, yup = 80
-	h_Gain2[idif]= new TH2D(Form("h_Gain2_DIF%d",idif+1),Form("h_Gain_DIF%d",idif+1), 20, 0, 20, 40, 0, 80);
+	name.Form("h_Gain2D_DIF%d", idif + 1);
+	h_Gain2D[idif] = new TH2D(name, name, 20, 0, 20, 40, 0, 80);
   }
+
 
   // Fill the histograms
   for(unsigned idif = 0; idif < n_difs; idif++) {
 	for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 	  for(unsigned ichan = 0; ichan < n_chans; ichan++) {
-		// Difference between the 2 p.e. peak and the 1 p.e. peak (i.e. the gain value)
-		double DIST = Peak[idif][ichip][ichan][TWO_PE] - Peak[idif][ichip][ichan][ONE_PE];
-		h_Gain[idif] ->Fill(DIST);
-		// fill ichip bin with weight DIST
-		h_Gain2[idif]->Fill(ichip, DIST);
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  // Difference between the 2 p.e. peak and the 1 p.e. peak (i.e. the gain value)
+		  double DIST = Gain[idif][ichip][ichan][icol][TWO_PE] - Gain[idif][ichip][ichan][icol][ONE_PE];
+		  h_Gain[idif]->Fill(DIST);
+		  // fill ichip bin with weight DIST
+		  h_Gain2D[idif]->Fill(ichip, DIST);
+		}
 	  }
 	}
   }
-
+  
   // Print the histograms
   for(unsigned idif = 0; idif < n_difs; idif++) {
 	c1->cd(idif * 2 + 1);
@@ -208,9 +224,10 @@ int AnaPedestalSummary(const char * x_inputDir,
 	c1->cd(idif * 2 + 2);
 	c1->GetPad(idif * 2 + 2)->SetLogy(0);
 	c1->SetLogz(1);
-	h_Gain2[idif]->Draw("colz");
+	h_Gain2D[idif]->Draw("colz");
   }
   c1->Print(Form("%s/Gain.png",outputIMGDir.c_str()));
+
 
   /*************************************************************************
    *                              PEDESTAL                                 *
@@ -233,7 +250,7 @@ int AnaPedestalSummary(const char * x_inputDir,
 
 
   xmlfile = outputXMLDir + "/pedestal_card.xml";
-  Edit.Calib_Make(xmlfile);
+  Edit.Calib_Make(xmlfile, n_difs, n_chips, n_chans);
   try {
 	Edit.Open(xmlfile);
   }
@@ -245,17 +262,17 @@ int AnaPedestalSummary(const char * x_inputDir,
   for(unsigned idif = 0; idif < n_difs; idif++) {
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
-        Edit.Calib_SetValue(string("pe1"),  idif+1, ichip, ichan, Peak[idif][ichip][ichan][ONE_PE], NO_CREATE_NEW_MODE);
-        Edit.Calib_SetValue(string("pe2"),  idif+1, ichip, ichan, Peak[idif][ichip][ichan][TWO_PE], NO_CREATE_NEW_MODE);
-        Edit.Calib_SetValue(string("Gain"), idif+1, ichip, ichan, Peak[idif][ichip][ichan][TWO_PE] - Peak[idif][ichip][ichan][ONE_PE], NO_CREATE_NEW_MODE);
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  Edit.Calib_SetValue("pe1_" + to_string(icol),  idif+1, ichip, ichan, Gain[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
+		  Edit.Calib_SetValue("pe2_" + to_string(icol),  idif+1, ichip, ichan, Gain[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
+		  Edit.Calib_SetValue("gain_" + to_string(icol), idif+1, ichip, ichan, Gain[idif][ichip][ichan][icol][TWO_PE] - Gain[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
 		  // nominal_pedestal = 1 p.e. peak - 2 * gain
-          double nominal_pedestal = ped_ref[idif][ichip][ichan][icol] - 2 * (Peak[idif][ichip][ichan][TWO_PE] - Peak[idif][ichip][ichan][ONE_PE]);		  
+          double nominal_pedestal = ped_ref[idif][ichip][ichan][icol] - 2 * (Gain[idif][ichip][ichan][icol][TWO_PE] - Gain[idif][ichip][ichan][icol][ONE_PE]);		  
           Edit.Calib_SetValue("ped_" + to_string(icol), idif+1, ichip, ichan, nominal_pedestal, CREATE_NEW_MODE);
           h1[icol]->Fill(nominal_pedestal);
 
 		  // Pedestal when there is no hit
-          Edit.Calib_SetValue("ped_nohit" + to_string(icol), idif+1, ichip, ichan, ped[idif][ichip][ichan][icol], CREATE_NEW_MODE);
+          Edit.Calib_SetValue("ped_nohit_" + to_string(icol), idif+1, ichip, ichan, ped[idif][ichip][ichan][icol], CREATE_NEW_MODE);
 		  // Difference between the nominal_pedestal and the pedestal_nohit 
           h2[icol]->Fill(nominal_pedestal - ped[idif][ichip][ichan][icol]);
           h3->Fill(nominal_pedestal - ped[idif][ichip][ichan][icol]);
