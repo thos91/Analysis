@@ -31,7 +31,7 @@ ANA_MODE=12 # dark noise + pedestal + charge_HG
 
 DIF=1
 NCHIPS_DECODE=20
-NCHIPS_ANA=1
+NCHIPS_ANA=20
 NCHANNELS=32
 
 echo " wgAnaPedestal unit test: input DAC 121 - 2 p.e."
@@ -53,9 +53,9 @@ if [ ! -d "${ANA_DIR}" ]; then
 fi
 if [ ! -d "${ANA_PEDESTAL_DIR}" ]; then
 echo ""
-echo " AnaPedestal :  ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -c -r"
-                      ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -c -r
+echo " AnaPedestal :  ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -r"
+                      ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -r
 fi
 echo ""
-echo " AnaPedestalSummary : ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${SUMMARY_DIR}/${RUN_NAME} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS}"
-                            ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${SUMMARY_DIR}/${RUN_NAME} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS}
+echo " AnaPedestalSummary : ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${CURRENT_DIR} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS}"
+                            ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${CURRENT_DIR} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS}
