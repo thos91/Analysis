@@ -51,5 +51,5 @@ if [ ! -d "${ANA_DIR}" ]; then
 fi
 
 echo ""
-echo " AnaPedestal :  ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -c -r"
-                      ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -c -r
+echo " AnaPedestal :  ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -r"
+                      ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -r

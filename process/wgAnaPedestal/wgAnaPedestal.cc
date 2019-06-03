@@ -15,7 +15,6 @@ void print_help(const char * program_name) {
 	"  -f (char*) : input directory (mandatory)\n"
 	"  -o (char*) : output directory (default: same as input directory)\n"
 	"  -i (char*) : output directory for plots and images (default: WAGASCI_IMGDIR)\n"
-	"  -c         : pre-calibration mode\n"
 	"  -r         : overwrite mode\n"
 	"  -x (int)   : number of chips per DIF (default is 20)\n"
 	"  -y (int)   : number of channels per chip (default is 36)\n";
@@ -27,7 +26,6 @@ int main(int argc, char** argv){
 
   int opt;
   bool overwrite = false;
-  bool pre_calibration_mode = false;
   wgConst con;
   con.GetENV();
   string inputDir("");
@@ -42,7 +40,7 @@ int main(int argc, char** argv){
   OperateString OpStr;
   CheckExist check;
 
-  while((opt = getopt(argc,argv, "f:o:i:x:y:hrc")) !=-1 ){
+  while((opt = getopt(argc,argv, "f:o:i:x:y:hr")) !=-1 ){
     switch(opt){
 	case 'f':
 	  inputDir=optarg;
@@ -72,10 +70,6 @@ int main(int argc, char** argv){
 	case 'r':
 	  overwrite = true; 
 	  break;
-
-	case 'c':
-	  pre_calibration_mode = true; 
-	  break;
 	  
 	case 'h':
 	  print_help(argv[0]);
@@ -100,7 +94,6 @@ int main(int argc, char** argv){
   AnaPedestal(inputDir.c_str(),
 			  outputXMLDir.c_str(),
 			  outputIMGDir.c_str(),
-			  pre_calibration_mode,
 			  overwrite,
 			  n_chips,
 			  n_chans);

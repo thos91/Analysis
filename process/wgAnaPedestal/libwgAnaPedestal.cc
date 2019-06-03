@@ -38,7 +38,6 @@
 int AnaPedestal(const char * x_inputDir,
 				const char * x_outputXMLDir,
 				const char * x_outputIMGDir,
-				const bool pre_calibration_mode,
 				const bool overwrite,
 				const unsigned n_chips,
 				const unsigned n_chans) {
@@ -121,16 +120,14 @@ int AnaPedestal(const char * x_inputDir,
 	h_Npe[ichip]->SetMarkerColor(wgColor::wgcolors[ichip]);
 	h_Npe[ichip]->SetStats(0);
 
-	if ( ! pre_calibration_mode ) {
-	  name.Form("h_Noise_chip%d", ichip);
-	  h_Noise[ichip]=new TH1D(name, name, 34, -1, 33);
-	  name.Form("Noise chip:%d;ch;Noise Rate[Hz]", ichip);
-	  h_Noise[ichip]->SetTitle(name);
-	  h_Noise[ichip]->SetMarkerStyle(8);
-	  h_Noise[ichip]->SetMarkerSize(0.3);
-	  h_Noise[ichip]->SetMarkerColor(wgColor::wgcolors[ichip]);
-	  h_Noise[ichip]->SetStats(0);
-	}
+	name.Form("h_Noise_chip%d", ichip);
+	h_Noise[ichip]=new TH1D(name, name, 34, -1, 33);
+	name.Form("Noise chip:%d;ch;Noise Rate[Hz]", ichip);
+	h_Noise[ichip]->SetTitle(name);
+	h_Noise[ichip]->SetMarkerStyle(8);
+	h_Noise[ichip]->SetMarkerSize(0.3);
+	h_Noise[ichip]->SetMarkerColor(wgColor::wgcolors[ichip]);
+	h_Noise[ichip]->SetStats(0);
   }
 
   //*** Read data ***//
@@ -156,21 +153,10 @@ int AnaPedestal(const char * x_inputDir,
       inputDAC[ichip][ichan]    = Edit.GetConfigValue (string("inputDAC"));
       ampDAC  [ichip][ichan]    = Edit.GetConfigValue (string("HG"));
       adjDAC  [ichip][ichan]    = Edit.GetConfigValue (string("trig_adj"));
-	  if ( ! pre_calibration_mode ) {
-		Noise   [ichip][ichan][0] = Edit.GetChValue     (string("NoiseRate"));
-		Noise   [ichip][ichan][1] = Edit.GetChValue     (string("NoiseRate_e"));
-		// Guess the threshold value (in p.e.) given the dark noise rate
-		pe_level[ichip][ichan]    = NoiseToPe(Noise[ichip][ichan][0]);
-	  }
-	  else {
-		int pos = inputDir.find("_pe") + 3;
-		if      (inputDir[pos] == '1') pe_level[ichip][ichan] = 1;
-		else if (inputDir[pos] == '2') pe_level[ichip][ichan] = 2;
-		else {
-		  Log.eWrite("failed to guess photo electrons from folder name: " + inputDir);
-		  return ERR_WRONG_PE_VALUE;
-		}
-	  }
+	  Noise   [ichip][ichan][0] = Edit.GetChValue     (string("NoiseRate"));
+	  Noise   [ichip][ichan][1] = Edit.GetChValue     (string("NoiseRate_e"));
+	  // Guess the threshold value (in p.e.) given the dark noise rate
+	  pe_level[ichip][ichan]    = NoiseToPe(Noise[ichip][ichan][0]);
 
       for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 		// Pedestal position
@@ -203,13 +189,8 @@ int AnaPedestal(const char * x_inputDir,
       Edit.SUMMARY_SetChConfigValue(string("inputDAC"), inputDAC[ichip][ichan], ichan, NO_CREATE_NEW_MODE);
       Edit.SUMMARY_SetChConfigValue(string("ampDAC"),   ampDAC[ichip][ichan],   ichan, NO_CREATE_NEW_MODE);
       Edit.SUMMARY_SetChConfigValue(string("adjDAC"),   adjDAC[ichip][ichan],   ichan, NO_CREATE_NEW_MODE);
-
-	  Edit.SUMMARY_SetChFitValue(string("pe_level"), pe_level[ichip][ichan], ichan, CREATE_NEW_MODE);
-	  
-	  if ( ! pre_calibration_mode ) {
-		Edit.SUMMARY_SetChFitValue(string("Noise"), Noise[ichip][ichan][0], ichan, NO_CREATE_NEW_MODE);
-		h_Noise[ichip]->Fill(ichan, Noise[ichip][ichan][0]);
-	  }
+	  Edit.SUMMARY_SetChFitValue(string("pe_level"),    pe_level[ichip][ichan], ichan, CREATE_NEW_MODE);
+	  Edit.SUMMARY_SetChFitValue(string("Noise"),       Noise[ichip][ichan][0], ichan, NO_CREATE_NEW_MODE);
 	  
       for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 		// Difference between the charge_HG peak (it is the pe_level p.e. peak) and
@@ -223,6 +204,7 @@ int AnaPedestal(const char * x_inputDir,
         h_Pedestal[ichip]->Fill(ichan * 26 + icol, charge[ichip][ichan][icol][CHARGE_NOHIT_PEAK]);
 		h_Npe[ichip]->     Fill(ichan * 26 + icol, charge[ichip][ichan][icol][CHARGE_HG_PEAK]);
 		h_Gain[ichip]->    Fill(ichan * 26 + icol, gain  [ichip][ichan][icol]);
+		h_Noise[ichip]->Fill(ichan, Noise[ichip][ichan][0]);
       }
     }
     Edit.Write();
@@ -296,7 +278,6 @@ int AnaPedestal(const char * x_inputDir,
 	name.Form("%s/Summary_Gain_chip%d.png", outputIMGDir.c_str(), ichip);
 	c1->Print(name);
 	
-	if ( ! pre_calibration_mode) {
 	  name.Form("chip:%d", ichip);
 	  l_Noise[ichip]=new TLegend(0.75, 0.84, 0.90, 0.90, name);
 	  l_Noise[ichip]->SetBorderSize(1);
@@ -306,7 +287,6 @@ int AnaPedestal(const char * x_inputDir,
 	  l_Noise[ichip]->Draw();
 	  name.Form("%s/Summary_Noise_chip%d.png", outputIMGDir.c_str(), ichip);
 	  c1->Print(name);
-	}
   }
   return AP_SUCCESS;
 }
