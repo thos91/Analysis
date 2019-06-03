@@ -854,7 +854,7 @@ void wgEditXML::PreCalib_SetValue(const string& name, int idif, int ichip, int i
 }
 
 //**********************************************************************
-double wgEditXML::PreCalib_GetValue(const string& name,int idif, int ichip, int ich){
+double wgEditXML::PreCalib_GetValue(const string& name,int idif, int ichip, int ich) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
@@ -882,6 +882,9 @@ void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const 
   XMLElement* pe1;
   XMLElement* pe2;
   XMLElement* gain;
+  XMLElement* ped;
+  XMLElement* ped_nohit;
+  char str[XML_ELEMENT_STRING_LENGTH];
 
   // **********************//
   data = xml->NewElement("data");
@@ -890,10 +893,10 @@ void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const 
   difs->SetText(to_string(n_difs).c_str());
   data->InsertEndChild(difs);
   XMLElement* chips = xml->NewElement("n_chips");
-  difs->SetText(to_string(n_chips).c_str());
+  chips->SetText(to_string(n_chips).c_str());
   data->InsertEndChild(chips);
   XMLElement* chans = xml->NewElement("n_chans");
-  difs->SetText(to_string(n_chans).c_str());
+  chans->SetText(to_string(n_chans).c_str());
   data->InsertEndChild(chans);
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
@@ -906,16 +909,35 @@ void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const 
       dif->InsertEndChild(chip);
       // ***** data > dif > chip > ch ***** //
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
-        ch = xml->NewElement(Form("ch_%d",ichan));    
+		ch = xml->NewElement(Form("ch_%d",ichan));    
         chip->InsertEndChild(ch);
-        pe1 = xml->NewElement("pe1");    
-        pe2 = xml->NewElement("pe2");    
-        gain = xml->NewElement("Gain");    
-        ch->InsertEndChild(pe1);
-        ch->InsertEndChild(pe2);
-        ch->InsertEndChild(gain);
-      }
-    }
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe1_%d", icol );
+		  pe1 = xml->NewElement(str);
+		  ch->InsertEndChild(pe1);
+		}
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe2_%d", icol );
+		  pe2 = xml->NewElement(str);
+		  ch->InsertEndChild(pe2);
+		}
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
+		  gain = xml->NewElement(str);  
+		  ch->InsertEndChild(gain);
+		}
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+		  ped = xml->NewElement(str);  
+		  ch->InsertEndChild(ped);
+		}
+		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_nohit_%d", icol );
+		  ped_nohit = xml->NewElement(str);  
+		  ch->InsertEndChild(ped_nohit);
+		}		
+	  }
+	}
   }
   xml->SaveFile(filename.c_str());
   delete xml;
