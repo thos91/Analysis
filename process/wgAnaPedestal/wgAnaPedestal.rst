@@ -2,8 +2,10 @@
 wgAnaPedestal program
 =====================
 
-The wgAnaHist program is used to summarize the information contained in the xml
-files created by the wgAnaHist program.
+The wgAnaPedestal program extracts the information contained in the xml files
+created by the wgAnaHist program, necessary for the calculation of the pedestal
+for each column. Its output is further analyzed by the wgAnaPedestalSummary
+program that finally creates the ``pedestal_card.xml`` file.
 
 Arguments
 =========
@@ -17,17 +19,18 @@ Arguments
 - ``[-c]`` : pre-calibration mode (default is false)
 - ``[-r]`` : overwrite mode (default is false)
 
-Pre-calibration mode
-====================
+Operation mode
+==============
 
-In this mode the detector is assumed completely uncalibrated. Only the pedestal
-information is extracted and analyzed.
+It is assumed that the thresholds have been optimized for a certain
+p.e. level. This means that the wgAnaPedestal must be run after TO-DO
 
 The ``chip%d/ch%d.xml`` files that were produced by the wgAnaHist program are
 read. You need to run that program at in a mode that has at least "pedestal" and
 "charge_HG". Mode 12 is recommended but mode 20 is fine too.
 
 The following info are extracted by those files:
+
 - ``trigth``       : Trigger threshold (chip)
 - ``gainth``       : Gain select threshold (chip)
 - ``inputDAC``     : Input DAC (chip, channel)
@@ -35,11 +38,11 @@ The following info are extracted by those files:
 - ``trig_adj``     : Trigger threshold adjustment (chip, channel)
 - ``charge_nohit`` : ADC count when not hit (chip, channel, column)
 - ``charge_lowHG`` : ADC count when hit and high gain preamp is selected (chip,
-channel, column)
+  channel, column)
 
-  charge_lowHG may refer to the 1 p.e., 2 p.e., etc depending on the value of
-  the threshold. In the pre-calibration mode take care to lower the threshold
-  enough to select the 1 p.e. peak.
+``charge_lowHG`` may refer to the 1 p.e., 2 p.e., etc depending on the value of
+the threshold. In the pre-calibration mode take care to lower the threshold
+enough to select the 1 p.e. peak.
 
 Then in the output directory a ``Summary_chip%d.xml`` template file is created
 for every chip and then filled with the following info:
