@@ -109,15 +109,15 @@ public:
 
   // wgEditXML::SetConfigValue
   // data -> config -> name
-  void SetConfigValue(const string& name, int value, int mode = NO_CREATE_NEW_MODE);
+  void SetConfigValue(const string& name, int value, bool create_new = false);
 
   // wgEditXML::SetColValue
   // data -> ch -> col_%d -> name
-  void SetColValue(const string& name, int icol, double value, int mode = NO_CREATE_NEW_MODE);
+  void SetColValue(const string& name, int icol, double value, bool create_new = false);
 
   // wgEditXML::SetChValue
   // data -> ch -> name
-  void SetChValue(const string& name, double value, int = NO_CREATE_NEW_MODE);
+  void SetChValue(const string& name, double value, bool create_new = false);
 
   // wgEditXML::AddColElement
   // data -> ch -> col_%d -> name
@@ -175,19 +175,19 @@ public:
 
   // wgEditXML::SUMMARY_SetGlobalConfigValue
   // data -> config -> name
-  void SUMMARY_SetGlobalConfigValue(const string& name, int value, int mode = NO_CREATE_NEW_MODE);
+  void SUMMARY_SetGlobalConfigValue(const string& name, int value, bool create_new = false);
 
   // wgEditXML::SUMMARY_SetChConfigValue
   // data -> ch_%d -> config -> name
-  void SUMMARY_SetChConfigValue(const string& name, int value, int ichan, int mode = NO_CREATE_NEW_MODE);
+  void SUMMARY_SetChConfigValue(const string& name, int value, int ichan, bool create_new = false);
 
   // wgEditXML::SUMMARY_SetChFitValue
   // data -> ch_%d -> fit -> name
-  void SUMMARY_SetChFitValue(const string& name, int value, int ichan, int mode = NO_CREATE_NEW_MODE);
+  void SUMMARY_SetChFitValue(const string& name, int value, int ichan, bool create_new = false);
 
   // wgEditXML::SUMMARY_SetPedFitValue
   // data -> ch_%d -> fit -> ped_%d
-  void SUMMARY_SetPedFitValue(double value[MEMDEPTH], int ichan, int = NO_CREATE_NEW_MODE);
+  void SUMMARY_SetPedFitValue(double value[MEMDEPTH], int ichan, bool create_new = false);
 
   // wgEditXML::SUMMARY_AddGlobalElement
   // data -> name
@@ -218,7 +218,7 @@ public:
   //=======================================================================//
   
   void SCURVE_Make(const string&);
-  void SCURVE_SetValue(const string&,int,double,int);
+  void SCURVE_SetValue(const string&,int,double,bool);
   double SCURVE_GetValue(const string&,int);
 
   //=======================================================================//
@@ -226,9 +226,9 @@ public:
   //=======================================================================//
   
   void OPT_Make(const string&);
-  void OPT_SetValue(const string&,int,int,int,double,int);
+  void OPT_SetValue(const string&,int,int,int,double,bool);
   double OPT_GetValue(const string&,int,int,int);
-  void OPT_SetChipValue(const string&,int,int,double,int);
+  void OPT_SetChipValue(const string&,int,int,double,bool);
   double OPT_GetChipValue(const string&,int,int);
 
   //=======================================================================//
@@ -236,7 +236,7 @@ public:
   //=======================================================================//
   
   void PreCalib_Make(const string&);
-  void PreCalib_SetValue(const string&,int,int,int,double,int);
+  void PreCalib_SetValue(const string&,int,int,int,double,bool);
   double PreCalib_GetValue(const string&,int,int,int);
 
   //=======================================================================//
@@ -271,7 +271,7 @@ public:
 
   // wgEditXML::Calib_SetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
-  void Calib_SetValue(const string& name, int idif, int ichip, int ich, double value, int mode = NO_CREATE_NEW_MODE);
+  void Calib_SetValue(const string& name, int idif, int ichip, int ich, double value, bool create_new = false);
 
   // wgEditXML::Calib_GetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name

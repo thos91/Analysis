@@ -37,8 +37,8 @@
 
 // ============ wgEditXML MACROS ============== //
 
-#define NO_CREATE_NEW_MODE 0
-#define CREATE_NEW_MODE    1
+#define NO_CREATE_NEW_MODE false
+#define CREATE_NEW_MODE    true
 
 // ============ SPIROC2D MACROS ============== //
 

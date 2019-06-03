@@ -205,14 +205,14 @@ void wgEditXML::GetLog(const string& filename, vector<int>& v){
 }
 
 //**********************************************************************
-void wgEditXML::SetConfigValue(const string& name, const int value, const int mode) {
+void wgEditXML::SetConfigValue(const string& name, const int value, const bool create_new) {
   XMLElement* data   = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if (target) {
     target->SetText(to_string(value).c_str());
   }
-  else if(mode == CREATE_NEW_MODE) {
+  else if(create_new == true) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
 	newElement->SetText(value);
 	config->InsertEndChild(newElement);      
@@ -221,7 +221,7 @@ void wgEditXML::SetConfigValue(const string& name, const int value, const int mo
 }
 
 //**********************************************************************
-void wgEditXML::SetColValue(const string& name, const int icol, const double value, const int mode) {
+void wgEditXML::SetColValue(const string& name, const int icol, const double value, const bool create_new) {
   if(icol<0 || icol>MEMDEPTH) return;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
@@ -233,7 +233,7 @@ void wgEditXML::SetColValue(const string& name, const int icol, const double val
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
     target->SetText(str);
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(value);
       col->InsertEndChild(newElement);
@@ -244,7 +244,7 @@ void wgEditXML::SetColValue(const string& name, const int icol, const double val
 }
 
 //**********************************************************************
-void wgEditXML::SetChValue(const string& name, const double value, const int mode){
+void wgEditXML::SetChValue(const string& name, const double value, const bool create_new){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* ch = data->FirstChildElement("ch");
@@ -253,7 +253,7 @@ void wgEditXML::SetChValue(const string& name, const double value, const int mod
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
     target->SetText(str);
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(value);
       ch->InsertEndChild(newElement); 
@@ -421,7 +421,7 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value, const int mode){
+void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value, const bool create_new){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* config = data->FirstChildElement("config");
@@ -430,7 +430,7 @@ void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	target->SetText(str);
   }
-  else if( mode == CREATE_NEW_MODE ) {
+  else if( create_new == true ) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	newElement->SetText(str);
@@ -440,7 +440,7 @@ void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, const int ichan, const int mode){
+void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, const int ichan, const bool create_new){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
@@ -451,7 +451,7 @@ void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, co
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	target->SetText(str);
   }
-  else if( mode == CREATE_NEW_MODE ) {
+  else if( create_new == true ) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	newElement->SetText(str);
@@ -461,7 +461,7 @@ void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, co
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const int ichan, const int mode){
+void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const int ichan, const bool create_new){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
@@ -472,7 +472,7 @@ void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
     target->SetText(str);
   }
-  else if( mode == CREATE_NEW_MODE ) {
+  else if( create_new == true ) {
 	XMLElement* newElement = xml->NewElement(name.c_str());
 	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
 	newElement->SetText(str);
@@ -482,7 +482,7 @@ void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const
 }
 
 //**********************************************************************
-void wgEditXML::SUMMARY_SetPedFitValue(double value[MEMDEPTH], const int ichan, const int mode){
+void wgEditXML::SUMMARY_SetPedFitValue(double value[MEMDEPTH], const int ichan, const bool create_new){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
@@ -495,7 +495,7 @@ void wgEditXML::SUMMARY_SetPedFitValue(double value[MEMDEPTH], const int ichan, 
 	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
       target->SetText(str);
     }else{
-      if(mode == CREATE_NEW_MODE){
+      if(create_new == true){
 		snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
         XMLElement* newElement = xml->NewElement(str);
 		snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
@@ -638,14 +638,14 @@ void wgEditXML::SCURVE_Make(const string& filename){
 }
 
 //**********************************************************************
-void wgEditXML::SCURVE_SetValue(const string& name,int iDAC,double value,int mode=0){
+void wgEditXML::SCURVE_SetValue(const string& name,int iDAC,double value, bool create_new) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* inputDAC = data->FirstChildElement(Form("inputDAC_%d",iDAC));
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
   if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       inputDAC->InsertEndChild(newElement);
@@ -721,7 +721,7 @@ void wgEditXML::OPT_Make(const string& filename){
 }
 
 //**********************************************************************
-void wgEditXML::OPT_SetValue(const string& name,int idif, int ichip, int iDAC,double value,int mode=0){
+void wgEditXML::OPT_SetValue(const string& name,int idif, int ichip, int iDAC, double value, bool create_new) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
@@ -731,7 +731,7 @@ void wgEditXML::OPT_SetValue(const string& name,int idif, int ichip, int iDAC,do
   if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       inputDAC->InsertEndChild(newElement);
@@ -742,7 +742,7 @@ void wgEditXML::OPT_SetValue(const string& name,int idif, int ichip, int iDAC,do
 }
 
 //**********************************************************************
-double wgEditXML::OPT_GetValue(const string& name,int idif, int ichip, int iDAC){
+double wgEditXML::OPT_GetValue(const string& name,int idif, int ichip, int iDAC) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
@@ -758,7 +758,7 @@ double wgEditXML::OPT_GetValue(const string& name,int idif, int ichip, int iDAC)
 }
 
 //**********************************************************************
-void wgEditXML::OPT_SetChipValue(const string& name,int idif, int ichip,double value,int mode=0){
+void wgEditXML::OPT_SetChipValue(const string& name,int idif, int ichip, double value, bool create_new){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
@@ -767,7 +767,7 @@ void wgEditXML::OPT_SetChipValue(const string& name,int idif, int ichip,double v
   if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       chip->InsertEndChild(newElement);
@@ -833,7 +833,7 @@ void wgEditXML::PreCalib_Make(const string& filename){
 }
 
 //**********************************************************************
-void wgEditXML::PreCalib_SetValue(const string& name,int idif, int ichip, int ich,double value,int mode=0){
+void wgEditXML::PreCalib_SetValue(const string& name, int idif, int ichip, int ich, double value, bool create_new) {
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
@@ -843,7 +843,7 @@ void wgEditXML::PreCalib_SetValue(const string& name,int idif, int ichip, int ic
   if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       ch->InsertEndChild(newElement);
@@ -922,7 +922,7 @@ void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const 
 }
 
 //**********************************************************************
-void wgEditXML::Calib_SetValue(const string& name, const int idif, const int ichip, const int ich, const double value, const int mode){
+void wgEditXML::Calib_SetValue(const string& name, const int idif, const int ichip, const int ich, const double value, const bool create_new){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
@@ -932,7 +932,7 @@ void wgEditXML::Calib_SetValue(const string& name, const int idif, const int ich
   if ( target ) {
     target->SetText(Form("%f",value));
   }else{
-    if(mode == CREATE_NEW_MODE){
+    if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%f",value));
       ch->InsertEndChild(newElement);
