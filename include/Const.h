@@ -103,6 +103,12 @@
 #define GLOBAL_INPUT_DAC_REF_INDEX  5
 #define GLOBAL_INPUT_DAC_REF_START  36
 
+// ============ Number of photo-electrons MACROS ============== //
+
+#define ONE_PE 0
+#define TWO_PE 1
+#define THREE_PE 2
+
 // ============ wgMakeHist MACROS ============== //
 
 #define MAX_BCID_BIN  12288
