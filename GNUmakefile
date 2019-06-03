@@ -1,4 +1,4 @@
-PROCESS = wgDecoder wgMakeHist wgAnaHist wgAnaHistSummary wgChangeConfig wgOptimize wgPreCalib wgAnaPedestalSummary # wgCheckData wgScurve wgScurveSummary wgCalib wgCalibDiff wgAnaPedestal wgRecon wgDQCheck wgBsdSpillCheck wgHitTimeCheck wgDQHistory wgReconDisp IngDisp wgSpillEff wgSpillCheck wgGainCheck
+PROCESS = wgDecoder wgMakeHist wgAnaHist wgAnaHistSummary wgChangeConfig wgOptimize wgPreCalib wgAnaPedestal wgAnaPedestalSummary # wgCheckData wgScurve wgScurveSummary wgCalib wgCalibDiff wgRecon wgDQCheck wgBsdSpillCheck wgHitTimeCheck wgDQHistory wgReconDisp IngDisp wgSpillEff wgSpillCheck wgGainCheck
 MDIR = process
 
 define maker
