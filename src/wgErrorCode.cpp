@@ -9,10 +9,10 @@
 #include "TFile.h"
 
 // user includes
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "wgTools.h"
-#include "Const.h"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "wgTools.hpp"
+#include "Const.hpp"
 
 namespace filesys = boost::filesystem;
 

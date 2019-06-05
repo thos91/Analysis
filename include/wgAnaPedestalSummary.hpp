@@ -5,7 +5,7 @@
 #include <string>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // errors
 #define APS_SUCCESS                 0

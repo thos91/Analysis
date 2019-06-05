@@ -3,8 +3,8 @@
 #include <string>
 
 // user includes
-#include "wgErrorCode.h"
-#include "wgTools.h"
+#include "wgErrorCode.hpp"
+#include "wgTools.hpp"
 #include "wgMakeHist.hpp"
 
 // print_help

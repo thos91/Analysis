@@ -16,12 +16,12 @@
 #include <TH1.h>
 
 // user includes
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgFit.h"
-#include "wgFitConst.h"
-#include "wgEditXML.h"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgFit.hpp"
+#include "wgFitConst.hpp"
+#include "wgEditXML.hpp"
 #include "wgAnaHist.hpp"
 
 //******************************************************************

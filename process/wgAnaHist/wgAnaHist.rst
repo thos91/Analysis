@@ -93,7 +93,7 @@ C API
 Flags
 =====
 
-The C API of the wgAnaHist library ("wgAnaHist" function in the "libwgAnaHist.cc" source file) has one argument of type <unsigned long> called "flags_ulong". This argument is decoded by the "wgAnaHist" function into a set of flags. Each flag occupies a well definite place in the binary represetation of that number.
+The C API of the wgAnaHist library ("wgAnaHist" function in the "libwgAnaHist.cpp" source file) has one argument of type <unsigned long> called "flags_ulong". This argument is decoded by the "wgAnaHist" function into a set of flags. Each flag occupies a well definite place in the binary represetation of that number.
 
 .. code-block:: cpp
 

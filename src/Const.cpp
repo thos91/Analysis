@@ -1,7 +1,11 @@
+// system includes
 #include <iostream>
-#include "Const.h"
+
+// ROOT includes
 #include <TROOT.h>
-#include <cstdlib>
+
+// user includes
+#include "Const.hpp"
 
 //***************************************
 wgConst::wgConst(){

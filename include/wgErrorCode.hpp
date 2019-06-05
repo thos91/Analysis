@@ -2,6 +2,7 @@
 #define ERROR_CODE_H_INCLUDE
 
 #include <string>
+
 using namespace std;
 
 //=== error list :open

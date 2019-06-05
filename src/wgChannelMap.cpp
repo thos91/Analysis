@@ -1,10 +1,15 @@
+// system includes
 #include <string>
-#include <TROOT.h>
 #include <iostream>
-#include "wgChannelMap.h"
-#include "ContiguousVectors.h"
-#include "DetectorConst.h"
-#include "Const.h"
+
+// ROOT includes
+#include <TROOT.h>
+
+// user includes
+#include "wgChannelMap.hpp"
+#include "ContiguousVectors.hpp"
+#include "DetectorConst.hpp"
+#include "Const.hpp"
 
 // #define DEBUG_CHMAP
 // #ifndef DEBUG

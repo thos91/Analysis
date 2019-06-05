@@ -1,5 +1,8 @@
-#include "wgColor.h"
+// system includes
 #include <iostream>
+
+// user includes
+#include "wgColor.hpp"
 
 using namespace std;
 

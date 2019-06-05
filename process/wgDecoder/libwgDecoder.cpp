@@ -19,12 +19,12 @@
 #include "TInterpreter.h"
 
 // user includes
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "wgGetCalibData.h"
-#include "wgChannelMap.h"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "wgGetCalibData.hpp"
+#include "wgChannelMap.hpp"
 #include "wgDecoder.hpp"
 
 using namespace std;
@@ -97,11 +97,11 @@ int wgDecoder(const char * x_inputFileName,
   }
 
   // If the number of chips is not provided as an argument, use the global macro
-  // defined in the Const.h header
+  // defined in the Const.hpp header
   if ( n_chips == 0 ) n_chips = NCHIPS;
 
   // If the number of channels per chip is not provided as an argument, use the
-  // global macro defined in the Const.h header
+  // global macro defined in the Const.hpp header
   if ( n_channels == 0 ) n_channels = NCHANNELS;
 
   // Get the geometrical information (position in space) for each channel

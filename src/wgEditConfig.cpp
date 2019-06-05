@@ -17,11 +17,11 @@
 #include "TTree.h"
 
 // user includes
-#include "Const.h"
-#include "wgEditConfig.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "wgTools.h"
+#include "Const.hpp"
+#include "wgEditConfig.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "wgTools.hpp"
 
 //#define DEBUG_WG_EDIT_CONFIG
 

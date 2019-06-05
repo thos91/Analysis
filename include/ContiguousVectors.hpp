@@ -1,14 +1,19 @@
 #ifndef CONTIGUOUS_VECTORS_H_
 #define CONTIGUOUS_VECTORS_H_
 
-#include <cstddef>
+// system includes
 #include <vector>
 #include <algorithm>
 #include <exception>
 #include <stdexcept>
 #include <iostream>
+
+// system C includes
 #include <cstdbool>
-#include "wgExceptions.h"
+#include <cstddef>
+
+// user includes
+#include "wgExceptions.hpp"
 
 /****************************** WRAP VECTORS ********************************/
 

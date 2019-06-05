@@ -1,4 +1,5 @@
-#include "wgFitConst.h"
+#include "wgFitConst.hpp"
+
 const double sigma          = 8.;     // pre-gaussian-fit value of sigma
 const double max_sigma      = 20.;    // max value (upper limit for sigma)
 const double min_sigma      = 1.;     // min value (lower limit for sigma)

@@ -21,11 +21,11 @@
 #include "TH2D.h"
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgEditXML.h"
-#include "wgColor.h"
-#include "wgFitConst.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgEditXML.hpp"
+#include "wgColor.hpp"
+#include "wgFitConst.hpp"
 #include "wgAnaHistSummary.hpp"
 
 //******************************************************************

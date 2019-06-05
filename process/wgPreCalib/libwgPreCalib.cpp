@@ -25,13 +25,13 @@
 #include <TSpectrum.h>
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgEditXML.h"
-#include "wgColor.h"
-#include "wgFit.h"
-#include "wgFitConst.h"
-#include "wgGetHist.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgEditXML.hpp"
+#include "wgColor.hpp"
+#include "wgFit.hpp"
+#include "wgFitConst.hpp"
+#include "wgGetHist.hpp"
 #include "wgPreCalib.hpp"
 
 //******************************************************************

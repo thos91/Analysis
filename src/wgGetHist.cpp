@@ -8,10 +8,10 @@
 #include "TFile.h"
 
 // user includes
-#include "wgErrorCode.h"
-#include "Const.h"
-#include "wgTools.h"
-#include "wgGetHist.h"
+#include "wgErrorCode.hpp"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgGetHist.hpp"
 
 using namespace std;
 

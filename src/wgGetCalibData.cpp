@@ -1,12 +1,14 @@
+// ROOT includes
 #include <TROOT.h>
 
-#include "wgGetCalibData.h"
-#include "wgTools.h"
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgEditXML.h"
-#include "wgExceptions.h"
+// user includes
+#include "wgGetCalibData.hpp"
+#include "wgTools.hpp"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgEditXML.hpp"
+#include "wgExceptions.hpp"
 
 //******************************************************************************
 int wgGetCalibData::Get_Pedestal(const string& pedFileName, unsigned dif, d3vector& pedestal, d3vector& ped_nohit) {

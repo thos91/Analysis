@@ -1,9 +1,17 @@
+#ifndef WAGASCI_GET_TREE_HPP_
+#define WAGASCI_GET_TREE_HPP_ 
+
+// system includes
+#include <string>
+
+// ROOT includes
 #include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
-#include "Const.h"
 #include "TH1D.h"
-#include <string>
+
+// user includes
+#include "Const.hpp"
 
 using namespace std;
 
@@ -76,3 +84,5 @@ protected:
   // false otherwise.
   bool BranchExists(const string&);
 };
+
+#endif // WAGASCI_GET_TREE_HPP_ 

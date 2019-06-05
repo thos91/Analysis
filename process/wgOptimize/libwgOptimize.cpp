@@ -3,11 +3,11 @@
 #include <vector>
 
 // user includes
-#include "wgEditXML.h"
-#include "wgEditConfig.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "Const.h"
+#include "wgEditXML.hpp"
+#include "wgEditConfig.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "Const.hpp"
 #include "wgOptimize.hpp"
 
 using namespace std;

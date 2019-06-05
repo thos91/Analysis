@@ -2,7 +2,7 @@
 #define WG_OPTIMIZE_HPP_
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // modes
 #define OP_THRESHOLD_MODE 0

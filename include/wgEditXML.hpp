@@ -1,10 +1,13 @@
 #ifndef WG_EDITXML_H_INCLUDE
 #define WG_EDITXML_H_INCLUDE
 
+// system includes
 #include <string>
 #include <vector>
-#include "tinyxml2.h"
-#include "Const.h"
+
+// user includes
+#include "tinyxml2.hpp"
+#include "Const.hpp"
 
 #define XML_ELEMENT_STRING_LENGTH 32
 

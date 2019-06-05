@@ -7,8 +7,8 @@
 #include "wgGetTree.h"
 #include "wgErrorCode.h"
 #include "wgTools.h"
-#include "Const.h"
-#include "DetectorConst.h"
+#include "Const.hpp"
+#include "DetectorConst.hpppp"
 #include "wgReconClass.h"
 
 #define DEBUG_RECON

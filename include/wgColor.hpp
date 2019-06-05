@@ -8,4 +8,5 @@ public:
   static int wgcolors[100];
   wgColor();
 };
+
 #endif

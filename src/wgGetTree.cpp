@@ -1,9 +1,14 @@
+// system includes
 #include <iostream>
-#include "wgGetTree.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "Const.h"
+
+// ROOT includes
 #include "TH1D.h"
+
+// user includes
+#include "wgGetTree.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "Const.hpp"
 
 using namespace std;
 

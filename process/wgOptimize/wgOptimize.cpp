@@ -2,9 +2,9 @@
 #include <string>
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "Const.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "Const.hpp"
 #include "wgOptimize.hpp"
 
 using namespace std;

@@ -1,6 +1,6 @@
 /* ***********************************************************************
  * To execute wagasci display program 
- * Program : wagasci_disp_exe.cc
+ * Program : wagasci_disp_exe.cpp
  * Name: Naruhiro Chikuma
  * Date: 2017-05-08 23:33:49
  * ********************************************************************** */
@@ -20,9 +20,9 @@
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgChannelMap.h"
-#include "DetectorConst.h"
+#include "DetectorConst.hpppp"
 #include "wgGetTree.h"
-#include "Const.h"
+#include "Const.hpp"
 #include "wgReconClass.h"
 
 using namespace std;

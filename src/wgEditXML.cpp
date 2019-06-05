@@ -8,15 +8,15 @@
 #include <ctime>
 
 // tinyxml2 includes
-#include "tinyxml2.h"
+#include "tinyxml2.hpp"
 
 // user includes
-#include "Const.h"
-#include "wgEditXML.h"
-#include "wgEditConfig.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "wgTools.h"
+#include "Const.hpp"
+#include "wgEditXML.hpp"
+#include "wgEditConfig.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "wgTools.hpp"
 
 using namespace std;
 using namespace tinyxml2;

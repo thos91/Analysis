@@ -1,12 +1,15 @@
 #ifndef WG_GETCALIBDATA_H_INCLUDE
 #define WG_GETCALIBDATA_H_INCLUDE
 
+// system includes
 #include <string>
 #include <vector>
-#include "tinyxml2.h"
-#include "wgEditXML.h"
-#include "wgTools.h"
-#include "Const.h"
+
+// user includes
+#include "tinyxml2.hpp"
+#include "wgEditXML.hpp"
+#include "wgTools.hpp"
+#include "Const.hpp"
 
 #define TDC_RAMP_ODD  1
 #define TDC_RAMP_EVEN 0

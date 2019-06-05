@@ -11,10 +11,10 @@
 #include <TLegend.h>
 #include <TH1.h>
 
-#include "Const.h"
+#include "Const.hpp"
 #include "wgTools.h"
 #include "wgErrorCode.h"
-#include "wgFitConst.h"
+#include "wgFitConst.hpp"
 #include "wgEditXML.h"
 #include "wgEditConfig.h"
 

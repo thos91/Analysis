@@ -11,9 +11,9 @@
 #include "TFile.h"
 
 // user includes
-#include "wgErrorCode.h"
-#include "Const.h"
-#include "wgTools.h"
+#include "wgErrorCode.hpp"
+#include "Const.hpp"
+#include "wgTools.hpp"
 
 using namespace std;
 

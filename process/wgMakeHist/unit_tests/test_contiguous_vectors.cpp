@@ -4,7 +4,7 @@
 
 // user includes
 #include "ContiguousVectors.h"
-#include "Const.h"
+#include "Const.hpp"
 
 #define TEST_SIZE1 100
 #define TEST_SIZE2 200

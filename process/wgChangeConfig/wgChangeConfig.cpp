@@ -6,8 +6,8 @@
 #include <bits/stdc++.h>
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
 #include "wgChangeConfig.hpp"
 
 using namespace std;

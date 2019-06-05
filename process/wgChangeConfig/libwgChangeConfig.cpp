@@ -16,11 +16,11 @@
 #include <TTree.h>
 
 // user includes
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgFitConst.h"
-#include "wgEditConfig.h"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgFitConst.hpp"
+#include "wgEditConfig.hpp"
 #include "wgChangeConfig.hpp"
 
 using namespace std;

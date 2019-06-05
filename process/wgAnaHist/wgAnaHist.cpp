@@ -6,9 +6,9 @@
 #include <bits/stdc++.h>
 
 // user includes
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
 #include "wgAnaHist.hpp"
 
 // print_help

@@ -1,6 +1,6 @@
 /* ***********************************************************************
  * For calculation of hit efficiency
- * Program : wgHitEff.cc
+ * Program : wgHitEff.cpp
  * Name: Naruhiro Chikuma
  * Date: 2017-11-17 17:05:24 
  * ********************************************************************** */
@@ -20,9 +20,9 @@
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgChannelMap.h"
-#include "DetectorConst.h"
+#include "DetectorConst.hpppp"
 #include "wgGetTree.h"
-#include "Const.h"
+#include "Const.hpp"
 #include "wgReconClass.h"
 
 using namespace std;

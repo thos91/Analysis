@@ -1,10 +1,13 @@
 #ifndef WG_CHANNELMAP_H_INCLUDE
 #define WG_CHANNELMAP_H_INCLUDE
 
+// system includes
 #include <string>
-#include "Const.h"
-#include "ContiguousVectors.h"
-#include "DetectorConst.h"
+
+// user includes
+#include "Const.hpp"
+#include "ContiguousVectors.hpp"
+#include "DetectorConst.hpp"
 
 #define NumView 2
 #define NumPln 8

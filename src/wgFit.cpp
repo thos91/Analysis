@@ -24,13 +24,13 @@
 #include <TSpectrum.h>
 
 // user includes
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "wgGetHist.h"
-#include "wgFit.h"
-#include "wgFitConst.h"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "wgGetHist.hpp"
+#include "wgFit.hpp"
+#include "wgFitConst.hpp"
 
 //#define DEBUG_WGFIT
 
@@ -183,7 +183,7 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
 	  x[0]=x[1]=x[2]=0.;
 	  return;
 	} 
-  // begin_low_pe and end_low_pe are defined in wgFitConst.cc
+  // begin_low_pe and end_low_pe are defined in wgFitConst.cpp
   wgFit::GetHist->h_charge_hit->GetXaxis()->SetRange(begin_low_pe,end_low_pe);
 
   double mean={(double)GetHist->h_charge_hit->GetMaximumBin()};
@@ -196,7 +196,7 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
   gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
   gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
   gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
-  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cc)
+  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cpp)
 
   // Fit histogram with gaussian function.
   // "Q": quiet mode (minimum printing)
@@ -235,7 +235,7 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
     x[0]=x[1]=x[2]=0.;
     return;
   } 
-  // begin_low_pe_HG and end_low_pe_HG are defined in wgFitConst.cc
+  // begin_low_pe_HG and end_low_pe_HG are defined in wgFitConst.cpp
   wgFit::GetHist->h_charge_hit_HG->GetXaxis()->SetRange(begin_low_pe_HG,end_low_pe_HG);
   double mean=(double)GetHist->h_charge_hit_HG->GetMaximumBin();
   double peak=(double)GetHist->h_charge_hit_HG->GetMaximum();
@@ -247,7 +247,7 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
   gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
   gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
   gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
-  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cc)
+  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cpp)
 
   // Fit histogram with gaussian function.
   // "Q": quiet mode (minimum printing)
@@ -297,7 +297,7 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   // Gaussian function to use when fitting
   // Arguments:
   // (function name, function pointer, xmin, xmax, number of parameters)
-  // Sigma is defined in wgFitConst.cc
+  // Sigma is defined in wgFitConst.cpp
   TF1* gaussian = new TF1("gauss", gauss, mean - 3 * sigma, mean + 3 * sigma, 3);
   gaussian->SetLineColor(kViolet);
   gaussian->SetNpx(500);
@@ -305,7 +305,7 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
   gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
   gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
-  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cc)
+  gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cpp)
 
   // Fit histogram with gaussian function.
   // "Q": quiet mode (minimum printing)

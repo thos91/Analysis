@@ -1,18 +1,24 @@
-#include "wgTools.h"
-#include "TROOT.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "Const.h"
-
+// system C++ includes
 #include <iostream>
 #include <chrono>
 #include <iomanip>
-#include <cerrno>
 #include <fstream>
 #include <string>
 
-#include <sys/types.h>
-#include <sys/stat.h>
+// system C includes
+#include <cerrno>
+
+// boost includes
+#include <boost/filesystem.hpp>
+
+// ROOT includes
+#include "TROOT.h"
+
+// user includes
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "Const.hpp"
 
 using namespace std;
 
@@ -110,10 +116,11 @@ Logger::Logger(const string& log_dir)
   
 	// If the log directory is not found, create it
 	CheckExist check;
-	if ( check.Dir(dir) == false ) {
-	  const int dir_err = mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	  if (dir_err == -1) {
-		string error_message("error while creating " + dir + " directory!");
+	if ( !check.Dir(dir) ) {
+	  boost::filesystem::path dir_path(dir);
+	  if( !boost::filesystem::create_directories(dir_path) ) {
+		string error_message("[wgTools][" + dir + "] failed to create directory");
+		Log.eWrite(error_message);
 		throw wgInvalidFile(error_message);
 	  }
 	}

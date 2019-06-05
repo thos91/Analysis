@@ -3,9 +3,9 @@
 #include <iostream>
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "Const.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "Const.hpp"
 #include "wgAnaPedestal.hpp"
 
 void print_help(const char * program_name) {

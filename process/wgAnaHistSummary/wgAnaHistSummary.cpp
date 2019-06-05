@@ -3,9 +3,9 @@
 #include <string>
 
 // user includes
-#include "Const.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
 #include "wgAnaHistSummary.hpp"
 
 void print_help(const char * program_name) {

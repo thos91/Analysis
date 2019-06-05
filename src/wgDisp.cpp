@@ -1,3 +1,13 @@
+// system C++ includes
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <complex>
+
+// system C includes
+#include "cmath"
+
+// ROOT includes
 #include "TROOT.h"
 #include "TApplication.h"
 #include "TFile.h"
@@ -19,19 +29,14 @@
 #include "TText.h"
 #include "TPolyLine.h"
 
-#include <iostream>
-#include <fstream>
-#include "math.h"
-#include <sstream>
-#include <complex>
-
-#include "Const.h"
-#include "DetectorConst.h"
-#include "wgDetectorDimension.h"
-#include "wgChannelMap.h"
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgDisp.h"
+// user includes
+#include "Const.hpp"
+#include "DetectorConst.hpp"
+#include "wgDetectorDimension.hpp"
+#include "wgChannelMap.hpp"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgDisp.hpp"
 
 //**************************************************************
 void wgDisp::sci_ing(double x,double y,double x_len,double y_len,double deg_ing=0.){

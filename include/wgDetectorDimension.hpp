@@ -1,11 +1,15 @@
 #ifndef wgDetectorDimension_H_INCLUDE
 #define wgDetectorDimension_H_INCLUDE
 
-#include"Const.h"
+// system includes
+#include <iostream>
+#include <sstream>
+#include <fstream>
 
-#include<iostream>
-#include<sstream>
-#include<fstream>
+// user includes
+#include "Const.hpp"
+
+
 using namespace std;
 
 class wgDetectorDimension{

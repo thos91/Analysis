@@ -8,8 +8,9 @@
  * Date: 2017-09-05
  * ********************************************************************** */
 
-#include "Const.h"
-#include "wgChannelMap.h"
+// user includes
+#include "Const.hpp"
+#include "wgChannelMap.hpp"
 
 #define NumHitPara 13
 #define HGtoLG 3000.

@@ -1,14 +1,19 @@
 #ifndef CONST_H_INCLUDE
 #define CONST_H_INCLUDE
 
+// system includes
 #include <string>
 #include <vector>
-#include "ContiguousVectors.h"
 #include <memory>
+
+// ROOT includes
 #include <TROOT.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TNamed.h>
+
+// user includes
+#include "ContiguousVectors.hpp"
 
 #define NumDif        2
 #define NumChip       20

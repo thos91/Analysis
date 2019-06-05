@@ -5,10 +5,10 @@ OBJDIR = ../../obj
 SRCDIR = ../../src
 BINDIR = ../../bin
 
-SRCS = $(shell ls $(SRCDIR)/*.cc)
-OBJS = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.cc=.o))	
+SRCS = $(shell ls $(SRCDIR)/*.cpp)
+OBJS = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.cpp=.o))	
 
-SRCS += $(TARGET).cc
+SRCS += $(TARGET).cpp
 OBJS += $(TARGET).o
 
 ROOTCFLAGS = $(shell root-config --cflags)
@@ -30,7 +30,7 @@ $(BINDIR)/$(TARGET): $(OBJS)
 		fi
 	$(CC) -o $@ $^ $(CXXLIBS)
 
-$(OBJDIR)/%.o:$(SRCDIR)/%.cc
+$(OBJDIR)/%.o:$(SRCDIR)/%.cpp
 	@if [ ! -d $(OBJDIR) ]; \
 		then echo "mkdir -p $(OBJDIR)"; mkdir -p $(OBJDIR); \
 		fi

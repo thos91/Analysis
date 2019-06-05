@@ -17,15 +17,14 @@
 #include <TLine.h>
 #include <TCanvas.h>
 #include <TText.h>
-#include <Const.h>
 
 #include <iostream>
 #include <fstream>
 #include <math.h>
 #include <sstream>
 
-#include "Const.h"
-#include "DetectorConst.h"
+#include "Const.hpp"
+#include "DetectorConst.hpppp"
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgChannelMap.h"

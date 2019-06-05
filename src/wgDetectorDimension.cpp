@@ -1,10 +1,11 @@
+// system includes
 #include <iostream>
 #include <sstream>
 #include <fstream>
-#include <cstdlib>
-#include <cstdio>
-#include "wgDetectorDimension.h"
-#include "DetectorConst.h"
+
+// user includes
+#include "wgDetectorDimension.hpp"
+#include "DetectorConst.hpp"
 
 using namespace std;
 

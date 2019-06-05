@@ -1,4 +1,7 @@
-#include "Const.h"
+#ifndef WAGASCI_DISP_HPP_
+#define WAGASCI_DISP_HPP_
+
+#include "Const.hpp"
 
 class wgDisp
 {
@@ -35,9 +38,6 @@ class wgDisp
   Hit_t type_hit;
   Recon_t type_recon;
   Track_t type_track;
-  
-  
-
-
-
 };
+
+#endif // WAGASCI_DISP_HPP_

@@ -12,12 +12,12 @@
 #include "TTree.h"
 
 // user includes
-#include "Const.h"
-#include "wgColor.h"
-#include "wgTools.h"
-#include "wgGetTree.h"
-#include "wgExceptions.h"
-#include "wgErrorCode.h"
+#include "Const.hpp"
+#include "wgColor.hpp"
+#include "wgTools.hpp"
+#include "wgGetTree.hpp"
+#include "wgExceptions.hpp"
+#include "wgErrorCode.hpp"
 #include "wgMakeHist.hpp"
 
 int MakeHist(const string& inputFileName, const string& outputDir, const bool overwrite, const unsigned n_chips, const unsigned n_channels) {

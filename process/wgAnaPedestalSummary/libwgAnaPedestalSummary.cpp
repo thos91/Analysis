@@ -24,15 +24,15 @@
 #include <TSpectrum.h>
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "wgEditXML.h"
-#include "wgColor.h"
-#include "wgFit.h"
-#include "wgFitConst.h"
-#include "wgGetHist.h"
-#include "Const.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "wgEditXML.hpp"
+#include "wgColor.hpp"
+#include "wgFit.hpp"
+#include "wgFitConst.hpp"
+#include "wgGetHist.hpp"
+#include "Const.hpp"
 #include "wgAnaPedestalSummary.hpp"
 
 //******************************************************************

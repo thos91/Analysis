@@ -23,8 +23,8 @@
 #include <sstream>
 #include <complex>
 
-#include "Const.h"
-#include "DetectorConst.h"
+#include "Const.hpp"
+#include "DetectorConst.hpppp"
 #include "wgReconClass.h"
 #include "wgDetectorDimension.h"
 #include "wgChannelMap.h"

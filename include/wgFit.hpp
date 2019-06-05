@@ -1,13 +1,18 @@
 #ifndef wgFit_H_INCLUDE
 #define wgFit_H_INCLUDE
 
+// system includes
 #include <string>
 #include <vector>
+
+// ROOT includes
 #include "TROOT.h"
-#include "Const.h"
-#include "wgTools.h"
-#include "wgGetHist.h"
-#include "wgErrorCode.h"
+
+// user includes
+#include "Const.hpp"
+#include "wgTools.hpp"
+#include "wgGetHist.hpp"
+#include "wgErrorCode.hpp"
 
 #define DEBUG_WGFIT
 

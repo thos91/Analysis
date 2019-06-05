@@ -1,6 +1,6 @@
 /* ***********************************************************************
  * Reconstruction program for wagasci 
- * Program : wagasci_recon_exe.cc
+ * Program : wagasci_recon_exe.cpp
  * Name: Naruhiro Chikuma
  * Date: 2017-05-09 02:45:48
  * ********************************************************************** */
@@ -10,7 +10,7 @@
 #include "wgGetTree.h"
 #include "wgErrorCode.h"
 #include "wgTools.h"
-#include "Const.h"
+#include "Const.hpp"
 
 using namespace std;
 

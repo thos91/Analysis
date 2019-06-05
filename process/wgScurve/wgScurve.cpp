@@ -23,7 +23,7 @@
 #include "wgEditXML.h"
 #include "wgColor.h"
 #include "wgFit.h"
-#include "wgFitConst.h"
+#include "wgFitConst.hpp"
 #include "wgGetHist.h"
 
 using namespace std;

@@ -2,7 +2,7 @@
 #define WG_MAKEHIST_HPP_
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // #define DEBUG_MAKEHIST
 

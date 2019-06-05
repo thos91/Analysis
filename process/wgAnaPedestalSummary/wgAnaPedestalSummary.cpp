@@ -2,10 +2,10 @@
 #include <string>
 
 // user includes
-#include "wgTools.h"
-#include "wgErrorCode.h"
-#include "wgExceptions.h"
-#include "Const.h"
+#include "wgTools.hpp"
+#include "wgErrorCode.hpp"
+#include "wgExceptions.hpp"
+#include "Const.hpp"
 #include "wgAnaPedestalSummary.hpp"
 
 void print_help(const char * program_name) {

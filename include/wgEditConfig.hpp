@@ -1,9 +1,12 @@
+#ifndef WAGASCI_EDIT_CONFIG_HPP_
+#define WAGASCI_EDIT_CONFIG_HPP_
+
 // system C++ includes
 #include <string>
 #include <vector>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 using namespace std;
 
@@ -139,3 +142,5 @@ public:
 
   int Get_1bitparam(int); 
 };
+
+#endif // WAGASCI_EDIT_CONFIG_HPP_
