@@ -8,6 +8,9 @@ cmake_minimum_required (VERSION 3.10.2)
 # Name of the project
 project(Analysis)
 
+# Set C++11 standard
+set (CMAKE_CXX_STANDARD 11)
+
 # boost system and filesystem are required
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 

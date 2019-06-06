@@ -47,8 +47,8 @@ extern int NUMB2MOD      ;
 extern int NORMMOD ;
 extern int NORMPLN ;
 
-extern int PE_THRESHOLD ;
-extern int VETO_PE_THRESHOLD ;
+extern double PE_THRESHOLD ;
+extern double VETO_PE_THRESHOLD ;
 
 extern const double PI;
 

@@ -1,4 +1,5 @@
 #include "DetectorConst.hpp"
+#include <cmath>
 
 // ===================================================================================
 // ===================================================================================
@@ -43,10 +44,10 @@ int NUMB2MOD      = 3;
 int NORMMOD = 2000;
 int NORMPLN = 100;
 
-int PE_THRESHOLD = 0.;
-int VETO_PE_THRESHOLD = 2.5;
+double PE_THRESHOLD = 0.;
+double VETO_PE_THRESHOLD = 2.5;
 
-const double PI = 3.1415926535897932384626;
+const double PI = M_PI;
 
 // set mod# put in B2MotherLV
 // 0-6:ING_h, 7-13:ING_v, 16:PM, 20:OnAxisWM,
