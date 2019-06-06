@@ -600,28 +600,8 @@ int wgDecoder(const char * x_inputFileName,
 
 				  /********************** BCID **********************/
 
-				  // If the BCID reaches the maximum value for 12bits (4096)
-				  // then the loopBCID 4bits are incremented and the BCID starts
-				  // to count backwards. Same thing happens when the BCID
-				  // reaches zero again and so on.
 				  rd.bcid[currentChipID][ibc] = -1;
-				  int loopBCID = 0;
-				  int bcid_slope = 1;
-				  int bcid_inter = 0;
-				  // less significative 12 bits (BCID number)
-				  rd.bcid[currentChipID][ibc] = ( eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & x0FFF).to_ulong();
-				  // most significative 4bit (loopBCID)
-				  loopBCID                    = ((eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] & xF000) >> 12).to_ulong();
-                   
-				  if     ( loopBCID == 0) { bcid_slope=  1;  bcid_inter = 0;        } /*  this one /    */
-				  else if( loopBCID == 1) { bcid_slope= -1;  bcid_inter = 2 * 4096; } /*  this one /\   */
-				  else if( loopBCID == 2) { bcid_slope=  1;  bcid_inter = 2 * 4096; } /*  this one /\/   */
-				  else if( loopBCID == 3) { bcid_slope= -1;  bcid_inter = 4 * 4096; } /*  this one /\/\   */
-				  else Log.eWrite("[" + logfilename + "][Decoder] bad loopBCID value: " + to_string(loopBCID) +
-								  " chipid: " + to_string(v_chipid[currentChipID]) + " column:" + to_string(ibc));
-
-				  // In case of error the rd.bcid will be 0 + (-1) * 1 = -1 (just like the default/empty value)
-				  rd.bcid[currentChipID][ibc] = bcid_inter + rd.bcid[currentChipID][ibc] * bcid_slope;
+				  rd.bcid[currentChipID][ibc] = ( eventData[i - CHIPENDTAG - CHIPIDSIZE - ibc] ).to_ulong();
 
 				  /********************** Charge and Time **********************/
 
