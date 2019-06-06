@@ -50,22 +50,23 @@ int AnaPedestal(const char * x_inputDir,
   CheckExist Check;
   wgEditXML Edit;
   string xmlfile("");
-  int trig_th    [n_chips];
-  int gain_th    [n_chips];
-  int inputDAC   [n_chips][n_chans];
-  int ampDAC     [n_chips][n_chans];
-  int adjDAC     [n_chips][n_chans];
-  double charge  [n_chips][n_chans][MEMDEPTH][2];
-  double gain    [n_chips][n_chans][MEMDEPTH];
-  double Noise   [n_chips][n_chans][2];
-  double pe_level[n_chips][n_chans];
+
+  vector<int> trig_th(n_chips);
+  vector<int> gain_th(n_chips);
+  vector<vector<int>> inputDAC(n_chips, vector<int>(n_chans));
+  vector<vector<int>> ampDAC  (n_chips, vector<int>(n_chans));
+  vector<vector<int>> adjDAC   (n_chips, vector<int>(n_chans));
+  vector<vector<vector<array<double, 2>>>> charge (n_chips, vector<vector<array<double, 2>>>(n_chans, vector<array<double, 2>>(MEMDEPTH)));	
+  vector<vector<array<double, MEMDEPTH>>> gain    (n_chips, vector<array<double, MEMDEPTH>>(n_chans));
+  vector<vector<array<double, 2>>>        Noise   (n_chips, vector<array<double, 2>>(n_chans));
+  vector<vector<double>>                  pe_level(n_chips, vector<double>(n_chans));
 
   wgColor wgColor;
 
-  TH1D *h_Pedestal[n_chips];
-  TH1D *h_Npe     [n_chips];
-  TH1D *h_Gain    [n_chips];
-  TH1D *h_Noise   [n_chips];
+  vector<TH1D *> h_Pedestal(n_chips);
+  vector<TH1D *> h_Npe     (n_chips);
+  vector<TH1D *> h_Gain    (n_chips);
+  vector<TH1D *> h_Noise   (n_chips);
 
   if(outputXMLDir == "") outputXMLDir = inputDir;
 
@@ -214,13 +215,14 @@ int AnaPedestal(const char * x_inputDir,
   //*** Plot data ***//
 
   TCanvas *c1 = new TCanvas("c1", "c1", 1280, 720);
-  TLegend *l_Noise   [n_chips];
-  TLegend *l_Npe     [n_chips];
-  TLegend *l_Gain    [n_chips];
-  TLegend *l_Pedestal[n_chips];
-  TLine   *line_Pedestal[n_chips][n_chans];
-  TLine   *line_Gain[n_chips][n_chans];
-  TLine   *line_Npe[n_chips][n_chans];
+
+  vector<TLegend*> l_Noise   (n_chips);
+  vector<TLegend*> l_Npe     (n_chips);
+  vector<TLegend*> l_Gain    (n_chips);
+  vector<TLegend*> l_Pedestal(n_chips);
+  vector<vector<TLine*>> line_Pedestal(n_chips, vector<TLine*>(n_chans));
+  vector<vector<TLine*>> line_Gain(n_chips, vector<TLine*>(n_chans));
+  vector<vector<TLine*>> line_Npe(n_chips, vector<TLine*>(n_chans));
 
   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 

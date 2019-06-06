@@ -52,17 +52,18 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   wgColor wgColor;
 
   TH1D* h_spill;
-  TH1D* h_charge_hit    [n_chips][n_channels][MEMDEPTH];
-  TH1D* h_charge_hit_HG [n_chips][n_channels][MEMDEPTH];
-  TH1D* h_charge_hit_LG [n_chips][n_channels][MEMDEPTH];
-  TH1D* h_pe_hit        [n_chips][n_channels][MEMDEPTH];
-  TH1D* h_charge_nohit  [n_chips][n_channels][MEMDEPTH];
-  TH1D* h_time_hit      [n_chips][n_channels][MEMDEPTH]; 
-  TH1D* h_time_nohit    [n_chips][n_channels][MEMDEPTH]; 
 
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_charge_hit   (n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_charge_hit_HG(n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_charge_hit_LG(n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_pe_hit       (n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_charge_nohit (n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_time_hit     (n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  vector<vector<array<TH1D*, MEMDEPTH>>> h_time_nohit   (n_chips, vector<array<TH1D*, MEMDEPTH>>(n_channels));
+  
   // h_bcid_hit: For every channel fill it with the BCID of all the columns with
   // a hit.
-  TH1D* h_bcid_hit      [n_chips][n_channels]; 
+  vector<vector<TH1D*>> h_bcid_hit(n_chips, vector<TH1D*>(n_channels));
 
   int min_bin = 0;
   int max_bin = MAX_12BIT_BIN;
@@ -202,15 +203,15 @@ int MakeHist(const string& inputFileName, const string& outputDir, const bool ov
   if (h_spill != NULL) h_spill->Write();
   for (unsigned ichip = 0; ichip < n_chips; ichip++) {
     for (unsigned ichan = 0; ichan < n_channels; ichan++) {
-      if (h_bcid_hit != NULL) h_bcid_hit[ichip][ichan]->Write();
+      if (h_bcid_hit[ichip][ichan] != NULL) h_bcid_hit[ichip][ichan]->Write();
       for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
-		if (h_charge_hit != NULL)    h_charge_hit   [ichip][ichan][icol]->Write();
-        if (h_charge_hit_HG != NULL) h_charge_hit_HG[ichip][ichan][icol]->Write();
-		if (h_charge_hit_LG != NULL) h_charge_hit_LG[ichip][ichan][icol]->Write();
-		if (h_pe_hit != NULL)        h_pe_hit       [ichip][ichan][icol]->Write();
-		if (h_charge_nohit != NULL)  h_charge_nohit [ichip][ichan][icol]->Write();
-        if (h_time_hit != NULL)      h_time_hit     [ichip][ichan][icol]->Write();
-        if (h_time_nohit != NULL)    h_time_nohit   [ichip][ichan][icol]->Write();
+		if (h_charge_hit[ichip][ichan][icol]    != NULL) h_charge_hit   [ichip][ichan][icol]->Write();
+        if (h_charge_hit_HG[ichip][ichan][icol] != NULL) h_charge_hit_HG[ichip][ichan][icol]->Write();
+		if (h_charge_hit_LG[ichip][ichan][icol] != NULL) h_charge_hit_LG[ichip][ichan][icol]->Write();
+		if (h_pe_hit[ichip][ichan][icol]        != NULL) h_pe_hit       [ichip][ichan][icol]->Write();
+		if (h_charge_nohit[ichip][ichan][icol]  != NULL) h_charge_nohit [ichip][ichan][icol]->Write();
+        if (h_time_hit[ichip][ichan][icol]      != NULL) h_time_hit     [ichip][ichan][icol]->Write();
+        if (h_time_nohit[ichip][ichan][icol]    != NULL) h_time_nohit   [ichip][ichan][icol]->Write();
       }
     }
   }

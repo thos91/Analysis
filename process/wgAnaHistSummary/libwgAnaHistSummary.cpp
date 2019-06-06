@@ -102,22 +102,23 @@ int wgAnaHistSummary(const char * x_inputDir, const char * x_outputXMLDir, const
   try {
 	string xmlfile("");
 	int start_time,stop_time;
-	int trig_th[n_chips];
-	int gain_th[n_chips];
-	int inputDAC[n_chips][n_chans];
-	int ampDAC[n_chips][n_chans];
-	int adjDAC[n_chips][n_chans];
-	double charge[n_chips][n_chans];
-	double rawcharge[n_chips][n_chans][MEMDEPTH][2];
-	double e_rawcharge[n_chips][n_chans][MEMDEPTH][2];
-	double Noise[n_chips][n_chans][2];
+	vector<int>            trig_th  (n_chips);
+	vector<int>            gain_th  (n_chips);
+	vector<vector<int>>    inputDAC (n_chips, vector<int>(n_chans));
+	vector<vector<int>>    ampDAC   (n_chips, vector<int>(n_chans));
+	vector<vector<int>>    adjDAC   (n_chips, vector<int>(n_chans));
+	vector<vector<double>> charge   (n_chips, vector<double>(n_chans));
+
+	vector<vector<vector<array<double, 2>>>> rawcharge   (n_chips, vector<vector<array<double, 2>>>(n_chans, vector<array<double, 2>>(MEMDEPTH)));
+    vector<vector<vector<array<double, 2>>>> e_rawcharge (n_chips, vector<vector<array<double, 2>>>(n_chans, vector<array<double, 2>>(MEMDEPTH)));	
+	vector<vector<array<double, 2>>>         Noise       (n_chips, vector<array<double, 2>>(n_chans));
 
 	wgColor wgColor;
 
-	TH1D *h_Pedestal[n_chips];
-	TH1D *h_Gain[n_chips];
-	TH1D *h_rawcharge[n_chips];
-	TH1D *h_Noise[n_chips];
+	vector<TH1D *> h_Pedestal (n_chips);
+	vector<TH1D *> h_Gain     (n_chips);
+	vector<TH1D *> h_rawcharge(n_chips);
+	vector<TH1D *> h_Noise    (n_chips);
 
 	//*** Define histgram ***//
 	if(flags[SELECT_PRINT]){

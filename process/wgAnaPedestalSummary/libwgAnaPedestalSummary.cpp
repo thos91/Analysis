@@ -116,10 +116,20 @@ int AnaPedestalSummary(const char * x_inputDir,
   unsigned npe = ONE_PE;
   // Gain[][][][ONE_PE] is the position of the 1 p.e. peak relative to the pedestal
   // Gain[][][][TWO_PE] is the position of the 2 p.e. peak relative to the pedestal
-  double Gain   [n_difs][n_chips][n_chans][MEMDEPTH][2] = {};
-  double ped    [n_difs][n_chips][n_chans][MEMDEPTH] = {};
-  double ped_ref[n_difs][n_chips][n_chans][MEMDEPTH] = {};
 
+  vector<vector<vector<vector<array<double, 2>>>>> Gain (n_difs, vector<vector<vector<array<double, 2>>>>
+														 (n_chips, vector<vector<array<double, 2>>>
+														  (n_chans, vector<array<double, 2>>
+														   (MEMDEPTH, array<double, 2>()))));	
+
+  vector<vector<vector<array<double, MEMDEPTH>>>> ped (n_difs, vector<vector<array<double, MEMDEPTH>>>
+													   (n_chips, vector<array<double, MEMDEPTH>>
+														(n_chans, array<double, MEMDEPTH>())));
+
+  vector<vector<vector<array<double, MEMDEPTH>>>> ped_ref (n_difs, vector<vector<array<double, MEMDEPTH>>>
+														   (n_chips, vector<array<double, MEMDEPTH>>
+															(n_chans, array<double, MEMDEPTH>())));
+	
   /********************************************************************************
    *                              Read XML files                                  *
    ********************************************************************************/
@@ -187,8 +197,8 @@ int AnaPedestalSummary(const char * x_inputDir,
   
   // Define the histograms
 
-  TH1D * h_Gain[n_difs];
-  TH2D * h_Gain2D[n_difs];
+  vector<TH1D*> h_Gain  (n_difs);
+  vector<TH2D*> h_Gain2D(n_difs);
   TString name;
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
@@ -199,7 +209,6 @@ int AnaPedestalSummary(const char * x_inputDir,
 	name.Form("h_Gain2D_DIF%d", idif + 1);
 	h_Gain2D[idif] = new TH2D(name, name, 20, 0, 20, 40, 0, 80);
   }
-
 
   // Fill the histograms
   for(unsigned idif = 0; idif < n_difs; idif++) {

@@ -23,6 +23,7 @@
 #include <TGraphErrors.h>
 #include <TF1.h>
 #include <TSpectrum.h>
+#include <TVector.h>
 
 // user includes
 #include "wgTools.hpp"
@@ -83,7 +84,7 @@ int wgPreCalib(const char * x_inputDir,
 
   vector<string> inputFiles = ListFiles(inputDir);
   unsigned n_files = inputFiles.size();
-  int inputDAC[n_files];
+  vector<int> inputDAC(n_files);
   
   // Save all the inputDAC values in the inputDAC[] array
   wgEditXML Edit;
@@ -114,8 +115,22 @@ int wgPreCalib(const char * x_inputDir,
   unsigned size_inputDAC = list_inputDAC.size();
 
   int dif = 0, npe = 0;
-  double Gain[n_difs][n_chips][n_chans][size_inputDAC][2];
-  double Pedestal[n_difs][n_chips][n_chans][size_inputDAC][2][MEMDEPTH];
+
+  // double Gain[n_difs][n_chips][n_chans][size_inputDAC][2];
+  // double Pedestal[n_difs][n_chips][n_chans][size_inputDAC][2][MEMDEPTH];
+
+  vector<vector<vector<vector<array<double, 2>>>>> Gain (n_difs, vector<vector<vector<array<double, 2>>>>
+														 (n_chips, vector<vector<array<double, 2>>>
+														  (n_chans, vector<array<double, 2>>
+														   (size_inputDAC, array<double, 2>()))));
+
+  vector<vector<vector<vector<vector<array<double, MEMDEPTH>>>>>> Pedestal (n_difs, vector<vector<vector<vector<array<double, MEMDEPTH>>>>>
+																			(n_chips, vector<vector<vector<array<double, MEMDEPTH>>>>
+																			 (n_chans, vector<vector<array<double, MEMDEPTH>>>
+																			  (size_inputDAC, vector<array<double, MEMDEPTH>>
+																			   (2, array<double, MEMDEPTH>())))));
+																	   
+
 
   // ======================================================//
   //              Read Gain and Pedestal                   //
@@ -163,7 +178,7 @@ int wgPreCalib(const char * x_inputDir,
         Gain[dif][ichip][ichan][iDAC.second][npe] = Edit.SUMMARY_GetChFitValue(string("Gain"), ichan);
         if(mode == TWIN_PEAKS){
 		  // If we use both 1pe and 2ped, get the pedestal position
-          Edit.SUMMARY_GetPedFitValue(Pedestal[dif][ichip][ichan][iDAC.second][npe], ichan);
+          Edit.SUMMARY_GetPedFitValue(Pedestal[dif][ichip][ichan][iDAC.second][npe].data(), ichan);
         }
       }
       Edit.Close();
@@ -174,16 +189,16 @@ int wgPreCalib(const char * x_inputDir,
   //            Draw the inputDAC vs Gain graph            //
   // ======================================================//
 
-  double slope[n_difs][n_chips][n_chans];
-  double inter[n_difs][n_chips][n_chans];
-
+  vector<vector<vector<double>>> slope(n_difs, vector<vector<double>>(n_chips, vector<double>(n_chans)));
+  vector<vector<vector<double>>> inter(n_difs, vector<vector<double>>(n_chips, vector<double>(n_chans)));
+	
   for(unsigned idif = 0; idif < n_difs; idif++) {
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       TMultiGraph * mg = new TMultiGraph();
-      TGraphErrors * g_Dist[n_chans]; 
-      TGraph * g_Gain0[n_chans];
-      TGraph * g_Gain1[n_chans];
-      TGraph * g_ped[MEMDEPTH];
+      vector<TGraphErrors *> g_Dist(n_chans); 
+      vector<TGraph *> g_Gain0(n_chans);
+      vector<TGraph *> g_Gain1(n_chans);
+      vector<TGraph *> g_ped(MEMDEPTH);
 
 	  // ===== plot the Pedestal ===== //
 	  
@@ -191,8 +206,8 @@ int wgPreCalib(const char * x_inputDir,
       if( mode == TWIN_PEAKS ) {
         c1->Divide(4,4);
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-          double x_ch [n_chans * size_inputDAC];
-          double y_ped[n_chans * size_inputDAC];
+          TVectorD x_ch (n_chans * size_inputDAC);
+          TVectorD y_ped(n_chans * size_inputDAC);
           for(unsigned int l = 0; l < size_inputDAC; l++) {
             for(unsigned ichan = 0; ichan < n_chans; ichan++) {
               x_ch [ichan + n_chans * l] = ichan;
@@ -200,7 +215,7 @@ int wgPreCalib(const char * x_inputDir,
             }
           }
 
-          g_ped[icol] = new TGraph(n_chans * 2 * size_inputDAC, x_ch, y_ped);
+          g_ped[icol] = new TGraph(x_ch, y_ped);
           g_ped[icol]->SetMarkerColor(880+icol);
           g_ped[icol]->SetMarkerSize(0.5);
           g_ped[icol]->SetMaximum(700);
@@ -221,7 +236,7 @@ int wgPreCalib(const char * x_inputDir,
 
 	  // ===== calculate the gain average over all the channels  ===== //
 	  
-      double mean_Dist[size_inputDAC];
+      vector<double> mean_Dist(size_inputDAC);
 	  for(unsigned l = 0; l < size_inputDAC; l++) {
 		for(unsigned ichan = 0; ichan < n_chans; ichan++) {
           if(mode == LONELY_MOUNTAIN)
@@ -234,12 +249,12 @@ int wgPreCalib(const char * x_inputDir,
       }
 
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
-        double x_inputDAC[size_inputDAC];
-        double ex_inputDAC[size_inputDAC];
-        double y_Dist[size_inputDAC];
-        double ey_Dist[size_inputDAC];
-        double y_Gain0[size_inputDAC];
-        double y_Gain1[size_inputDAC];
+        TVectorD x_inputDAC(size_inputDAC);
+        TVectorD ex_inputDAC(size_inputDAC);
+        TVectorD y_Dist(size_inputDAC);
+        TVectorD ey_Dist(size_inputDAC);
+        TVectorD y_Gain0(size_inputDAC);
+        TVectorD y_Gain1(size_inputDAC);
         for(unsigned l = 0; l < size_inputDAC; l++) {
           x_inputDAC[l] = list_inputDAC[l];
           ex_inputDAC[l] = 1.;
@@ -267,7 +282,7 @@ int wgPreCalib(const char * x_inputDir,
             y_Gain1[l]=Gain[idif][ichip][ichan][l][TWO_PE];    
           }
         }
-        g_Dist[ichan] = new TGraphErrors(size_inputDAC, x_inputDAC, y_Dist, ex_inputDAC, ey_Dist);
+        g_Dist[ichan] = new TGraphErrors(x_inputDAC, y_Dist, ex_inputDAC, ey_Dist);
         TF1 *f_Dist  = new TF1("f_Dist","[0]*x+[1]");
         f_Dist->SetLineColor(kGreen);
         g_Dist [ichan]->Fit("f_Dist","Q+ E","same"); 
@@ -277,11 +292,11 @@ int wgPreCalib(const char * x_inputDir,
         mg->Add(g_Dist[ichan]);
 
         if(mode == TWIN_PEAKS) {
-          g_Gain0[ichan] = new TGraph(size_inputDAC,x_inputDAC,y_Gain0);
+          g_Gain0[ichan] = new TGraph(x_inputDAC, y_Gain0);
           g_Gain0[ichan]->SetMarkerColor(600);
           g_Gain0[ichan]->SetMarkerSize(1);
           g_Gain0[ichan]->SetMarkerStyle(8);
-          g_Gain1[ichan] = new TGraph(size_inputDAC,x_inputDAC,y_Gain1);
+          g_Gain1[ichan] = new TGraph(x_inputDAC, y_Gain1);
           g_Gain1[ichan]->SetMarkerColor(616);
           g_Gain1[ichan]->SetMarkerSize(1);
           g_Gain1[ichan]->SetMarkerStyle(8);
