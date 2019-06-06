@@ -25,3 +25,5 @@ ch*.xml
 build/*
 obj/*
 lib/*
+doc/build/*
+doc/source/*
