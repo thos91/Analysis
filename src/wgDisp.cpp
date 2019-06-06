@@ -62,7 +62,7 @@ void wgDisp::sci_ing(double x,double y,double x_len,double y_len,double deg_ing=
   pline->SetFillStyle(1001);
   pline->SetLineWidth(LineWid);
   pline->Draw("f SAME");
-};
+}
 
 //**************************************************************
 void wgDisp::sci_par(double x,double y,double x_len,double y_len,double deg_par=0.){
@@ -87,7 +87,7 @@ void wgDisp::sci_par(double x,double y,double x_len,double y_len,double deg_par=
   pline->SetFillStyle(3001);
   pline->SetLineWidth(LineWid2);
   pline->Draw("f SAME");
-};
+}
 
 //**************************************************************
 void wgDisp::sci_sci(double x,double y,double x1,double y1){
@@ -99,7 +99,7 @@ void wgDisp::sci_sci(double x,double y,double x1,double y1){
   //b1->SetLineStyle(0);
   b1->SetLineWidth(LineWid);
   b1->Draw("f SAME");
-};
+}
 
 //**************************************************************
 void wgDisp::sci_veto(double x,double y,double x_len,double y_len,double deg_veto=0.){
@@ -124,8 +124,7 @@ void wgDisp::sci_veto(double x,double y,double x_len,double y_len,double deg_vet
   pline->SetLineWidth(LineWid);
   pline->SetFillStyle(1001);
   pline->Draw("f SAME");
-
-};
+}
 
 //**************************************************************
 void wgDisp::iron(double x,double y,double x_len,double y_len,double deg_iron=0.){
@@ -147,7 +146,7 @@ void wgDisp::iron(double x,double y,double x_len,double y_len,double deg_iron=0.
   pline->SetFillColor(17);
   pline->SetLineWidth(LineWid);
   pline->Draw("f SAME");
-};
+}
 
 
 //**************************************************************
@@ -157,7 +156,7 @@ void wgDisp::watertank(double x,double y,double x1,double y1){
   b1->SetFillStyle(0);
   b1->SetLineWidth(LineWid);
   b1->Draw("f SAME");
-};
+}
 
 //**************************************************************
 void wgDisp::DrawProtonModule(int view, double x_center, double y_center, double z_center){
@@ -473,7 +472,7 @@ void wgDisp::drawx(int targetmod){
       DrawINGRID(8,0,offset_x,offset_y,offset_z);
     }
   }
-};
+}
 
 //**************************************************************
 //topview
@@ -527,7 +526,7 @@ void wgDisp::drawy(int targetmod){
       DrawINGRID(8,1,offset_x,offset_y,offset_z);
     }
   }
-};
+}
 
 //**************************************************************
 void wgDisp::drawpartx(bool two_palet){
@@ -536,7 +535,7 @@ void wgDisp::drawpartx(bool two_palet){
   offset_y = 0;
   offset_z = 0;
   DrawPartWaterModule(0,offset_x,offset_y,offset_z,two_palet);
-};
+}
 
 //**************************************************************
 void wgDisp::drawparty(bool two_palet){
@@ -545,14 +544,14 @@ void wgDisp::drawparty(bool two_palet){
   offset_y = 0;
   offset_z = 0;
   DrawPartWaterModule(1,offset_x,offset_y,offset_z,two_palet);
-};
+}
 
 //*************************************************************
 void wgDisp::tline(double iX,double iY,double fX,double fY){
   TLine *l1=new TLine(iX,iY,fX,fY);
   l1->SetLineWidth(LineWid2);
   l1->Draw("SAME");
-};
+}
 
 //**************************************************************
 void wgDisp::drawdotline(double iX,double iY,double fX,double fY){
@@ -561,7 +560,7 @@ void wgDisp::drawdotline(double iX,double iY,double fX,double fY){
   l1->SetLineColor(kBlue);
   l1->SetLineWidth(LineWid2);
   l1->Draw("SAME");
-};
+}
 
 //**************************************************************
 void wgDisp::drawtext(const char* text, double x, double y,double font){

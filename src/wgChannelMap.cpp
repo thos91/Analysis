@@ -243,7 +243,7 @@ bool wgChannelMap::ChipchToMPPCch(const int chip_ch, string& mppc_ch)
     << " mppc_sh:" << mppc_ch << endl;
 #endif
   return true;
-};
+}
 
 //******************************************************************************
 bool wgChannelMap::GetMPPCPlnCh(string mppc_ch, int view, int& pln, int& ch, int& grid){
@@ -323,7 +323,7 @@ bool wgChannelMap::GetMPPCPlnCh(string mppc_ch, int view, int& pln, int& ch, int
        << " ch:" << ch << endl;
 #endif
   return true;
-}; //GetMPPCPlnCh
+} //GetMPPCPlnCh
 
 
 //******************************************************************************
@@ -362,7 +362,7 @@ bool wgChannelMap::GetViewPlnCh(const int dif_id, const int chip_id, const int c
 
   return true;
 
-}; //GetViewPlnCh
+} //GetViewPlnCh
 
 //******************************************************************************
 bool wgChannelMap::GetXYZ(int view, int pln, int ch, double& x, double& y, double& z)
@@ -412,7 +412,7 @@ bool wgChannelMap::GetXYZ(int view, int pln, int ch, double& x, double& y, doubl
     return false;
   }
   return true;
-}; //GetXYZ
+} //GetXYZ
 
 //******************************************************************************
 bool wgChannelMap::GetChipAlloc(const int dif_id, const int chip_id, int& id_z, int& id_xy){

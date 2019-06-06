@@ -828,7 +828,7 @@ int tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope,
 	}
   }
   return 0;
-};
+}
 
 void rd_clear(Raw_t &rd) {
   // Scalars

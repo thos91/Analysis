@@ -344,17 +344,17 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   XMLElement* gs_threshold;
   XMLElement* trigger_threshold;
   //chan
-  XMLElement* ch              [n_chans];
-  XMLElement* fit             [n_chans];
-  XMLElement* noise           [n_chans];
-  XMLElement* config          [n_chans];
-  XMLElement* inputDAC        [n_chans];
-  XMLElement* ampDAC          [n_chans];
-  XMLElement* threshold_adjust[n_chans];
+  vector<XMLElement*> ch              (n_chans);
+  vector<XMLElement*> fit             (n_chans);
+  vector<XMLElement*> noise           (n_chans);
+  vector<XMLElement*> config          (n_chans);
+  vector<XMLElement*> inputDAC        (n_chans);
+  vector<XMLElement*> ampDAC          (n_chans);
+  vector<XMLElement*> threshold_adjust(n_chans);
   //col
-  XMLElement* gain [n_chans][MEMDEPTH];
-  XMLElement* pedestal[n_chans][MEMDEPTH];
-  XMLElement* pedestal_reference[n_chans][MEMDEPTH];
+  vector<array<XMLElement*, MEMDEPTH> > gain;
+  vector<array<XMLElement*, MEMDEPTH> > pedestal;
+  vector<array<XMLElement*, MEMDEPTH> > pedestal_reference;
   
   // **********************//
 

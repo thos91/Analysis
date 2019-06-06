@@ -2,7 +2,7 @@
 #include <iostream>
 
 // ROOT includes
-#include <TROOT.h>
+#include "TROOT.h"
 
 // user includes
 #include "Const.hpp"
@@ -178,7 +178,7 @@ void Hit_t::Clear()
     hit_numtrack    [i] = 0;
     hit_cluster_pe   [i] = 0;
   }
-};
+}
 
 //***************************************
 void Recon_t::Clear()
@@ -226,7 +226,7 @@ void Recon_t::Clear()
   cell_clusterid          .shrink_to_fit();
   neighborcell_down_cellid.shrink_to_fit();
   neighborcell_up_cellid  .shrink_to_fit();
-};
+}
 
 //***************************************
 void Recon_t::Clear_ReconVector()
@@ -239,7 +239,7 @@ void Recon_t::Clear_ReconVector()
   cell_clusterid          .shrink_to_fit();
   neighborcell_down_cellid.shrink_to_fit();
   neighborcell_up_cellid  .shrink_to_fit();
-};
+}
 
 //***************************************
 void Track_t::Clear()
@@ -292,7 +292,7 @@ void Track_t::Clear()
 	recon_pair_start_reconpln.shrink_to_fit();
 	recon_pair_stop_reconpln.shrink_to_fit();
   */
-};
+}
 
 //***************************************
 void Track_t::Clear_TrackVector()
@@ -307,7 +307,7 @@ void Track_t::Clear_TrackVector()
 	recon_pair_start_reconpln.shrink_to_fit();
 	recon_pair_stop_reconpln.shrink_to_fit();
   */
-};
+}
 
 
 //***************************************
@@ -363,14 +363,14 @@ bool BSD_t::OpenBsdFile(string filename)
   BSD_t::bsd->SetBranchAddress("hps"            , (BSD_t::hps));
 
   return true;
-};
+}
 
 
 //***************************************
 void BSD_t::GetEntry(int i)
 {
   BSD_t::bsd->GetEntry(i);
-};
+}
 
 
 //***************************************
@@ -407,11 +407,11 @@ void BSD_t::MakeTree(string filename)
   BSD_t::bsd_out->Branch("hctx"           , (BSD_t::hctx),"hctx[2][5]/D");
   BSD_t::bsd_out->Branch("htrans"         , (BSD_t::htrans),"htrans[2]/D");
   BSD_t::bsd_out->Branch("hps"            , (BSD_t::hps),"hps[2]/D");
-};
+}
 
 void BSD_t::Clear()
 {
-};
+}
 
 void IngRecon_t::Clear(){
   unixtime     = -1;
@@ -461,4 +461,4 @@ void IngRecon_t::Clear(){
     pmrecon_endpln  [i] = -1 ;
     pmrecon_endxy   [i] = -1.;
   }
-};
+}
