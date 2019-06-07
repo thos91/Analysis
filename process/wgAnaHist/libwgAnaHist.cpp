@@ -88,11 +88,16 @@ int AnaHist(const char * x_inputFileName,
 	}
   }
   // ============ Create outputIMGDir ============ //
-  if( flags[SELECT_PRINT] && !Check.Dir(outputIMGDir) ) {
-	boost::filesystem::path dir(outputIMGDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgAnaHist][" + outputIMGDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
+  if( flags[SELECT_PRINT] ) {
+	for ( unsigned ichip = 0; ichip < n_chips; ichip++ ) {
+	  string img_dir(outputIMGDir + "/chip" + to_string(ichip));
+	  if( !Check.Dir(img_dir) ) {
+		boost::filesystem::path dir(img_dir);
+		if( !boost::filesystem::create_directories(dir) ) {
+		  Log.eWrite("[wgAnaHist][" + img_dir + "] failed to create directory");
+		  return ERR_CANNOT_CREATE_DIRECTORY;
+		}
+	  }
 	}
   }
 
