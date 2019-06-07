@@ -50,7 +50,10 @@ public:
   // in the x[0] element, the gaussian sigma is stored in the x[1] element and
   // the least interesting parameter, the gaussian peak value is store in the
   // x[3] element. If the mode is PRINT_HIST_MODE, an image of the fitted
-  // histogram is saved in the default WAGASCI_IMGDATADIR directory.
+  // histogram is saved in the default WAGASCI_IMGDATADIR directory.  The lower
+  // limit of the gaussian peak is 0.9 times the maximum bin height. The upper
+  // limit is 1.1 times the maximum bin height. The mean value is limited to the
+  // value of the maximum bin (its x) +/- three times the max_sigma variable.
   void low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool print_flag = false);
 
   // wgFit::low_pe_charge

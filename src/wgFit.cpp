@@ -124,17 +124,18 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print
 	throw wgElementNotFound("BCID histogram has no entries");
   }
 
-  // Create a step function of unit height to fit the histogram and precisely
-  // find the "non zero range" for the BCID hits. We could use the value of the
-  // last non zero bin as a measure of the histogram "non zero range" but, that
-  // way, a single corrupted hit could spoil the whole measurement and we want
-  // to avoid that. Better to make the code a little slower (more computational
-  // heavy) than to make it a little more unreliable.
-  TF1 * step_function = new TF1("step_function", "((x > 0) ? ((x < [0]) ? 1 : 0) : 0)");
+  // Create a step function to fit the histogram and precisely find the "non
+  // zero range" for the BCID hits. We could use the value of the last non zero
+  // bin as a measure of the histogram "non zero range" but, that way, a single
+  // corrupted hit could spoil the whole measurement and we want to avoid
+  // that. Better to make the code a little slower (more computational heavy)
+  // than to make it a little more unreliable.
+  TF1 * step_function = new TF1("step_function", "((x > 0) ? ((x < [0]) ? [1] : 0) : 0)");
   
   // Find the right-most bin that is non-zero. This value provides us with a
   // rough estimate of the [0] parameter in the step function.
   step_function->SetParameter(0,GetHist->h_bcid_hit->FindLastBinAbove(0,1));
+  step_function->SetParameter(1,1);
   step_function->SetParLimits(0, 1, MAX_BCID_BIN);
 
   // Fit histogram with step function.
@@ -195,14 +196,14 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
   gaussian->SetParameters(peak, mean, sigma);
   gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
   gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
-  gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
+  gaussian->SetParLimits(1, mean - max_sigma, mean + max_sigma);   // mean_fit
   gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cpp)
 
   // Fit histogram with gaussian function.
   // "Q": quiet mode (minimum printing)
   // "P" : drawing option
   // (mean - 3 * sigma, mean + 3 * sigma) : range over which to apply the fit.
-  GetHist->h_charge_hit->Fit(gaussian, "Q", "P", mean - 2 * sigma, mean + 2 * sigma);
+  GetHist->h_charge_hit->Fit(gaussian, "Q", "P", mean - 3 * sigma, mean + 3 * sigma);
   x[0]=gaussian->GetParameter(1); // mean_fit
   x[1]=gaussian->GetParameter(2); // sigma_fit
   x[2]=gaussian->GetParameter(0); // peak_fit
@@ -246,14 +247,14 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
   gaussian->SetParameters(peak, mean, sigma);
   gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
   gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
-  gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
+  gaussian->SetParLimits(1, mean - max_sigma, mean + max_sigma);   // mean_fit
   gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cpp)
 
   // Fit histogram with gaussian function.
   // "Q": quiet mode (minimum printing)
   // "P" : drawing option
   // (mean - 3 * sigma, mean + 3 * sigma) : range over which to apply the fit.
-  GetHist->h_charge_hit_HG->Fit(gaussian, "Q", "P", mean - 2 * sigma, mean + 2 * sigma);
+  GetHist->h_charge_hit_HG->Fit(gaussian, "Q", "P", mean - 3 * sigma, mean + 3 * sigma);
   x[0]=gaussian->GetParameter(1); // mean_fit
   x[1]=gaussian->GetParameter(2); // sigma_fit
   x[2]=gaussian->GetParameter(0); // peak_fit
@@ -304,7 +305,7 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   gaussian->SetParameters(peak, mean, sigma);
   gaussian->SetParNames("peak_fit", "mean_fit", "sigma_fit");
   gaussian->SetParLimits(0, 0.9 * peak, 1.1 * peak); // peak_fit
-  gaussian->SetParLimits(1, mean - 20, mean + 20);   // mean_fit
+  gaussian->SetParLimits(1, mean - max_sigma, mean + max_sigma);   // mean_fit
   gaussian->SetParLimits(2, min_sigma, max_sigma);   // sigma_fit (min_sigma and max_sigma are defined in wgFitConst.cpp)
 
   // Fit histogram with gaussian function.
