@@ -352,9 +352,9 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   vector<XMLElement*> ampDAC          (n_chans);
   vector<XMLElement*> threshold_adjust(n_chans);
   //col
-  vector<array<XMLElement*, MEMDEPTH> > gain;
-  vector<array<XMLElement*, MEMDEPTH> > pedestal;
-  vector<array<XMLElement*, MEMDEPTH> > pedestal_reference;
+  vector<array<XMLElement*, MEMDEPTH> > gain(n_chans);
+  vector<array<XMLElement*, MEMDEPTH> > pedestal(n_chans);
+  vector<array<XMLElement*, MEMDEPTH> > pedestal_reference(n_chans);
   
   // **********************//
 
