@@ -11,6 +11,9 @@ project(Analysis)
 # Set C++11 standard
 set (CMAKE_CXX_STANDARD 11)
 
+# Enable debug symbols
+set(CMAKE_BUILD_TYPE Debug)
+
 # boost system and filesystem are required
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
