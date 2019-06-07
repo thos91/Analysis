@@ -57,9 +57,9 @@ int AnaPedestal(const char * x_inputDir,
   vector<vector<int>> ampDAC  (n_chips, vector<int>(n_chans));
   vector<vector<int>> adjDAC   (n_chips, vector<int>(n_chans));
   vector<vector<vector<array<double, 2>>>> charge (n_chips, vector<vector<array<double, 2>>>(n_chans, vector<array<double, 2>>(MEMDEPTH)));	
-  vector<vector<array<double, MEMDEPTH>>> gain    (n_chips, vector<array<double, MEMDEPTH>>(n_chans));
-  vector<vector<array<double, 2>>>        Noise   (n_chips, vector<array<double, 2>>(n_chans));
-  vector<vector<double>>                  pe_level(n_chips, vector<double>(n_chans));
+  vector<vector<array<double, MEMDEPTH>>>  gain    (n_chips, vector<array<double, MEMDEPTH>>(n_chans));
+  vector<vector<double>>                   Noise   (n_chips, vector<double>(n_chans));
+  vector<vector<double>>                   pe_level(n_chips, vector<double>(n_chans));
 
   wgColor wgColor;
 
@@ -151,13 +151,12 @@ int AnaPedestal(const char * x_inputDir,
         gain_th[ichip] = Edit.GetConfigValue(string("gainth"));
       }
 	  // Fill the arrays with the data read from the xml files
-      inputDAC[ichip][ichan]    = Edit.GetConfigValue (string("inputDAC"));
-      ampDAC  [ichip][ichan]    = Edit.GetConfigValue (string("HG"));
-      adjDAC  [ichip][ichan]    = Edit.GetConfigValue (string("trig_adj"));
-	  Noise   [ichip][ichan][0] = Edit.GetChValue     (string("NoiseRate"));
-	  Noise   [ichip][ichan][1] = Edit.GetChValue     (string("NoiseRate_e"));
+      inputDAC[ichip][ichan] = Edit.GetConfigValue (string("inputDAC"));
+      ampDAC  [ichip][ichan] = Edit.GetConfigValue (string("HG"));
+      adjDAC  [ichip][ichan] = Edit.GetConfigValue (string("trig_adj"));
+	  Noise   [ichip][ichan] = Edit.GetChValue     (string("NoiseRate"));
 	  // Guess the threshold value (in p.e.) given the dark noise rate
-	  pe_level[ichip][ichan]    = NoiseToPe(Noise[ichip][ichan][0]);
+	  pe_level[ichip][ichan]    = NoiseToPe(Noise[ichip][ichan]);
 
       for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 		// Pedestal position
@@ -191,7 +190,7 @@ int AnaPedestal(const char * x_inputDir,
       Edit.SUMMARY_SetChConfigValue(string("ampDAC"),   ampDAC[ichip][ichan],   ichan, NO_CREATE_NEW_MODE);
       Edit.SUMMARY_SetChConfigValue(string("adjDAC"),   adjDAC[ichip][ichan],   ichan, NO_CREATE_NEW_MODE);
 	  Edit.SUMMARY_SetChFitValue(string("pe_level"),    pe_level[ichip][ichan], ichan, CREATE_NEW_MODE);
-	  Edit.SUMMARY_SetChFitValue(string("Noise"),       Noise[ichip][ichan][0], ichan, NO_CREATE_NEW_MODE);
+	  Edit.SUMMARY_SetChFitValue(string("Noise"),       Noise[ichip][ichan],    ichan, NO_CREATE_NEW_MODE);
 	  
       for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 		// Difference between the charge_HG peak (it is the pe_level p.e. peak) and
@@ -205,7 +204,7 @@ int AnaPedestal(const char * x_inputDir,
         h_Pedestal[ichip]->Fill(ichan * 26 + icol, charge[ichip][ichan][icol][CHARGE_NOHIT_PEAK]);
 		h_Npe[ichip]->     Fill(ichan * 26 + icol, charge[ichip][ichan][icol][CHARGE_HG_PEAK]);
 		h_Gain[ichip]->    Fill(ichan * 26 + icol, gain  [ichip][ichan][icol]);
-		h_Noise[ichip]->Fill(ichan, Noise[ichip][ichan][0]);
+		h_Noise[ichip]->Fill(ichan, Noise[ichip][ichan]);
       }
     }
     Edit.Write();
