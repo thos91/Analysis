@@ -62,10 +62,79 @@ Fit modes: simple explanation
 | (high range)     |                                                                                         |
 +------------------+-----------------------------------------------------------------------------------------+
 
+Charge fit
+----------
+
+All the charge* histograms are fitted by a single 3-parameter gaussian: it is
+assumed that only one peak is present corresponding to low p.e. events (mainly
+dark noise). If a second smaller peak is present it is ignored (only the highest
+peak is fitted). If two peaks whose highest bin has exactly the same height are
+present, only the most left one is fitted.
+
+The lower limit of the gaussian peak is 0.9 times the maximum bin height. The
+upper limit is 1.1 times the maximum bin height. The mean value is limited to
+the value of the maximum bin (its x) +/- three times the max_sigma variable.
+
+.. figure:: ../nohit_example.png
+			:width: 600px
+					
+			Sample picture of the gaussian fit of the `charge_nohit`
+			histogram. This histogram is filled using the values of the charge
+			ADC when there is no hit in the corresponding channel and
+			column. All the SPIROC chips show a small drift with respect to the
+			real pedestal for the channels without any hit. I was told by
+			Stéphane that it is probably due to some coupling because all
+			channels without hit switch from Track to Hold at the same. When an
+			external trigger signal is used then the pedestal value is more
+			accurate (barely shifted).
+
+.. figure:: ../HG_example.png
+			:width: 600px
+					
+			Sample picture of the gaussian fit of the `charge_lowHG` histogram.
+			This histogram is filled using the values of the charge ADC when
+			there is a hit in the high gain preamp of the corresponding channel
+			and column. Depending on the threshold value the peak can correspond
+			to 1 p.e. or 2 p.e. The 3 p.e. peak is rarely used because of the
+			considerable time needed to acquire enough statistics. In this
+			example picture the 2 p.e. peak is fitted but, as you can see, the
+			statistics is barely enough. *Please update the picture*
+
+Dark noise fit
+--------------
+
+The `NoiseRate` histogram is filled with the BCID values recorded only when a certain channel is hit, regardless of the column. If you think about it, integrating over this histogram from zero to a certain BCID, say T, will give use the number of hits over the whole acquisition period. More precicely, if the length of each BCID is 580 ns, the integral of this histogram is equal to the number of hits over a time equal to:
+
+.. math::
+
+   \textrm{total time (ns)} = \textrm{number of spills} * T * 580 \textrm{ns}
+
+But one must also take into account that the number of columns is limited to 16
+and the gate window cannot be arbitrarily wide (the chip saturate). In the
+example picture below, we can see that, when the gate window is too wide, the
+number of hits start to decrease at the right end of the histogram.
+
+Once there is a hit in a channel, the SPIROC chip cannot record another hit in
+the same channel for at least another BCID period (580ns). This means that we
+have to deal with an unavoidable 580ns dead-time when measuring the dark noise
+rate. **To learn how this issue is addressed in the code, please refer to the
+WAGASCI PDF documentation (Chapter 4).**
+
+.. figure:: ../NoiseRate_example.png	
+			:width: 600px
+	
+			Sample picture of the `NoiseRate` histogram with fitted with a step
+			function of unit height. The purpose of this fit is just to measure
+			the "length" of the histogram. We could use the value of the last non
+			zero bin as a measure of the histogram "non zero range" but, that
+			way, a single corrupted hit could spoil the whole measurement and we
+			want to avoid that. Better to make the code a little slower (more
+			computational heavy) than to make it a little more unreliable.
+
 Print mode
 ----------
 
-If the print mode (-p 1) is selected, the plot of the histograms analyzed (along
+If the print mode (-p) is selected, the plot of the histograms analyzed (along
 with the fitted functions) are saved in the WAGASCI_IMGDATADIR directory.
 
 C API
