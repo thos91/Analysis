@@ -15,6 +15,8 @@
 #define ERR_WRONG_DIF_VALUE         4
 #define ERR_WRONG_PE_VALUE          5
 
+static const double PEDESTAL_DIFFERENCE_WARNING_THRESHOLD = 0.1;
+
 using namespace std;
 
 // This is needed to call the following functions from Python using ctypes
