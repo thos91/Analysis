@@ -75,7 +75,7 @@ The lower limit of the gaussian peak is 0.9 times the maximum bin height. The
 upper limit is 1.1 times the maximum bin height. The mean value is limited to
 the value of the maximum bin (its x) +/- three times the max_sigma variable.
 
-.. figure:: ../nohit_example.png
+.. figure:: ../images/nohit_example.png
 			:width: 600px
 					
 			Sample picture of the gaussian fit of the `charge_nohit`
@@ -88,7 +88,7 @@ the value of the maximum bin (its x) +/- three times the max_sigma variable.
 			external trigger signal is used then the pedestal value is more
 			accurate (barely shifted).
 
-.. figure:: ../HG_example.png
+.. figure:: ../images/HG_example.png
 			:width: 600px
 					
 			Sample picture of the gaussian fit of the `charge_lowHG` histogram.
@@ -103,7 +103,12 @@ the value of the maximum bin (its x) +/- three times the max_sigma variable.
 Dark noise fit
 --------------
 
-The `NoiseRate` histogram is filled with the BCID values recorded only when a certain channel is hit, regardless of the column. If you think about it, integrating over this histogram from zero to a certain BCID, say T, will give use the number of hits over the whole acquisition period. More precicely, if the length of each BCID is 580 ns, the integral of this histogram is equal to the number of hits over a time equal to:
+The `NoiseRate` histogram is filled with the BCID values recorded only when a
+certain channel is hit, regardless of the column. If you think about it,
+integrating over this histogram from zero to a certain BCID, say T, will give
+use the number of hits over the whole acquisition period. More precicely, if the
+length of each BCID is 580 ns, the integral of this histogram is equal to the
+number of hits over a time equal to:
 
 .. math::
 
@@ -120,7 +125,7 @@ have to deal with an unavoidable 580ns dead-time when measuring the dark noise
 rate. **To learn how this issue is addressed in the code, please refer to the
 WAGASCI PDF documentation (Chapter 4).**
 
-.. figure:: ../NoiseRate_example.png	
+.. figure:: ../images/NoiseRate_example.png	
 			:width: 600px
 	
 			Sample picture of the `NoiseRate` histogram with fitted with a step
@@ -162,7 +167,11 @@ C API
 Flags
 =====
 
-The C API of the wgAnaHist library ("wgAnaHist" function in the "libwgAnaHist.cpp" source file) has one argument of type <unsigned long> called "flags_ulong". This argument is decoded by the "wgAnaHist" function into a set of flags. Each flag occupies a well definite place in the binary represetation of that number.
+The C API of the wgAnaHist library ("wgAnaHist" function in the
+"libwgAnaHist.cpp" source file) has one argument of type <unsigned long> called
+"flags_ulong". This argument is decoded by the "wgAnaHist" function into a set
+of flags. Each flag occupies a well definite place in the binary represetation
+of that number.
 
 .. code-block:: cpp
 
@@ -184,13 +193,34 @@ The C API of the wgAnaHist library ("wgAnaHist" function in the "libwgAnaHist.cp
 				if( flags[SELECT_OVERWRITE] )
 				// something
 
-If you need an introduction to the bitset class template take a look `here <https://en.cppreference.com/w/cpp/utility/bitsets>`_. It is used mainly to handle arrays of booleans and so it fits our needs perfectly. When the wgAnaHist function is called through the CLI the flags are automatically set according to the selected mode. When calling the C API the user is free to set the flags at will.
+If you need an introduction to the bitset class template take a look `here
+<https://en.cppreference.com/w/cpp/utility/bitsets>`_. It is used mainly to
+handle arrays of booleans and so it fits our needs perfectly. When the wgAnaHist
+function is called through the CLI the flags are automatically set according to
+the selected mode. When calling the C API the user is free to set the flags at
+will.
 
-- ``flags[SELECT_OVERWRITE]``      : overwrite the XML files in the output folder if present
-- ``flags[SELECT_CONFIG]``         : read the acquisition start time, stop time, global 10-bit discriminator threshold, global 10-bit gain selection discriminator threshold, adjustable input 8-bit DAC, adjustable 6-bit high gain (HG) preamp feedback capacitance, adjustable 4-bit discriminator threshold from the Pyrame XML configuration file.
-- ``flags[SELECT_PRINT]``          : print graphs. If false no image is printed and only the XML files are filled.
-- ``flags[SELECT_DARK_NOISE]``     : calculate dark noise for each chip and channel. The ``wgFit`` class ``NoiseRate`` method is used to calculate the dark noise. Prints the ``bcid_hit[chip][chan]`` histogram if the print flag is set.
-- ``flags[SELECT_CHARGE_LOW]``     : calculate the ADC count of the first peak when there is a hit using the ``charge_hit[chip][chan]`` histogram. Print the histogram if the print flag is set.
-- ``flags[SELECT_PEDESTAL]``       : calculate the ADC count of the first peak when there is no hit using the ``charge_nohit[chip][chan]`` histogram. Print the histogram if the print flag is set.
-- ``flags[SELECT_CHARGE_HG_LOW]``  : calculate the ADC count of the first peak when there is no hit in the high gain preamp using the ``charge_nohit[chip][chan]`` histogram. Print the histogram if the print flag is set.
+- ``flags[SELECT_OVERWRITE]`` : overwrite the XML files in the output folder if
+  present
+- ``flags[SELECT_CONFIG]`` : read the acquisition start time, stop time, global
+  10-bit discriminator threshold, global 10-bit gain selection discriminator
+  threshold, adjustable input 8-bit DAC, adjustable 6-bit high gain (HG) preamp
+  feedback capacitance, adjustable 4-bit discriminator threshold from the Pyrame
+  XML configuration file.
+- ``flags[SELECT_PRINT]`` : print graphs. If false no image is printed and only
+  the XML files are filled.
+- ``flags[SELECT_DARK_NOISE]`` : calculate dark noise for each chip and
+  channel. The ``wgFit`` class ``NoiseRate`` method is used to calculate the
+  dark noise. Prints the ``bcid_hit[chip][chan]`` histogram if the print flag is
+  set.
+- ``flags[SELECT_CHARGE_LOW]`` : calculate the ADC count of the first peak when
+  there is a hit using the ``charge_hit[chip][chan]`` histogram. Print the
+  histogram if the print flag is set.
+- ``flags[SELECT_PEDESTAL]`` : calculate the ADC count of the first peak when
+  there is no hit using the ``charge_nohit[chip][chan]`` histogram. Print the
+  histogram if the print flag is set.
+- ``flags[SELECT_CHARGE_HG_LOW]`` : calculate the ADC count of the first peak
+  when there is no hit in the high gain preamp using the
+  ``charge_nohit[chip][chan]`` histogram. Print the histogram if the print flag
+  is set.
 - ``flags[SELECT_CHARGE_HG_HIGH]`` : not implemented yet
