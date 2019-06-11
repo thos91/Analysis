@@ -507,7 +507,7 @@ MapInv_t wgChannelMap::load_mapping_inv(size_t n_chans){
       int view;
       vector<int> pln(n_chans), ch(n_chans), grid(n_chans);
       vector<double> x(n_chans), y(n_chans), z(n_chans);
-      this->GetMap(idif, ichip, view, pln, ch, grid, x, y, z);
+      this->GetMap(idif, ichip, n_chans, view, pln.data(), ch.data(), grid.data(), x.data(), y.data(), z.data());
         
       for(int ich=0;ich<NumChipCh;ich++){
         mapinv_struct.dif[view][pln[ich]][ch[ich]] = idif;
