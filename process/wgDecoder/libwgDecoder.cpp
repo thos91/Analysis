@@ -46,6 +46,10 @@ int wgDecoder(const char * x_inputFileName,
   string tdcFileName(x_tdcFileName);
   string outputDir(x_outputDir);
 
+  if ( maxEvt == 0 ) {
+    maxEvt = MAX_EVENT;
+  }
+  
   OperateString OptStr;
   CheckExist check;
   string outputTreeFileName = OptStr.GetName(inputFileName)+"_tree.root";
