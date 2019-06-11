@@ -35,7 +35,7 @@ int wgDecoder(const char * x_inputFileName,
 			  const char * x_tdcFileName,
 			  const char * x_outputDir,
 			  const bool overwrite,
-			  const unsigned maxEvt,
+			  unsigned maxEvt,
 			  unsigned dif,
 			  unsigned n_chips,
 			  unsigned n_channels) {
