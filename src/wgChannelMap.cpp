@@ -437,13 +437,22 @@ bool wgChannelMap::GetChipAlloc(const int dif_id, const int chip_id, int& id_z, 
 
 //*****************************************************************************
 
-bool wgChannelMap::GetMap(const int dif_id, const int chip_id, int& view, ivector& pln, ivector& ch, ivector& grid, fvector& x, fvector& y, fvector& z) {
-  for(size_t ich = 0; ich < ch.size(); ich++) {
-    if( !GetViewPlnCh(dif_id, chip_id, ich, view, pln[ich], ch[ich], grid[ich])) {
+bool wgChannelMap::GetMap (const unsigned dif_id,
+                           const unsigned chip_id,
+                           const unsigned n_channels,
+                           int& view,
+                           int * pln,
+                           int * ch,
+                           int * grid,
+                           double * x,
+                           double * y,
+                           double * z) {
+  for(size_t ichan = 0; ichan < n_channels; ichan++) {
+    if( !GetViewPlnCh(dif_id, chip_id, ichan, view, pln[ichan], ch[ichan], grid[ichan])) {
       cout << "Failed to GetViewPlnCh" << endl;
       return false;
     }    
-    if(!GetXYZ(view, pln[ich], ch[ich], x[ich], y[ich], z[ich])){
+    if(!GetXYZ(view, pln[ichan], ch[ichan], x[ichan], y[ichan], z[ichan])){
       cout << "Failed to GetXYZ" << endl;
       return false;
     }
@@ -457,21 +466,18 @@ Map_t wgChannelMap::load_mapping(){
   //reading mapping
   vector<int> pln, ch, grid;
   vector<double> x, y, z;
-  for(size_t idif=0;idif<NumDif;idif++) {
-    for(size_t ichip=0;ichip<NumChip;ichip++) {
-	  wrapArrayInVector( map_struct.pln [idif][ichip].data(), map_struct.pln [idif][ichip].size(), pln );
-	  wrapArrayInVector( map_struct.ch  [idif][ichip].data(), map_struct.ch  [idif][ichip].size(), ch  );
-	  wrapArrayInVector( map_struct.grid[idif][ichip].data(), map_struct.grid[idif][ichip].size(), grid);
-	  wrapArrayInVector( map_struct.x   [idif][ichip].data(), map_struct.x   [idif][ichip].size(), x   );
-	  wrapArrayInVector( map_struct.y   [idif][ichip].data(), map_struct.y   [idif][ichip].size(), y   );
-	  wrapArrayInVector( map_struct.z   [idif][ichip].data(), map_struct.z   [idif][ichip].size(), z   );
-      this->GetMap( idif, ichip, map_struct.view[idif][ichip][0], pln, ch, grid, x, y, z );
-	  releaseVectorWrapper( pln );
-	  releaseVectorWrapper( ch );
-	  releaseVectorWrapper( grid );
-	  releaseVectorWrapper( x );
-	  releaseVectorWrapper( y );
-	  releaseVectorWrapper( z );
+  for(size_t idif = 0; idif < NumDif; idif++) {
+    for(size_t ichip = 0; ichip < NumChip; ichip++) {
+      this->GetMap( idif,
+                    ichip,
+                    map_struct.pln [idif][ichip].size(),
+                    map_struct.view[idif][ichip][0],
+                    map_struct.pln [idif][ichip].data(),
+                    map_struct.ch  [idif][ichip].data(),
+                    map_struct.grid[idif][ichip].data(),
+                    map_struct.x   [idif][ichip].data(),
+                    map_struct.y   [idif][ichip].data(),
+                    map_struct.z   [idif][ichip].data());
       for(int ich = 1; ich < NumChipCh; ich++) {
         map_struct.view[idif][ichip][ich] = map_struct.view[idif][ichip][0];
       }

@@ -110,19 +110,16 @@ int wgDecoder(const char * x_inputFileName,
 	vector<int> pln, ch, grid;
 	vector<double> x, y, z;
 	for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-	  wrapArrayInVector( rd.pln [ichip].data(), rd.pln [ichip].size(), pln );
-	  wrapArrayInVector( rd.ch  [ichip].data(), rd.ch  [ichip].size(), ch  );
-	  wrapArrayInVector( rd.grid[ichip].data(), rd.grid[ichip].size(), grid);
-	  wrapArrayInVector( rd.x   [ichip].data(), rd.x   [ichip].size(), x   );
-	  wrapArrayInVector( rd.y   [ichip].data(), rd.y   [ichip].size(), y   );
-	  wrapArrayInVector( rd.z   [ichip].data(), rd.z   [ichip].size(), z   );
-	  Map->GetMap( dif -1, ichip, rd.view, pln, ch, grid, x, y, z );
-	  releaseVectorWrapper( pln );
-	  releaseVectorWrapper( ch );
-	  releaseVectorWrapper( grid );
-	  releaseVectorWrapper( x );
-	  releaseVectorWrapper( y );
-	  releaseVectorWrapper( z );
+      Map->GetMap( dif - 1,
+                   ichip,
+                   rd.pln [ichip].size(),
+                   rd.view,
+                   rd.pln [ichip].data(),
+                   rd.ch  [ichip].data(),
+                   rd.grid[ichip].data(),
+                   rd.x   [ichip].data(),
+                   rd.y   [ichip].data(),
+                   rd.z   [ichip].data());
 	}
   }
   delete Map;
