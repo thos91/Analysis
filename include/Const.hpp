@@ -40,6 +40,8 @@
 #define NON_BEAM_SPILL 0 // non beam spill bit (spill_flag)
 #define BEAM_SPILL     1 // beam spill bit (spill_flag)
 
+#define MAX_EVENT 99999999
+
 // ============ wgEditXML MACROS ============== //
 
 #define NO_CREATE_NEW_MODE false

@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
 	exit(1);
   } else if (batch == true) Log.WhereToLog = LOGFILE;
   
-  const unsigned int maxEvt = 99999999;
+  const unsigned int maxEvt = MAX_EVENT;
   Log.Write("Maximum number of events treated = " + to_string(maxEvt));
 
   int retcode;
