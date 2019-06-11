@@ -279,15 +279,16 @@ int AnaPedestal(const char * x_inputDir,
 	name.Form("%s/Summary_Gain_chip%d.png", outputIMGDir.c_str(), ichip);
 	c1->Print(name);
 	
-	  name.Form("chip:%d", ichip);
-	  l_Noise[ichip]=new TLegend(0.75, 0.84, 0.90, 0.90, name);
-	  l_Noise[ichip]->SetBorderSize(1);
-	  l_Noise[ichip]->SetFillStyle(0);
-	  l_Noise[ichip]->AddEntry(h_Noise[ichip],"Noise Rate","p");
-	  h_Noise[ichip]->Draw("P HIST");
-	  l_Noise[ichip]->Draw();
-	  name.Form("%s/Summary_Noise_chip%d.png", outputIMGDir.c_str(), ichip);
-	  c1->Print(name);
+	name.Form("chip:%d", ichip);
+	l_Noise[ichip]=new TLegend(0.75, 0.84, 0.90, 0.90, name);
+	l_Noise[ichip]->SetBorderSize(1);
+	l_Noise[ichip]->SetFillStyle(0);
+	l_Noise[ichip]->AddEntry(h_Noise[ichip],"Noise Rate","p");
+	h_Noise[ichip]->SetMarkerSize(2);
+	h_Noise[ichip]->Draw("P HIST");
+	l_Noise[ichip]->Draw();
+	name.Form("%s/Summary_Noise_chip%d.png", outputIMGDir.c_str(), ichip);
+	c1->Print(name);
   }
   return AP_SUCCESS;
 }
