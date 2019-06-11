@@ -12,9 +12,16 @@
 
 using namespace std;
 
-int wgOptimize(const char * x_threshold_card, const char * x_calibration_card, const char * x_wagasci_config_dif_dir,
-			   const int mode, const int inputDAC, const int pe, const unsigned n_difs, const unsigned n_chips,
+int wgOptimize(const char * x_threshold_card,
+               const char * x_calibration_card,
+               const char * x_wagasci_config_dif_dir,
+			   const int mode,
+               const int inputDAC,
+               const int pe,
+               const unsigned n_difs,
+               const unsigned n_chips,
 			   const unsigned n_channels) {
+
   CheckExist check;
   string threshold_card;
   if (x_threshold_card != NULL) threshold_card = x_threshold_card;
@@ -25,6 +32,15 @@ int wgOptimize(const char * x_threshold_card, const char * x_calibration_card, c
   string wagasci_config_dif_dir;
   if (x_wagasci_config_dif_dir != NULL) wagasci_config_dif_dir = x_wagasci_config_dif_dir;
   else wagasci_config_dif_dir = "";
+  
+  if ( (mode == 1) && (calibration_card == "") ) {
+	Log.eWrite("[wgOptimize] A valid calibration card is needed in mode = 1");
+    return ERR_CALIBRATION_CARD_NOT_FOUND;
+  }
+  if ( (mode == 0) && ( ((inputDAC % 20) != 1) || (inputDAC < 1) || (inputDAC > 241) ) ) {
+	Log.eWrite("[wgOptimize] Input DAC must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
+    return ERR_WRONG_INPUTDAC_VALUE;
+  }
 
   d2vector threshold(n_difs, n_chips);
   d2vector s_th(n_difs, n_chips);

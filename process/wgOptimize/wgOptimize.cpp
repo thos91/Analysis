@@ -116,18 +116,16 @@ int main(int argc, char** argv){
     }   
   }
 
-  if ( (mode == 1) && (calibration_card == "") ) {
-	Log.eWrite("[wgOptimize] A valid calibration card is needed in mode = 1");
-    exit(1);
-  }
-  if ( (mode == 0) && ( ((inputDAC % 20) != 1) || (inputDAC < 1) || (inputDAC > 241) ) ) {
-	Log.eWrite("[wgOptimize] Input DAC must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
-    exit(1);
-  }
-
   int result;
-  if ( (result = wgOptimize(threshold_card.c_str(), calibration_card.c_str(), wagasci_config_dif_dir.c_str(),
-							mode, inputDAC, pe, n_difs, n_chips, n_channels)) != OP_SUCCESS ) {
+  if ( (result = wgOptimize(threshold_card.c_str(),
+                            calibration_card.c_str(),
+                            wagasci_config_dif_dir.c_str(),
+							mode,
+                            inputDAC,
+                            pe,
+                            n_difs,
+                            n_chips,
+                            n_channels)) != OP_SUCCESS ) {
 	Log.eWrite("[wgOptimize] wgOptimize returned error " + to_string(result));
     exit(1);
   }
