@@ -41,3 +41,8 @@ const double GSthreshold    = 2510;     //estimate Gain Select Threshold
 const double GSthreshold_0  = 2730;     //estimate Gain Select Threshold for column 0.
 
 const double time_bcid_bin = 580e-9;    // BCID (slow clock) period in seconds (580 ns)
+
+const int ped_diff_max = 10;  // maximum (most right) value of the difference
+							  // between the measured pedestal and the nominal
+							  // pedestal
+const int ped_diff_min = -50; // minimum (most left) value

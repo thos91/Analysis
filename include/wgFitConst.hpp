@@ -45,8 +45,9 @@ extern const double GSthreshold_0 ;     //estimate Gain
 
 extern const double time_bcid_bin ;   // bcid 1bin time[s]
 
-
-
-
+extern const int ped_diff_max;  // maximum (most right) value of the difference
+							    // between the measured pedestal and the nominal
+							    // pedestal
+extern const int ped_diff_min;  // minimum (most left) value
 
 #endif
