@@ -26,11 +26,7 @@ set_target_properties(libwagasci PROPERTIES OUTPUT_NAME "wagasci")
 #set_target_properties(libwagasci_static PROPERTIES OUTPUT_NAME "wagasci_static")
 
 # Link with ROOT and boost libraries
-target_link_libraries(libwagasci
-  ${ROOT_LIBRARIES}
-  ${Boost_FILESYSTEM_LIBRARY}
-  ${Boost_SYSTEM_LIBRARY}
-  )
+target_link_libraries(libwagasci ${ROOT_LIBRARIES}  ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} Boost::system Boost::filesystem)
 #target_link_libraries(libwagasci_static
 #  ${ROOT_LIBRARIES}
 #  ${Boost_FILESYSTEM_LIBRARY}

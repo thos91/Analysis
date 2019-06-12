@@ -19,6 +19,7 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 
 # ROOT
 find_package(ROOT CONFIG REQUIRED)
+include(${ROOT_USE_FILE})
 
 # build libwagasci.a
 add_subdirectory(src)
