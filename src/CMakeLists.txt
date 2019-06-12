@@ -21,22 +21,19 @@ AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR} SOURCES)
 
 # Compile them as a static library and dynamic library
 add_library(libwagasci SHARED ${SOURCES})
-#add_library(libwagasci_static STATIC ${SOURCES})
+
+# Set the library name (dont use the wrong "liblibwagasci" name)
 set_target_properties(libwagasci PROPERTIES OUTPUT_NAME "wagasci")
-#set_target_properties(libwagasci_static PROPERTIES OUTPUT_NAME "wagasci_static")
 
 # Link with ROOT and boost libraries
-target_link_libraries(libwagasci ${ROOT_LIBRARIES}  ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} Boost::system Boost::filesystem)
-#target_link_libraries(libwagasci_static
-#  ${ROOT_LIBRARIES}
-#  ${Boost_FILESYSTEM_LIBRARY}
-#  ${Boost_SYSTEM_LIBRARY}
-#  )
+if ( APPLE )
+  target_link_libraries(libwagasci ${ROOT_LIBRARIES} Boost::system Boost::filesystem)
+else()
+  target_link_libraries(libwagasci ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+endif()
 
 # make the library discoverable from all the programs
 target_include_directories(libwagasci PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-#target_include_directories(libwagasci_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # install the static library in the lib folder
 install(TARGETS libwagasci DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
-#install(TARGETS libwagasci_static DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
