@@ -1,6 +1,9 @@
 // system includes
 #include <string>
 
+// system C includes
+#include <getopt.h>
+
 // user includes
 #include "wgTools.hpp"
 #include "wgErrorCode.hpp"

@@ -1,7 +1,8 @@
 // system includes
 #include <iostream>
 #include <string>
-
+// system C includes
+#include <getopt.h>
 // user includes
 #include "Const.hpp"
 #include "wgTools.hpp"

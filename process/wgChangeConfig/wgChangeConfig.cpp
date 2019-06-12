@@ -4,7 +4,7 @@
 
 // system C includes
 #include <bits/stdc++.h>
-
+#include <getopt.h>
 // user includes
 #include "wgTools.hpp"
 #include "wgErrorCode.hpp"

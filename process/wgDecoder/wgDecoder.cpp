@@ -1,6 +1,10 @@
 // system C++ includes
 #include <string>
 
+// system C includes
+#include <getopt.h>
+
+
 // user includes
 #include "Const.hpp"
 #include "wgTools.hpp"
