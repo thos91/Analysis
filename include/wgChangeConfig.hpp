@@ -2,7 +2,7 @@
 #define WG_CHANGE_CONFIG_HPP_
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // flags
 #define EDIT_FLAG      0

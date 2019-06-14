@@ -31,31 +31,32 @@ ANA_MODE=12 # dark noise + pedestal + charge_HG
 
 DIF=1
 NCHIPS_DECODE=20
-NCHIPS_ANA=20
-NCHANNELS=32
+NCHANNELS_DECODE=32
+NCHIPS_ANA=1
+NCHANNELS_ANA=32
 
 echo " wgAnaPedestal unit test: input DAC 121 - 2 p.e."
 
 if [ ! -f "${TREE_FILE}" ]; then
 	echo ""
-	echo " Decode   : ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r"
-                      ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
+	echo " Decode   : ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS_DECODE} -r"
+                      ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS_DECODE} -r
 fi
 if [ ! -f "${HIST_FILE}" ]; then
 	echo ""
-	echo " MakeHist : ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r"
-                      ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
+	echo " MakeHist : ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS_DECODE} -r"
+                      ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS_DECODE} -r
 fi
 if [ ! -d "${ANA_DIR}" ]; then
 	echo""
-	echo " AnaHist  : ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r"
-                      ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r
+	echo " AnaHist  : ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -q ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS_ANA} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r"
+                      ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -q ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS_ANA} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r
 fi
 if [ ! -d "${ANA_PEDESTAL_DIR}" ]; then
 echo ""
-echo " AnaPedestal :  ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -r"
-                      ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -r
+echo " AnaPedestal :  ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS_ANA} -r"
+                      ${ANAPEDESTAL} -f ${ANA_DIR}/${RUN_NAME} -o ${ANA_PEDESTAL_DIR} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS_ANA} -r
 fi
 echo ""
-echo " AnaPedestalSummary : ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${CURRENT_DIR} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS}"
-                            ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${CURRENT_DIR} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS}
+echo " AnaPedestalSummary : ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${CURRENT_DIR} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS_ANA}"
+                            ${ANAPEDESTALSUMMARY} -f ${ANA_PEDESTAL_DIR} -o ${CURRENT_DIR} -i ${IMAGE_DIR} -n ${DIF} -x ${NCHIPS_ANA} -y ${NCHANNELS_ANA}

@@ -8,8 +8,8 @@ are optimized are the input DAC and the trigger threshold.
 
 There are two modes of operation:
 
-OP_THRESHOLD MODE
-=================
+Pre-calibration mode
+====================
 
 Given a certain value of the inputDAC, the trigger threshold is usually set at
 certain optimal levels corresponding to the plateaus in the S-curve graph. The
@@ -38,8 +38,8 @@ input DAC, the 0.5 p.e. threshold "threshold_1", 1.5 p.e. threshold
 program just reads the values corresponing the the given p.e. level and edit the
 bitstream files accordingly.
 
-OP_INPUTDAC_MODE
-================
+Post-calibration mode
+=====================
 
 In this mode the inputDAC vs optimal threshold and the inputDAC vs gain linear
 fits are used to optimize the inputDAC and the threshold values (for a given
@@ -47,11 +47,11 @@ p.e. target). The inputDAC is set for each channel to the value such that the
 gain is closest to 40 ADC counts. The threshold is set to the optimal p.e. value
 (plateau of the S-curve).
 
-Just as in the OP_THRESHOLD MODE, the threshold card file is assumed to be
-already present. The intercept and the slope of the linear fit of the
-inputDAC (x) vs optimal threshold for the given p.e. equivalend (y) are read.
-Moreover the intercept and the slope of the linear fit of the inputDAC (x) vs
-Gain (y) are read from the calibration card file.
+Just as in the OP_THRESHOLD MODE (Pre-calibration mode), the threshold card file
+is assumed to be already present. The intercept and the slope of the linear fit
+of the inputDAC (x) vs optimal threshold for the given p.e. equivalend (y) are
+read.  Moreover the intercept and the slope of the linear fit of the
+inputDAC (x) vs Gain (y) are read from the calibration card file.
 
 Then use the gain vs inputDAC fit to select the optimal value for the inputDAC
 (the one so that the gain is closest to 40 ADC counts.) If the result inputDAC
@@ -75,7 +75,9 @@ Bitstream files
 
 This program assumes that the bitstream files for each chip are already present and gathered together in a folder. The pattern for the names of the bitstream files is fixed and changing it will almost certainly result in a error, or worse a misbehavior. The files must be in the same folder and named:
 
-   wagasci_config_dif%d_chip%d.txt
+```
+wagasci_config_dif%d_chip%d.txt
+```
 
 where the dif and chip numbers start from 1 and not from 0.
 
@@ -83,22 +85,22 @@ where the dif and chip numbers start from 1 and not from 0.
 Arguments
 =========
 
-- [-h]         : print this help message
-- [-m] (int)   : mode selection (default 0)
--     0        :   pre calibration
--     1        :   post calibration
-- [-t] (char*) : threshold card you want to read (mandatory)
-- [-f] (char*) : calibration card you want to read (only mode 1)
-- [-s] (char*) : spiroc2d configuration files folder
-- [-d] (int)   : number of DIFs (must be 1-8)
-- [-c] (int)   : number of ASU chips per DIF (must be 1-20)
-- [-e] (int)   : number of channels per chip (must be 1-36)
-- [-p] (int)   : photo electrons equivalent threshold (must be 1-3)
--     1        :   0.5 p.e. equivalent threshold
--     2        :   1.5 p.e. equivalent threshold
--     3        :   2.5 p.e. equivalent threshold
-- [-i] (int)   : inputDAC (high voltage adjustment DAC)
--     1+20*n   :   (only mode 0) where n is in (0,12)
+- ``[-h]``         : print this help message
+- ``[-m]`` (int)   : mode selection (default 0)
+   -   ``0``       :   pre calibration
+   -   ``1``       :   post calibration
+- ``[-t]`` (char*) : threshold card you want to read (mandatory)
+- ``[-f]`` (char*) : calibration card you want to read (only mode 1)
+- ``[-s]`` (char*) : spiroc2d configuration files folder
+- ``[-d]`` (int)   : number of DIFs (must be 1-8)
+- ``[-c]`` (int)   : number of ASU chips per DIF (must be 1-20)
+- ``[-e]`` (int)   : number of channels per chip (must be 1-36)
+- ``[-p]`` (int)   : photo electrons equivalent threshold (must be 1-3)
+   -     ``1``     :   0.5 p.e. equivalent threshold
+   -     ``2``     :   1.5 p.e. equivalent threshold
+   -     ``3``     :   2.5 p.e. equivalent threshold
+- ``[-i]`` (int)   : inputDAC (high voltage adjustment DAC)
+-     ``1+20*n``   :   (only mode 0) where n is in (0,12)
 	
 TO-DO: threshold fine tuning
 ----------------------------

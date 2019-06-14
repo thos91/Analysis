@@ -8,13 +8,13 @@ OBJDIR = ../../obj
 SRCDIR = ../../src
 BINDIR = ../../bin
 
-SRCS = $(shell ls $(SRCDIR)/*.cc)
-OBJS = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.cc=.o))	
+SRCS = $(shell ls $(SRCDIR)/*.cpp)
+OBJS = $(subst $(SRCDIR),$(OBJDIR),$(SRCS:.cpp=.o))	
 
-LIB_SRC    = $(TARGET_LIB).cc
+LIB_SRC    = $(TARGET_LIB).cpp
 LIB_OBJ    = $(TARGET_LIB).o
 HEADER     = $(INCDIR)/$(TARGET).hpp
-TARGET_SRC = $(TARGET).cc
+TARGET_SRC = $(TARGET).cpp
 TARGET_OBJ = $(TARGET).o 
 
 ROOTCFLAGS := $(shell root-config --cflags)
@@ -47,7 +47,7 @@ $(LIB_OBJ): $(LIB_SRC) $(HEADER)
 $(TARGET_OBJ): $(TARGET_SRC) $(HEADER)
 	$(CC) $(CXXFLAGS) -o $@ -c $<
 
-$(OBJDIR)/%.o:$(SRCDIR)/%.cc
+$(OBJDIR)/%.o:$(SRCDIR)/%.cpp
 	@if [ ! -d $(OBJDIR) ]; \
 		then echo "mkdir -p $(OBJDIR)"; mkdir -p $(OBJDIR); \
 	fi

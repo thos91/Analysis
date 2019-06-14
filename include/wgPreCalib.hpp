@@ -8,7 +8,7 @@
 #include <cstdbool>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 #define TWIN_PEAKS      1
 #define LONELY_MOUNTAIN 0

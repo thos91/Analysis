@@ -8,7 +8,7 @@
 #include <cstdbool>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // Errors
 #define AP_SUCCESS                  0
@@ -32,12 +32,12 @@ extern "C" {
 						  unsigned n_chips = NCHIPS,
 						  unsigned n_chans = NCHANNELS);
 
-  int AnaPedestal(const char * x_inputDir,
-				  const char * x_outputXMLDir,
-				  const char * x_outputIMGDir,
-				  bool overwrite = false,
-				  unsigned n_chips = NCHIPS,
-				  unsigned n_chans = NCHANNELS);
+  int wgAnaPedestal(const char * x_inputDir,
+                    const char * x_outputXMLDir,
+                    const char * x_outputIMGDir,
+                    bool overwrite = false,
+                    unsigned n_chips = NCHIPS,
+                    unsigned n_chans = NCHANNELS);
 
 #ifdef __cplusplus
 }

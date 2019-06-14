@@ -5,7 +5,7 @@
 #include <string>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // errors
 #define APS_SUCCESS                 0
@@ -14,6 +14,8 @@
 #define ERR_FAILED_OPEN_XML_FILE    3
 #define ERR_WRONG_DIF_VALUE         4
 #define ERR_WRONG_PE_VALUE          5
+
+static const double PEDESTAL_DIFFERENCE_WARNING_THRESHOLD = 0.1;
 
 using namespace std;
 
@@ -24,12 +26,12 @@ extern "C" {
 
   vector<string> GetIncludeFileName(const string& inputDirName);
 
-  int AnaPedestalSummary(const char * inputDirName,
-						 const char * outputXMLDirName,
-						 const char * outputIMGDirName,
-						 unsigned n_difs = NDIFS,
-						 unsigned n_chips = NCHIPS,
-						 unsigned n_chans = NCHANNELS);
+  int wgAnaPedestalSummary(const char * inputDirName,
+                           const char * outputXMLDirName,
+                           const char * outputIMGDirName,
+                           unsigned n_difs = NDIFS,
+                           unsigned n_chips = NCHIPS,
+                           unsigned n_chans = NCHANNELS);
 
 #ifdef __cplusplus
 }

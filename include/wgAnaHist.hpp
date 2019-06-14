@@ -8,7 +8,7 @@
 #include <bits/stdc++.h>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 using namespace std;
 
@@ -34,6 +34,7 @@ using namespace std;
 #define ERR_WRONG_DIF_VALUE         6
 #define ERR_WRONG_CHIP_VALUE        7
 #define ERR_WRONG_CHANNEL_VALUE     8
+#define ERR_EMPTY_INPUT_FILE        9
 
 // Set the flags according to the mode
 void ModeSelect(int mode, bitset<M>& flag);
@@ -42,14 +43,15 @@ void ModeSelect(int mode, bitset<M>& flag);
 extern "C" {
 #endif
 
-  int AnaHist(const char * inputFileName,
-			  const char * configFileName,
-			  const char * outputDir,
-			  const char * outputIMGDir,
-			  unsigned long flags_ulong,
-			  unsigned idif    = 1,
-			  unsigned n_chips = NCHIPS,
-			  unsigned n_chans = NCHANNELS);
+  int wgAnaHist(const char * inputFileName,
+                const char * configFileName,
+                const char * outputDir,
+                const char * outputIMGDir,
+                int mode,
+                unsigned long flags_ulong,
+                unsigned idif    = 1,
+                unsigned n_chips = NCHIPS,
+                unsigned n_chans = NCHANNELS);
 
 #ifdef __cplusplus
 }

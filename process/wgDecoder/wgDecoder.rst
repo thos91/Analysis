@@ -31,7 +31,7 @@ Histograms
 - ``gain`` : if the gain bit in the raw data (for each chip and each channel) is
   set to one the high gain preamplifier is used, if it set to zero the low gain
   preamplifier is used.
-- ``debug`` : for each DEBUG macro defined in Decoder.cc that bin is increased by one
+- ``debug`` : for each DEBUG macro defined in Decoder.cpp that bin is increased by one
   every time that the relative error occurres
 - ``chipid`` : chip ID tag as it is recorded in the chip trailer.
 - ``chipid_tag`` : chip ID tag as it is recorded in the chip header (if not found the software tries to guess it)

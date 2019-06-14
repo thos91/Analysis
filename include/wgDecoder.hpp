@@ -6,9 +6,14 @@
 #include <bits/stdc++.h>
 
 // user includes
-#include "Const.h"
+#include "Const.hpp"
 
 // #define DEBUG_DECODE
+#define DE_SUCCESS                       0
+#define ERR_CANNOT_CREATE_DIRECTORY      1
+#define ERR_CANNOT_OVERWRITE_OUTPUT_FILE 2
+#define ERR_WRONG_DIF_VALUE              3
+#define ERR_FAILED_OPEN_RAW_FILE         4
 
 // Debug macros that will fill the debug histogram
 #define DEBUG_NODATA 1
@@ -72,7 +77,7 @@ extern "C" {
   // tdc2time
   /* If the detector is calibrated (if the TDC coefficient file is present) this
 	 function converts the raw TDC into an absolute time in nanoseconds */
-  int tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt);
+  void tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt);
 
   // rd_clear
   // Clear the Raw_t rd arrays

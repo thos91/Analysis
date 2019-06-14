@@ -22,3 +22,9 @@ bin/*
 .#*
 test_contiguous_vectors
 ch*.xml
+build/*
+obj/*
+lib/*
+doc/build/*
+doc/source/*
+*.png
