@@ -53,6 +53,11 @@ int wgAnaHist(const char * x_inputFileName,
   wgEditXML Edit;
   CheckExist Check;
   OperateString OptStr;
+  
+  if(!Check.RootFile(inputFileName)) {
+    Log.eWrite("[wgAnaHist] No input file");
+    return ERR_EMPTY_INPUT_FILE;
+  }
 
   if ( idif <= 0 || idif > NDIFS ) {
 	Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif) );
@@ -74,6 +79,16 @@ int wgAnaHist(const char * x_inputFileName,
 	Log.eWrite("[wgAnaHist] the SELECT_CHARGE_HG_HIGH mode is not implemented yet");
 	flags[SELECT_CHARGE_HG_HIGH] = false;
   }
+
+  // Set the correct flags according to the mode
+  try {
+	ModeSelect(mode, flags);
+  }
+  catch (const exception& e) {
+	Log.eWrite("[wgAnaHist][" + outputDir + "] " + string(e.what()));
+	exit(1);
+  }
+  
   
   string DirName = OptStr.GetNameBeforeLastUnderBar(inputFileName);
 

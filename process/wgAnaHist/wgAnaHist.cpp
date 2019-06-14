@@ -115,23 +115,9 @@ int main(int argc, char** argv){
     }
   }
 
-  if(inputFileName == "") {
-    Log.eWrite("[wgAnaHist] No input file");
-    exit(1);
-  }
-
   Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
   Log.Write("start analyzing ...");
 
-  // Set the correct flags according to the mode
-  try {
-	ModeSelect(mode, flags);
-  }
-  catch (const exception& e) {
-	Log.eWrite("[wgAnaHist][" + outputXMLDir + "] " + string(e.what()));
-	exit(1);
-  }
-  
   int result;
   if ( (result = wgAnaHist(inputFileName.c_str(),
                            configFileName.c_str(),
