@@ -430,6 +430,9 @@ public:
   string DQ_DIRECTORY;
   string DQHISTORY_DIRECTORY;
   string CONF_DIRECTORY;
+private:
+  static const std::string script_path;
+  std::string ReadENVFile(const std::string &env_var_name);
 };
 
 #endif
