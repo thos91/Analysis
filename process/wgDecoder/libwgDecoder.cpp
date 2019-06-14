@@ -10,6 +10,9 @@
 #include "unistd.h"
 #include <bits/stdc++.h>
 
+// boost includes
+#include <boost/filesystem.hpp>
+
 // ROOT includes
 #include "TDirectory.h"
 #include "TFile.h"
@@ -64,8 +67,16 @@ int wgDecoder(const char * x_inputFileName,
   Log.Write("[" + logfilename + "][Decoder] *****  READING FILE     :" + inputFileName      + "  *****");
   Log.Write("[" + logfilename + "][Decoder] *****  OUTPUT TREE FILE :" + outputTreeFileName + "  *****");
   Log.Write("[" + logfilename + "][Decoder] *****  OUTPUT DIRECTORY :" + outputDir          + "  *****");
-  Log.Write("[" + logfilename + "][Decoder] *****  LOG FILE         :" + logfilename        + "  *****");
 #endif
+
+  // ============ Create outputDir ============ //
+  if( !check.Dir(outputDir) ) {
+	boost::filesystem::path dir(outputDir);
+	if( !boost::filesystem::create_directories(dir) ) {
+	  Log.eWrite("[wgAnaHist][" + outputDir + "] failed to create directory");
+	  return ERR_CANNOT_CREATE_DIRECTORY;
+	}
+  }
 
   TFile * outputTreeFile;
 
@@ -73,7 +84,7 @@ int wgDecoder(const char * x_inputFileName,
     outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "create");
     if ( !outputTreeFile->IsOpen() ) {
       Log.eWrite("[" + logfilename + "][Decoder] Error:" + outputDir + "/" + outputTreeFileName + " already exists!");
-      return 1;
+      return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
     }
   }
   else outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "recreate");
@@ -96,7 +107,7 @@ int wgDecoder(const char * x_inputFileName,
 	}
 	else {
 	  Log.eWrite("[" + logfilename + "][Decoder] Error: DIF ID number not given nor found");
-	  return 1;
+	  return ERR_WRONG_DIF_VALUE;
 	}
   }
 
@@ -184,8 +195,8 @@ int wgDecoder(const char * x_inputFileName,
   ifstream inputFile;
   inputFile.open(inputFileName.c_str(), ios_base::in | ios_base::binary);
   if (!inputFile.is_open()) {
-	Log.eWrite("[" + logfilename + "][Decoder] Error:" + strerror(errno));
-	return 1;
+	Log.eWrite("[" + inputFileName+ "][wgDecoder] Failed to open raw file: " + strerror(errno));
+	return ERR_FAILED_OPEN_RAW_FILE;
   }
 
   // Move to ROOT tree
@@ -672,11 +683,9 @@ int wgDecoder(const char * x_inputFileName,
 		  // ============================================
 
 		  if (time_calibration) {
-			int retcode = 0;
-			if ( (retcode = tdc2time(rd.time_ns, rd.time, rd.bcid, rd.tdc_slope, rd.tdc_intcpt)) != 0 )
-			  Log.eWrite("Error in tdc2time: size mismatch (retcode = " + to_string(retcode) + ")");
-		  }
-
+			tdc2time(rd.time_ns, rd.time, rd.bcid, rd.tdc_slope, rd.tdc_intcpt);
+          }
+        
 		  // ***** Fill TTree ***** //
 
 		  tree->Fill();
@@ -739,7 +748,7 @@ int wgDecoder(const char * x_inputFileName,
   tree->Write();
   outputTreeFile->Close();
   Log.Write("[" + logfilename + "][Decoder] Decode is finished");
-  return 0;
+  return DE_SUCCESS;
 }
 
 //******************************************************************************
@@ -797,7 +806,7 @@ bool check_ChipID(int16_t v_chipid, uint16_t n_chips) {
 
 //******************************************************************************
 
-int tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt) {
+void tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt) {
   int Parity;
   for(size_t ichip = 0; ichip < time.size(); ichip++){
 	for(size_t ich = 0; ich < time[ichip].size(); ich++){
@@ -808,7 +817,6 @@ int tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope,
 	  }
 	}
   }
-  return 0;
 }
 
 void rd_clear(Raw_t &rd) {
