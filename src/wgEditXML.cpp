@@ -354,9 +354,12 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   //col
   vector<array<XMLElement*, MEMDEPTH> > gain(n_chans);
   vector<array<XMLElement*, MEMDEPTH> > pedestal(n_chans);
+  vector<array<XMLElement*, MEMDEPTH> > pedestal_error(n_chans);
   vector<array<XMLElement*, MEMDEPTH> > pedestal_reference(n_chans);
-  
-  // **********************//
+  vector<array<XMLElement*, MEMDEPTH> > raw_charge(n_chans);
+  vector<array<XMLElement*, MEMDEPTH> > raw_charge_error(n_chans);
+
+  // ********************** //
 
   data = xml->NewElement("data");
   xml->InsertEndChild(data);
@@ -401,6 +404,16 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
 	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
 	  gain[ichan][icol] = xml->NewElement(str);
 	  fit[ichan]->InsertEndChild(gain[ichan][icol]);
+    }
+    for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "raw_%d", icol );
+	  raw_charge[ichan][icol] = xml->NewElement(str);
+	  fit[ichan]->InsertEndChild(raw_charge[ichan][icol]);
+    }
+    for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "eraw_%d", icol );
+	  raw_charge_error[ichan][icol] = xml->NewElement(str);
+	  fit[ichan]->InsertEndChild(raw_charge_error[ichan][icol]);
     }
   
     // ***** data > ch > config ***** //
