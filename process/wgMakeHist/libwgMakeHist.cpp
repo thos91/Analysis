@@ -20,10 +20,22 @@
 #include "wgErrorCode.hpp"
 #include "wgMakeHist.hpp"
 
-int MakeHist(const string& inputFileName, const string& outputDir, const bool overwrite, const unsigned n_chips, const unsigned n_channels) {
+int wgMakeHist(const char * x_inputFileName,
+               const char * x_outputDir,
+               const bool overwrite,
+               const unsigned n_chips,
+               const unsigned n_channels) {
 
+  string inputFileName(x_inputFileName);
+  string outputDir(x_outputDir);
+  CheckExist check;
+  if(!check.RootFile(inputFileName)) {
+    Log.eWrite("[wgMakeHist] Input file " + inputFileName + " not found");
+    return ERR_EMPTY_INPUT_FILE;
+  }
+  
   OperateString OptStr;
-  string outputHistFileName = OptStr.GetNameBeforeLastUnderBar(inputFileName)+"_hist.root";
+  string outputHistFileName = OptStr.GetNameBeforeLastUnderBar(inputFileName) + "_hist.root";
   string logfilename  = OptStr.GetName(inputFileName);
   int pos             = logfilename.rfind("_ecal_dif_") ;
   string logfile      = OptStr.GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";

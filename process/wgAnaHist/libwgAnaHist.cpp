@@ -36,14 +36,15 @@ void ModeSelect(const int mode, bitset<M>& flag){
 }
 
 //******************************************************************
-int AnaHist(const char * x_inputFileName,
-			const char * x_configFileName,
-			const char * x_outputDir,
-			const char * x_outputIMGDir,
-			const unsigned long flags_ulong,
-			const unsigned idif,
-			const unsigned n_chips,
-			const unsigned n_chans) {
+int wgAnaHist(const char * x_inputFileName,
+              const char * x_configFileName,
+              const char * x_outputDir,
+              const char * x_outputIMGDir,
+              int mode,
+              const unsigned long flags_ulong,
+              const unsigned idif,
+              const unsigned n_chips,
+              const unsigned n_chans) {
 
   string inputFileName(x_inputFileName);
   string configFileName(x_configFileName);

@@ -92,12 +92,12 @@ int main(int argc, char** argv){
   Log.Write(" *****  OUTPUT XML DIRECTORY   : " + OpStr.GetName(outputXMLDir) + "  *****");
   Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + OpStr.GetName(outputIMGDir) + "  *****");
 
-  AnaPedestal(inputDir.c_str(),
-			  outputXMLDir.c_str(),
-			  outputIMGDir.c_str(),
-			  overwrite,
-			  n_chips,
-			  n_chans);
+  wgAnaPedestal(inputDir.c_str(),
+                outputXMLDir.c_str(),
+                outputIMGDir.c_str(),
+                overwrite,
+                n_chips,
+                n_chans);
 
   Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestal] wgAnaPedestal finished");
 }

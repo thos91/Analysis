@@ -84,7 +84,11 @@ int main(int argc, char** argv) {
   }
   
   int result;
-  if ( (result = MakeHist(inputFileName, outputDir, overwrite, n_chips, n_channels)) != MH_SUCCESS ) {
+  if ( (result = wgMakeHist(inputFileName.c_str(),
+                            outputDir.c_str(),
+                            overwrite,
+                            n_chips,
+                            n_channels)) != MH_SUCCESS ) {
 	Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] wgMakeHist returned error " + to_string(result));
     exit(1);
   }

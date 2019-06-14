@@ -78,13 +78,15 @@ int main(int argc, char** argv){
   Log.Write(" *****  OUTPUT XML DIRECTORY   :" + OpStr.GetName(outputXMLDir) + "  *****");
   Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + OpStr.GetName(outputIMGDir) + "  *****");
 
-
-  AnaPedestalSummary(inputDir.c_str(),
-					 outputXMLDir.c_str(),
-					 outputIMGDir.c_str(),
-					 n_difs,
-					 n_chips,
-					 n_chans);
+  int result;
+  if ( (result = wgAnaPedestalSummary(inputDir.c_str(),
+                                      outputXMLDir.c_str(),
+                                      outputIMGDir.c_str(),
+                                      n_difs,
+                                      n_chips,
+                                      n_chans)) != APS_SUCCESS ) {
+    Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] Return error code " + to_string(result));
+  }
 
   Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] Finished");
 }

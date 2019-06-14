@@ -133,14 +133,15 @@ int main(int argc, char** argv){
   }
   
   int result;
-  if ( (result = AnaHist(inputFileName.c_str(),
-						 configFileName.c_str(),
-						 outputXMLDir.c_str(),
-						 outputIMGDir.c_str(),
-						 flags.to_ulong(),
-						 idif,
-						 n_chips,
-						 n_chans)) != AH_SUCCESS ) {
+  if ( (result = wgAnaHist(inputFileName.c_str(),
+                           configFileName.c_str(),
+                           outputXMLDir.c_str(),
+                           outputIMGDir.c_str(),
+                           mode,
+                           flags.to_ulong(),
+                           idif,
+                           n_chips,
+                           n_chans)) != AH_SUCCESS ) {
 	Log.eWrite("[" +OptStr.GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
 	exit(1);
   }

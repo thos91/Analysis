@@ -62,12 +62,12 @@ vector<string> GetIncludeFileName(const string& inputDir){
 } 
 
 //******************************************************************
-int AnaPedestalSummary(const char * x_inputDir,
-					   const char * x_outputXMLDir,
-					   const char * x_outputIMGDir,
-					   const unsigned n_difs,
-					   const unsigned n_chips,
-					   const unsigned n_chans)
+int wgAnaPedestalSummary(const char * x_inputDir,
+                         const char * x_outputXMLDir,
+                         const char * x_outputIMGDir,
+                         const unsigned n_difs,
+                         const unsigned n_chips,
+                         const unsigned n_chans)
 {
   string inputDir(x_inputDir);
   string outputXMLDir(x_outputXMLDir);

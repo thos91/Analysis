@@ -26,12 +26,12 @@ extern "C" {
 
   vector<string> GetIncludeFileName(const string& inputDirName);
 
-  int AnaPedestalSummary(const char * inputDirName,
-						 const char * outputXMLDirName,
-						 const char * outputIMGDirName,
-						 unsigned n_difs = NDIFS,
-						 unsigned n_chips = NCHIPS,
-						 unsigned n_chans = NCHANNELS);
+  int wgAnaPedestalSummary(const char * inputDirName,
+                           const char * outputXMLDirName,
+                           const char * outputIMGDirName,
+                           unsigned n_difs = NDIFS,
+                           unsigned n_chips = NCHIPS,
+                           unsigned n_chans = NCHANNELS);
 
 #ifdef __cplusplus
 }

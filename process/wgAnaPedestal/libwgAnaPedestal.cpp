@@ -35,12 +35,12 @@
 
 //******************************************************************
 
-int AnaPedestal(const char * x_inputDir,
-				const char * x_outputXMLDir,
-				const char * x_outputIMGDir,
-				const bool overwrite,
-				const unsigned n_chips,
-				const unsigned n_chans) {
+int wgAnaPedestal(const char * x_inputDir,
+                  const char * x_outputXMLDir,
+                  const char * x_outputIMGDir,
+                  const bool overwrite,
+                  const unsigned n_chips,
+                  const unsigned n_chans) {
 
   string inputDir(x_inputDir);
   string outputXMLDir(x_outputXMLDir);
