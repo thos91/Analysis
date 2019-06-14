@@ -29,7 +29,7 @@ set_target_properties(libwagasci PROPERTIES OUTPUT_NAME "wagasci")
 if ( APPLE )
   target_link_libraries(libwagasci ${ROOT_LIBRARIES} Boost::system Boost::filesystem)
 else()
-  target_link_libraries(libwagasci ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
+  target_link_libraries(libwagasci ${ROOT_LIBRARIES} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 endif()
 
 # make the library discoverable from all the programs
