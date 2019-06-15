@@ -25,12 +25,18 @@
 
 using namespace std;
 
-int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const unsigned long x_flags, const int value, const int mode, const int ichip, const int channel) {
+int wgChangeConfig(const char * x_inputFile,
+                   const char * x_outputFile,
+                   const unsigned long flags_ulong,
+                   const int value,
+                   const int mode,
+                   const int chip,
+                   const int channel) {
   
   // open txtfile ...
   OperateString OpStr;
   CheckExist Check;
-  bitset<4> flags(x_flags);
+  bitset<WG_CHANGE_CONFIG_FLAGS> flags(flags_ulong);
   string inputFile(x_inputFile);
   string outputFile(x_outputFile);
 
@@ -54,7 +60,7 @@ int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const un
 
 	  // fine tuning mode
 	  if( flags[MPPC_DATA_FLAG] ) {
-		try { EditConfig.Get_MPPCinfo(ichip); }
+		try { EditConfig.Get_MPPCinfo(chip); }
 		catch (const exception& e) {
 		  Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] failed to get MPPC info :" + e.what());
 		}
@@ -68,9 +74,6 @@ int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const un
 			Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] value is out of range : " + to_string(value));
 			return ERR_VALUE_OUT_OF_RANGE;
 		  }
-		  else {
-			flags[CHECKOPT_FLAG] = true;
-		  }
 		}
 		else if( mode == EC_INPUT_DAC || mode == EC_HG_LG_AMPLIFIER || mode == EC_THRESHOLD_ADJUSTMENT) {
 		  if(channel < 0 || channel > NCHANNELS) {
@@ -82,17 +85,11 @@ int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const un
 			  Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] value is out of range : " + to_string(value));
 			  return ERR_VALUE_OUT_OF_RANGE;
 			}
-			else {
-			  flags[CHECKOPT_FLAG]=true;
-			}
 		  }
 		  else if( mode == EC_HG_LG_AMPLIFIER) {
 			if(value < 0 || value > MAX_VALUE_6BITS) {
 			  Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] value is out of range : " + to_string(value));
 			  return ERR_VALUE_OUT_OF_RANGE;
-			}
-			else {
-			  flags[CHECKOPT_FLAG]=true;
 			}
 		  }
 		  else if( mode == EC_THRESHOLD_ADJUSTMENT) {
@@ -100,14 +97,10 @@ int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const un
 			  Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] value is out of range : " + to_string(value));
 			  return ERR_VALUE_OUT_OF_RANGE;
 			}
-			else {
-			  flags[CHECKOPT_FLAG]=true;
-			}
 		  }
 		}
 		else if(mode == EC_INPUT_DAC_REFERENCE) {
-		  if(value == 0 || value == 1) flags[CHECKOPT_FLAG] = true;
-		  else {
+		  if(value != 0 && value != 1) {
 			Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] value is out of range : " + to_string(value));
 			return ERR_VALUE_OUT_OF_RANGE;
 		  }
@@ -123,7 +116,6 @@ int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const un
 	  }
   
 	  try {
-		if(flags[CHECKOPT_FLAG]) {
 		  // Global threshold
 		  if( mode == EC_TRIGGER_THRESHOLD ) {
 			EditConfig.Change_trigth(value);
@@ -187,7 +179,6 @@ int wgChangeConfig(const char * x_inputFile, const char * x_outputFile, const un
 			EditConfig.Change_1bitparam(value, GLOBAL_INPUT_DAC_REF_START);
 		  }
 		  EditConfig.Write(outputFile);
-		}
 	  }
 	  catch (const exception &e) {
 		Log.eWrite("[wgChangeConfig][" + OpStr.GetName(inputFile) + "] failed to write value :" + e.what());
