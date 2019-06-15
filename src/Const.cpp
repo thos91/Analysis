@@ -15,14 +15,12 @@
 #include "Const.hpp"
 
 //***************************************
-wgConst::wgConst(){
+wgConst::wgConst() : script_path("/opt/calicoes/wagasci_environment.sh") {
 }
 
 //***************************************
 wgConst::~wgConst(){
 }
-
-extern const std::string wgConst::script_path = "/opt/calicoes/wagasci_environment.sh";
 
 //***************************************
 std::string wgConst::ReadENVFile(const std::string& env_var_name) {
