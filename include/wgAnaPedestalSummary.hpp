@@ -19,12 +19,12 @@ static const double PEDESTAL_DIFFERENCE_WARNING_THRESHOLD = 0.1;
 
 using namespace std;
 
+vector<string> GetIncludeFileName(const string& inputDirName);
+
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-  vector<string> GetIncludeFileName(const string& inputDirName);
 
   int wgAnaPedestalSummary(const char * inputDirName,
                            const char * outputXMLDirName,
