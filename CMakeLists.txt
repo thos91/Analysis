@@ -8,6 +8,10 @@ cmake_minimum_required (VERSION 3.10.2)
 # Name of the project
 project(Analysis)
 
+if ( NOT UNIX )
+  message( FATAL_ERROR "Non UNIX OSes are not supported" )
+endif()
+
 # Set C++11 standard
 set (CMAKE_CXX_STANDARD 11)
 
@@ -20,6 +24,14 @@ find_package(Boost COMPONENTS system filesystem REQUIRED)
 # ROOT
 find_package(ROOT CONFIG REQUIRED)
 include(${ROOT_USE_FILE})
+
+# nlohmann_json JSON parser
+if ( APPLE )
+  set(nlohmann_json_DIR "/opt/local/lib/cmake/nlohmann_json")
+else ()
+  set(nlohmann_json_DIR "/usr/lib/cmake")
+endif()
+find_package(nlohmann_json REQUIRED)
 
 # build libwagasci.a
 add_subdirectory(src)

@@ -98,6 +98,13 @@ RHEL/CentOS
 sudo yum install cmake
 ```
 
+#### nlohmann-json
+
+Debian/Ubuntu
+```
+sudo apt install nlohmann-json-dev
+```
+
 #### Sphinx (optional)
 
 Debian/Ubuntu:
@@ -156,6 +163,12 @@ The instructions above were taken from
 #### CMake
 
 Download the auto-installer (.dmg) from [here](https://cmake.org/download/).
+
+#### nlohmann-json
+
+```
+sudo port install nlohmann-json
+```
 
 ### Sphinx (optional)
 
