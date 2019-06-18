@@ -2,7 +2,7 @@
 #include <string>
 
 // json includes
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 // user includes
 #include "wgTopology.hpp"
@@ -18,7 +18,7 @@ int main () {
     std::cout << "First time : Topology string is empty" << std::endl;
   else
     std::cout << topology_string << std::endl;
-  FreeTopology(topology_string);
+  FreeTopologyCtypes(topology_string);
   
   // GetTopology : C API : Second time
   topology_string = const_cast <char *>(GetTopologyCtypes(xml_config_file.c_str()));
@@ -27,20 +27,11 @@ int main () {
     std::cout << "Second time : Topology string is empty" << std::endl;
   else
     std::cout << topology_string << std::endl;
-  FreeTopology(topology_string);
+  FreeTopologyCtypes(topology_string);
 
   // GetTopology : C++ API
   Topology topol(xml_config_file);
-  for (auto const& gdcc : topol.topology_map) {
-    std::cout << "GDCC[" << gdcc.first << "] ";
-    for (auto const& dif: gdcc.second) {
-      std::cout << "DIF[" << dif.first << "] ";
-      for (auto const& asu: dif.second) {
-        std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
-      }
-    }
-  }
-  std::cout << std::endl;
+  topol.Print();
 
   // Max number of chips
   int n_difs = 0, n_chips = 0, n_chans = 0;
@@ -58,4 +49,9 @@ int main () {
   std::cout << "# DIFs = " << n_difs << std::endl;
   std::cout << "max # ASUs per DIF = " << n_chips << std::endl;
   std::cout << "max # channels per ASU = " << n_chans << std::endl;
+
+  // TopologyMap from JSON string
+  std::string json_string(R"###({"1":{"1":{"1":32,"2":32,"3":32},"2":{"1":32,"2":32,"3":32}}})###");
+  Topology topology(json_string, TopologySourceType::json_string);
+  topology.Print();  
 }

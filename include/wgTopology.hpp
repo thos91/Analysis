@@ -16,6 +16,11 @@ using namespace tinyxml2;
 typedef map<string, map<string, map< string, int>>> TopologyMap;
 typedef map<string, map< string, int>> DifMap;
 
+enum class TopologySourceType {
+  xml_file,
+  json_string
+};
+
 /* Example of dif_mapping.txt file:
 {
 	"1": {
@@ -66,7 +71,8 @@ private:
   // The behavior of this function is the same as above. Actually the C API
   // function just calls this one internally. The only difference is that the
   // Topology map is returned directly without converting it to a JSON string.
-  TopologyMap GetTopology(string configxml);
+  TopologyMap GetTopologyFromFile(string configxml);
+  TopologyMap GetTopologyFromString(string json_string);
   // This function reads the JSON file "/opt/calicoes/config/dif_mapping.txt"
   // containing the mapping of the (gdcc, dif) pair into the absolute dif
   // number. The content is translated into a DifMap map.
@@ -80,8 +86,9 @@ public:
   unsigned max_channels = 0;
 
   // The constructors just call GetTopology and GetDifMapping internally
-  Topology(string configxml);
-  Topology(const char * configxml);
+  Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
+  Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
+  void Print();
 
   // Returns dif_map[gdcc][dif]
   unsigned Dif(std::string gdcc, std::string dif);

@@ -34,8 +34,8 @@ const char * GetTopologyCtypes(const char * x_configxml) {
   TopologyMap topology_map;
   
   try {
-  Topology topology(configxml);
-  topology_map = topology.topology_map;
+    Topology topology(configxml, TopologySourceType::xml_file);
+    topology_map = topology.topology_map;
   } // try/catch
   catch (const exception& e) {
     Log.eWrite("[GetTopologyCtypes] " + string(e.what()));
@@ -58,10 +58,17 @@ void FreeTopologyCtypes(char * topology_string) {
   free(topology_string);
 }
 
-Topology::Topology(const char * configxml) : Topology(string(configxml)) {}
+Topology::Topology(const char * configxml, TopologySourceType source_type) : Topology(string(configxml), source_type) {}
 
-Topology::Topology(string configxml) : m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
-  this->topology_map = this->GetTopology(configxml);
+Topology::Topology(string source, TopologySourceType source_type) : m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
+
+  if ( source_type == TopologySourceType::xml_file ) 
+    this->topology_map = this->GetTopologyFromFile(source);
+  else if ( source_type == TopologySourceType::json_string )
+    this->topology_map = this->GetTopologyFromString(source);
+  else
+    throw std::invalid_argument("[wgTopology] TopologySourceType not recognized");
+      
   this->m_dif_map = this->GetDifMapping();
 
   for ( auto const & gdcc : this->topology_map) {
@@ -78,7 +85,24 @@ Topology::Topology(string configxml) : m_mapping_file_path("/opt/calicoes/config
 }
 
 //**********************************************************************
-TopologyMap Topology::GetTopology(string configxml) {
+TopologyMap Topology::GetTopologyFromString(string json_string) {
+  TopologyMap topology_map;  
+  nlohmann::json json = nlohmann::json::parse(json_string);
+  map<string, nlohmann::json> external_map = json;
+  for ( const auto& gdcc : external_map ) {
+    map<string, nlohmann::json> middle_map = gdcc.second;
+    for ( const auto& dif : middle_map ) {
+      map<string, int> internal_map = dif.second;
+      for ( const auto& asu : internal_map ) {
+        topology_map[gdcc.first][dif.first][asu.first] = asu.second;
+      }
+    }
+  }
+  return topology_map;
+}
+
+//**********************************************************************
+TopologyMap Topology::GetTopologyFromFile(string configxml) {
   const string delimiter("-");
   string json("");
   unsigned igdcc = 1, idif = 1, iasu = 1;
@@ -86,60 +110,60 @@ TopologyMap Topology::GetTopology(string configxml) {
 
   TopologyMap topology_map;
   
-   CheckExist Check;
-    if(!Check.XmlFile(configxml))
-      throw wgInvalidFile(configxml + " wasn't found or is not valid");
+  CheckExist Check;
+  if(!Check.XmlFile(configxml))
+    throw wgInvalidFile(configxml + " wasn't found or is not valid");
 
-    XMLDocument configfile;
-    configfile.LoadFile(configxml.c_str()); 
-    XMLElement* ecal = configfile.FirstChildElement("ecal");
-    XMLElement* domain = ecal->FirstChildElement("domain");
-    XMLElement* acqpc = domain->FirstChildElement("acqpc");
-    // GDCCs loop
-    for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-      if( string(gdcc->Attribute("name")) != "gdcc_1_" + to_string(igdcc) ) {
-        Log.eWrite("[GetTopology] inconsistency found when counting (GDCC = " + to_string(igdcc) + ")");
+  XMLDocument configfile;
+  configfile.LoadFile(configxml.c_str()); 
+  XMLElement* ecal = configfile.FirstChildElement("ecal");
+  XMLElement* domain = ecal->FirstChildElement("domain");
+  XMLElement* acqpc = domain->FirstChildElement("acqpc");
+  // GDCCs loop
+  for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
+    if( string(gdcc->Attribute("name")) != "gdcc_1_" + to_string(igdcc) ) {
+      Log.eWrite("[GetTopology] inconsistency found when counting (GDCC = " + to_string(igdcc) + ")");
+    }
+    // DIFs loop
+    for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
+      if( string(dif->Attribute("name")) != "dif_1_" + to_string(igdcc) + "_" + to_string(idif) ) {
+        Log.eWrite("[GetTopology] inconsistency found when counting (DIF = " + to_string(idif) + ")");
       }
-      // DIFs loop
-      for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-        if( string(dif->Attribute("name")) != "dif_1_" + to_string(igdcc) + "_" + to_string(idif) ) {
-          Log.eWrite("[GetTopology] inconsistency found when counting (DIF = " + to_string(idif) + ")");
+      // ASUs loop
+      for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
+        if( string(asu->Attribute("name")) != "asu_1_" + to_string(igdcc) + "_" + to_string(idif) + "_" + to_string(iasu) ) {
+          Log.eWrite("[GetTopology] inconsistency found when counting (ASU = " + to_string(iasu) + ")");
         }
-        // ASUs loop
-        for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-          if( string(asu->Attribute("name")) != "asu_1_" + to_string(igdcc) + "_" + to_string(idif) + "_" + to_string(iasu) ) {
-            Log.eWrite("[GetTopology] inconsistency found when counting (ASU = " + to_string(iasu) + ")");
+        // param loop
+        XMLElement* param;
+        for(param = asu->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
+          if( string(param->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
+            string enabled_channels(param->GetText());
+            boost::char_separator<char> sep("-");
+            typedef boost::tokenizer<boost::char_separator<char>> t_tokenizer;
+            t_tokenizer token(enabled_channels, sep);
+            boost::tokenizer<boost::char_separator<char>>::iterator first = token.begin();
+            boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
+            std::advance(first, std::distance(first, last) - 1);
+            // Number of enabled channels
+            topology_map[to_string(igdcc)][to_string(idif)][to_string(iasu)] = stoi(*first) + 1;
+            found = true;
+            break;
           }
-          // param loop
-          XMLElement* param;
-          for(param = asu->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-            if( string(param->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
-              string enabled_channels(param->GetText());
-              boost::char_separator<char> sep("-");
-              typedef boost::tokenizer<boost::char_separator<char>> t_tokenizer;
-              t_tokenizer token(enabled_channels, sep);
-              boost::tokenizer<boost::char_separator<char>>::iterator first = token.begin();
-              boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
-              std::advance(first, std::distance(first, last) - 1);
-              // Number of enabled channels
-              topology_map[to_string(igdcc)][to_string(idif)][to_string(iasu)] = stoi(*first) + 1;
-              found = true;
-              break;
-            }
 
-          } // params loop
-          if (!found)
-            throw wgElementNotFound("Number of channels not found");
-          found = false;
-          iasu++;
-        } // ASUs loop
-        idif++;
-        iasu = 1;
-      } // DIFs loop
-      igdcc++;
-      idif = iasu = 1;
-    } // GDCCs loop
-    return topology_map;
+        } // params loop
+        if (!found)
+          throw wgElementNotFound("Number of channels not found");
+        found = false;
+        iasu++;
+      } // ASUs loop
+      idif++;
+      iasu = 1;
+    } // DIFs loop
+    igdcc++;
+    idif = iasu = 1;
+  } // GDCCs loop
+  return topology_map;
 }
 
 //**********************************************************************
@@ -168,4 +192,18 @@ DifMap Topology::GetDifMapping() {
     dif_mapping[i.first] = i.second.get<std::map<string, int>>();
   }
   return dif_mapping;
+}
+
+//**********************************************************************
+void Topology::Print() {
+  for (auto const& gdcc : this->topology_map) {
+    std::cout << "GDCC[" << gdcc.first << "] ";
+    for (auto const& dif: gdcc.second) {
+      std::cout << "DIF[" << dif.first << "] ";
+      for (auto const& asu: dif.second) {
+        std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
+      }
+    }
+  }
+  std::cout << std::endl;
 }
