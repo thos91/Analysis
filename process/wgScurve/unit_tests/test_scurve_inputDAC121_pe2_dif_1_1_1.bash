@@ -25,6 +25,7 @@ HIST_FILE="${CURRENT_DIR}/${RUN_NAME}_hist.root"
 ANA_DIR="${CURRENT_DIR}/AnaHist"
 SUMMARY_DIR="${CURRENT_DIR}/Summary"
 IMAGE_DIR="${CURRENT_DIR}/Images"
+SCURVE_DIR="${CURRENT_DIR}/Scurve"
 
 ANA_MODE=20
 ANA_SUMMARY_MODE=12
@@ -39,19 +40,24 @@ echo " wgPreCalib unit test: input DAC 121 - 2 p.e."
 if [ ! -f "${TREE_FILE}" ]; then
 	echo ""
 	echo " Decode   : ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r"
-                      ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
+                    ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
 fi
 if [ ! -f "${HIST_FILE}" ]; then
 	echo ""
 	echo " MakeHist : ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r"
-                      ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
+                    ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
 fi
 if [ ! -d "${ANA_DIR}" ]; then
 	echo""
 	echo " AnaHist  : ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r"
-                      ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r
+                    ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r
 fi
-
+if [ ! -d "${SUMMARY_DIR}" ]; then
    echo ""
    echo " AnaHistSummary : ${ANAHISTSUMMARY} -f ${ANA_DIR}/${RUN_NAME} -o ${SUMMARY_DIR}/${RUN_NAME} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -m ${ANA_SUMMARY_MODE} -r -p"
                            ${ANAHISTSUMMARY} -f ${ANA_DIR}/${RUN_NAME} -o ${SUMMARY_DIR}/${RUN_NAME} -i ${IMAGE_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -m ${ANA_SUMMARY_MODE} -r -p
+fi
+
+   echo ""
+   echo " Scurve : ${SCURVE} -f ${SUMMARY_DIR}/${RUN_NAME} -o ${SCURVE_DIR}/${RUN_NAME}"
+                   ${SCURVE} -f ${SUMMARY_DIR}/${RUN_NAME} -o ${SCURVE_DIR}/${RUN_NAME}
