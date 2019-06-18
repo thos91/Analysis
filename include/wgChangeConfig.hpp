@@ -5,10 +5,10 @@
 #include "wgConst.hpp"
 
 // flags
+#define WG_CHANGE_CONFIG_FLAGS 3
 #define EDIT_FLAG      0
 #define OVERWRITE_FLAG 1
 #define MPPC_DATA_FLAG 2
-#define CHECKOPT_FLAG  3
 
 // error codes
 #define EC_SUCCESS                  0
@@ -44,7 +44,7 @@ int wgChangeConfig(const char * x_inputFile,
 				   unsigned long x_flags,
 				   int value,
 				   int mode,
-				   int ichip   = 0,
+				   int chip    = 0,
 				   int channel = NCHANNELS);
 
 #ifdef __cplusplus

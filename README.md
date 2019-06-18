@@ -64,7 +64,95 @@ In MacOS download [MacPorts](https://www.macports.org/), and run the following
 command
 
 ```
+sudo apt install cmake
+```
+
+RHEL/CentOS
+
+```
+sudo yum install cmake
+```
+
+#### nlohmann-json
+
+Debian/Ubuntu
+```
+sudo apt install nlohmann-json-dev
+```
+
+#### Sphinx (optional)
+
+Debian/Ubuntu:
+
+```
+sudo apt-get install python3-sphinx
+```
+
+RHEL/CentOS:
+
+```
+sudo yum install python-sphinx
+```
+
+### MacOS
+
+#### ROOT
+
+Download the latest ROOT binary (.dmg) for MacOS from
+[here](https://root.cern.ch/downloading-root) and install it. No other
+configuration is necessary.
+
+#### XCode command line tools
+Open a terminal and issue this command
+
+```
+sudo xcode-select --install
+```
+
+#### MacPorts
+
+You can download the automatic installer from here
+[MacPorts](https://www.macports.org/),
+
+#### Boost
+
+After installing MacPorts, run the following command
+
+```
 sudo port install boost
+```
+
+#### Fix "<bits/stdc++.h> not found" error
+
+```
+sudo port install wget
+cd /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
+mkdir bits
+cd bits
+wget https://gist.githubusercontent.com/reza-ryte-club/97c39f35dab0c45a5d924dd9e50c445f/raw/47ecad34033f986b0972cdbf4636e22f838a1313/stdc++.h
+```
+
+The instructions above were taken from
+[here](https://qiita.com/acchan_ar/items/6a4c4c070dd76a236fdc) (Only Japanese).
+
+#### CMake
+
+Download the auto-installer (.dmg) from [here](https://cmake.org/download/).
+
+#### nlohmann-json
+
+```
+sudo port install nlohmann-json
+```
+
+### Sphinx (optional)
+
+Make sure that MacPorts is installed and then:
+
+```
+sudo port install py36-sphinx
+sudo port select --set python python36
+sudo port select --set sphinx py36-sphinx
 ```
 
 ## (Obsolete) MAKE : Compile and install

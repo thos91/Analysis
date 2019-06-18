@@ -23,6 +23,8 @@
 #define ERR_INPUTDAC_WRITE             11
 #define ERR_THRESHOLD_WRITE            12
 #define ERR_OPTIMIZE_GENERIC_ERROR     13
+#define ERR_CONFIG_XML_FILE_NOT_FOUND  14
+#define ERR_TOPOLOGY                   15
 
 //#define DEBUG_OPTIMIZE
 
@@ -35,13 +37,11 @@ extern "C" {
   
 int wgOptimize(const char * x_threshold_card,
 			   const char * x_calibration_card,
-			   const char * x_wagasci_config_dif_dir,
+			   const char * x_config_xml_file,
+               const char * x_wagasci_config_dif_dir,
 			   int mode            = OP_THRESHOLD_MODE,
 			   int inputDAC        = 121,
-			   int pe              = 2,
-			   unsigned n_difs     = NDIFS,
-			   unsigned n_chips    = NCHIPS,
-			   unsigned n_channels = NumChipCh);
+			   int pe              = 2);
 
 #ifdef __cplusplus
 }

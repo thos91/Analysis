@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ecal name="ecal">
+  <domain name="localhost">
+    <param name="domain_ip">127.0.0.1</param>
+    <varmod name="varmod"></varmod>
+    <acqpc name="pcacq_1">
+      <param name="acqpc_media">wagasci</param>
+      <param name="acqpc_replay">0</param>
+      <gdcc name="gdcc_1_1">
+        <param name="gdcc_trans_delay">0</param>
+        <param name="gdcc_reset_channel">undef</param>
+        <param name="gdcc_mac_addr">00:0a:35:01:fe:01</param>
+        <param name="gdcc_pc_dev">enp2s0</param>
+        <param name="dif_alim">CC</param>
+	<param name="dif_cnh">0</param>
+	<param name="dif_mapping_filename">/opt/pyrame/wagasci_mapping_table.txt</param>
+        <param name="dif_dcc_nibble">0</param>
+        <param name="dif_simul">0</param>
+        <dif name="dif_1_1_1">
+          <!--<param name="dif_gdcc_port">2</param>-->
+          <param name="dif_gdcc_port">1</param>
+          <param name="dif_nb_asu">3</param>
+          <asu name="asu_1_1_1_1">
+            <param name="asu_version">eval_spiroc2d</param>
+            <param name="asu_nb_spiroc2d">1</param>
+            <param name="spiroc2d_file">/opt/calicoes/config/wagasci_config_dif1_chip1.txt</param>
+	    <param name="spiroc2d_disallow_trig_chans">32-35</param>
+	    <param name="spiroc2d_allow_trig_chans">0-31</param>
+	    <param name="spiroc2d_disable_preamp_chans">32-35</param>
+	    <param name="spiroc2d_enable_preamp_chans">0-31</param>
+          </asu>
+          <asu name="asu_1_1_1_2">
+            <param name="asu_version">eval_spiroc2d</param>
+            <param name="asu_nb_spiroc2d">1</param>
+            <param name="spiroc2d_file">/opt/calicoes/config/wagasci_config_dif1_chip2.txt</param>
+	    <param name="spiroc2d_disallow_trig_chans">32-35</param>
+	    <param name="spiroc2d_allow_trig_chans">0-31</param>
+	    <param name="spiroc2d_disable_preamp_chans">32-35</param>
+	    <param name="spiroc2d_enable_preamp_chans">0-31</param>
+          </asu>
+          <asu name="asu_1_1_1_3">
+            <param name="asu_version">eval_spiroc2d</param>
+            <param name="asu_nb_spiroc2d">1</param>
+            <param name="spiroc2d_file">/opt/calicoes/config/wagasci_config_dif1_chip3.txt</param>
+            <param name="spiroc2d_disallow_trig_chans">32-35</param>
+            <param name="spiroc2d_allow_trig_chans">0-31</param>
+            <param name="spiroc2d_disable_preamp_chans">32-35</param>
+            <param name="spiroc2d_enable_preamp_chans">0-31</param>
+          </asu>
+        </dif>
+        <dif name="dif_1_1_2">
+            <!--<param name="dif_gdcc_port">2</param>-->
+            <param name="dif_gdcc_port">2</param>
+            <param name="dif_nb_asu">3</param>
+            <asu name="asu_1_1_2_1">
+                <param name="asu_version">eval_spiroc2d</param>
+                <param name="asu_nb_spiroc2d">1</param>
+                <param name="spiroc2d_file">/opt/calicoes/config/wagasci_config_dif2_chip1.txt</param>
+                <param name="spiroc2d_disallow_trig_chans">32-35</param>
+                <param name="spiroc2d_allow_trig_chans">0-31</param>
+                <param name="spiroc2d_disable_preamp_chans">32-35</param>
+                <param name="spiroc2d_enable_preamp_chans">0-31</param>
+            </asu>
+            <asu name="asu_1_1_2_2">
+                <param name="asu_version">eval_spiroc2d</param>
+                <param name="asu_nb_spiroc2d">1</param>
+                <param name="spiroc2d_file">/opt/calicoes/config/wagasci_config_dif2_chip2.txt</param>
+                <param name="spiroc2d_disallow_trig_chans">32-35</param>
+                <param name="spiroc2d_allow_trig_chans">0-31</param>
+                <param name="spiroc2d_disable_preamp_chans">32-35</param>
+                <param name="spiroc2d_enable_preamp_chans">0-31</param>
+            </asu>
+            <asu name="asu_1_1_2_3">
+                <param name="asu_version">eval_spiroc2d</param>
+                <param name="asu_nb_spiroc2d">1</param>
+                <param name="spiroc2d_file">/opt/calicoes/config/wagasci_config_dif2_chip3.txt</param>
+                <param name="spiroc2d_disallow_trig_chans">32-35</param>
+                <param name="spiroc2d_allow_trig_chans">0-31</param>
+                <param name="spiroc2d_disable_preamp_chans">32-35</param>
+                <param name="spiroc2d_enable_preamp_chans">0-31</param>
+            </asu>
+        </dif>
+      </gdcc>
+    </acqpc>
+    <storage name="storage">
+      <param name="storage_use_rundb">0</param>
+      <param name="storage_brg_name">prototech</param>
+      <param name="storage_brg_mp">file:///</param>
+      <param name="storage_brg_path">home/data/prototech</param>
+      <param name="storage_elog_server">undef</param>
+      <param name="storage_elog_name">undef</param>
+      <param name="storage_mode">append</param>
+      <param name="storage_producers_count">${count(acqpc)}</param>
+      <param name="storage_stats_names">nb_data_pkts,nb_lost_pkts,bytes_on_dsk,nb_spills,cur_spill,nb_evts,nb_hits</param>
+    </storage>
+  </domain>
+</ecal>

@@ -19,9 +19,6 @@
 #include "wgFileSystemTools.hpp"
 #include "wgLogger.hpp"
 
-using namespace std;
-using namespace tinyxml2;
-
 //**********************************************************************
 void wgEditXML::Write(){
   xml->SaveFile(wgEditXML::filename.c_str());
@@ -30,11 +27,13 @@ void wgEditXML::Write(){
 //**********************************************************************
 void wgEditXML::Open(const string& filename){
   CheckExist Check;
-  if(!Check.XmlFile(filename)) throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
+  if(!Check.XmlFile(filename))
+    throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
   wgEditXML::filename=filename; 
   wgEditXML::xml = new XMLDocument();
   XMLError eResult = wgEditXML::xml->LoadFile(filename.c_str());
-  if (eResult != tinyxml2::XML_SUCCESS) throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
+  if (eResult != tinyxml2::XML_SUCCESS)
+    throw wgInvalidFile("[" + filename + "][wgEditXML::Open] error in opening XML file");
 }
 
 //**********************************************************************
