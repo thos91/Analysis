@@ -5,9 +5,9 @@
 #include <getopt.h>
 
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgOptimize.hpp"
 
 using namespace std;

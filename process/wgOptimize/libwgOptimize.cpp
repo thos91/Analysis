@@ -5,9 +5,9 @@
 // user includes
 #include "wgEditXML.hpp"
 #include "wgEditConfig.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgOptimize.hpp"
 
 using namespace std;
