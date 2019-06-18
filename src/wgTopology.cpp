@@ -14,8 +14,9 @@
 
 //user includes
 #include "wgExceptions.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
+#include "wgLogger.hpp"
 #include "wgTopology.hpp"
 
 //**********************************************************************

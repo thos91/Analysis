@@ -25,8 +25,6 @@ using namespace std;
 extern "C" {
 #endif
 
-  vector<string> GetIncludeFileName(const string& inputDirName);
-
   int wgAnaPedestalSummary(const char * inputDirName,
                            const char * outputXMLDirName,
                            const char * outputIMGDirName,
