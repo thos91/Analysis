@@ -5,7 +5,7 @@
 #include "wgEditConfig.h"
 #include "wgTools.h"
 #include "wgErrorCode.h"
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 using namespace std;
 

@@ -1,28 +1,11 @@
-#ifndef WGTOOLS_H_INCLUDE
-#define WGTOOLS_H_INCLUDE
+#ifndef WGLOGGER_HPP_INCLUDE_
+#define WGLOGGER_HPP_INCLUDE_
 
 // system includes
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <fstream>
-
-using namespace std;
-
-/* class to extract the information contained in a generic path. The members and
-   methods names are pretty self-explanatory */
-
-class OperateString
-{
-private:
-  string str;
-  string ext;
-public:  
-  string GetExtension(const string& str);                //Get Extension from full path.
-  string GetName(const string& str);                     //Get Name from full path.
-  string GetPath(const string& str);                     //Get Path from full path.
-  string GetNameBeforeLastUnderBar(const string& str);   //Get Path from full path.
-};
 
 /* - Initialize: opens two files (one for info logging and another one for error
                  logging) in the log_dir directory. If the directory is not
@@ -37,21 +20,23 @@ public:
                               std::cerr respectively
 */
 
+using namespace std;
+
 typedef enum {
    LOGFILE  = 0,
    COUT     = 1,
    BOTH     = 2
 } TriState;
 
-class Logger
+class wgLogger
 {
 public:
   TriState WhereToLog = BOTH;
-  Logger();
-  Logger(const string&);
-  void Write(const string&);
-  void eWrite(const string&);
-  ~Logger();
+  wgLogger();
+  wgLogger(const string & log_dir);
+  void Write(const string & log);
+  void eWrite(const string & log);
+  ~wgLogger();
 protected:
   string m_printTime();
   string m_fileName;
@@ -60,6 +45,6 @@ protected:
   ofstream m_efile;
 };
 
-extern Logger Log;
+extern wgLogger Log;
 
 #endif

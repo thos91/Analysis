@@ -6,7 +6,7 @@
 #include <bits/stdc++.h>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 // #define DEBUG_DECODE
 #define DE_SUCCESS                       0
@@ -14,6 +14,7 @@
 #define ERR_CANNOT_OVERWRITE_OUTPUT_FILE 2
 #define ERR_WRONG_DIF_VALUE              3
 #define ERR_FAILED_OPEN_RAW_FILE         4
+#define ERR_INPUT_FILE_NOT_FOUND         5
 
 // Debug macros that will fill the debug histogram
 #define DEBUG_NODATA 1

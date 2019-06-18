@@ -26,7 +26,7 @@
 #include <TVector.h>
 
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
@@ -34,6 +34,9 @@
 #include "wgFitConst.hpp"
 #include "wgGetHist.hpp"
 #include "wgPreCalib.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 //******************************************************************
 int wgPreCalib(const char * x_inputDir,
@@ -44,16 +47,14 @@ int wgPreCalib(const char * x_inputDir,
 			   const unsigned n_chips,
 			   const unsigned n_chans) {
   
-  OperateString OpStr;
   CheckExist Check;
   wgConst con;
-  con.GetENV();
   string inputDir(x_inputDir);
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
 
   if(outputXMLDir == "") {
-    outputXMLDir = con.CALIBDATA_DIRECTORY + OpStr.GetName(inputDir);
+    outputXMLDir = con.CALIBDATA_DIRECTORY + GetName(inputDir);
 	if(outputXMLDir == "") {
 	  return ERR_CANNOT_CREATE_DIRECTORY;
 	}
@@ -167,7 +168,7 @@ int wgPreCalib(const char * x_inputDir,
 	  
 	  pair<bool, int> iDAC = findInVector(list_inputDAC, inputDAC[iFN]);
 	  if (iDAC.first == false) {
-		Log.eWrite("[" + OpStr.GetName(inputFiles[iFN]) + "][wgPreCalib] inputDAC value (" + to_string(inputDAC[iFN]) + ") not found in the list");
+		Log.eWrite("[wgPreCalib] inputDAC value (" + to_string(inputDAC[iFN]) + ") not found in the list");
 		continue;
 	  }
 
@@ -368,7 +369,6 @@ int wgPreCalib(const char * x_inputDir,
 
 //******************************************************************
 vector<string> ListFiles(const string& inputDirName){
-  OperateString OpStr;
   DIR *dp;
   struct dirent *entry;
   vector<string> openxmlfile;

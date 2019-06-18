@@ -17,11 +17,12 @@
 #include "TTree.h"
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgEditConfig.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
+#include "wgLogger.hpp"
 
 //#define DEBUG_WG_EDIT_CONFIG
 
@@ -39,7 +40,6 @@ vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
   CheckExist check;
   if (spiroc2d_csv.empty()) {
 	wgConst con;
-	con.GetENV();
 	spiroc2d_csv = string(con.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
   if (!check.CsvFile(spiroc2d_csv))
@@ -75,7 +75,6 @@ vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
 //*********************************************************************************
 void wgEditConfig::Get_MPPCinfo(int ichip){ 
   wgConst con;
-  con.GetENV();
   
   CheckExist check;
   string mppc_csv(con.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");

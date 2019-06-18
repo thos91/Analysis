@@ -20,9 +20,9 @@
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgChannelMap.h"
-#include "DetectorConst.hpppp"
+#include "DetectorwgConst.hpppp"
 #include "wgGetTree.h"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgReconClass.h"
 
 using namespace std;

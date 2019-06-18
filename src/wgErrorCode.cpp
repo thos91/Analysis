@@ -11,18 +11,18 @@
 // user includes
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
-#include "wgTools.hpp"
-#include "Const.hpp"
+#include "wgFileSystemTools.hpp"
+#include "wgConst.hpp"
+#include "wgLogger.hpp"
 
 namespace filesys = boost::filesystem;
+using namespace wagasci_tools;
 
 bool CheckExist::GenericFile(const string& filename, const string & ext)
 {
-  OperateString OpStr;
-
   try {
 	// Check for correct extension
-    if(OpStr.GetExtension(filename) != ext)
+    if(GetExtension(filename) != ext)
 	  throw wgInvalidFile(filename + " has not ." + ext + " extension");
 	// Create a Path object from given path string
 	filesys::path pathObj(filename);

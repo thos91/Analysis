@@ -26,7 +26,7 @@
 #include "wgEditXML.h"
 #include "wgColor.h"
 #include "wgFit.h"
-#include "wgFitConst.hpp"
+#include "wgFitwgConst.hpp"
 #include "wgGetHist.h"
 #include "wgChannelMap.h"
 

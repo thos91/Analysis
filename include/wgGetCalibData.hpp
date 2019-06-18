@@ -8,8 +8,8 @@
 // user includes
 #include "tinyxml2.hpp"
 #include "wgEditXML.hpp"
-#include "wgTools.hpp"
-#include "Const.hpp"
+#include "wgFileSystemTools.hpp"
+#include "wgConst.hpp"
 
 #define TDC_RAMP_ODD  1
 #define TDC_RAMP_EVEN 0

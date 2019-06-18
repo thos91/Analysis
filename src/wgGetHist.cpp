@@ -9,9 +9,10 @@
 
 // user includes
 #include "wgErrorCode.hpp"
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgGetHist.hpp"
+#include "wgLogger.hpp"
 
 using namespace std;
 

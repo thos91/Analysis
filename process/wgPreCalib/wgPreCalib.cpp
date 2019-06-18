@@ -5,8 +5,8 @@
 // system C includes
 #include <getopt.h>
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgPreCalib.hpp"
 

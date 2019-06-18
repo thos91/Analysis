@@ -19,7 +19,7 @@
 #include <TLine.h>
 
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
 #include "wgEditXML.hpp"
@@ -27,11 +27,14 @@
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
 #include "wgGetHist.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgAnaPedestal.hpp"
+#include "wgLogger.hpp"
 
 #define CHARGE_NOHIT_PEAK 0
 #define CHARGE_HG_PEAK    1
+
+using namespace wagasci_tools;
 
 //******************************************************************
 
@@ -46,10 +49,21 @@ int wgAnaPedestal(const char * x_inputDir,
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
 
-  OperateString OpStr;
   CheckExist Check;
   wgEditXML Edit;
   string xmlfile("");
+
+  if( inputDir.empty() || !Check.Dir(inputDir) ) {
+    Log.eWrite("[wgAnaPedestal] No input directory");
+    return ERR_EMPTY_INPUT_FILE;
+  }
+  
+  if(outputXMLDir == "") outputXMLDir = inputDir;
+
+  Log.Write(" *****  READING DIRECTORY      : " + GetName(inputDir)     + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   : " + GetName(outputXMLDir) + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + GetName(outputIMGDir) + "  *****");
+
 
   vector<int> trig_th(n_chips);
   vector<int> gain_th(n_chips);
@@ -71,7 +85,7 @@ int wgAnaPedestal(const char * x_inputDir,
   if(outputXMLDir == "") outputXMLDir = inputDir;
 
   // ============ Create outputIMGDir ============ //
-  outputIMGDir = outputIMGDir + "/" + OpStr.GetName(inputDir);
+  outputIMGDir = outputIMGDir + "/" + GetName(inputDir);
   if ( !Check.Dir(outputIMGDir) ) {
 	boost::filesystem::path dir(outputIMGDir);
 	if( !boost::filesystem::create_directories(dir) ) {
@@ -80,7 +94,7 @@ int wgAnaPedestal(const char * x_inputDir,
 	}
   }
   // ============ Create outputXMLDir ============ //
-  outputXMLDir = outputXMLDir + "/" + OpStr.GetName(inputDir);
+  outputXMLDir = outputXMLDir + "/" + GetName(inputDir);
   if ( !Check.Dir(outputXMLDir) ) {
 	boost::filesystem::path dir(outputXMLDir);
 	if( !boost::filesystem::create_directories(dir) ) {
@@ -142,7 +156,7 @@ int wgAnaPedestal(const char * x_inputDir,
 		Edit.Open(inputDir + "/chip" + to_string(ichip) + "/ch" + to_string(ichan) + ".xml");
 	  }
 	  catch (const exception& e) {
-		Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
+		Log.eWrite("[" + GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
 		return ERR_FAILED_OPEN_XML_FILE;
 	  }
 	  
@@ -178,7 +192,7 @@ int wgAnaPedestal(const char * x_inputDir,
 	  Edit.Open( outputXMLDir + "/Pedestal_chip" + to_string(ichip) + ".xml" );
 	}
 	catch (const exception& e) {
-	  Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
+	  Log.eWrite("[" + GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
 	  return ERR_FAILED_OPEN_XML_FILE;
 	}
 

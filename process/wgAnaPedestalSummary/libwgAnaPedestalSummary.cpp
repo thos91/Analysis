@@ -27,7 +27,7 @@
 #include <TSpectrum.h>
 
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
 #include "wgEditXML.hpp"
@@ -35,31 +35,11 @@
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
 #include "wgGetHist.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgAnaPedestalSummary.hpp"
+#include "wgLogger.hpp"
 
-//******************************************************************
-vector<string> GetIncludeFileName(const string& inputDir){
-  OperateString OpStr;
-  DIR *dp;
-  struct dirent *entry;
-  vector<string> openxmlfile;
-
-  // Open the input directory
-  dp = opendir(inputDir.c_str());
-  if(dp == NULL)
-	throw wgInvalidFile("opendir: failed to open directory");
-
-  // Fill the openxmlfile vector of strings with the path of all the files and
-  // directories contained inside the input directory
-  while( (entry = readdir(dp)) != NULL ) {
-	// Ignore hidden files and directories
-    if( (entry->d_name[0]) != '.' )
-	  openxmlfile.push_back( inputDir + "/" + string(entry->d_name) );
-  }
-  closedir(dp);
-  return openxmlfile;
-} 
+using namespace wagasci_tools;
 
 //******************************************************************
 int wgAnaPedestalSummary(const char * x_inputDir,
@@ -74,42 +54,48 @@ int wgAnaPedestalSummary(const char * x_inputDir,
   string outputIMGDir(x_outputIMGDir);
   
   wgConst con;
-  OperateString OpStr;
   CheckExist Check;
-  if (outputXMLDir == ""){
+
+  if (inputDir.empty() || !Check.Dir(inputDir)) {
+    Log.eWrite("[wgAnaPedestal] input directory doesn't exist");
+    return ERR_EMPTY_INPUT_FILE;
+  }
+  
+  if (outputXMLDir.empty()) {
     outputXMLDir = con.CALIBDATA_DIRECTORY;
   }
 
   // ============ Create outputXMLDir ============ //
-  if ( !Check.Dir(outputXMLDir) ) {
-	boost::filesystem::path dir(outputXMLDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgAnaHist][" + outputXMLDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
-  }
-    // ============ Create outputIMGDir ============ //
-  if ( !Check.Dir(outputIMGDir) ) {
-	boost::filesystem::path dir(outputIMGDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgAnaHist][" + outputIMGDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
+  try { MakeDir(outputXMLDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
+  // ============ Create outputIMGDir ============ //
+  try { MakeDir(outputIMGDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
+  }
+
+  Log.Write(" *****  READING DIRECTORY      :" + GetName(inputDir)     + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + GetName(outputXMLDir) + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + GetName(outputIMGDir) + "  *****");
+  
   // Open the input directory and fill the ReadFile vector with the list of
   // files in it
   vector<string> inputFile;
   try {
-	inputFile = GetIncludeFileName(inputDir); 
+	inputFile = ListFilesWithExtension(inputDir); 
   } catch (const wgInvalidFile& e) {
-	Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
+	Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
 	return ERR_GET_FILE_LIST;
   }
 
   int nFiles = inputFile.size();
   if (nFiles == 0) {
-    Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] input directory seems empty");
+    Log.Write("[wgAnaPedestalSummary] input directory seems empty");
     return ERR_GET_FILE_LIST;
   }
   
@@ -155,7 +141,7 @@ int wgAnaPedestalSummary(const char * x_inputDir,
 		Edit.Open(xmlfile);
 	  }
 	  catch (const exception& e) {
-		Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
+		Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
 		return ERR_FAILED_OPEN_XML_FILE;
 	  }
 
@@ -272,7 +258,7 @@ int wgAnaPedestalSummary(const char * x_inputDir,
 	Edit.Open(xmlfile);
   }
   catch (const exception& e) {
-	Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] " + e.what());
+	Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
 	return ERR_FAILED_OPEN_XML_FILE;
   }
 

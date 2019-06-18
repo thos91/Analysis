@@ -7,7 +7,7 @@
 
 // user includes
 #include "tinyxml2.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 #define XML_ELEMENT_STRING_LENGTH 32
 

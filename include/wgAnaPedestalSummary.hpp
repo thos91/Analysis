@@ -5,7 +5,7 @@
 #include <string>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 // errors
 #define APS_SUCCESS                 0
@@ -14,17 +14,18 @@
 #define ERR_FAILED_OPEN_XML_FILE    3
 #define ERR_WRONG_DIF_VALUE         4
 #define ERR_WRONG_PE_VALUE          5
+#define ERR_EMPTY_INPUT_FILE        6
 
 static const double PEDESTAL_DIFFERENCE_WARNING_THRESHOLD = 0.1;
 
 using namespace std;
 
-vector<string> GetIncludeFileName(const string& inputDirName);
-
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+  vector<string> GetIncludeFileName(const string& inputDirName);
 
   int wgAnaPedestalSummary(const char * inputDirName,
                            const char * outputXMLDirName,

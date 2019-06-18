@@ -5,7 +5,7 @@
 
 // user includes
 #include "wgDetectorDimension.hpp"
-#include "DetectorConst.hpp"
+#include "wgDetectorConst.hpp"
 
 using namespace std;
 

@@ -10,7 +10,7 @@
 #include "wgGetTree.h"
 #include "wgErrorCode.h"
 #include "wgTools.h"
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 using namespace std;
 

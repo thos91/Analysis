@@ -23,9 +23,9 @@
 #include <math.h>
 #include <sstream>
 
-#include "Const.hpp"
-#include "DetectorConst.hpppp"
-#include "wgTools.h"
+#include "wgConst.hpp"
+#include "wgDetectorConst.hpp"
+#include "wgFileSystemTools.h"
 #include "wgErrorCode.h"
 #include "wgChannelMap.h"
 #include "wgGetTree.h"
@@ -77,7 +77,6 @@ int main(int argc, char **argv)
   int thres_numwgrecon = -1;
   int thres_numingrecon = -1;
   wgConst *con = new wgConst;
-  con->GetENV();
   string wgFileName("");
   string ingFileName("");
   string logoutputDir=con->LOG_DIRECTORY;

@@ -12,13 +12,16 @@
 #include "TTree.h"
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgColor.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
 #include "wgErrorCode.hpp"
 #include "wgMakeHist.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 int wgMakeHist(const char * x_inputFileName,
                const char * x_outputDir,
@@ -34,18 +37,15 @@ int wgMakeHist(const char * x_inputFileName,
     return ERR_EMPTY_INPUT_FILE;
   }
   
-  OperateString OptStr;
-  string outputHistFileName = OptStr.GetNameBeforeLastUnderBar(inputFileName) + "_hist.root";
-  string logfilename  = OptStr.GetName(inputFileName);
+  string outputHistFileName = GetNameBeforeLastUnderBar(inputFileName) + "_hist.root";
+  string logfilename  = GetName(inputFileName);
   int pos             = logfilename.rfind("_ecal_dif_") ;
-  string logfile      = OptStr.GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
+  string logfile      = GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
 
-#ifdef DEBUG_MAKEHIST
-  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  READING FILE     : " + OptStr.GetName(inputFileName)      + "  *****");
-  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  OUTPUT HIST FILE : " + OptStr.GetName(outputHistFileName) + "  *****");
-  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  OUTPUT DIRECTORY : " + outputDir                          + "  *****");
-  Log.Write("[" + OptStr.GetName(logfilename) + "][wgMakeHist] *****  LOG FILE         : " + OptStr.GetName(logfilename)        + "  *****");
-#endif
+  Log.Write("[wgMakeHist] *****  READING FILE     : " + GetName(inputFileName)      + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT HIST FILE : " + GetName(outputHistFileName) + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + outputDir                          + "  *****");
+  Log.Write("[wgMakeHist] *****  LOG FILE         : " + GetName(logfilename)        + "  *****");
   
   TFile * outputHistFile;
 
@@ -118,7 +118,7 @@ int wgMakeHist(const char * x_inputFileName,
 	GetTree = new wgGetTree( inputFileName, rd ); 
   }
   catch (const exception& e) {
-	Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] failed to get the TTree : " + string(e.what()));
+	Log.eWrite("[wgMakeHist] failed to get the TTree : " + string(e.what()));
 	exit(1);
   }
   TH1D * start_time;
@@ -134,7 +134,7 @@ int wgMakeHist(const char * x_inputFileName,
   double max_spill = tree->GetMaximum("spill");
   double min_spill = tree->GetMinimum("spill");
   if(min_spill < 0) {
-    Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] some spill value is missed : min_spill = " + to_string(min_spill));
+    Log.eWrite("[wgMakeHist] some spill value is missed : min_spill = " + to_string(min_spill));
   }
 
   outputHistFile->cd();
@@ -151,7 +151,7 @@ int wgMakeHist(const char * x_inputFileName,
   for (int ievent = 0; ievent < n_events; ievent++) {
 
     if ( ievent % 1000 == 0 )
-	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] Event number = " + to_string(ievent) + " / " + to_string(n_events));
+	  Log.Write("[wgMakeHist] Event number = " + to_string(ievent) + " / " + to_string(n_events));
 	// Read one event
     tree->GetEntry(ievent);
 	// Fill the spill histogram with using the spill_flag as a weight.
@@ -165,7 +165,7 @@ int wgMakeHist(const char * x_inputFileName,
     for(unsigned i = 0; i < n_chips; i++) {
 	  if( rd.chipid[i] < 0 || rd.chipid[i] >= (int) n_chips ) {
 #ifdef DEBUG_MAKEHIST
-		Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] event " + to_string(ievent) + " : chipid[" + to_string(i) + "] = " + to_string(rd.chipid[i])); 
+		Log.Write("[wgMakeHist] event " + to_string(ievent) + " : chipid[" + to_string(i) + "] = " + to_string(rd.chipid[i])); 
 #endif
 		continue;
 	  }
@@ -190,7 +190,7 @@ int wgMakeHist(const char * x_inputFileName,
               h_charge_hit_LG[ichip][ichan][icol]->Fill(rd.charge[i][ichan][icol]);
             }
 #ifdef DEBUG_MAKEHIST	
-			else Log.Write("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] event " + to_string(ievent) + " : bad gain bit = " + to_string(rd.gs[i][ichan][icol] ));
+			else Log.Write("[wgMakeHist] event " + to_string(ievent) + " : bad gain bit = " + to_string(rd.gs[i][ichan][icol] ));
 #endif	  
           }
 		  // NO HIT

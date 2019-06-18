@@ -12,8 +12,8 @@
 
 // user includes
 #include "wgErrorCode.hpp"
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 
 using namespace std;
 

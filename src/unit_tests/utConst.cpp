@@ -1,4 +1,4 @@
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include <iostream>
 
 int main() {

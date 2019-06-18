@@ -3,9 +3,9 @@
 
 // user includes
 #include "wgGetCalibData.hpp"
-#include "wgTools.hpp"
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgEditXML.hpp"
 #include "wgExceptions.hpp"

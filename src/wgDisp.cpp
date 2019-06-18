@@ -30,11 +30,11 @@
 #include "TPolyLine.h"
 
 // user includes
-#include "Const.hpp"
-#include "DetectorConst.hpp"
+#include "wgConst.hpp"
+#include "wgDetectorConst.hpp"
 #include "wgDetectorDimension.hpp"
 #include "wgChannelMap.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgDisp.hpp"
 

@@ -6,9 +6,10 @@
 
 // user includes
 #include "wgGetTree.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
+#include "wgLogger.hpp"
 
 using namespace std;
 
@@ -84,8 +85,7 @@ bool wgGetTree::BranchExists(const string& branch_name) {
 	TBranch *br = dynamic_cast<TBranch*>(tree_in->GetListOfBranches()->At(i));
 	if( br && br->GetName() == branch_name ) return true;
    }
-   OperateString OptStr;
-   Log.Write("[" + OptStr.GetName(finputname) + "][SetTreeFile] Branch " + branch_name + " not found");
+   Log.Write("[SetTreeFile] Branch " + branch_name + " not found");
   return false;
 }
 

@@ -8,13 +8,14 @@
 #include <cstdbool>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 // Errors
 #define AP_SUCCESS                  0
 #define ERR_CANNOT_CREATE_DIRECTORY 1
 #define ERR_FAILED_OPEN_XML_FILE    2
 #define ERR_WRONG_PE_VALUE          3
+#define ERR_EMPTY_INPUT_FILE        4
 
 using namespace std;
 

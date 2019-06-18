@@ -4,10 +4,13 @@
 // system C includes
 #include <getopt.h>
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgAnaPedestal.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 void print_help(const char * program_name) {
   cout <<  program_name << " is used to summarize the information contained in the\n"
@@ -28,28 +31,17 @@ int main(int argc, char** argv){
   int opt;
   bool overwrite = false;
   wgConst con;
-  con.GetENV();
   string inputDir("");
   string configFileName("");
-  string outputIMGDir=con.IMGDATA_DIRECTORY;
-  string outputXMLDir("");
-  string outputDir("");
-  string logoutputDir=con.LOG_DIRECTORY;
+  string outputIMGDir = con.IMGDATA_DIRECTORY;
+  string outputXMLDir = con.XMLDATA_DIRECTORY;
 
   int n_chips = NCHIPS, n_chans = NCHANNELS;
-
-  OperateString OpStr;
-  CheckExist check;
 
   while((opt = getopt(argc,argv, "f:o:i:x:y:hr")) !=-1 ){
     switch(opt){
 	case 'f':
-	  inputDir=optarg;
-	  if(!check.Dir(inputDir)){ 
-		cout<<"!!Error!! "<< inputDir.c_str() << "doesn't exist!!";
-		Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaHistSummary] target doesn't exist");
-		return 1;
-	  }   
+	  inputDir = optarg;
 	  break;
 
 	case 'o':
@@ -81,23 +73,15 @@ int main(int argc, char** argv){
     }   
   }
 
-  if(inputDir == "") {
-    Log.eWrite("[wgAnaPedestal] No input directory");
-    exit(1);
-  }
-  
-  if(outputXMLDir == "") outputXMLDir = inputDir;
-
-  Log.Write(" *****  READING DIRECTORY      : " + OpStr.GetName(inputDir)     + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   : " + OpStr.GetName(outputXMLDir) + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + OpStr.GetName(outputIMGDir) + "  *****");
-
-  wgAnaPedestal(inputDir.c_str(),
+  int result;
+  if ( (result = wgAnaPedestal(inputDir.c_str(),
                 outputXMLDir.c_str(),
                 outputIMGDir.c_str(),
                 overwrite,
                 n_chips,
-                n_chans);
-
-  Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestal] wgAnaPedestal finished");
+                               n_chans)) != AP_SUCCESS ) {
+    Log.Write("[wgAnaPedestalSummary] returned error code " + to_string(result));
+    exit(1);
+  }
+  exit(0);
 }

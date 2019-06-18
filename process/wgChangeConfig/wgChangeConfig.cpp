@@ -5,12 +5,15 @@
 // system C includes
 #include <bits/stdc++.h>
 #include <getopt.h>
+
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgChangeConfig.hpp"
+#include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 void print_help(const char * program_name) {
   cout << program_name << " checks or changes a SPIROC bitstream file.\n"
@@ -39,49 +42,36 @@ void print_help(const char * program_name) {
 //******************************************************************
 int main(int argc, char** argv){
   int opt;
-  int mode   = -1;
+  int mode    = -1;
   int channel = -1;
-  int value  = -1;
-  int ichip  = -1;
-  bitset<4> flags;
+  int value   = -1;
+  int ichip   = -1;
+  bitset<M> flags;
   string inputFile("");
   string outputFile("");
   string outputPath("");
 
-  CheckExist Check;
-  OperateString OpStr;
-
   while((opt = getopt(argc,argv, "f:o:m:b:v:t:her")) !=-1 ){
     switch(opt){
 	case 'f':
-	  inputFile=optarg;
-	  Log.Write("[" + OpStr.GetName(inputFile) + "][wgChangeConfig] input directory: " + OpStr.GetPath(inputFile));
+	  inputFile = optarg;
 	  break;
 
 	case 'o':
-	  outputFile=optarg;
-	  outputPath=OpStr.GetPath(outputFile); 
-	  if(!Check.Dir(outputPath)){
-		Log.eWrite("[" + OpStr.GetName(inputFile) + "][wgChangeConfig] " + outputPath + " doesn't exist");
-		return 1;
-	  }
-	  Log.Write("[" + OpStr.GetName(inputFile) + "][wgChangeConfig] Output directory: " + outputPath);
+	  outputFile = optarg;
 	  break;
 
 	case 'r':
 	  flags[OVERWRITE_FLAG] = true;
-	  Log.Write("[" + OpStr.GetName(inputFile) + "][wgChangeConfig] overwrite mode");
 	  break;
 
 	case 'e':
 	  flags[EDIT_FLAG] = true;
-	  Log.Write("[" + OpStr.GetName(inputFile) + "][wgChangeConfig] edit mode");
 	  break;
       
 	case 't':
 	  flags[MPPC_DATA_FLAG] = true;
 	  ichip = atoi(optarg);
-	  Log.Write("[" + OpStr.GetName(inputFile) + "][wgChangeConfig] fine tuning mode");
 	  break;
 
 	case 'm':
@@ -105,10 +95,18 @@ int main(int argc, char** argv){
 	  break;
 	}
   }
-  if(flags[OVERWRITE_FLAG] && outputFile == "") outputFile = inputFile;
 
   int result;
-  if ( (result = wgChangeConfig(inputFile.c_str(), outputFile.c_str(), flags.to_ulong(), value, mode, ichip, channel)) != 0) {
+  if ( (result = wgChangeConfig(inputFile.c_str(),
+                                outputFile.c_str(),
+                                flags.to_ulong(),
+                                value,
+                                mode,
+                                ichip,
+                                channel)) != 0) {
 	Log.eWrite(string(argv[0]) + " returned error code " + to_string(result));
+    exit(1);
   }
+
+  exit(0);
 }

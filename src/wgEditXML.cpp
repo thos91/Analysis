@@ -11,12 +11,13 @@
 #include "tinyxml2.hpp"
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgEditXML.hpp"
 #include "wgEditConfig.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
+#include "wgLogger.hpp"
 
 using namespace std;
 using namespace tinyxml2;

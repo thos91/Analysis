@@ -9,8 +9,8 @@
 #include "TROOT.h"
 
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgGetHist.hpp"
 #include "wgErrorCode.hpp"
 

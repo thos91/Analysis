@@ -7,7 +7,7 @@
 #include <fstream>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 
 using namespace std;

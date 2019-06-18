@@ -4,11 +4,14 @@
 // system C includes
 #include <getopt.h>
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgAnaPedestalSummary.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 void print_help(const char * program_name) {
   cout <<  program_name << " TO DO.\n"
@@ -25,22 +28,15 @@ void print_help(const char * program_name) {
 int main(int argc, char** argv){
   int opt, n_difs = NDIFS, n_chips = NCHIPS, n_chans = NCHANNELS;
   wgConst con;
-  con.GetENV();
   string inputDir("");
-  string outputXMLDir("");
+  string outputXMLDir = con.XMLDATA_DIRECTORY;
   string outputIMGDir = con.IMGDATA_DIRECTORY;
 
-  OperateString OpStr;
-  CheckExist check;
 
   while((opt = getopt(argc,argv, "f:o:i:n:x:y:h")) !=-1 ) {
     switch(opt){
 	case 'f':
 	  inputDir = optarg;
-	  if( !check.Dir(inputDir) ) { 
-		Log.eWrite("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] target doesn't exist");
-		return 1;
-	  }   
 	  break;
 	case 'o':
 	  outputXMLDir = optarg; 
@@ -65,19 +61,6 @@ int main(int argc, char** argv){
     }   
   }
 
-  if (inputDir == "") {
-    Log.eWrite("[wgAnaPedestal] No input directory");
-    exit(1);
-  }
-
-  if (outputXMLDir == "") {
-    outputXMLDir = con.CALIBDATA_DIRECTORY;
-  } 
-
-  Log.Write(" *****  READING DIRECTORY      :" + OpStr.GetName(inputDir)     + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + OpStr.GetName(outputXMLDir) + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + OpStr.GetName(outputIMGDir) + "  *****");
-
   int result;
   if ( (result = wgAnaPedestalSummary(inputDir.c_str(),
                                       outputXMLDir.c_str(),
@@ -85,9 +68,8 @@ int main(int argc, char** argv){
                                       n_difs,
                                       n_chips,
                                       n_chans)) != APS_SUCCESS ) {
-    Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] Return error code " + to_string(result));
+    Log.Write("[wgAnaPedestalSummary] Returned error code " + to_string(result));
   }
 
-  Log.Write("[" + OpStr.GetName(inputDir) + "][wgAnaPedestalSummary] Finished");
 }
 

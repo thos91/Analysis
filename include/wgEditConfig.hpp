@@ -6,7 +6,7 @@
 #include <vector>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 using namespace std;
 

@@ -2,7 +2,7 @@
 #define WG_CHANGE_CONFIG_HPP_
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 // flags
 #define EDIT_FLAG      0
@@ -11,15 +11,15 @@
 #define CHECKOPT_FLAG  3
 
 // error codes
-#define EC_SUCCESS                 0
-#define ERR_EMPTY_INPUT_FILE       1
-#define ERR_INPUT_FILE_NOT_FOUND   2
-#define ERR_OVERWRITE_FLAG_NOT_SET 3
-#define ERR_VALUE_OUT_OF_RANGE     4
-#define ERR_CHANNEL_OUT_OF_RANGE   5
-#define ERR_WRONG_MODE             6
-#define ERR_FAILED_WRITE           7
-
+#define EC_SUCCESS                  0
+#define ERR_EMPTY_INPUT_FILE        1
+#define ERR_INPUT_FILE_NOT_FOUND    2
+#define ERR_OVERWRITE_FLAG_NOT_SET  3
+#define ERR_VALUE_OUT_OF_RANGE      4
+#define ERR_CHANNEL_OUT_OF_RANGE    5
+#define ERR_WRONG_MODE              6
+#define ERR_FAILED_WRITE            7
+#define ERR_CANNOT_CREATE_DIRECTORY 8
 // modes
 #define EC_TRIGGER_THRESHOLD     0
 #define EC_GAIN_SELECT_THRESHOLD 1
@@ -29,6 +29,7 @@
 #define EC_INPUT_DAC_REFERENCE   5
 
 //#define DEBUG_CHANGECONFIG
+#define M 4
 
 using namespace std;
 

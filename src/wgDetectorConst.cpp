@@ -1,4 +1,4 @@
-#include "DetectorConst.hpp"
+#include "wgDetectorConst.hpp"
 #include <cmath>
 
 // ===================================================================================

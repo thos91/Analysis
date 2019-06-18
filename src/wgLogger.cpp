@@ -11,97 +11,19 @@
 // boost includes
 #include <boost/filesystem.hpp>
 
-// ROOT includes
-#include "TROOT.h"
-
 // user includes
-#include "wgTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
-#include "Const.hpp"
+#include "wgConst.hpp"
+#include "wgLogger.hpp"
 
-using namespace std;
+//==================== wgLogger Class ====================//
 
-string OperateString::GetExtension(const string& str)
-{
-  OperateString::str = str;
-  size_t pos1 = str.rfind('.');
-  if(pos1 !=string::npos){
-    OperateString::ext = str.substr(pos1+1, str.size()-pos1);
-    string::iterator itr = ext.begin();
-    while(itr != ext.end()){
-      *itr=tolower(*itr);
-      itr++;  
-    }
-    itr = ext.end()-1;
-    while(itr != ext.begin()){
-      if(*itr==0 || *itr == 32){
-        ext.erase(itr--);
-      }else{
-        itr--;
-      }
-    }
-  }
-  return ext;
-}
+wgLogger Log;
 
-string OperateString::GetName(const string& str)
-{
-  string fn;
-  string tmp = str;
-  string::size_type fpos;
-  if( (fpos = tmp.find_last_of("/")) == tmp.size()-1){
-    tmp = tmp.substr(0,tmp.size()-1);
-  }
+wgLogger::wgLogger() : wgLogger(string("")) {}
 
-  if((fpos = tmp.find_last_of("/")) != string::npos){
-    fn = tmp.substr(fpos+1);
-  }else{
-    fn = tmp;
-  }
-  if((fpos = fn.find_last_of(".")) != string::npos){
-    if(fpos>1){
-      fn = fn.substr(0,fpos);
-    }
-  }
-  return fn;
-}
-
-string OperateString::GetPath(const string& str)
-{
-  size_t pos1;
-  pos1 = str.rfind("/");
-  if(pos1 != string::npos){
-    return str.substr(0,pos1+1);
-  }
-  return "";
-}
-
-string OperateString::GetNameBeforeLastUnderBar(const string& str)
-{
-  string fn;
-  string::size_type fpos;
-  if((fpos = str.find_last_of("/")) != string::npos){
-    fn = str.substr(fpos+1);
-  }else{
-    fn = str;
-  }
-  if((fpos = fn.find_last_of(".")) != string::npos){
-    fn = fn.substr(0,fpos);
-  }
-  if((fpos = fn.find_last_of("_")) != string::npos){
-    fn = fn.substr(0,fpos);
-  }
-  return fn;
-}
-
-//==================== Logger Class ====================//
-
-Logger Log;
-
-Logger::Logger() : Logger(string("")) {}
-
-Logger::Logger(const string& log_dir)
+wgLogger::wgLogger(const string& log_dir)
 {
   try {
 	time_t newTime = time( NULL );
@@ -110,7 +32,6 @@ Logger::Logger(const string& log_dir)
 	// If log_dir is empty try to infer it from the environment
 	if ( log_dir.empty() ) {
 	  wgConst con;
-	  con.GetENV();
 	  dir = con.LOG_DIRECTORY;
 	} else dir = log_dir;
   
@@ -145,17 +66,17 @@ Logger::Logger(const string& log_dir)
   }
   catch (const exception& e) {
 	WhereToLog = COUT;
-	this->eWrite("[Logger] Error in Logger object constructor : " + string(e.what()));
-	this->Write( "[Logger] The standard output (cout) will be used for logging");
+	this->eWrite("[wgLogger] Error in wgLogger object constructor : " + string(e.what()));
+	this->Write( "[wgLogger] The standard output (cout) will be used for logging");
   }
   catch (...) {
 	WhereToLog = COUT;
-	this->eWrite("[Logger] Error in Logger object constructor");
-	this->Write( "[Logger] The standard output (cout) will be used for logging");
+	this->eWrite("[wgLogger] Error in wgLogger object constructor");
+	this->Write( "[wgLogger] The standard output (cout) will be used for logging");
   }
 }
 
-void Logger::Write(const string& log)
+void wgLogger::Write(const string& log)
 {
   if ( WhereToLog == COUT )
 	cout << "[ " << m_printTime() << " ]: " << log << endl;
@@ -167,7 +88,7 @@ void Logger::Write(const string& log)
   }
 }
 
-void Logger::eWrite(const string& log)
+void wgLogger::eWrite(const string& log)
 {
   if ( WhereToLog == COUT )
 	cerr << "[ " << m_printTime() << " ]: " << log << endl;
@@ -180,7 +101,7 @@ void Logger::eWrite(const string& log)
 }
 
 // Prints UTC timestamp
-string Logger::m_printTime() {
+string wgLogger::m_printTime() {
   chrono::time_point<chrono::system_clock> now = chrono::system_clock::now();
   time_t now_time = chrono::system_clock::to_time_t(now);
   auto gmt_time = gmtime(&now_time);
@@ -190,11 +111,10 @@ string Logger::m_printTime() {
   return ss.str();
 }
 
-Logger::~Logger()
+wgLogger::~wgLogger()
 {
   m_file.close();
   m_efile.close();
 }
 
-//==================== end Logger Class ====================//
-
+//==================== end wgLogger Class ====================//

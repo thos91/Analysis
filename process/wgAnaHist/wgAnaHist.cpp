@@ -6,10 +6,13 @@
 #include <bits/stdc++.h>
 #include <getopt.h>
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgAnaHist.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 // print_help
 // prints an help message with all the arguments taken by the program
@@ -56,11 +59,9 @@ int main(int argc, char** argv){
 
   // Get the output directories from
   wgConst con;
-  con.GetENV();
   string outputXMLDir = con.XMLDATA_DIRECTORY;
   string outputIMGDir = con.IMGDATA_DIRECTORY;
 
-  OperateString OptStr;
   CheckExist Check;
 
   while((opt = getopt(argc,argv, "f:d:m:i:o:q:x:y:prh")) !=-1 ) {
@@ -68,10 +69,10 @@ int main(int argc, char** argv){
 	case 'f':
 	  inputFileName=optarg;
 	  if(!Check.RootFile(inputFileName)){
-		Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] target doesn't exist");
+		Log.eWrite("[" + GetName(inputFileName) + "][wgAnaHist] target doesn't exist");
 		exit(1);
 	  }
-	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] start wgAnaHist");
+	  Log.Write("[" + GetName(inputFileName) + "][wgAnaHist] start wgAnaHist");
 	  break;
 	case 'd':
 	  idif = atoi(optarg);
@@ -83,10 +84,10 @@ int main(int argc, char** argv){
 	  configFileName = optarg;
 	  flags[SELECT_CONFIG] = true;
 	  if(!Check.XmlFile(configFileName)) {
-		Log.eWrite("[" + OptStr.GetName(configFileName) + "][wgAnaHist] target doesn't exist");
+		Log.eWrite("[" + GetName(configFileName) + "][wgAnaHist] target doesn't exist");
 		exit(1);
 	  }
-	  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] read config file: " + configFileName);
+	  Log.Write("[" + GetName(inputFileName) + "][wgAnaHist] read config file: " + configFileName);
 	  break;
 	case 'o':
 	  outputXMLDir = optarg;
@@ -128,10 +129,10 @@ int main(int argc, char** argv){
                            idif,
                            n_chips,
                            n_chans)) != AH_SUCCESS ) {
-	Log.eWrite("[" +OptStr.GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
+	Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
 	exit(1);
   }
 
-  Log.Write("[" + OptStr.GetName(inputFileName) + "][wgAnaHist] finished");
+  Log.Write("[" + GetName(inputFileName) + "][wgAnaHist] finished");
   exit(0);
 }

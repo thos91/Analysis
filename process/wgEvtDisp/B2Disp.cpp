@@ -29,7 +29,7 @@
 #include "ThreeDimReconSummary.h"
 #include "EVENTSUMMARY.h"
 #include "TwoDimRecon.hxx"
-#include "Const.hpph"
+#include "wgConst.hpph"
 
 //#define DEBUG_DISP
 //#define DEBUG_DETDIM

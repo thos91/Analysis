@@ -12,10 +12,11 @@
 #include "TROOT.h"
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 //***************************************
 wgConst::wgConst() : script_path("/opt/calicoes/wagasci_environment.sh") {
+  this->GetENV();
 }
 
 //***************************************

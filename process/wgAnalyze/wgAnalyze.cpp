@@ -12,12 +12,12 @@
 #include <TGraphErrors.h>
 #include <TMultiGraph.h>
 
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgColor.h"
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgFit.h"
-#include "wgFitConst.hpp"
+#include "wgFitwgConst.hpp"
 #include "wgGetHist.h"
 #include "wgEditXML.h"
 

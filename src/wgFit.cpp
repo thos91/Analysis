@@ -24,13 +24,14 @@
 #include <TSpectrum.h>
 
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
 #include "wgGetHist.hpp"
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
+#include "wgLogger.hpp"
 
 //#define DEBUG_WGFIT
 
@@ -70,7 +71,6 @@ wgFit::wgFit(const string& x_inputfile, const string& x_outputIMGDir) {
 wgFit::wgFit(const string& x_inputfile) {
   wgFit::GetHist = new wgGetHist(x_inputfile);
   wgConst con;
-  con.GetENV();
   CheckExist Check;
   if( !Check.Dir(con.IMGDATA_DIRECTORY) ) {
 	boost::filesystem::path dir(con.IMGDATA_DIRECTORY);

@@ -6,8 +6,9 @@
 
 // user includes
 #include "wgErrorCode.hpp"
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgMakeHist.hpp"
+#include "wgLogger.hpp"
 
 // print_help
 // prints an help message with all the arguments taken by the program
@@ -26,11 +27,9 @@ void print_help(const char * program_name) {
 int main(int argc, char** argv) {
 
   CheckExist check;
-  OperateString OptStr;
 
   // Get environment variables
   wgConst con;
-  con.GetENV();
   
   int opt;
   string inputFileName("");
@@ -40,7 +39,7 @@ int main(int argc, char** argv) {
   unsigned n_chips = NCHIPS;
   unsigned n_channels = NCHANNELS;
 
-  while((opt = getopt(argc,argv, "f:o:x:y:rh")) !=-1 ){
+  while((opt = getopt(argc,argv, "f:o:x:y:rh")) != -1 ){
     switch(opt){
 	case 'f':
 	  inputFileName=optarg;
@@ -55,14 +54,14 @@ int main(int argc, char** argv) {
 	case 'x':
 	  n_chips = atoi(optarg);
 	  if( n_chips <= 0 && n_chips > NCHIPS ) {
-		Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] The number of chips per DIF must be {1-" + to_string(NCHIPS) + "}");
+		Log.eWrite("[wgMakeHist] The number of chips per DIF must be {1-" + to_string(NCHIPS) + "}");
 		exit(1);
 	  }
 	  break;
 	case 'y':
 	  n_channels = atoi(optarg);
 	  if( n_channels <= 0 && n_channels > NCHANNELS ) {
-		Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] The number of channels per DIF must be {1-" + to_string(NCHANNELS) + "}");
+		Log.eWrite("[wgMakeHist] The number of channels per DIF must be {1-" + to_string(NCHANNELS) + "}");
 		exit(1);
 	  }
 	  break;
@@ -89,7 +88,7 @@ int main(int argc, char** argv) {
                             overwrite,
                             n_chips,
                             n_channels)) != MH_SUCCESS ) {
-	Log.eWrite("[" + OptStr.GetName(inputFileName) + "][wgMakeHist] wgMakeHist returned error " + to_string(result));
+	Log.eWrite("[wgMakeHist] wgMakeHist returned error " + to_string(result));
     exit(1);
   }
 	exit(0);

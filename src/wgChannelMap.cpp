@@ -7,9 +7,9 @@
 
 // user includes
 #include "wgChannelMap.hpp"
-#include "ContiguousVectors.hpp"
-#include "DetectorConst.hpp"
-#include "Const.hpp"
+#include "wgContiguousVectors.hpp"
+#include "wgDetectorConst.hpp"
+#include "wgConst.hpp"
 
 // #define DEBUG_CHMAP
 // #ifndef DEBUG

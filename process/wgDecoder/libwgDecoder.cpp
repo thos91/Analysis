@@ -22,20 +22,22 @@
 #include "TInterpreter.h"
 
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
 #include "wgGetCalibData.hpp"
 #include "wgChannelMap.hpp"
 #include "wgDecoder.hpp"
+#include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
-int wgDecoder(const char * x_inputFileName,
-			  const char * x_calibFileName,
-			  const char * x_pedFileName,
-			  const char * x_tdcFileName,
+int wgDecoder(const char * x_inputFile,
+			  const char * x_calibFile,
+			  const char * x_pedFile,
+			  const char * x_tdcFile,
 			  const char * x_outputDir,
 			  const bool overwrite,
 			  unsigned maxEvt,
@@ -43,53 +45,74 @@ int wgDecoder(const char * x_inputFileName,
 			  unsigned n_chips,
 			  unsigned n_channels) {
 
-  string inputFileName(x_inputFileName);
-  string calibFileName(x_calibFileName);
-  string pedFileName(x_pedFileName);
-  string tdcFileName(x_tdcFileName);
+  string inputFile(x_inputFile);
+  string calibFile(x_calibFile);
+  string pedFile(x_pedFile);
+  string tdcFile(x_tdcFile);
   string outputDir(x_outputDir);
 
   if ( maxEvt == 0 ) {
     maxEvt = MAX_EVENT;
   }
   
-  OperateString OptStr;
   CheckExist check;
-  string outputTreeFileName = OptStr.GetName(inputFileName)+"_tree.root";
+  wgConst con;
+  string outputFile = GetName(inputFile)+"_tree.root";
+
+  if( inputFile.empty() || !check.RawFile(inputFile) ) { 
+    Log.eWrite("[wgDecoder] Input file doesn't exist : " + inputFile);
+    return ERR_INPUT_FILE_NOT_FOUND;
+  }
+
+  if(calibFile.empty()) {
+	calibFile = con.CONF_DIRECTORY + "/cards/calibration_card.xml";
+  }
+  if(pedFile.empty()) {
+	pedFile = con.CONF_DIRECTORY + "/cards/pedestal_card.xml";
+  }
+  if(tdcFile.empty()) {
+	tdcFile = con.CONF_DIRECTORY + "/cards/tdc_coefficient_card.xml";
+  }
+
+  if( dif > NDIFS ) {
+    Log.eWrite("[wgDecoder] The number of chips per DIF must be {1-" + to_string(NCHIPS) + "}");
+    exit(1);
+  }
+  if( n_channels > NCHANNELS ) {
+    Log.eWrite("[wgDecoder] The number of channels per DIF must be {1-" + to_string(NCHANNELS) + "}");
+    exit(1);
+  }
 
   // This is not the output log file but the log file that should be already
   // present in the input folder and was created together with the .raw file
-  string logfilename  = OptStr.GetName(inputFileName);
-  int pos             = logfilename.rfind("_ecal_dif_") ;
-  string logfile      = OptStr.GetPath(inputFileName) + logfilename.substr(0, pos ) + ".log";
-  
-#ifndef DEBUG_DECODE
-  Log.Write("[" + logfilename + "][Decoder] *****  READING FILE     :" + inputFileName      + "  *****");
-  Log.Write("[" + logfilename + "][Decoder] *****  OUTPUT TREE FILE :" + outputTreeFileName + "  *****");
-  Log.Write("[" + logfilename + "][Decoder] *****  OUTPUT DIRECTORY :" + outputDir          + "  *****");
-#endif
+  string logfile  = GetName(inputFile);
+  int pos             = logfile.rfind("_ecal_dif_") ;
+  logfile      = GetPath(inputFile) + logfile.substr(0, pos ) + ".log";
+
 
   // ============ Create outputDir ============ //
-  if( !check.Dir(outputDir) ) {
-	boost::filesystem::path dir(outputDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgAnaHist][" + outputDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
+  try { MakeDir(outputDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[Decoder] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
-  TFile * outputTreeFile;
+  Log.Write("[Decoder] READING FILE     :" + inputFile      );
+  Log.Write("[Decoder] OUTPUT TREE FILE :" + outputFile );
+  Log.Write("[Decoder] OUTPUT DIRECTORY :" + outputDir      );
+  
+  TFile * outputTFile;
 
   if (!overwrite){
-    outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "create");
-    if ( !outputTreeFile->IsOpen() ) {
-      Log.eWrite("[" + logfilename + "][Decoder] Error:" + outputDir + "/" + outputTreeFileName + " already exists!");
+    outputTFile = new TFile((outputDir + "/" + outputFile).c_str(), "create");
+    if ( !outputTFile->IsOpen() ) {
+      Log.eWrite("[Decoder] Error:" + outputDir + "/" + outputFile + " already exists!");
       return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
     }
   }
-  else outputTreeFile = new TFile((outputDir + "/" + outputTreeFileName).c_str(), "recreate");
+  else outputTFile = new TFile((outputDir + "/" + outputFile).c_str(), "recreate");
 
-  Log.Write("[" + logfilename + "][Decoder] " + outputDir + "/" + outputTreeFileName + " is being created");
+  Log.Write("[Decoder] " + outputDir + "/" + outputFile + " is being created");
 
   Raw_t rd(n_chips, n_channels);
   rd.spill      = -1;
@@ -98,25 +121,25 @@ int wgDecoder(const char * x_inputFileName,
   // If the number of DIFs is not provided as an argument, try to infer it from
   // the file name
   if ( dif == 0 ) {
-	pos = inputFileName.find("dif_1_1_") + 8;
-	if(inputFileName[pos] == '1') {
+	pos = inputFile.find("dif_1_1_") + 8;
+	if(inputFile[pos] == '1') {
 	  dif = 1;
 	}
-	else if(inputFileName[pos] == '2') {
+	else if(inputFile[pos] == '2') {
 	  dif = 2;
 	}
 	else {
-	  Log.eWrite("[" + logfilename + "][Decoder] Error: DIF ID number not given nor found");
+	  Log.eWrite("[Decoder] Error: DIF ID number not given nor found");
 	  return ERR_WRONG_DIF_VALUE;
 	}
   }
 
   // If the number of chips is not provided as an argument, use the global macro
-  // defined in the Const.hpp header
+  // defined in the wgConst.hpp header
   if ( n_chips == 0 ) n_chips = NCHIPS;
 
   // If the number of channels per chip is not provided as an argument, use the
-  // global macro defined in the Const.hpp header
+  // global macro defined in the wgConst.hpp header
   if ( n_channels == 0 ) n_channels = NCHANNELS;
 
   // Get the geometrical information (position in space) for each channel
@@ -143,10 +166,10 @@ int wgDecoder(const char * x_inputFileName,
   wgGetCalibData *getcalib = new wgGetCalibData();
   bool charge_calibration = false, time_calibration = false; 
   try {
-	if (pedFileName.empty()) throw wgInvalidFile("pedestal card file not given");
-	else getcalib->Get_Pedestal(pedFileName, dif, rd.pedestal, rd.ped_nohit);
-	if (calibFileName.empty()) throw wgInvalidFile("calibration card file not given");
-	else getcalib->Get_Gain(calibFileName, dif, rd.gain);
+	if (pedFile.empty()) throw wgInvalidFile("pedestal card file not given");
+	else getcalib->Get_Pedestal(pedFile, dif, rd.pedestal, rd.ped_nohit);
+	if (calibFile.empty()) throw wgInvalidFile("calibration card file not given");
+	else getcalib->Get_Gain(calibFile, dif, rd.gain);
 	charge_calibration = true;
   } catch (const exception& e) {
 	Log.eWrite(e.what());
@@ -155,8 +178,8 @@ int wgDecoder(const char * x_inputFileName,
 	charge_calibration = false;
   }
   try {
-	if (tdcFileName.empty()) throw wgInvalidFile("TDC coefficient card file not given");
-	else getcalib->Get_TdcCoeff(tdcFileName, dif, rd.tdc_slope, rd.tdc_intcpt);
+	if (tdcFile.empty()) throw wgInvalidFile("TDC coefficient card file not given");
+	else getcalib->Get_TdcCoeff(tdcFile, dif, rd.tdc_slope, rd.tdc_intcpt);
 	time_calibration = true;
   } catch (const exception& e) {
 	Log.eWrite(e.what());
@@ -192,15 +215,15 @@ int wgDecoder(const char * x_inputFileName,
 
   vector<bitset<M>> packetData;
 
-  ifstream inputFile;
-  inputFile.open(inputFileName.c_str(), ios_base::in | ios_base::binary);
-  if (!inputFile.is_open()) {
-	Log.eWrite("[" + inputFileName+ "][wgDecoder] Failed to open raw file: " + strerror(errno));
+  ifstream ifs;
+  ifs.open(inputFile.c_str(), ios_base::in | ios_base::binary);
+  if (!ifs.is_open()) {
+	Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
 	return ERR_FAILED_OPEN_RAW_FILE;
   }
 
   // Move to ROOT tree
-  outputTreeFile->cd();
+  outputTFile->cd();
 
   if( check.LogFile(logfile) ) {
 	// Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
@@ -285,15 +308,15 @@ int wgDecoder(const char * x_inputFileName,
   //     ============================================
   // =====================================================
 
-  if (inputFile.is_open()) {
-    Log.Write("[" + logfilename + "][Decoder] *****  Start reading file  *****");
+  if (ifs.is_open()) {
+    Log.Write("[Decoder] *****  Start reading file  *****");
 
 	// Pretend that we just reached the end of a previous spill so that the
 	// first spill header is correctly recognized
 	endOfSpillTag = true;
 	lastFour[0] = x2020;
 	
-    while (inputFile.read((char*) &dataResult, M / 8) && iEvt < maxEvt) {
+    while (ifs.read((char*) &dataResult, M / 8) && iEvt < maxEvt) {
       packetData.push_back(dataResult);
       nChipData++;
 
@@ -340,7 +363,7 @@ int wgDecoder(const char * x_inputFileName,
 		// gap is not that bad, if the cause is something else the problem is
 		// more serious)
         if( SPILL_GAP.to_ulong() != 0 ){
-		  Log.eWrite("[" + logfilename + "][Decoder] spill gap warning: last = " + to_string(LAST_SPILL_NUMBER) + ", current = "
+		  Log.eWrite("[Decoder] spill gap warning: last = " + to_string(LAST_SPILL_NUMBER) + ", current = "
 					 + to_string(SPILL_NUMBER));
 
 		  bool good_spill_gap = false;
@@ -363,7 +386,7 @@ int wgDecoder(const char * x_inputFileName,
         if( dataResult == xFFFC )
           spillInsertTag = true; 
 		else
-          Log.eWrite("[" + logfilename + "][Decoder] spill insert tag was inserted in wrong position, last_spill = "
+          Log.eWrite("[Decoder] spill insert tag was inserted in wrong position, last_spill = "
 					 + to_string(LAST_SPILL_COUNT) + ", current_spill = " + to_string(SPILL_COUNT)); 
 	  }
 
@@ -399,13 +422,13 @@ int wgDecoder(const char * x_inputFileName,
 
 		  uint32_t SPILL_COUNT_GAP = LAST_SPILL_COUNT + 1 - SPILL_COUNT;
           if( SPILL_COUNT_GAP != 0 )
-            Log.eWrite("[" + logfilename + "][Decoder] spill count gap warning: last_spill = " + to_string(LAST_SPILL_COUNT) +
+            Log.eWrite("[Decoder] spill count gap warning: last_spill = " + to_string(LAST_SPILL_COUNT) +
 					   ", current_spill = " + to_string(SPILL_COUNT)); 
           
 		  endOfSpillTag=false;
         }
 		else {
-          Log.eWrite("[" + logfilename + "][Decoder] Warning : spill trailer not found: current_spill = " +
+          Log.eWrite("[Decoder] Warning : spill trailer not found: current_spill = " +
 					 to_string(SPILL_COUNT));
 		}
 	  }
@@ -431,7 +454,7 @@ int wgDecoder(const char * x_inputFileName,
 		  // +2 +3 (header/trailer) = 79
 		  // let's replace this magic number 
 		}else{          
-		  Log.eWrite("[" + logfilename + "][Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
+		  Log.eWrite("[Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
 					 to_string(SPILL_COUNT) + ", chip number = " + to_string(nChips + 1));
 		  rd.spill_flag--;
 		}
@@ -449,7 +472,7 @@ int wgDecoder(const char * x_inputFileName,
 		  // maybe one word was skipped
 		  nbchip = ( lastFour[0] & x00FF ).to_ulong();
 		  if( nChips != nbchip ){
-			Log.eWrite("[" + logfilename + "][Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
+			Log.eWrite("[Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
 					   ", (spill trailer) nbchip = " + to_string(nbchip) + ", acq id = " + to_string(SPILL_COUNT));
 		  }
 		}
@@ -489,7 +512,7 @@ int wgDecoder(const char * x_inputFileName,
 			  else {
 				currentChipID = chip_count - 1;
 #ifdef DEBUG_DECODE
-				Log.eWrite("[" + logfilename + "][Decoder] Warning : one chipid_tag is missing "
+				Log.eWrite("[Decoder] Warning : one chipid_tag is missing "
 						   "(chipid_count: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");
 #endif
 				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIPID_TAG;
@@ -500,7 +523,7 @@ int wgDecoder(const char * x_inputFileName,
 			  lastChipID[0] = currentChipID;
 
 			  if( Missing_Header > 1 ) {
-				Log.eWrite("[" + logfilename + "][Decoder] Warning : part of chip header is missing (missing words: " + to_string(Missing_Header)  +
+				Log.eWrite("[Decoder] Warning : part of chip header is missing (missing words: " + to_string(Missing_Header)  +
 						   ", chipid_tag: " + to_string(chip_count) + ", acq id: " + to_string(SPILL_COUNT) + ")");;
 				rd.debug[chip_count - 1] += DEBUG_MISSING_CHIP_HEADER;
 			  }
@@ -513,7 +536,7 @@ int wgDecoder(const char * x_inputFileName,
 				isValidChip = true;
 			  }
 			  else{                    
-				Log.eWrite("[" + logfilename + "][Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
+				Log.eWrite("[Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
 						   ", read ChipID = " + to_string((eventData[i] & x00FF).to_ulong()) + ", acq id = " + to_string(SPILL_COUNT)); 
 				bool matchChipID = false;
 				if( lastChipID[0] + 1 < nChips && lastChipID[0] > 0 ) {
@@ -554,7 +577,7 @@ int wgDecoder(const char * x_inputFileName,
 
 				if(matchChipID) {
 #ifdef DEBUG_DECODE
-				  Log.Write("[" + logfilename + "][Decoder] Debug : the order of CHIPID is OK!");  
+				  Log.Write("[Decoder] Debug : the order of CHIPID is OK!");  
 #endif
 				  isValidChip = true;
 				  rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER;
@@ -563,7 +586,7 @@ int wgDecoder(const char * x_inputFileName,
 				else {
 				  isValidChip = false;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
-				  Log.eWrite("[" + logfilename + "][Decoder] Warning : HEAD ChipID and END ChipID is wrong! (HEAD: " +
+				  Log.eWrite("[Decoder] Warning : HEAD ChipID and END ChipID is wrong! (HEAD: " +
 							 to_string(currentChipID) + ", END: " + to_string(eventData[i].to_ulong()) + ") spill: " + to_string(rd.spill));
 				  rd.spill_flag--;
 				}
@@ -576,7 +599,7 @@ int wgDecoder(const char * x_inputFileName,
 				rawDataSize = i - chipStartIndex - CHIPENDTAG;
 				nColumns    = (rawDataSize - CHIPIDSIZE) / (1 + NCHANNELS * 2);
 				if ( (rawDataSize - CHIPIDSIZE) % (1 + NCHANNELS * 2) != 0) {
-				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD DATA SIZE! "
+				  Log.eWrite("[Decoder] Warning : BAD DATA SIZE! "
 							 "spill: " + to_string(rd.spill) + ", chip: " + to_string(currentChipID));
 				  rd.spill_flag--;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
@@ -587,7 +610,7 @@ int wgDecoder(const char * x_inputFileName,
 				}
 				else if(nColumns > MEMDEPTH) {
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
-				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD COLUMN SIZE! "
+				  Log.eWrite("[Decoder] Warning : BAD COLUMN SIZE! "
 							 "DataSize: " + to_string(rd.spill) + ", column: " + to_string(nColumns));
 				  rd.spill_flag--;
 				  last = eventData[i].to_ulong();
@@ -599,7 +622,7 @@ int wgDecoder(const char * x_inputFileName,
 				v_chipid[currentChipID] = (eventData[i - CHIPENDTAG] & x00FF).to_ulong();
 
 				if ( !check_ChipID(v_chipid[currentChipID], n_chips) ) {
-				  Log.eWrite("[" + logfilename + "][Decoder] Warning : BAD CHIP ID! spill: " + to_string(rd.spill) +
+				  Log.eWrite("[Decoder] Warning : BAD CHIP ID! spill: " + to_string(rd.spill) +
 							 " chipid: " + to_string(v_chipid[currentChipID]));
 				  rd.spill_flag--;
 				  rd.debug[currentChipID] += DEBUG_BAD_CHIPNUM;
@@ -643,7 +666,7 @@ int wgDecoder(const char * x_inputFileName,
 						  }
 						  else {
 							stringstream ss;
-							ss << "[" << logfilename << "][Decoder] Warning : BAD GAIN BIT! " <<
+							ss << "[Decoder] Warning : BAD GAIN BIT! " <<
 							  "gs[" << currentChipID << "][" << ichan << "][" << ibc << "] = " << rd.gs[currentChipID][ichan][ibc];
 							Log.eWrite(ss.str());
 							rd.pe[currentChipID][ichan][ibc] = -100.;
@@ -653,7 +676,7 @@ int wgDecoder(const char * x_inputFileName,
 					}
 					else if (ibc >= MEMDEPTH || ichan >= NCHANNELS) {
 					  stringstream ss;
-					  ss << "[" << logfilename << "][Decoder] Warning : BAD CHANNEL OR COLUMN NUMBER! " <<
+					  ss << "[Decoder] Warning : BAD CHANNEL OR COLUMN NUMBER! " <<
 						"chip = " << currentChipID << ", channel = " << ichan << ", column = " << ibc;
 					  Log.eWrite(ss.str());
 					}
@@ -697,7 +720,7 @@ int wgDecoder(const char * x_inputFileName,
 		  iEvt++;
 		}
 		else {
-		  Log.eWrite("[" + logfilename + "][Decoder] Warning : number of chips less than zero : spill count = " + to_string(rd.spill_count));
+		  Log.eWrite("[Decoder] Warning : number of chips less than zero : spill count = " + to_string(rd.spill_count));
 		}
 	  }
 	  // SPILL trailer check
@@ -710,7 +733,7 @@ int wgDecoder(const char * x_inputFileName,
 		// If the tree was not filled at the end of the event, fill it now with
 		// the "empty" values.
 		if (FILL_FLAG) {
-		  Log.eWrite("[" + logfilename + "][Decoder] Warning : no data recorded : spill count = " + to_string(rd.spill_count));
+		  Log.eWrite("[Decoder] Warning : no data recorded : spill count = " + to_string(rd.spill_count));
 		  for(unsigned ichip = 0 ; ichip < n_chips ; ichip++) {
 			rd.debug[ichip] += DEBUG_NODATA;
 		  }
@@ -726,7 +749,7 @@ int wgDecoder(const char * x_inputFileName,
 	  // Unexpected spill header
 	  if (lastFour[1] == x5053 && lastFour[0] == x4C49 &&  dataResult == x2020) { 
 		if (endOfChipTag) {
-		  Log.eWrite("[" + logfilename + "][Decoder] Warning : spill trailer is missing : spill number = " + to_string(rd.spill));
+		  Log.eWrite("[Decoder] Warning : spill trailer is missing : spill number = " + to_string(rd.spill));
 		}
 		packetData.clear();
 		endOfChipTag = false;
@@ -737,17 +760,17 @@ int wgDecoder(const char * x_inputFileName,
 	  lastFour[1] = lastFour[0];
 	  lastFour[0] = dataResult;
 
-	} // while (inputFile.read(...
+	} // while (ifs.read(...
   } // if (fin.is_open())
 
-  Log.Write("[" + logfilename + "][Decoder] *****  Finished reading file  *****");
-  Log.Write("[" + logfilename + "][Decoder] *****  with " + to_string(iEvt) + " entries  *****");
-  Log.Write("[" + logfilename + "][Decoder] *****       BAD data : " + to_string(ineff_data) + " *****");
+  Log.Write("[Decoder] *****  Finished reading file  *****");
+  Log.Write("[Decoder] *****  with " + to_string(iEvt) + " entries  *****");
+  Log.Write("[Decoder] *****  BAD data : " + to_string(ineff_data) + " *****");
 
-  outputTreeFile->cd();
+  outputTFile->cd();
   tree->Write();
-  outputTreeFile->Close();
-  Log.Write("[" + logfilename + "][Decoder] Decode is finished");
+  outputTFile->Close();
+  Log.Write("[Decoder] Decode is finished");
   return DE_SUCCESS;
 }
 

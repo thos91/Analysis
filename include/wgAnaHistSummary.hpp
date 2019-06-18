@@ -8,7 +8,7 @@
 #include <cstdbool>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 #define M 5
 
@@ -23,6 +23,7 @@
 #define ERR_WRONG_MODE              2
 #define ERR_FAILED_CREATE_XML_FILE  3
 #define ERR_WG_ANA_HIST_SUMMARY     4
+#define ERR_EMPTY_INPUT_FILE        5
 
 using namespace std;
 

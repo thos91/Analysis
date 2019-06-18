@@ -1,13 +1,16 @@
 // system includes
 #include <iostream>
 #include <string>
+
 // system C includes
 #include <getopt.h>
+
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgAnaHistSummary.hpp"
+#include "wgLogger.hpp"
 
 void print_help(const char * program_name) {
   cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
@@ -31,6 +34,7 @@ void print_help(const char * program_name) {
   exit(0);
 }
 
+using namespace wagasci_tools;
 
 //******************************************************************
 int main(int argc, char** argv){
@@ -40,7 +44,6 @@ int main(int argc, char** argv){
   int n_chips = NCHIPS, n_chans = NCHANNELS;
   bool overwrite = false, print = false;
   wgConst con;
-  con.GetENV();
   string inputDirName("");
   string configFileName("");
   string outputXMLDirName("");
@@ -48,7 +51,6 @@ int main(int argc, char** argv){
   string logoutputDir(con.LOG_DIRECTORY);
   string outputIMGDirName(con.IMGDATA_DIRECTORY);
   
-  OperateString OpStr;
   CheckExist check;
 
   while((opt = getopt(argc,argv, "f:o:i:x:y:m:rph")) !=-1 ){
@@ -56,7 +58,7 @@ int main(int argc, char** argv){
 	case 'f':
 	  inputDirName=optarg;
 	  if(!check.Dir(inputDirName)){ 
-		Log.eWrite("[" + OpStr.GetName(inputDirName) + "][wgAnaHistSummary] target doesn't exist");
+		Log.eWrite("[wgAnaHistSummary] target doesn't exist");
 		return 1;
 	  }   
 	  break;
@@ -89,15 +91,6 @@ int main(int argc, char** argv){
     }   
   }
 
-  if(inputDirName == "") {
-    Log.eWrite("[wgAnaPedestal] No input directory");
-    exit(1);
-  }
-
-  Log.Write(" *****  READING DIRECTORY      :" + OpStr.GetName(inputDirName)     + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + OpStr.GetName(outputXMLDirName) + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + OpStr.GetName(outputIMGDirName) + "  *****");
-  
   int result;
   if ( (result = wgAnaHistSummary(inputDirName.c_str(),
 								  outputXMLDirName.c_str(),
@@ -107,10 +100,9 @@ int main(int argc, char** argv){
 								  print,
 								  n_chips,
 								  n_chans)) != AHS_SUCCESS ) {
-	Log.eWrite("[" + OpStr.GetName(inputDirName) + "][wgAnaHistSummary] wgAnaHistSummary returned error " + to_string(result));
+	Log.eWrite("[wgAnaHistSummary] wgAnaHistSummary returned error " + to_string(result));
 	exit(1);
   }
 
-  Log.Write("[" + OpStr.GetName(inputDirName) + "][wgAnaHistSummary] finished");
   exit(0);
 }

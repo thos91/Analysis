@@ -16,13 +16,16 @@
 #include <TH1.h>
 
 // user includes
-#include "Const.hpp"
-#include "wgTools.hpp"
+#include "wgConst.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
 #include "wgEditXML.hpp"
 #include "wgAnaHist.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 //******************************************************************
 void ModeSelect(const int mode, bitset<M>& flag){
@@ -52,7 +55,6 @@ int wgAnaHist(const char * x_inputFileName,
   string outputIMGDir(x_outputIMGDir);
   wgEditXML Edit;
   CheckExist Check;
-  OperateString OptStr;
   
   if(!Check.RootFile(inputFileName)) {
     Log.eWrite("[wgAnaHist] No input file");
@@ -90,7 +92,7 @@ int wgAnaHist(const char * x_inputFileName,
   }
   
   
-  string DirName = OptStr.GetNameBeforeLastUnderBar(inputFileName);
+  string DirName = GetNameBeforeLastUnderBar(inputFileName);
 
   outputDir = outputDir + "/" + DirName;
   outputIMGDir = outputIMGDir + "/" + DirName;

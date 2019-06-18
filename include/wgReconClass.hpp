@@ -9,7 +9,7 @@
  * ********************************************************************** */
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 #include "wgChannelMap.hpp"
 
 #define NumHitPara 13

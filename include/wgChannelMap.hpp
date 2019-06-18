@@ -5,9 +5,9 @@
 #include <string>
 
 // user includes
-#include "Const.hpp"
-#include "ContiguousVectors.hpp"
-#include "DetectorConst.hpp"
+#include "wgConst.hpp"
+#include "wgContiguousVectors.hpp"
+#include "wgDetectorConst.hpp"
 
 #define NumView 2
 #define NumPln 8

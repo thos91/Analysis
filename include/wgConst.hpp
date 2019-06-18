@@ -13,7 +13,7 @@
 #include <TNamed.h>
 
 // user includes
-#include "ContiguousVectors.hpp"
+#include "wgContiguousVectors.hpp"
 
 #define NumDif        2
 #define NumChip       20
@@ -415,7 +415,6 @@ class wgConst{
 public:
   wgConst();
   ~wgConst();
-  void GetENV();
   string RAWDATA_DIRECTORY;
   string DECODE_DIRECTORY;
   string HIST_DIRECTORY;
@@ -432,6 +431,7 @@ public:
   string CONF_DIRECTORY;
 private:
   const std::string script_path;
+  void GetENV();
   std::string ReadENVFile(const std::string &env_var_name);
 };
 

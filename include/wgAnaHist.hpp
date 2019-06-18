@@ -8,7 +8,7 @@
 #include <bits/stdc++.h>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 using namespace std;
 

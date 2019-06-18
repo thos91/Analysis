@@ -1,7 +1,7 @@
 #ifndef WAGASCI_DISP_HPP_
 #define WAGASCI_DISP_HPP_
 
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 class wgDisp
 {

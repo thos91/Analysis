@@ -21,12 +21,15 @@
 #include "TH2D.h"
 
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
 #include "wgFitConst.hpp"
 #include "wgAnaHistSummary.hpp"
+#include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 //******************************************************************
 void ModeSelect(int mode, bitset<M>& flags) {
@@ -59,39 +62,41 @@ int wgAnaHistSummary(const char * x_inputDir, const char * x_outputXMLDir, const
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
 
+  if(inputDir.empty()) {
+    Log.eWrite("[wgAnaHistSummary] No input directory");
+    return ERR_EMPTY_INPUT_FILE;
+  }
+  if(outputXMLDir.empty()) outputXMLDir = inputDir;
+    
   bitset<M> flags;
   flags[SELECT_PRINT] = print;
   // Set the correct flags according to the mode
   try { ModeSelect(mode, flags); }
   catch (const exception& e) {
-	Log.eWrite("[wgAnaHist][" + outputXMLDir + "] " + string(e.what()));
+	Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
 	return ERR_WRONG_MODE;
   }
 
-  
-  if(outputXMLDir == "") outputXMLDir = inputDir;
-
   // ============ Create outputXMLDir ============ //
-  CheckExist Check;
-  if( !Check.Dir(outputXMLDir) ) {
-	boost::filesystem::path dir(outputXMLDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgAnaHist][" + outputXMLDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
+  try { MakeDir(outputXMLDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
   }
+
   // ============ Create outputIMGDir ============ //
   if( flags[SELECT_PRINT] ) {
-	OperateString OpStr;
-	outputIMGDir += "/" + OpStr.GetName(inputDir);
-	if ( !Check.Dir(outputIMGDir) ) {
-	  boost::filesystem::path dir(outputIMGDir);
-	  if( !boost::filesystem::create_directories(dir) ) {
-		Log.eWrite("[wgAnaHist][" + outputIMGDir + "] failed to create directory");
-		return ERR_CANNOT_CREATE_DIRECTORY;
-	  }
-	}
+	outputIMGDir += "/" + GetName(inputDir);
+    try { MakeDir(outputIMGDir); }
+    catch (const wgInvalidFile& e) {
+      Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
+      return ERR_CANNOT_CREATE_DIRECTORY;
+    }
   }
+
+  Log.Write(" *****  READING DIRECTORY      :" + GetName(inputDir)     + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + GetName(outputXMLDir) + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + GetName(outputIMGDir) + "  *****");
 
   try { MakeSummaryXmlFile(outputXMLDir, overwrite, n_chips, n_chans); }
   catch (const exception& e) {
