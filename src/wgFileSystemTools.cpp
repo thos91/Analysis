@@ -6,6 +6,7 @@
 
 // boost includes
 #include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 
 // user includes
 #include "wgErrorCode.hpp"
@@ -91,26 +92,20 @@ namespace wagasci_tools {
   }
 
   //******************************************************************
-    vector<string> ListFilesWithExtension(const string& inputDir,
-                                          const string& extension) {
-    DIR *dp;
-    struct dirent *entry;
-    vector<string> openxmlfile;
+  vector<string> ListFilesWithExtension(const string& inputDir, const string& extension) {
+    vector<string> file_list;
 
-    // Open the input directory
-    dp = opendir(inputDir.c_str());
-    if(dp == NULL)
-      throw wgInvalidFile("opendir: failed to open directory");
-
-    // Fill the openxmlfile vector of strings with the path of all the files and
-    // directories contained inside the input directory
-    while( (entry = readdir(dp)) != NULL ) {
-      // Ignore hidden files and directories
-      if( (entry->d_name[0]) != '.' )
-        openxmlfile.push_back( inputDir + "/" + string(entry->d_name) );
+    if (boost::filesystem::exists(inputDir)) {
+      if (boost::filesystem::is_directory(inputDir)) {
+        for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
+          if (GetExtension(entry.path().string()) == extension)
+            file_list.push_back(entry.path().string());
+      }
+      else throw wgInvalidFile(inputDir + " exists, but is not a regular file or directory");
     }
-    closedir(dp);
-    return openxmlfile;
+    else throw wgInvalidFile(inputDir + " does not exist");
+
+    return file_list;   
   }
 
   void MakeDir(const string& str) {
