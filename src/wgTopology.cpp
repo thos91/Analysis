@@ -7,7 +7,7 @@
 #include <boost/tokenizer.hpp>
 
 // json includes
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 // tinyxml2 includes
 #include "tinyxml2.hpp"

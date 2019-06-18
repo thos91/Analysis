@@ -3,7 +3,7 @@
 #include <vector>
 
 // json includes
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 // user includes
 #include "wgEditXML.hpp"
