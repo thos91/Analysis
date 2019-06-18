@@ -8,7 +8,7 @@
 #include <cstdbool>
 
 // user includes
-#include "Const.hpp"
+#include "wgConst.hpp"
 
 // #define M 5
 
@@ -30,20 +30,18 @@ using namespace std;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-  double Calcurate_Mean(vector<double>);
-  double Calcurate_Sigma(vector<double>);
-  
-  double NoiseToPe(double); // where is this function used??
-  void MakeDir(string& str);
-  void MakeXML(string& str,int ichip);
-  vector<string> GetIncludeFileName(string& inputDirName);
-  void AnaXML(vector<string> &inputDirName,string& outputXMLDirName,string& outputIMGDirName,int ichip);
-  int wgScurve(const char* x_inputDirName, const char* x_outputXMLDirName, const char* x_outputIMGDirName);
-
-  
+  int wgScurve(const char* x_inputDirName,
+               const char* x_outputXMLDirName = "",
+               const char* x_outputIMGDirName = "");
 #ifdef __cplusplus
 }
 #endif
+
+double NoiseToPe(double); // where is this function used??
+void MakeXML(string& str,int ichip);
+vector<string> GetIncludeFileName(const string& inputDirName);
+void AnaXML(vector<string> &inputDirName,string& outputXMLDirName,string& outputIMGDirName,int ichip);
+double Calcurate_Mean(vector<double>);
+double Calcurate_Sigma(vector<double>);
 
 #endif // WG_SCURVE_HPP_

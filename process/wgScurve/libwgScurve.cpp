@@ -30,7 +30,7 @@
 #include <TSpectrum.h>
 
 // user includes
-#include "wgTools.hpp"
+#include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
@@ -38,38 +38,76 @@
 #include "wgFitConst.hpp"
 #include "wgScurve.hpp"
 #include "wgGetHist.hpp"
-
+#include "wgLogger.hpp"
 
 using namespace std;
 
-
-double Calcurate_Mean(vector<double>);
-double Calcurate_Sigma(vector<double>);
-double NoiseToPe(double); // where is this function used??
-void MakeDir(string& str);
-void MakeXML(string& str,int ichip);
-vector<string> GetIncludeFileName(string& inputDirName);
-void AnaXML(vector<string> &inputDirName,string& outputXMLDirName,string& outputIMGDirName,int ichip);
-
-
 //******************************************************************
-int wgScurve(const char* x_inputDirName, const char* x_outputXMLDirName, const char* x_outputIMGDirName){
-  
-  string inputDirName(x_inputDirName);
-  string outputXMLDirName(x_outputXMLDirName);
-  string outputIMGDirName(x_outputIMGDirName);
+int wgScurve(const char* x_inputDir,
+             const char* x_outputXMLDir,
+             const char* x_outputIMGDir) {
 
-  vector<string> ReadFile = GetIncludeFileName(inputDirName); 
+  // ============================================================= //
+  //                                                               //
+  //                        Parse Arguments                        //
+  //                                                               //
+  // ============================================================= //
+  
+  string inputDir    (x_inputDir);
+  string outputXMLDir(x_outputXMLDir);
+  string outputIMGDir(x_outputIMGDir);
+
+  CheckExist check;
+  if( inputDir.empty() || !check.Dir(inputDir) ) { 
+    Log.eWrite("Input directory " + inputDir + " doesn't exist");
+    exit(1);
+  }
+  wgConst con;
+  if( outputXMLDir.empty() ) {
+    outputXMLDir = con.CALIBDATA_DIRECTORY;
+  }
+  if( outputIMGDir.empty() ) {
+    outputIMGDir = con.IMGDATA_DIRECTORY;
+  }
+  outputIMGDir = outputIMGDir + "/" + GetName(inputDir);
+
+  // ============ Create outputXMLDir ============ //
+  if( !check.Dir(outputXMLDir) ) {
+	boost::filesystem::path dir(outputXMLDir);
+	if( !boost::filesystem::create_directories(dir) ) {
+	  Log.eWrite("[wgScurve][" + outputXMLDir + "] failed to create directory");
+	  return ERR_CANNOT_CREATE_DIRECTORY;
+	}
+  }
+  // ============ Create outputIMGDir ============ //
+  if( !check.Dir(outputIMGDir) ) {
+	boost::filesystem::path dir(outputIMGDir);
+	if( !boost::filesystem::create_directories(dir) ) {
+	  Log.eWrite("[wgScurve][" + outputIMGDir + "] failed to create directory");
+	  return ERR_CANNOT_CREATE_DIRECTORY;
+	}
+  }
+
+  Log.Write(" *****  READING DIRECTORY      : " + inputDir + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   : " + outputXMLDir + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + outputIMGDir + "  *****");
+  
+  // ============================================================= //
+  //                                                               //
+  //                                                               //
+  //                                                               //
+  // ============================================================= //
+  
+  vector<string> ReadFile = GetIncludeFileName(inputDir); 
   cout << " Finish  reading file"<<endl;
-  MakeDir(outputIMGDirName);
 
   int nchip=NCHIPS;
   //int nchip=1;
   try{
     for(int ichip=0;ichip<nchip;ichip++){
       AnaXML(ReadFile,
-          outputXMLDirName,
-          outputIMGDirName,
+          outputXMLDir,
+          outputIMGDir,
           ichip
           );
     }
@@ -77,28 +115,28 @@ int wgScurve(const char* x_inputDirName, const char* x_outputXMLDirName, const c
     // delete Log;  
   }
   catch (const exception& e){
-    Log.eWrite("[wgScurve][" + inputDirName + "] " + string(e.what()));
+    Log.eWrite("[wgScurve][" + inputDir + "] " + string(e.what()));
     return ERR_WG_SCURVE;
   }
   return SCURVE_SUCCESS;
 }
 
 //******************************************************************
-vector<string> GetIncludeFileName(string& inputDirName){
+vector<string> GetIncludeFileName(const string& inputDir){
   DIR *dp;
   struct dirent *entry;
   vector<string> openxmlfile;
 
-  dp = opendir(inputDirName.c_str());
+  dp = opendir(inputDir.c_str());
   if(dp==NULL){
-    cout << " !! WARNING !! no data is in "<< inputDirName << endl;
+    cout << " !! WARNING !! no data is in "<< inputDir << endl;
     return openxmlfile;
   }
 
   while( (entry = readdir(dp))!=NULL ){
     if((entry->d_name[0])!='.'){
-      openxmlfile.push_back(Form("%s/%s",inputDirName.c_str(),entry->d_name));
-      cout << "ReadFile : " << inputDirName << "/" << entry->d_name << endl;
+      openxmlfile.push_back(Form("%s/%s",inputDir.c_str(),entry->d_name));
+      cout << "ReadFile : " << inputDir << "/" << entry->d_name << endl;
     }
   }
   closedir(dp);
@@ -106,12 +144,12 @@ vector<string> GetIncludeFileName(string& inputDirName){
 } 
 
 //******************************************************************
-void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outputIMGDirName,int ichip){
+void AnaXML(vector<string> &inputFileName, string& outputXMLDir,string& outputIMGDir,int ichip){
 
   cout << "*********************************"<<endl;    
   cout << "       chip " << ichip << " start... " <<endl;   
   cout << "*********************************"<<endl;    
-  MakeXML(outputXMLDirName,ichip);
+  MakeXML(outputXMLDir,ichip);
 
   int FN=inputFileName.size();
   int ndif[FN];
@@ -134,13 +172,13 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
   wgEditXML *Edit = new wgEditXML();
   string xmlfile("");
   string str_dir;
-  str_dir=Form("%s/Gain",outputIMGDirName.c_str());
+  str_dir=Form("%s/Gain",outputIMGDir.c_str());
   MakeDir(str_dir);
-  str_dir=Form("%s/Noise",outputIMGDirName.c_str());
+  str_dir=Form("%s/Noise",outputIMGDir.c_str());
   MakeDir(str_dir);
-  str_dir=Form("%s/Gain/chip%d",outputIMGDirName.c_str(),ichip);
+  str_dir=Form("%s/Gain/chip%d",outputIMGDir.c_str(),ichip);
   MakeDir(str_dir);
-  str_dir=Form("%s/Noise/chip%d",outputIMGDirName.c_str(),ichip);
+  str_dir=Form("%s/Noise/chip%d",outputIMGDir.c_str(),ichip);
   MakeDir(str_dir);
 
   cout << "  ~~~ Start Reading ~~~  " <<endl;
@@ -329,7 +367,7 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
       double* py_Gain=ts_Gain->GetPositionY();
 //#ifdef DEBUG_WGCALIB
       h_Gain[l][idif]->Draw();
-      c1->Print(Form("%s/Gain/chip%d/Gain_dif%d_chip%d_inputDAC%d.png",outputIMGDirName.c_str(),ichip,idif+1,ichip,list_inputDAC[l]));
+      c1->Print(Form("%s/Gain/chip%d/Gain_dif%d_chip%d_inputDAC%d.png",outputIMGDir.c_str(),ichip,idif+1,ichip,list_inputDAC[l]));
 //#endif
       delete h_Gain[l][idif];
       fit->swap(Npeaks_Gain,px_Gain,py_Gain);
@@ -577,7 +615,7 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
       }
       c1->SetLogy(1);
       hs->Draw("nostack HIST P");
-      c1->Print(Form("%s/Noise/chip%d/Noise_classified_dif%d_chip%d_inputDAC%d.png",outputIMGDirName.c_str(),ichip,idif+1,ichip,list_inputDAC[l]));
+      c1->Print(Form("%s/Noise/chip%d/Noise_classified_dif%d_chip%d_inputDAC%d.png",outputIMGDir.c_str(),ichip,idif+1,ichip,list_inputDAC[l]));
       c1->SetLogy(0);
       delete hs;
 
@@ -611,7 +649,7 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
     string outputxml;
     string name;
     int ich=0;
-    outputxml=Form("%s/dif%d/chip%d/ch%d.xml",outputXMLDirName.c_str(),idif+1,ichip,ich);
+    outputxml=Form("%s/dif%d/chip%d/ch%d.xml",outputXMLDir.c_str(),idif+1,ichip,ich);
     Edit->Open(outputxml);
     for(unsigned int l=0;l<size_inputDAC;l++){
       name = "pe_center1";
@@ -644,7 +682,7 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
     }
     mg->Draw("ap");
     c1->SetLogy(1);
-    c1->Print(Form("%s/Noise/chip%d/Range_Noise_dif%d_chip%d.png",outputIMGDirName.c_str(),ichip,idif+1,ichip));
+    c1->Print(Form("%s/Noise/chip%d/Range_Noise_dif%d_chip%d.png",outputIMGDir.c_str(),ichip,idif+1,ichip));
     c1->SetLogy(0);
     for(int pe=0;pe<3;pe++){ delete g_Range[pe]; }
     delete mg;
@@ -660,15 +698,6 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDirName,string& outp
 }
 
 //******************************************************************
-void MakeDir(string& str){
-  CheckExist *check = new CheckExist;
-  if(!check->Dir(str)){
-    system(Form("mkdir %s",str.c_str()));
-  }
-  delete check;
-}
-
-//******************************************************************
 double NoiseToPe(double noise){
   if(noise>u_limit_1pe){ return 0.5;
   }else if(noise>=l_limit_1pe && noise<u_limit_1pe){ return 1.0;
@@ -681,16 +710,16 @@ double NoiseToPe(double noise){
 }
 
 //******************************************************************
-void MakeXML(string& outputXMLDirName,int ichip){
+void MakeXML(string& outputXMLDir,int ichip){
   string name;
   wgEditXML *Edit = new wgEditXML();
   for(int idif=0;idif<2;idif++){
-    name=Form("%s/dif%d",outputXMLDirName.c_str(),idif+1);
+    name=Form("%s/dif%d",outputXMLDir.c_str(),idif+1);
     MakeDir(name);
-    name=Form("%s/dif%d/chip%d",outputXMLDirName.c_str(),idif+1,ichip);
+    name=Form("%s/dif%d/chip%d",outputXMLDir.c_str(),idif+1,ichip);
     MakeDir(name);
     for(int ich=0;ich<32;ich++){
-      name=Form("%s/dif%d/chip%d/ch%d.xml",outputXMLDirName.c_str(),idif+1,ichip,ich);
+      name=Form("%s/dif%d/chip%d/ch%d.xml",outputXMLDir.c_str(),idif+1,ichip,ich);
       Edit->SCURVE_Make(name);
     }
   }
