@@ -41,11 +41,13 @@
 #include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 //******************************************************************
 int wgScurve(const char* x_inputDir,
              const char* x_outputXMLDir,
-             const char* x_outputIMGDir) {
+             const char* x_outputIMGDir,
+             const char* x_topologyString) {
 
   // ============================================================= //
   //                                                               //
@@ -56,13 +58,16 @@ int wgScurve(const char* x_inputDir,
   string inputDir    (x_inputDir);
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
+  string topologyString(x_topologyString);
 
   CheckExist check;
+  wgConst con;
+
+  // ============ Check directories ============ //
   if( inputDir.empty() || !check.Dir(inputDir) ) { 
     Log.eWrite("Input directory " + inputDir + " doesn't exist");
     exit(1);
   }
-  wgConst con;
   if( outputXMLDir.empty() ) {
     outputXMLDir = con.CALIBDATA_DIRECTORY;
   }
@@ -72,20 +77,17 @@ int wgScurve(const char* x_inputDir,
   outputIMGDir = outputIMGDir + "/" + GetName(inputDir);
 
   // ============ Create outputXMLDir ============ //
-  if( !check.Dir(outputXMLDir) ) {
-	boost::filesystem::path dir(outputXMLDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgScurve][" + outputXMLDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
+  try { MakeDir(outputXMLDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
   }
+
   // ============ Create outputIMGDir ============ //
-  if( !check.Dir(outputIMGDir) ) {
-	boost::filesystem::path dir(outputIMGDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  Log.eWrite("[wgScurve][" + outputIMGDir + "] failed to create directory");
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
+  try { MakeDir(outputIMGDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
   Log.Write(" *****  READING DIRECTORY      : " + inputDir + "  *****");
@@ -98,8 +100,7 @@ int wgScurve(const char* x_inputDir,
   //                                                               //
   // ============================================================= //
   
-  vector<string> ReadFile = GetIncludeFileName(inputDir); 
-  cout << " Finish  reading file"<<endl;
+  vector<string> FileList = ListFilesWithExtension(inputDir, "xml"); 
 
   int nchip=NCHIPS;
   //int nchip=1;
