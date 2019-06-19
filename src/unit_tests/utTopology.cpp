@@ -34,24 +34,12 @@ int main () {
   topol.Print();
 
   // Max number of chips
-  int n_difs = 0, n_chips = 0, n_chans = 0;
-  for ( auto const & gdcc : topol.topology_map) {
-    for ( auto const & dif : gdcc.second) {
-      n_difs++;
-      int n_chips_tmp = 0;
-      for ( auto const & asu : dif.second) {
-        n_chips_tmp++;
-        if (asu.second > n_chans) n_chans = asu.second;
-      }
-      if (n_chips_tmp > n_chips) n_chips = n_chips_tmp;
-    }
-  }
-  std::cout << "# DIFs = " << n_difs << std::endl;
-  std::cout << "max # ASUs per DIF = " << n_chips << std::endl;
-  std::cout << "max # channels per ASU = " << n_chans << std::endl;
+  std::cout << "# DIFs = " << topol.n_difs << std::endl;
+  std::cout << "max # ASUs per DIF = " << topol.max_chips << std::endl;
+  std::cout << "max # channels per ASU = " << topol.max_channels << std::endl;
 
   // TopologyMap from JSON string
-  std::string json_string(R"###({"1":{"1":{"1":32,"2":32,"3":32},"2":{"1":32,"2":32,"3":32}}})###");
-  Topology topology(json_string, TopologySourceType::json_string);
-  topology.Print();  
+  std::string json_string(R"###({"1":{"1":32,"2":32,"3":32},"2":{"1":32,"2":32,"3":32}})###");
+  Topology topology_from_string(json_string, TopologySourceType::json_string);
+  topology_from_string.Print();
 }

@@ -11,6 +11,7 @@ Welcome to WAGASCI analysis software's documentation!
    :caption: Contents:
 
    CLI
+   Topology
    wgDecoder		 
    wgOptimize
    wgChangeConfig
