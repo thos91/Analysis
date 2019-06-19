@@ -1,25 +1,8 @@
-PROCESS = wgDecoder wgMakeHist wgAnaHist wgAnaHistSummary wgChangeConfig wgOptimize wgPreCalib wgAnaPedestal wgAnaPedestalSummary # wgCheckData wgScurve wgScurveSummary wgCalib wgCalibDiff wgRecon wgDQCheck wgBsdSpillCheck wgHitTimeCheck wgDQHistory wgReconDisp IngDisp wgSpillEff wgSpillCheck wgGainCheck
-MDIR = process
-
-define maker
-$(1):
-	@echo "make $1:";	cd $(MDIR)/$1 && make
-endef
-
-define clean
-	@echo "clean:";	cd $(MDIR)/$1 && rm -f obj/* *.d *.o ; cd ../../
-endef
-
 .PHONY: all clean
 
-all:$(PROCESS)
-
-$(foreach tar,$(PROCESS),$(eval $(call maker,$(tar))))
+all: doc
 
 clean:
-	$(foreach tar,$(PROCESS),$(call clean,$(tar)))
-	rm -f obj/*	
-	rm -f bin/*
 	cd doc; rm -rf build source *.pyc __pycache__ 
 
 prepare:
