@@ -14,6 +14,7 @@
 #include "wgExceptions.hpp"
 #include "wgOptimize.hpp"
 #include "wgTopology.hpp"
+#include "wgLogger.hpp"
 
 using namespace std;
 
@@ -51,7 +52,7 @@ int wgOptimize(const char * x_threshold_card,
     Log.eWrite("[wgOptimize] " + string(e.what()));
     return ERR_TOPOLOGY;
   }
-  unsigned n_difs = topol->max_difs;
+  unsigned n_difs = topol->n_difs;
   unsigned n_chips = topol->max_chips;
   unsigned n_channels = topol->max_channels;
   

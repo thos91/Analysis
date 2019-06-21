@@ -128,6 +128,9 @@ int wgAnaHist(const char * x_inputFileName,
   try {
 	wgFit Fit(inputFileName, outputIMGDir);
 
+        bool first_time = true;
+        int start_time = 0;
+        int stop_time = 0;
 	for (unsigned ichip = 0; ichip < n_chips; ichip++) {
 	  
 	  // ============ Create outputChipDir ============ //
@@ -174,11 +177,10 @@ int wgAnaHist(const char * x_inputFileName,
 		// ******************* FILL THE XML FILES ********************//
 
 		try {
-		  int start_time;
-		  int stop_time;
-		  if(ichip == 0) {
-			start_time = Fit.GetHist->Get_start_time();
-			stop_time  = Fit.GetHist->Get_stop_time();
+		  if (first_time) {
+				start_time = Fit.GetHist->Get_start_time();
+				stop_time  = Fit.GetHist->Get_stop_time();
+        first_time = false;
 		  }
 		  Edit.SetConfigValue(string("start_time"), start_time);
 		  Edit.SetConfigValue(string("stop_time"), stop_time);
