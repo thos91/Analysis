@@ -67,12 +67,7 @@ int main(int argc, char** argv){
   while((opt = getopt(argc,argv, "f:d:m:i:o:q:x:y:prh")) !=-1 ) {
     switch(opt) {
 	case 'f':
-	  inputFileName=optarg;
-	  if(!Check.RootFile(inputFileName)){
-		Log.eWrite("[" + GetName(inputFileName) + "][wgAnaHist] target doesn't exist");
-		exit(1);
-	  }
-	  Log.Write("[" + GetName(inputFileName) + "][wgAnaHist] start wgAnaHist");
+	  inputFileName = optarg;
 	  break;
 	case 'd':
 	  idif = atoi(optarg);
@@ -83,11 +78,6 @@ int main(int argc, char** argv){
 	case 'i':
 	  configFileName = optarg;
 	  flags[SELECT_CONFIG] = true;
-	  if(!Check.XmlFile(configFileName)) {
-		Log.eWrite("[" + GetName(configFileName) + "][wgAnaHist] target doesn't exist");
-		exit(1);
-	  }
-	  Log.Write("[" + GetName(inputFileName) + "][wgAnaHist] read config file: " + configFileName);
 	  break;
 	case 'o':
 	  outputXMLDir = optarg;
@@ -116,9 +106,6 @@ int main(int argc, char** argv){
     }
   }
 
-  Log.Write(" *****  READING FILE     : " + inputFileName + "  *****");
-  Log.Write("start analyzing ...");
-
   int result;
   if ( (result = wgAnaHist(inputFileName.c_str(),
                            configFileName.c_str(),
@@ -133,6 +120,5 @@ int main(int argc, char** argv){
 	exit(1);
   }
 
-  Log.Write("[" + GetName(inputFileName) + "][wgAnaHist] finished");
   exit(0);
 }
