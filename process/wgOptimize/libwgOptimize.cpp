@@ -22,7 +22,7 @@ int wgOptimize(const char * x_threshold_card,
                const char * x_calibration_card,
                const char * x_config_xml_file,
                const char * x_wagasci_config_dif_dir,
-			   const int mode,
+               const int mode,
                const int inputDAC,
                const int pe) {
 
@@ -58,40 +58,40 @@ int wgOptimize(const char * x_threshold_card,
   
   // ================ Sanity check on the arguments ================= //
   
-  if ( (mode == 1) && (calibration_card == "") ) {
-	Log.eWrite("[wgOptimize] A valid calibration card is needed in mode = 1");
-    return ERR_CALIBRATION_CARD_NOT_FOUND;
-  }
   if ( (mode == 0) && ( ((inputDAC % 20) != 1) || (inputDAC < 1) || (inputDAC > 241) ) ) {
-	Log.eWrite("[wgOptimize] Input DAC must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
+    Log.eWrite("[wgOptimize] Input DAC must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
     return ERR_WRONG_INPUTDAC_VALUE;
   }
   if ( threshold_card.empty() || !check.XmlFile(threshold_card) ) {
-	Log.eWrite("[wgOptimize] Threshold card not found");
-	return ERR_THRESHOLD_CARD_NOT_FOUND;
+    Log.eWrite("[wgOptimize] Threshold card not found");
+    return ERR_THRESHOLD_CARD_NOT_FOUND;
   }
   if ( (mode == OP_INPUTDAC_MODE) && (calibration_card.empty() || !check.XmlFile(calibration_card)) ) {
-	Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
+    Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
     return ERR_CALIBRATION_CARD_NOT_FOUND;
   }
+  if ( !check.XmlFile(config_xml_file)) {
+    Log.eWrite("[wgOptimize] Pyrame config file doesn't exist : " + config_xml_file);
+    return ERR_CONFIG_XML_FILE_NOT_FOUND;
+  }
   if ( (mode == OP_THRESHOLD_MODE) && ( ((inputDAC % 20) != 1) || (inputDAC < 1) || (inputDAC > 241) ) ) {
-	Log.eWrite("Input DAC (" + to_string(inputDAC) + ") must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
+    Log.eWrite("Input DAC (" + to_string(inputDAC) + ") must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
     return ERR_WRONG_INPUTDAC_VALUE;
   }
   if ( pe != 1 && pe != 2 && pe != 3 ) {
-	Log.eWrite("Photo-electrons (" + to_string(pe) + ") must be in {1,2,3}");
+    Log.eWrite("Photo-electrons (" + to_string(pe) + ") must be in {1,2,3}");
     return ERR_WRONG_PE_VALUE;
   }
   if ( n_difs > NDIFS ) {
-	Log.eWrite("Number of DIFs (" + to_string(n_difs) + ") must be less than " + to_string(NDIFS));
+    Log.eWrite("Number of DIFs (" + to_string(n_difs) + ") must be less than " + to_string(NDIFS));
     return ERR_WRONG_DIF_VALUE;
   }
   if ( n_chips > NCHIPS ) {
-	Log.eWrite("Number of chips (" + to_string(n_chips) + ") must be less than " + to_string(NCHIPS));
+    Log.eWrite("Number of chips (" + to_string(n_chips) + ") must be less than " + to_string(NCHIPS));
     return ERR_WRONG_CHIP_VALUE;
   }
   if ( mode != OP_THRESHOLD_MODE && mode != OP_INPUTDAC_MODE ) {
-	Log.eWrite("Mode not recognized : " + to_string(mode));
+    Log.eWrite("Mode not recognized : " + to_string(mode));
     return ERR_WRONG_MODE;
   }
 
@@ -104,37 +104,37 @@ int wgOptimize(const char * x_threshold_card,
   s_th.fill(0);
   i_th.fill(-1);
   try {
-	wgEditXML Edit;
-	Edit.Open(threshold_card);
-	for(unsigned idif = 0; idif < n_difs; idif++) {
-	  for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-		// pre-calibration mode
-		if (mode == OP_THRESHOLD_MODE) {
-		  // Get the optimal threshold for pe photo-electron equivalent
-		  threshold[idif][ichip] = Edit.OPT_GetValue("threshold_" + to_string(pe), idif, ichip, inputDAC);
-		}
+    wgEditXML Edit;
+    Edit.Open(threshold_card);
+    for(unsigned idif = 0; idif < n_difs; idif++) {
+      for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+        // pre-calibration mode
+        if (mode == OP_THRESHOLD_MODE) {
+          // Get the optimal threshold for pe photo-electron equivalent
+          threshold[idif][ichip] = Edit.OPT_GetValue("threshold_" + to_string(pe), idif, ichip, inputDAC);
+        }
         // post-calibration mode
-		else if (mode == OP_INPUTDAC_MODE) {
-		  if ( pe < 3 ) {
-			// s_th is the slope of the linear fit of the inputDAC (x) vs optimal
-			// threshold for the given p.e. equivalend (y)
-			// i_th is the intercept of the linear fit of the inputDAC (x) vs
-			// optimal threshold for the given p.e. equivalend (y)
-			s_th[idif][ichip]=Edit.OPT_GetChipValue("s_th" + to_string(pe), idif, ichip);
-			i_th[idif][ichip]=Edit.OPT_GetChipValue("i_th" + to_string(pe), idif, ichip);
-		  } else {
-			// Get the optimal threshold for 2.5 photo-electron equivalent
-			// for what value of the inputDAC??
-			threshold[idif][ichip]= Edit.OPT_GetChipValue(string("threshold_3"), idif, ichip);
-		  }
-		}
-	  }
-	}
-	Edit.Close();
+        else if (mode == OP_INPUTDAC_MODE) {
+          if ( pe < 3 ) {
+            // s_th is the slope of the linear fit of the inputDAC (x) vs optimal
+            // threshold for the given p.e. equivalend (y)
+            // i_th is the intercept of the linear fit of the inputDAC (x) vs
+            // optimal threshold for the given p.e. equivalend (y)
+            s_th[idif][ichip]=Edit.OPT_GetChipValue("s_th" + to_string(pe), idif, ichip);
+            i_th[idif][ichip]=Edit.OPT_GetChipValue("i_th" + to_string(pe), idif, ichip);
+          } else {
+            // Get the optimal threshold for 2.5 photo-electron equivalent
+            // for what value of the inputDAC??
+            threshold[idif][ichip]= Edit.OPT_GetChipValue(string("threshold_3"), idif, ichip);
+          }
+        }
+      }
+    }
+    Edit.Close();
   }
   catch (const exception& e) {
-	Log.eWrite("[wgOptimize] Error when reading the threshold card file : " + string(e.what()));
-	return ERR_THRESHOLD_CARD_READ;
+    Log.eWrite("[wgOptimize] Error when reading the threshold card file : " + string(e.what()));
+    return ERR_THRESHOLD_CARD_READ;
   }
 
   // ================ Read the calibration card ================= //
@@ -144,35 +144,37 @@ int wgOptimize(const char * x_threshold_card,
   s_Gain.fill(0);
   i_Gain.fill(-1);
   try {
-	wgEditXML Edit;
-	// Get the slope and intercept of the inputDAC(x) vs Gain(y) graph from the
-	// calibration_card.xml file
-	if(mode == OP_INPUTDAC_MODE) {
-	  Edit.Open(calibration_card);
-	  for(unsigned idif = 0; idif < n_difs; idif++) {
-		for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-		  for(unsigned ichan = 0; ichan < n_channels; ichan++) {
-			s_Gain[idif][ichip][ichan]= Edit.PreCalib_GetValue(string("s_Gain"), idif, ichip, ichan);
-			i_Gain[idif][ichip][ichan]= Edit.PreCalib_GetValue(string("i_Gain"), idif, ichip, ichan);
-		  }
-		}
-	  }
-	  Edit.Close();
-	}
+    wgEditXML Edit;
+    // Get the slope and intercept of the inputDAC(x) vs Gain(y) graph from the
+    // calibration_card.xml file
+    if(mode == OP_INPUTDAC_MODE) {
+      Edit.Open(calibration_card);
+      for(unsigned idif = 0; idif < n_difs; idif++) {
+        for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+          for(unsigned ichan = 0; ichan < n_channels; ichan++) {
+            s_Gain[idif][ichip][ichan]= Edit.PreCalib_GetValue(string("s_Gain"), idif, ichip, ichan);
+            i_Gain[idif][ichip][ichan]= Edit.PreCalib_GetValue(string("i_Gain"), idif, ichip, ichan);
+          }
+        }
+      }
+      Edit.Close();
+    }
   }
   catch (const exception& e) {
-	Log.eWrite("[wgOptimize] Error when reading the calibration card file : " + string(e.what()));
-	return ERR_CALIBRATION_CARD_READ;
+    Log.eWrite("[wgOptimize] Error when reading the calibration card file : " + string(e.what()));
+    return ERR_CALIBRATION_CARD_READ;
   }
 
-  // ================ Edit the SPIROC2D configuration files for every DIF ================= //
+  // ================ Edit the SPIROC2D configuration files for every GDCC, DIF, ASU, channel ================= //
 
   try {
-	for(auto const & igdcc : topol->topology_map) {
+    for(auto const & igdcc : topol->gdcc_map) {
       for ( auto const & idif : igdcc.second) {
+        unsigned u_idif = topol->GetAbsDif(stoi(igdcc.first), stoi(idif.first)) - 1;
         for ( auto const & ichip : idif.second) {
-
-          string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + igdcc.first + "_dif" + idif.first + "_chip" + ichip.first + ".txt");
+          unsigned u_ichip = stoi(ichip.first) - 1;
+          string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + igdcc.first +
+                            "_dif" + idif.first + "_chip" + ichip.first + ".txt");
 
           if( !check.TxtFile(configName) ) {
             Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);
@@ -183,7 +185,7 @@ int wgOptimize(const char * x_threshold_card,
           // In mode 0 edit the threshold of each chip to the optimal value taken
           // from threshold_card.xml
           if( mode == OP_THRESHOLD_MODE ) {
-            EditCon.Change_trigth(threshold[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1]);
+            EditCon.Change_trigth(threshold[u_idif][u_ichip]);
           }
 	  
           // In mode 1 edit the inputDAC of each channel of each chip to the
@@ -191,17 +193,16 @@ int wgOptimize(const char * x_threshold_card,
           else if( mode == OP_INPUTDAC_MODE ) {
             double mean_inputDAC = 0.;
 
-            for(unsigned ichan = 0; ichan < (unsigned) ichip.second; ichan++) {
+            for(unsigned ichan = 0; ichan < (unsigned) stoi(ichip.second); ichan++) {
               double inputDAC = 0.;
               try {
-                if(s_Gain[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1][ichan] == 0.) {
+                if(s_Gain[u_idif][u_ichip][ichan] == 0.) {
                   inputDAC = 121.;
                   mean_inputDAC += inputDAC;
                 }
                 else {
                   // This is the inputDAC value corresponding to a Gain of 40
-                  inputDAC = (40. - i_Gain[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1][ichan]) /
-                    s_Gain[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1][ichan];
+                  inputDAC = (40. - i_Gain[u_idif][u_ichip][ichan]) / s_Gain[u_idif][u_ichip][ichan];
                   if (inputDAC < 1.)   inputDAC = 1.;
                   if (inputDAC > 250.) inputDAC = 250.;
                   mean_inputDAC += inputDAC;
@@ -220,25 +221,24 @@ int wgOptimize(const char * x_threshold_card,
 
             // In mode 1 set the chip-wise threshold to the value corresponding to
             // mean_inputDAC
-            double thresholdDAC;
+            double thresholdDAC = -1;
             try {
               if ( pe < 3 ) {
                 // Use the slope and intercept of the inputDAC(x) vs threshold(y) graph
-                thresholdDAC = s_th[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1] * mean_inputDAC +
-                  i_th[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1];
+                thresholdDAC = s_th[u_idif][u_ichip] * mean_inputDAC + i_th[u_idif][u_ichip];
                 thresholdDAC = round(thresholdDAC);
               }
               else if( pe == 3) {
                 // For 2.5. p.e. just read the threshold from the threshold card file
-                thresholdDAC=threshold[topol->Dif(igdcc.first, idif.first) - 1][stoi(ichip.first) - 1];
-                thresholdDAC=round(thresholdDAC);
+                thresholdDAC = threshold[u_idif][u_ichip];
+                thresholdDAC = round(thresholdDAC);
               }
               // Set the global threshold of the chip
               EditCon.Change_trigth((int)thresholdDAC);
             }
             catch (const exception& e) {
               Log.eWrite("[wgOptimize] error setting the optimized threshold " + to_string(thresholdDAC) +
-						 "( igdcc " + igdcc.first + "idif " + idif.first + ", chip " + ichip.first + e.what());
+                         "( igdcc " + igdcc.first + "idif " + idif.first + ", chip " + ichip.first + e.what());
               return ERR_THRESHOLD_WRITE;
             }
           }
@@ -249,8 +249,8 @@ int wgOptimize(const char * x_threshold_card,
     }//igdcc
   }
   catch (const exception& e) {
-	Log.eWrite("[wgOptimize] " + string(e.what()));
-	return ERR_OPTIMIZE_GENERIC_ERROR;
+    Log.eWrite("[wgOptimize] " + string(e.what()));
+    return ERR_OPTIMIZE_GENERIC_ERROR;
   }
   return OP_SUCCESS;
 }
