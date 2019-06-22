@@ -22,7 +22,7 @@ CONF_FILE="${WAGASCI_MAINDIR}/configs/unit_tests/${RUN_NAME}.xml"
 TREE_FILE="${CURRENT_DIR}/${RUN_NAME}_tree.root"
 HIST_FILE="${CURRENT_DIR}/${RUN_NAME}_hist.root"
 ANA_DIR="${CURRENT_DIR}/AnaHist"
-SUMMARY_DIR="${CURRENT_DIR}/Summary"
+SUMMARY_DIR="${CURRENT_DIR}/AnaHistSummary"
 IMAGE_DIR="${CURRENT_DIR}/Images"
 
 ANA_MODE=20
@@ -30,25 +30,25 @@ ANA_SUMMARY_MODE=12
 
 DIF=1
 NCHIPS_DECODE=20
-NCHIPS_ANA=20
+NCHIPS_ANA=1
 NCHANNELS=32
 
-echo " wgPreCalib unit test: input DAC 121 - 2 p.e."
+echo " wgAnaHistSummary unit test: input DAC 121 - 2 p.e."
 
 if [ ! -f "${TREE_FILE}" ]; then
 	echo ""
 	echo " Decode   : ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r"
-                      ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
+                          ${DECODER} -f ${RAW_FILE}  -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
 fi
 if [ ! -f "${HIST_FILE}" ]; then
 	echo ""
 	echo " MakeHist : ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r"
-                      ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
+                          ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS_DECODE} -y ${NCHANNELS} -r
 fi
 if [ ! -d "${ANA_DIR}" ]; then
 	echo""
 	echo " AnaHist  : ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r"
-                      ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r
+                          ${ANAHIST} -f ${HIST_FILE} -o ${ANA_DIR} -x ${NCHIPS_ANA} -y ${NCHANNELS} -d ${DIF} -i ${CONF_FILE} -m ${ANA_MODE} -r
 fi
 
    echo ""

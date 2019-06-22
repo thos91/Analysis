@@ -32,24 +32,24 @@ using namespace std;
 extern "C" {
 #endif
 
-  void ModeSelect(int mode);
-
-  void MakeSummaryXmlFile(const string& str,
-						  bool overwrite,
-						  unsigned n_chips = NCHIPS,
-						  unsigned n_chans = NCHANNELS);
-
-  int wgAnaHistSummary(const char * x_inputDirName,
-					   const char * x_outputXMLDir,
-					   const char * x_outputIMGDir,
-					   int mode,
-					   bool overwrite = false,
-					   bool print = false,
-					   unsigned n_chips = NCHIPS,
-					   unsigned n_chans = NCHANNELS);
+  int wgAnaHistSummary(const char * x_inputDir,
+                       const char * x_outputXMLDir,
+                       const char * x_outputIMGDir,
+                       int mode,
+                       bool overwrite = false,
+                       bool print = false,
+                       unsigned n_chips = NCHIPS,
+                       unsigned n_chans = NCHANNELS);
   
 #ifdef __cplusplus
 }
 #endif
+
+void ModeSelect(int mode);
+
+void MakeSummaryXmlFile(const string& str,
+                        bool overwrite,
+                        unsigned n_chips = NCHIPS,
+                        unsigned n_chans = NCHANNELS);
 
 #endif // WG_ANAHISTSUMMARY_HPP_
