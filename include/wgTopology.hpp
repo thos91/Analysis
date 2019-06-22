@@ -109,16 +109,6 @@ private:
   // populated.
   void GetGdccDifMapping();
 
-  // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
-  string GetAbsDif(const string& gdcc, const string& dif);
-  // Returns m_gdcc_to_dif_map[pair<gdcc, dif>] after converting the arguments into strings
-  unsigned GetAbsDif(unsigned gdcc, unsigned dif);
-
-  // Returns m_dif_to_gdcc_map[dif]
-  std::pair<string, string> GetGdccDifPair(const string& dif);
-  // Returns m_dif_to_gdcc_map[dif] after converting the argument into string
-  std::pair<unsigned, unsigned> GetGdccDifPair(unsigned dif);
-
   // Transform the TopologyMapGdcc "gdcc_map" into the TopologyMapDif
   // "dif_map". Must be called after the GetTopology* and
   // GetGdccDifMapping functions.
@@ -156,6 +146,16 @@ public:
   Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
 
+  // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
+  string GetAbsDif(const string& gdcc, const string& dif);
+  // Returns m_gdcc_to_dif_map[pair<gdcc, dif>] after converting the arguments into strings
+  unsigned GetAbsDif(unsigned gdcc, unsigned dif);
+
+  // Returns m_dif_to_gdcc_map[dif]
+  std::pair<string, string> GetGdccDifPair(const string& dif);
+  // Returns m_dif_to_gdcc_map[dif] after converting the argument into string
+  std::pair<unsigned, unsigned> GetGdccDifPair(unsigned dif);
+  
   // Print the TopologyMapDif map member to cout
   void PrintMapDif();
   // Print the TopologyMapGdcc map member to cout
