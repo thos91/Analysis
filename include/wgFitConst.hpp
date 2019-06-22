@@ -50,4 +50,9 @@ extern const int ped_diff_max;  // maximum (most right) value of the difference
 							    // pedestal
 extern const int ped_diff_min;  // minimum (most left) value
 
+// Guess the threshold value (in p.e.) given the dark noise rate
+// This little function tries to guess the threshold level (0.5, 1.5 or 2.5)
+// given the value of the noise rate.
+double NoiseToPe(const double noise);
+
 #endif

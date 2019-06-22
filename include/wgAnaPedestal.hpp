@@ -24,10 +24,6 @@ using namespace std;
 extern "C" {
 #endif
 
-  // This little function tries to guess the threshold level (0.5, 1.5 or 2.5)
-  // given the value of the noise rate.
-  double NoiseToPe(double);
-
   void MakeSummaryXmlFile(const string& str,
 						  bool overwrite,
 						  unsigned n_chips = NCHIPS,

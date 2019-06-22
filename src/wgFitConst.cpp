@@ -46,3 +46,14 @@ const int ped_diff_max = 10;  // maximum (most right) value of the difference
 							  // between the measured pedestal and the nominal
 							  // pedestal
 const int ped_diff_min = -50; // minimum (most left) value
+
+double NoiseToPe(const double noise) {
+  if      (noise >  u_limit_1pe)                        return 0.5;
+  else if (noise >= l_limit_1pe && noise < u_limit_1pe) return 1.0;
+  else if (noise >= u_limit_2pe && noise < l_limit_1pe) return 1.5;
+  else if (noise >= l_limit_2pe && noise < u_limit_2pe) return 2.0;
+  else if (noise >= u_limit_3pe && noise < l_limit_2pe) return 2.5;
+  else if (noise >= l_limit_3pe && noise < u_limit_3pe) return 3.0;
+  else if (noise <  l_limit_3pe && noise > 0)           return 3.5;
+  else                                                  return 0; 
+}
