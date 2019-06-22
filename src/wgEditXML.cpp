@@ -100,7 +100,7 @@ void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigne
   data->InsertEndChild(ch);
 
   for(unsigned int k=0; k<MEMDEPTH; k++){
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", k );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", k );
     XMLElement* col = xml->NewElement(str);
     ch->InsertEndChild(col);
   }
@@ -111,58 +111,58 @@ void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigne
 //**********************************************************************
 bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const unsigned ichip, const unsigned n_chans, vector<vector<int>>& v) {
   try {
-	bool found=false;
-	string bitstream("");
-	CheckExist Check;
+    bool found=false;
+    string bitstream("");
+    CheckExist Check;
 
-	if(!Check.XmlFile(configxml))
-	  throw wgInvalidFile(configxml + " wasn't found or is not valid");
-	if(ichip > NCHIPS)
-	  throw std::invalid_argument("ichip is greater than " + to_string(NCHIPS));
+    if(!Check.XmlFile(configxml))
+      throw wgInvalidFile(configxml + " wasn't found or is not valid");
+    if(ichip > NCHIPS)
+      throw std::invalid_argument("ichip is greater than " + to_string(NCHIPS));
 
-	XMLDocument configfile;
-	configfile.LoadFile(configxml.c_str()); 
-	XMLElement* ecal = configfile.FirstChildElement("ecal");
-	XMLElement* domain = ecal->FirstChildElement("domain");
-	XMLElement* acqpc = domain->FirstChildElement("acqpc");
-	XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
-	// DIFs loop
-	for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-	  if( string(dif->Attribute("name")) == "dif_1_1_" + to_string(idif) ) {
-		// ASUs loop
-		for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-		  if( string(asu->Attribute("name")) == "asu_1_1_" + to_string(idif) + "_" + to_string(ichip) ) {
-			XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
-			// loop to find the spiroc2d_bitstream parameter
-			for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-			  if( string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
-				bitstream = param->GetText();
-				found=true;
-				break;
-			  }
-			}
-		  }
-		  // If the bitstream was found exit the ASU loop
-		  else if (found) break;
-		}
-	  }
-	}
-	if (found == false) return false;
+    XMLDocument configfile;
+    configfile.LoadFile(configxml.c_str()); 
+    XMLElement* ecal = configfile.FirstChildElement("ecal");
+    XMLElement* domain = ecal->FirstChildElement("domain");
+    XMLElement* acqpc = domain->FirstChildElement("acqpc");
+    XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
+    // DIFs loop
+    for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
+      if( string(dif->Attribute("name")) == "dif_1_1_" + to_string(idif) ) {
+        // ASUs loop
+        for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
+          if( string(asu->Attribute("name")) == "asu_1_1_" + to_string(idif) + "_" + to_string(ichip) ) {
+            XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
+            // loop to find the spiroc2d_bitstream parameter
+            for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
+              if( string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
+                bitstream = param->GetText();
+                found=true;
+                break;
+              }
+            }
+          }
+          // If the bitstream was found exit the ASU loop
+          else if (found) break;
+        }
+      }
+    }
+    if (found == false) return false;
 
-	wgEditConfig EditCon(bitstream, true);
-	v.clear();
-	v.resize(n_chans);
-	for(unsigned i = 0; i < n_chans; i++) {
-	  v[i].push_back(EditCon.Get_trigth());  
-	  v[i].push_back(EditCon.Get_gainth());
-	  v[i].push_back(EditCon.Get_inputDAC(i));
-	  v[i].push_back(EditCon.Get_ampDAC(i));
-	  v[i].push_back(EditCon.Get_trigadj(i));
-	}
+    wgEditConfig EditCon(bitstream, true);
+    v.clear();
+    v.resize(n_chans);
+    for(unsigned i = 0; i < n_chans; i++) {
+      v[i].push_back(EditCon.Get_trigth());  
+      v[i].push_back(EditCon.Get_gainth());
+      v[i].push_back(EditCon.Get_inputDAC(i));
+      v[i].push_back(EditCon.Get_ampDAC(i));
+      v[i].push_back(EditCon.Get_trigadj(i));
+    }
   }
   catch (const exception& e) {
-	Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + to_string(idif) + ", chip = " + to_string(ichip) + " : " + string(e.what()));
-	return false;
+    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + to_string(idif) + ", chip = " + to_string(ichip) + " : " + string(e.what()));
+    return false;
   }
   return true;
 }
@@ -213,9 +213,9 @@ void wgEditXML::SetConfigValue(const string& name, const int value, const bool c
     target->SetText(to_string(value).c_str());
   }
   else if(create_new == true) {
-	XMLElement* newElement = xml->NewElement(name.c_str());
-	newElement->SetText(value);
-	config->InsertEndChild(newElement);      
+    XMLElement* newElement = xml->NewElement(name.c_str());
+    newElement->SetText(value);
+    config->InsertEndChild(newElement);      
   }
   else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
@@ -230,7 +230,7 @@ void wgEditXML::SetColValue(const string& name, const int icol, const double val
   XMLElement* col = ch->FirstChildElement(str);
   XMLElement* target = col->FirstChildElement(name.c_str());
   if ( target ) {
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
     target->SetText(str);
   }else{
     if(create_new == true){
@@ -250,7 +250,7 @@ void wgEditXML::SetChValue(const string& name, const double value, const bool cr
   XMLElement* ch = data->FirstChildElement("ch");
   XMLElement* target = ch->FirstChildElement(name.c_str());
   if ( target ) {
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value );
     target->SetText(str);
   }else{
     if(create_new == true){
@@ -347,17 +347,19 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
   vector<XMLElement*> ch              (n_chans);
   vector<XMLElement*> fit             (n_chans);
   vector<XMLElement*> noise           (n_chans);
+  vector<XMLElement*> enoise          (n_chans);
+  vector<XMLElement*> pe_level        (n_chans);
   vector<XMLElement*> config          (n_chans);
   vector<XMLElement*> inputDAC        (n_chans);
   vector<XMLElement*> ampDAC          (n_chans);
   vector<XMLElement*> threshold_adjust(n_chans);
   //col
-  vector<array<XMLElement*, MEMDEPTH> > gain(n_chans);
   vector<array<XMLElement*, MEMDEPTH> > pedestal(n_chans);
   vector<array<XMLElement*, MEMDEPTH> > pedestal_error(n_chans);
-  vector<array<XMLElement*, MEMDEPTH> > pedestal_reference(n_chans);
   vector<array<XMLElement*, MEMDEPTH> > raw_charge(n_chans);
   vector<array<XMLElement*, MEMDEPTH> > raw_charge_error(n_chans);
+  vector<array<XMLElement*, MEMDEPTH> > gain(n_chans);
+  vector<array<XMLElement*, MEMDEPTH> > gain_error(n_chans);
 
   // ********************** //
 
@@ -377,7 +379,7 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
 
   for(unsigned ichan = 0; ichan < n_chans; ichan++) {
     // ***** data > ch ***** //
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ch_%d", ichan );
     ch[ichan] = xml->NewElement(str);    
     data->InsertEndChild(ch[ichan]);
 
@@ -385,37 +387,44 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
     fit[ichan] = xml->NewElement("fit");
     ch[ichan]->InsertEndChild(fit[ichan]);
 
-    noise[ichan] = xml->NewElement("Noise");
+    noise[ichan] = xml->NewElement("noise");
     fit[ichan]->InsertEndChild(noise[ichan]);
-    noise[ichan] = xml->NewElement("pe_level");
-    fit[ichan]->InsertEndChild(noise[ichan]);
+    enoise[ichan] = xml->NewElement("enoise");
+    fit[ichan]->InsertEndChild(enoise[ichan]);
+    pe_level[ichan] = xml->NewElement("pe_level");
+    fit[ichan]->InsertEndChild(pe_level[ichan]);
 
     for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
       pedestal[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(pedestal[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_ref_%d", icol );
-      pedestal_reference[ichan][icol] = xml->NewElement(str);
-      fit[ichan]->InsertEndChild(pedestal_reference[ichan][icol]);
-    }
-	for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
-	  gain[ichan][icol] = xml->NewElement(str);
-	  fit[ichan]->InsertEndChild(gain[ichan][icol]);
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "eped_%d", icol );
+      pedestal_error[ichan][icol] = xml->NewElement(str);
+      fit[ichan]->InsertEndChild(pedestal_error[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "raw_%d", icol );
-	  raw_charge[ichan][icol] = xml->NewElement(str);
-	  fit[ichan]->InsertEndChild(raw_charge[ichan][icol]);
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "raw_%d", icol );
+      raw_charge[ichan][icol] = xml->NewElement(str);
+      fit[ichan]->InsertEndChild(raw_charge[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
       snprintf( str, XML_ELEMENT_STRING_LENGTH, "eraw_%d", icol );
-	  raw_charge_error[ichan][icol] = xml->NewElement(str);
-	  fit[ichan]->InsertEndChild(raw_charge_error[ichan][icol]);
+      raw_charge_error[ichan][icol] = xml->NewElement(str);
+      fit[ichan]->InsertEndChild(raw_charge_error[ichan][icol]);
     }
-  
+    for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
+      gain[ichan][icol] = xml->NewElement(str);
+      fit[ichan]->InsertEndChild(gain[ichan][icol]);
+    }
+    for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "egain_%d", icol );
+      gain_error[ichan][icol] = xml->NewElement(str);
+      fit[ichan]->InsertEndChild(gain_error[ichan][icol]);
+    }
+
     // ***** data > ch > config ***** //
     config[ichan] = xml->NewElement("config");
     ch[ichan]->InsertEndChild(config[ichan]);
@@ -440,14 +449,14 @@ void wgEditXML::SUMMARY_SetGlobalConfigValue(const string& name, const int value
   XMLElement* config = data->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
-	target->SetText(str);
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
+    target->SetText(str);
   }
   else if( create_new == true ) {
-	XMLElement* newElement = xml->NewElement(name.c_str());
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
-	newElement->SetText(str);
-	config->InsertEndChild(newElement);
+    XMLElement* newElement = xml->NewElement(name.c_str());
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
+    newElement->SetText(str);
+    config->InsertEndChild(newElement);
   }
   else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
@@ -461,14 +470,14 @@ void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, co
   XMLElement* config = ch->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
-	target->SetText(str);
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
+    target->SetText(str);
   }
   else if( create_new == true ) {
-	XMLElement* newElement = xml->NewElement(name.c_str());
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
-	newElement->SetText(str);
-	config->InsertEndChild(newElement);
+    XMLElement* newElement = xml->NewElement(name.c_str());
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
+    newElement->SetText(str);
+    config->InsertEndChild(newElement);
   }
   else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
@@ -482,14 +491,14 @@ void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const
   XMLElement* config = ch->FirstChildElement("fit");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
     target->SetText(str);
   }
   else if( create_new == true ) {
-	XMLElement* newElement = xml->NewElement(name.c_str());
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
-	newElement->SetText(str);
-	config->InsertEndChild(newElement);
+    XMLElement* newElement = xml->NewElement(name.c_str());
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
+    newElement->SetText(str);
+    config->InsertEndChild(newElement);
   }
   else throw wgElementNotFound("Element " + name + " doesn't exist");
 }
@@ -502,16 +511,16 @@ void wgEditXML::SUMMARY_SetPedFitValue(double value[MEMDEPTH], const int ichan, 
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* fit = ch->FirstChildElement("fit");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
     XMLElement* target = fit->FirstChildElement(str);
-	if ( target ) {
-	  snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
+    if ( target ) {
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
       target->SetText(str);
     }else{
       if(create_new == true){
-		snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+        snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
         XMLElement* newElement = xml->NewElement(str);
-		snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
+        snprintf( str, XML_ELEMENT_STRING_LENGTH, "%.2f", value[icol] );
         newElement->SetText(str);
         fit->InsertEndChild(newElement); 
       }else{
@@ -594,9 +603,9 @@ void wgEditXML::SUMMARY_GetPedFitValue(double value[MEMDEPTH], const int ich){
   XMLElement* ch = data->FirstChildElement(str);
   XMLElement* config = ch->FirstChildElement("fit");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++){
-	snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
     XMLElement* target = config->FirstChildElement(str);
-	if ( target ) {
+    if ( target ) {
       string temp_value = target->GetText();
       value[icol] = atof(temp_value.c_str());
     }else{
@@ -922,35 +931,35 @@ void wgEditXML::Calib_Make(const string& filename, const unsigned n_difs, const 
       dif->InsertEndChild(chip);
       // ***** data > dif > chip > ch ***** //
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
-		ch = xml->NewElement(Form("ch_%d",ichan));    
+        ch = xml->NewElement(Form("ch_%d",ichan));    
         chip->InsertEndChild(ch);
-		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe1_%d", icol );
-		  pe1 = xml->NewElement(str);
-		  ch->InsertEndChild(pe1);
-		}
-		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe2_%d", icol );
-		  pe2 = xml->NewElement(str);
-		  ch->InsertEndChild(pe2);
-		}
-		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
-		  gain = xml->NewElement(str);  
-		  ch->InsertEndChild(gain);
-		}
-		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
-		  ped = xml->NewElement(str);  
-		  ch->InsertEndChild(ped);
-		}
-		for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-		  snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_nohit_%d", icol );
-		  ped_nohit = xml->NewElement(str);  
-		  ch->InsertEndChild(ped_nohit);
-		}		
-	  }
-	}
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe1_%d", icol );
+          pe1 = xml->NewElement(str);
+          ch->InsertEndChild(pe1);
+        }
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe2_%d", icol );
+          pe2 = xml->NewElement(str);
+          ch->InsertEndChild(pe2);
+        }
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
+          gain = xml->NewElement(str);  
+          ch->InsertEndChild(gain);
+        }
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
+          ped = xml->NewElement(str);  
+          ch->InsertEndChild(ped);
+        }
+        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_nohit_%d", icol );
+          ped_nohit = xml->NewElement(str);  
+          ch->InsertEndChild(ped_nohit);
+        }		
+      }
+    }
   }
   xml->SaveFile(filename.c_str());
   delete xml;
