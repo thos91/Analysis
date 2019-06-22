@@ -59,10 +59,10 @@ wgFit::wgFit(const string& x_inputfile, const string& x_outputIMGDir) {
   wgFit::GetHist = new wgGetHist(x_inputfile);
   CheckExist Check;
   if( !Check.Dir(x_outputIMGDir) ) {
-	boost::filesystem::path dir(x_outputIMGDir);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  throw wgInvalidFile("[wgFit][" + x_outputIMGDir + "] failed to create directory");
-	}
+    boost::filesystem::path dir(x_outputIMGDir);
+    if( !boost::filesystem::create_directories(dir) ) {
+      throw wgInvalidFile("[wgFit][" + x_outputIMGDir + "] failed to create directory");
+    }
   }
   wgFit::outputIMGDir = x_outputIMGDir;
 }
@@ -73,10 +73,10 @@ wgFit::wgFit(const string& x_inputfile) {
   wgConst con;
   CheckExist Check;
   if( !Check.Dir(con.IMGDATA_DIRECTORY) ) {
-	boost::filesystem::path dir(con.IMGDATA_DIRECTORY);
-	if( !boost::filesystem::create_directories(dir) ) {
-	  throw wgInvalidFile("[wgFit][" + con.IMGDATA_DIRECTORY + "] failed to create directory");
-	}
+    boost::filesystem::path dir(con.IMGDATA_DIRECTORY);
+    if( !boost::filesystem::create_directories(dir) ) {
+      throw wgInvalidFile("[wgFit][" + con.IMGDATA_DIRECTORY + "] failed to create directory");
+    }
   }
   wgFit::outputIMGDir = con.IMGDATA_DIRECTORY;
 }
@@ -111,9 +111,9 @@ void wgFit::swap(int Npeaks, double* px, double* py){
 //**********************************************************************
 void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
   if ( (! GetHist->Get_bcid_hit(ichip, ichan)) || (! GetHist->Get_spill()) ) {
-	x[0] = NAN;
-	x[1] = NAN;
-	return;
+    x[0] = NAN;
+    x[1] = NAN;
+    return;
   }
 
   // Number of recorded spills
@@ -121,7 +121,7 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print
   if( nEntries == 0 ) {
     x[0]=0.;
     x[1]=1./sqrt(GetHist->h_spill->GetEntries());
-	throw wgElementNotFound("BCID histogram has no entries");
+    throw wgElementNotFound("BCID histogram has no entries");
   }
 
   // Create a step function to fit the histogram and precisely find the "non
@@ -159,8 +159,8 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print
   x[1] = ((B * nEntries - Sigma) * sqrt(Sigma)) / (pow(B,2) * pow(nEntries,2) * time_bcid_bin); // Hertz
   
   if ( print_flag ) {
-	TString image;
-	image.Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
+    TString image;
+    image.Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
     GetHist->Print_bcid(image);
   }
   delete step_function;
@@ -170,20 +170,20 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print
 void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool print_flag) {
 
   if ( ! wgFit::GetHist->Get_charge_hit(ichip, ichan) ) {
-	x[0] = NAN;
-	x[1] = NAN;
-	x[2] = NAN;
-	return;
+    x[0] = NAN;
+    x[1] = NAN;
+    x[2] = NAN;
+    return;
   }
 
   if(wgFit::GetHist->h_charge_hit->Integral(begin_low_pe,end_low_pe) < 1 )
-	{
+    {
 #ifdef DEBUG_WGFIT
-	  Log.eWrite("[wgFit::charge_hit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ")");
+      Log.eWrite("[wgFit::charge_hit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ")");
 #endif
-	  x[0]=x[1]=x[2]=0.;
-	  return;
-	} 
+      x[0]=x[1]=x[2]=0.;
+      return;
+    } 
   // begin_low_pe and end_low_pe are defined in wgFitConst.cpp
   wgFit::GetHist->h_charge_hit->GetXaxis()->SetRange(begin_low_pe,end_low_pe);
 
@@ -209,8 +209,8 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
   x[2]=gaussian->GetParameter(0); // peak_fit
 
   if( print_flag && (!outputIMGDir.empty()) ) {
-	TString image;
-	image.Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
+    TString image;
+    image.Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
     GetHist->Print_charge(image);
   }
   delete gaussian;
@@ -222,20 +222,20 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
 void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag) {
 
   if ( ! wgFit::GetHist->Get_charge_hit_HG(ichip,ichan,icol) ) {
-	x[0] = NAN;
-	x[1] = NAN;
-	x[2] = NAN;
-	return;
+    x[0] = NAN;
+    x[1] = NAN;
+    x[2] = NAN;
+    return;
   }
   
   if(wgFit::GetHist->h_charge_hit_HG->Integral(begin_low_pe_HG,end_low_pe_HG) < 1 )
-  {
+    {
 #ifdef DEBUG_WGFIT
-	Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
+      Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
 #endif
-    x[0]=x[1]=x[2]=0.;
-    return;
-  } 
+      x[0]=x[1]=x[2]=0.;
+      return;
+    } 
   // begin_low_pe_HG and end_low_pe_HG are defined in wgFitConst.cpp
   wgFit::GetHist->h_charge_hit_HG->GetXaxis()->SetRange(begin_low_pe_HG,end_low_pe_HG);
   double mean=(double)GetHist->h_charge_hit_HG->GetMaximumBin();
@@ -260,8 +260,8 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
   x[2]=gaussian->GetParameter(0); // peak_fit
 
   if( print_flag && (!outputIMGDir.empty()) ) {
-	TString image;
-	image.Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
+    TString image;
+    image.Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
     GetHist->Print_charge_hit_HG(image);
   }
   delete gaussian;
@@ -273,21 +273,21 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
 
   // Read the "charge_nohit" histogram for the _hist.root file
   if ( ! GetHist->Get_charge_nohit(ichip, ichan, icol) ) {
-	x[0] = NAN;
-	x[1] = NAN;
-	x[2] = NAN;
-	return;
+    x[0] = NAN;
+    x[1] = NAN;
+    x[2] = NAN;
+    return;
   }
 
   // If the histogram is empty return a 0 vector
   if(GetHist->h_charge_nohit->Integral(begin_ped, end_ped) < 1 )
-  {
+    {
 #ifdef DEBUG_WGFIT 
-    Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
+      Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
 #endif
-    x[0]=x[1]=x[2]=0.;
-    return;
-  }
+      x[0]=x[1]=x[2]=0.;
+      return;
+    }
   
   // Set the histogram x axis range to 350 --- 700 (the pedestal lies usually in
   // that range)
@@ -319,8 +319,8 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   x[2]=gaussian->GetParameter(0); // peak_fit
     
   if( print_flag && (!outputIMGDir.empty()) ) {
-	TString image;
-	image.Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
+    TString image;
+    image.Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
     GetHist->Print_charge_nohit(image);
   }
   
