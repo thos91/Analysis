@@ -13,9 +13,10 @@
 using namespace std;
 using namespace tinyxml2;
 
-typedef std::map<string, std::map<string, std::map< string, unsigned>>> TopologyMapGdcc;
-typedef std::map<string, std::map< string, unsigned>> TopologyMapDif;
-typedef std::map<string, std::map< string, unsigned>> GdccToDifMap;
+typedef std::map<string, std::map<string, std::map< string, string>>> TopologyMapGdcc;
+typedef std::map<string, std::map< string, string>> TopologyMapDif;
+typedef std::map<std::pair<string, string>, string> GdccToDifMap;
+typedef std::map<string, std::pair< string, string>> DifToGdccMap;
 
 enum class TopologySourceType {
   xml_file,
@@ -85,29 +86,53 @@ private:
 
   // Map from the GDCC, DIF pair into the absolute DIF number
   GdccToDifMap m_gdcc_to_dif_map = {};
+  // Map from the absolute DIF number into the GDCC, DIF pair
+  DifToGdccMap m_dif_to_gdcc_map = {};
+  
   // The input value is the name of the Pyrame configuration file to
-  // read. The number of GDCCs, DIFs, ASUs and channels is retrieved from the
-  // configuration file. A map of type "TopologyMapGdcc" is then populated.
+  // read. The number of GDCCs, DIFs, ASUs and channels is retrieved
+  // from the configuration file. The "this->gdcc_map" of type
+  // "TopologyMapGdcc" is then populated.
   //
   // {"gdcc", {"dif", {"asu", "n_channels"}}} ...
-  TopologyMapGdcc GetTopologyFromFile(const string& configxml);
-  // Parse a JSON string containing a representation of the TopologyMapDif
-  TopologyMapDif  GetTopologyFromString(const string& json_string);
-  // This function reads the JSON file "/opt/calicoes/config/dif_mapping.txt"
-  // containing the mapping of the (gdcc, dif) pair into the absolute dif
-  // number. The content is translated into a DifMap map.
-  GdccToDifMap GetDifMapping();
-  // Returns m_gdcc_to_dif_map[gdcc][dif]
-  unsigned Dif(const string& gdcc, const string& dif);
-  // Returns m_gdcc_to_dif_map[gdcc][dif] after converting the arguments into strings
-  unsigned Dif(unsigned gdcc, unsigned dif);
-  // Transform the TopologyMapGdcc into
-  TopologyMapDif GdccToDif(TopologyMapGdcc& gdcc_map);
+  void GetTopologyFromFile(const string& configxml);
+
+  // Parse a JSON string containing a representation of the
+  // TopologyMapDif The "this->dif_map" of type "TopologyMapDif" is
+  // then populated.
+  void  GetTopologyFromString(const string& json_string);
+
+  // This function reads the JSON file
+  // "/opt/calicoes/config/dif_mapping.txt" containing the mapping of
+  // the (gdcc, dif) pair into the absolute dif number. Then the
+  // "this->m_gdcc_to_dif_map" and "this->m_dif_to_gdcc_map" maps are
+  // populated.
+  void GetGdccDifMapping();
+
+  // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
+  string GetAbsDif(const string& gdcc, const string& dif);
+  // Returns m_gdcc_to_dif_map[pair<gdcc, dif>] after converting the arguments into strings
+  unsigned GetAbsDif(unsigned gdcc, unsigned dif);
+
+  // Returns m_dif_to_gdcc_map[dif]
+  std::pair<string, string> GetGdccDifPair(const string& dif);
+  // Returns m_dif_to_gdcc_map[dif] after converting the argument into string
+  std::pair<unsigned, unsigned> GetGdccDifPair(unsigned dif);
+
+  // Transform the TopologyMapGdcc "gdcc_map" into the TopologyMapDif
+  // "dif_map". Must be called after the GetTopology* and
+  // GetGdccDifMapping functions.
+  void GdccMapToDifMap();
+  // Transform the TopologyMapDif "dif_map" into the TopologyMapGdcc
+  // "gdcc_map". Must be called after the GetTopology* and
+  // GetGdccDifMapping functions.
+  void DifMapToGdccMap();
   
 public:
-  // This is the most important member of the class. Basically this the only
-  // thing that the user must be concerned with
-  TopologyMapDif map = {};
+  // These are the most important members of the class. Basically this
+  // the only thing that the user must be concerned with.
+  TopologyMapDif dif_map = {};
+  TopologyMapGdcc gdcc_map = {};
   // Number of DIFs
   unsigned n_difs = 0;
   // Maximum number of chips in one DIF. For instance if one DIF has 10 chips
@@ -118,21 +143,23 @@ public:
 
   // - TopologySourceType::xml_file
   //
-  //     First GetTopologyFromFile is called. Then GetDifMapping is called. Then
-  //     the TopologyMapGdcc is converted to TopologyMapDif using the GdccToDif
-  //     method
+  //     First GetTopologyFromFile is called. Then GetGdccDifMapping
+  //     is called. Then the TopologyMapGdcc is converted to
+  //     TopologyMapDif using the GdccMapToDifMap method
   //
   // - TopologySourceType::json_string
   //
-  //      GetTopologyFromString is called and that's it.
+  //     GetTopologyFromString is called. Then GetGdccDifMapping is
+  //     called. Then the TopologyMapDif is converted to
+  //     TopologyMapGdcc using the DifMapToGdccMap method
 
   Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
 
   // Print the TopologyMapDif map member to cout
-  void Print();
-
-
+  void PrintMapDif();
+  // Print the TopologyMapGdcc map member to cout
+  void PrintMapGdcc();
 };
 
 #endif

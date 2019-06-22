@@ -31,7 +31,8 @@ int main () {
 
   // GetTopology : C++ API
   Topology topol(xml_config_file);
-  topol.Print();
+  topol.PrintMapDif();
+  topol.PrintMapGdcc();
 
   // Max number of chips
   std::cout << "# DIFs = " << topol.n_difs << std::endl;
@@ -41,5 +42,6 @@ int main () {
   // TopologyMap from JSON string
   std::string json_string(R"###({"1":{"1":32,"2":32,"3":32},"2":{"1":32,"2":32,"3":32}})###");
   Topology topology_from_string(json_string, TopologySourceType::json_string);
-  topology_from_string.Print();
+  topology_from_string.PrintMapDif();
+  topology_from_string.PrintMapGdcc();
 }
