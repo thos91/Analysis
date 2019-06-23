@@ -31,13 +31,13 @@ NCHANNELS=32
 echo " wgAnaHist unit test: input DAC 121 - 2 p.e."
 
 if [ ! -f "${TREE_FILE}" ]; then
-	echo " Decode   : ${DECODER} -f ${RAW_FILE}  -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r"
-	                  ${DECODER} -f ${RAW_FILE}  -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r
+	echo " Decode   : ${DECODER} -f ${RAW_FILE} -o ${CURRENT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r"
+	                  ${DECODER} -f ${RAW_FILE} -o ${CURRENT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r
 fi
 if [ ! -f "${HIST_FILE}" ]; then
-	echo " MakeHist : ${MAKEHIST} -f ${TREE_FILE} -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r"
-                      ${MAKEHIST} -f ${TREE_FILE} -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r
+	echo " MakeHist : ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r"
+                          ${MAKEHIST} -f ${TREE_FILE} -o ${CURRENT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r
 fi
 
-echo " AnaHist  : ${ANAHIST} -f ${HIST_FILE} -o ${OUTPUT_XMLDIR} -q ${OUTPUT_IMGDIR} -x ${NCHIPS} -y ${NCHANNELS} -d ${DIF} -i ${XML_CONFIG_FILE} -m ${EVERYTHING_MODE} -p -r"
-                  ${ANAHIST} -f ${HIST_FILE} -o ${OUTPUT_XMLDIR} -q ${OUTPUT_IMGDIR} -x ${NCHIPS} -y ${NCHANNELS} -d ${DIF} -i ${XML_CONFIG_FILE} -m ${EVERYTHING_MODE} -p -r
+echo " AnaHist  : ${ANAHIST} -f ${HIST_FILE} -o ${OUTPUT_XMLDIR} -q ${OUTPUT_IMGDIR} -d ${DIF} -i ${XML_CONFIG_FILE} -m ${EVERYTHING_MODE} -r"
+                  ${ANAHIST} -f ${HIST_FILE} -o ${OUTPUT_XMLDIR} -q ${OUTPUT_IMGDIR} -d ${DIF} -i ${XML_CONFIG_FILE} -m ${EVERYTHING_MODE} -r

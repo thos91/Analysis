@@ -17,8 +17,6 @@ Arguments
 - ``[-q]`` : output directory for the png image files (if not given, the
   environment variable WAGASCI_IMGDATADIR is used instead) 
 - ``[-d]`` : dif number (integer starting from 1)
-- ``[-x]`` : number of ASUs per DIF (default is 20)
-- ``[-y]`` : number of channels per ASU (default is 36)
 - ``[-m]`` : fit mode (mandatory)
 - ``[-p]`` : print mode (default is false) 
 - ``[-r]`` : overwrite mode (default is false)

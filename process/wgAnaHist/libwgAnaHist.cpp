@@ -24,6 +24,7 @@
 #include "wgEditXML.hpp"
 #include "wgAnaHist.hpp"
 #include "wgLogger.hpp"
+#include "wgTopology.hpp"
 
 using namespace wagasci_tools;
 
@@ -45,9 +46,7 @@ int wgAnaHist(const char * x_inputFileName,
               const char * x_outputIMGDir,
               int mode,
               const unsigned long flags_ulong,
-              const unsigned idif,
-              const unsigned n_chips,
-              const unsigned n_chans) {
+              const unsigned idif) {
 
   string inputFileName(x_inputFileName);
   string configFileName(x_configFileName);
@@ -88,13 +87,22 @@ int wgAnaHist(const char * x_inputFileName,
     Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif) );
     return ERR_WRONG_DIF_VALUE;
   }
+
+  // =========== Topology =========== //
+
+  Topology * topol;
+  try {
+    topol = new Topology(configFileName);
+  }
+  catch (const exception& e) {
+    Log.eWrite("[wgAnaHist] " + string(e.what()));
+    return ERR_TOPOLOGY;
+  }
+  unsigned n_chips = topol->dif_map[to_string(idif)].size();
+
   if ( n_chips <= 0 || n_chips > NCHIPS ) {
     Log.eWrite("[wgAnaHist] wrong number of chips : " + to_string(n_chips) );
     return ERR_WRONG_CHIP_VALUE;
-  }
-  if ( n_chans <= 0 || n_chans > NCHANNELS ) {
-    Log.eWrite("[wgAnaHist] wrong number of channels : " + to_string(n_chans) );
-    return ERR_WRONG_CHANNEL_VALUE;
   }
 
   // =========== Create output directories =========== //
@@ -138,8 +146,10 @@ int wgAnaHist(const char * x_inputFileName,
     bool first_time = true;
     int start_time = 0;
     int stop_time = 0;
+
     for (unsigned ichip = 0; ichip < n_chips; ichip++) {
-	  
+      unsigned n_chans = stoi(topol->dif_map[to_string(idif)][to_string(ichip + 1)]);
+
       // ============ Create outputChipDir ============ //
       string outputChipDir(outputDir + "/chip" + to_string(ichip));
       if ( !Check.Dir(outputChipDir) ) {
@@ -160,12 +170,15 @@ int wgAnaHist(const char * x_inputFileName,
       Log.Write("[wgAnaHist] Analyzing chip " + to_string(ichip + 1));
       // Read the SPIROC2D configuration parameters from the configFileName (the xml
       // configuration file used during acquisition) into the "config" vector.
-      if( flags[SELECT_CONFIG] )
-        if ( ! Edit.GetConfig(configFileName, idif, ichip + 1, n_chans, config) ) {
-          Log.eWrite("[wgAnaHist][" + configFileName + "] DIF " + to_string(idif) + ", chip " + to_string(ichip) +
+      if( flags[SELECT_CONFIG] ) {
+        unsigned gdcc = topol->GetGdccDifPair(idif).first;
+        unsigned dif = topol->GetGdccDifPair(idif).second;
+        if ( ! Edit.GetConfig(configFileName, gdcc, dif, ichip + 1, n_chans, config) ) {
+          Log.eWrite("[wgAnaHist][" + configFileName + "] DIF " + to_string(idif) + ", chip " + to_string(ichip + 1) +
                      " : failed to get bitstream parameters");
           return ERR_FAILED_GET_BISTREAM;
         }
+      }
 
       // For the idif DIF and ichip chip, loop over all the channels
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
@@ -264,7 +277,7 @@ int wgAnaHist(const char * x_inputFileName,
           Edit.Close();
         }
         catch (const exception& e) {
-          Log.eWrite("[wgAnaHist][" + outputxmlfile + "] chip " + to_string(ichip) +
+          Log.eWrite("[wgAnaHist][" + outputxmlfile + "] chip " + to_string(ichip + 1) +
                      ", chan " + to_string(ichan) + " : " + string(e.what()));
           return ERR_FAILED_WRITE;
         } // try (write to xml files)

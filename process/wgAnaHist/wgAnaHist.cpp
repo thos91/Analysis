@@ -26,8 +26,6 @@ void print_help(const char * program_name) {
 	"  -o (char*): outputXMLdir (default = WAGASCI_XMLDATADIR)\n"
 	"  -q (char*): outputIMGdir (default = WAGASCI_IMGDATADIR)\n"
 	"  -d (int)  : DIF number (integer starting from 1)\n"
-	"  -x (int)  : number of chips per DIF (default is 20)\n"
-	"  -y (int)  : number of channels per chip (default is 36)\n"
 	"  -m (int)  : fit mode (mandatory)\n"
 	"  -p        : print mode (default is false) \n"
 	"  -r        : overwrite mode (default is false)\n\n"
@@ -52,7 +50,6 @@ int main(int argc, char** argv){
   int opt;
   int mode = 0;
   unsigned idif = 1;
-  unsigned n_chans = 0, n_chips = 0;
   string inputFileName("");
   string configFileName("");
   bitset<M> flags;
@@ -64,7 +61,7 @@ int main(int argc, char** argv){
 
   CheckExist Check;
 
-  while((opt = getopt(argc,argv, "f:d:m:i:o:q:x:y:prh")) !=-1 ) {
+  while((opt = getopt(argc,argv, "f:d:m:i:o:q:prh")) !=-1 ) {
     switch(opt) {
 	case 'f':
 	  inputFileName = optarg;
@@ -84,12 +81,6 @@ int main(int argc, char** argv){
 	  break;
 	case 'q':
 	  outputIMGDir = optarg;
-	  break;
-	case 'x':
-	  n_chips = atoi(optarg);
-	  break;
-	case 'y':
-	  n_chans = atoi(optarg);
 	  break;
 	case 'p':
 	  flags[SELECT_PRINT] = true;
@@ -113,9 +104,7 @@ int main(int argc, char** argv){
                            outputIMGDir.c_str(),
                            mode,
                            flags.to_ulong(),
-                           idif,
-                           n_chips,
-                           n_chans)) != AH_SUCCESS ) {
+                           idif)) != AH_SUCCESS ) {
 	Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
 	exit(1);
   }
