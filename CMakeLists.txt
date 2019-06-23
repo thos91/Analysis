@@ -18,6 +18,12 @@ set (CMAKE_CXX_STANDARD 11)
 # Enable debug symbols
 set(CMAKE_BUILD_TYPE Debug)
 
+# Add -O0 to remove optimizations when using gcc
+IF(CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
+ENDIF(CMAKE_COMPILER_IS_GNUCC)
+
 # boost system and filesystem are required
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 
