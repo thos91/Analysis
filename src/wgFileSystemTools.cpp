@@ -98,7 +98,7 @@ namespace wagasci_tools {
     if (boost::filesystem::exists(inputDir)) {
       if (boost::filesystem::is_directory(inputDir)) {
         for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
-          if (GetExtension(entry.path().string()) == extension)
+          if (GetExtension(entry.path().string()) == extension || extension.empty())
             file_list.push_back(entry.path().string());
       }
       else throw wgInvalidFile(inputDir + " exists, but is not a regular file or directory");
