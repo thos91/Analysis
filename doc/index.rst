@@ -16,7 +16,6 @@ Welcome to WAGASCI analysis software's documentation!
    wgOptimize
    wgChangeConfig
    wgAnaPedestal
-   wgAnaPedestalSummary
    wgAnaHist
    wgAnaHistSummary
    wgMakeHist
