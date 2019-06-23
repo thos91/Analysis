@@ -22,7 +22,6 @@
 //**********************************************************************
 const char * GetTopologyCtypes(const char * x_configxml) {
   string configxml(x_configxml);
-  const string delimiter("-");
   string json("");
 
   char * topology_string = (char *) malloc(TOPOLOGY_STRING_LENGTH * sizeof(char));
@@ -102,7 +101,6 @@ void Topology::GetTopologyFromString(const string& json_string) {
 
 //**********************************************************************
 void Topology::GetTopologyFromFile(const string& configxml) {
-  const string delimiter("-");
   string json("");
   unsigned igdcc = 1, idif = 1, iasu = 1;
   bool found = false;
@@ -131,14 +129,25 @@ void Topology::GetTopologyFromFile(const string& configxml) {
         if( string(asu->Attribute("name")) != "asu_1_" + to_string(igdcc) + "_" + to_string(idif) + "_" + to_string(iasu) ) {
           Log.eWrite("[GetTopology] inconsistency found when counting (ASU = " + to_string(iasu) + ")");
         }
+        XMLElement* spiroc2d = asu;
+        if ( asu->FirstChildElement("spiroc2d") != NULL) spiroc2d = asu->FirstChildElement("spiroc2d");
         // param loop
         XMLElement* param;
-        for(param = asu->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
+        for(param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
           if( string(param->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
             string enabled_channels(param->GetText());
-            boost::char_separator<char> sep("-");
+            boost::char_separator<char> * sep;
+            if (enabled_channels.find('-') != std::string::npos)
+              sep = new boost::char_separator<char>("-");
+            else if (enabled_channels.find(',') != std::string::npos)
+              sep = new boost::char_separator<char>(",");
+            else {
+              this->gdcc_map[to_string(igdcc)][to_string(idif)][to_string(iasu)] = enabled_channels;
+              found = true;
+              break;
+            }
             typedef boost::tokenizer<boost::char_separator<char>> t_tokenizer;
-            t_tokenizer token(enabled_channels, sep);
+            t_tokenizer token(enabled_channels, *sep);
             boost::tokenizer<boost::char_separator<char>>::iterator first = token.begin();
             boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
             std::advance(first, std::distance(first, last) - 1);
@@ -150,7 +159,7 @@ void Topology::GetTopologyFromFile(const string& configxml) {
 
         } // params loop
         if (!found)
-          throw wgElementNotFound("Number of channels not found");
+          throw wgElementNotFound("Number of channels not found : GDCC " + to_string(igdcc) + ", DIF " + to_string(idif) + ", ASU " + to_string(iasu));
         found = false;
         iasu++;
       } // ASUs loop
@@ -192,10 +201,10 @@ void Topology::GetGdccDifMapping() {
   nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
   mapping_file.close();
 
-  for (auto &i : mapping_json.get<std::map<string, nlohmann::json>>() ) {
-    for (auto &j : i.second.get<std::map<string, unsigned>>()) {
+  for (auto const &i : mapping_json.get<std::map<string, nlohmann::json>>() ) {
+    for (auto const &j : i.second.get<std::map<string, unsigned>>()) {
       this->m_dif_to_gdcc_map[to_string(j.second)] = std::pair<string, string>(i.first, j.first);
-      this->m_gdcc_to_dif_map[std::pair<string, string>(i.first, j.first)] = j.second;
+      this->m_gdcc_to_dif_map[std::pair<string, string>(i.first, j.first)] = to_string(j.second);
     }
   }
 }
