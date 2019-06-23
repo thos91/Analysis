@@ -8,13 +8,13 @@
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
-#include "wgAnaPedestalSummary.hpp"
+#include "wgAnaPedestal.hpp"
 #include "wgLogger.hpp"
 
 using namespace wagasci_tools;
 
 void print_help(const char * program_name) {
-  cout <<  program_name << " TO DO.\n"
+  cout <<  program_name << " creates the pedestal_card.xml.\n"
 	"  -h         : help\n"
 	"  -f (char*) : input directory (mandatory)\n"
 	"  -o (char*) : output directory (default: same as input directory)\n"
@@ -62,13 +62,13 @@ int main(int argc, char** argv){
   }
 
   int result;
-  if ( (result = wgAnaPedestalSummary(inputDir.c_str(),
+  if ( (result = wgAnaPedestal(inputDir.c_str(),
                                       outputXMLDir.c_str(),
                                       outputIMGDir.c_str(),
                                       n_difs,
                                       n_chips,
                                       n_chans)) != APS_SUCCESS ) {
-    Log.Write("[wgAnaPedestalSummary] Returned error code " + to_string(result));
+    Log.Write("[wgAnaPedestal] Returned error code " + to_string(result));
   }
 
 }

@@ -1,4 +1,4 @@
-set(process wgAnaPedestalSummary)
+set(process wgAnaPedestal)
 
 ################ Compiler flags ################
 

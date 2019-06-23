@@ -15,8 +15,7 @@
 #define ERR_WRONG_DIF_VALUE         4
 #define ERR_WRONG_PE_VALUE          5
 #define ERR_EMPTY_INPUT_FILE        6
-
-static const double PEDESTAL_DIFFERENCE_WARNING_THRESHOLD = 0.1;
+#define PEDESTAL_DIFFERENCE_WARNING_THRESHOLD 0.1
 
 using namespace std;
 
@@ -25,12 +24,12 @@ using namespace std;
 extern "C" {
 #endif
 
-  int wgAnaPedestalSummary(const char * inputDirName,
-                           const char * outputXMLDirName,
-                           const char * outputIMGDirName,
-                           unsigned n_difs = NDIFS,
-                           unsigned n_chips = NCHIPS,
-                           unsigned n_chans = NCHANNELS);
+  int wgAnaPedestal(const char * inputDirName,
+                    const char * outputXMLDirName,
+                    const char * outputIMGDirName,
+                    unsigned n_difs = NDIFS,
+                    unsigned n_chips = NCHIPS,
+                    unsigned n_chans = NCHANNELS);
 
 #ifdef __cplusplus
 }

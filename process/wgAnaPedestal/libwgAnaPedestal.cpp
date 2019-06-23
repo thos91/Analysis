@@ -14,7 +14,6 @@
 
 // ROOT includes
 #include <TROOT.h>
-#include "TApplication.h"
 #include <THStack.h>
 #include <TMultiGraph.h>
 #include <TCanvas.h>
@@ -36,18 +35,18 @@
 #include "wgFitConst.hpp"
 #include "wgGetHist.hpp"
 #include "wgConst.hpp"
-#include "wgAnaPedestalSummary.hpp"
+#include "wgAnaPedestal.hpp"
 #include "wgLogger.hpp"
 
 using namespace wagasci_tools;
 
 //******************************************************************
-int wgAnaPedestalSummary(const char * x_inputDir,
-                         const char * x_outputXMLDir,
-                         const char * x_outputIMGDir,
-                         const unsigned n_difs,
-                         const unsigned n_chips,
-                         const unsigned n_chans)
+int wgAnaPedestal(const char * x_inputDir,
+                  const char * x_outputXMLDir,
+                  const char * x_outputIMGDir,
+                  const unsigned n_difs,
+                  const unsigned n_chips,
+                  const unsigned n_chans)
 {
   string inputDir(x_inputDir);
   string outputXMLDir(x_outputXMLDir);
@@ -68,14 +67,14 @@ int wgAnaPedestalSummary(const char * x_inputDir,
   // ============ Create outputXMLDir ============ //
   try { MakeDir(outputXMLDir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
     return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
   // ============ Create outputIMGDir ============ //
   try { MakeDir(outputIMGDir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
     return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
@@ -87,15 +86,15 @@ int wgAnaPedestalSummary(const char * x_inputDir,
   // files in it
   vector<string> inputFile;
   try {
-    inputFile = ListFilesWithExtension(inputDir); 
+    inputFile = ListFilesWithExtension(inputDir, "xml"); 
   } catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
     return ERR_GET_FILE_LIST;
   }
 
   int nFiles = inputFile.size();
   if (nFiles == 0) {
-    Log.Write("[wgAnaPedestalSummary] input directory seems empty");
+    Log.Write("[wgAnaPedestal] input directory seems empty");
     return ERR_GET_FILE_LIST;
   }
   
@@ -136,12 +135,12 @@ int wgAnaPedestalSummary(const char * x_inputDir,
 
       // ************* Open XML file ************* //
 	  
-      string xmlfile(inputFile[iFN] + "/Pedestal_chip" + to_string(ichip) + ".xml");
+      string xmlfile(inputFile[iFN] + "/Summary_chip" + to_string(ichip) + ".xml");
       try {
         Edit.Open(xmlfile);
       }
       catch (const exception& e) {
-        Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+        Log.eWrite("[wgAnaPedestal] " + string(e.what()));
         return ERR_FAILED_OPEN_XML_FILE;
       }
 
@@ -169,7 +168,7 @@ int wgAnaPedestalSummary(const char * x_inputDir,
           // variable. This variable is called like this because it will serve as
           // a reference to calculate the nominal value of the pedestal:
           // nominal pedestal = pedestal reference - gain
-          ped_ref[dif][ichip][ichan][icol][npe] = Edit.SUMMARY_GetChFitValue("ped_ref_" + to_string(icol), ichan);
+          ped_ref[dif][ichip][ichan][icol][npe] = Edit.SUMMARY_GetChFitValue("raw_" + to_string(icol), ichan);
         }
       }
       Edit.Close();
@@ -258,7 +257,7 @@ int wgAnaPedestalSummary(const char * x_inputDir,
     Edit.Open(xmlfile);
   }
   catch (const exception& e) {
-    Log.eWrite("[wgAnaPedestalSummary] " + string(e.what()));
+    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
     return ERR_FAILED_OPEN_XML_FILE;
   }
 
@@ -282,7 +281,7 @@ int wgAnaPedestalSummary(const char * x_inputDir,
           // pedestal for two pe threshold are significantly different, there is
           // something wrong!
           if ( abs(measured_pedestal - ped_nohit[idif][ichip][ichan][icol][TWO_PE]) / measured_pedestal > PEDESTAL_DIFFERENCE_WARNING_THRESHOLD ) {
-            Log.eWrite("[wgAnaPedestalSummary] Difference between 1 pe pedestal_nohit (" + to_string(measured_pedestal) +
+            Log.eWrite("[wgAnaPedestal] Difference between 1 pe pedestal_nohit (" + to_string(measured_pedestal) +
                        ") and 2 pe pedestal_nohit (" + to_string(ped_nohit[idif][ichip][ichan][icol][TWO_PE])+
                        ") is greater than " + to_string(int(PEDESTAL_DIFFERENCE_WARNING_THRESHOLD * 100)) + "%"); 
           }
