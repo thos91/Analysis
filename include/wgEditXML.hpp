@@ -72,7 +72,12 @@ public:
   // v[channel][2] = adjustable input 8-bit DAC
   // v[channel][3] = adjustable 6-bit high gain (HG) preamp feedback capacitance
   // v[channel][4] = adjustable 4-bit discriminator threshold
-  bool GetConfig(const string& configxml, unsigned idif, unsigned n_chips, unsigned n_chans, vector<vector<int>>& v);
+  bool GetConfig(const string& configxml,
+                 unsigned igdcc,
+                 unsigned idif,
+                 unsigned n_chips,
+                 unsigned n_chans,
+                 vector<vector<int>>& v);
 
   // GetLog: Parse a .log file and fill a vector with:
   //    - v[0]: start_time

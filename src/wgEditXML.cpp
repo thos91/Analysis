@@ -109,7 +109,12 @@ void wgEditXML::Make(const string& filename, const unsigned ichip, const unsigne
 }
 
 //**********************************************************************
-bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const unsigned ichip, const unsigned n_chans, vector<vector<int>>& v) {
+bool wgEditXML::GetConfig(const string& configxml,
+                          const unsigned igdcc,
+                          const unsigned idif,
+                          const unsigned ichip,
+                          const unsigned n_chans,
+                          vector<vector<int>>& v) {
   try {
     bool found=false;
     string bitstream("");
@@ -125,25 +130,29 @@ bool wgEditXML::GetConfig(const string& configxml, const unsigned idif, const un
     XMLElement* ecal = configfile.FirstChildElement("ecal");
     XMLElement* domain = ecal->FirstChildElement("domain");
     XMLElement* acqpc = domain->FirstChildElement("acqpc");
-    XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
-    // DIFs loop
-    for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-      if( string(dif->Attribute("name")) == "dif_1_1_" + to_string(idif) ) {
-        // ASUs loop
-        for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-          if( string(asu->Attribute("name")) == "asu_1_1_" + to_string(idif) + "_" + to_string(ichip) ) {
-            XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
-            // loop to find the spiroc2d_bitstream parameter
-            for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-              if( string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
-                bitstream = param->GetText();
-                found=true;
-                break;
+    // GDCCs loop
+    for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
+      if( string(gdcc->Attribute("name")) == "gdcc_1_" + to_string(igdcc) ) {
+        // DIFs loop
+        for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
+          if( string(dif->Attribute("name")) == "dif_1_" + to_string(igdcc) + "_" + to_string(idif) ) {
+            // ASUs loop
+            for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
+              if( string(asu->Attribute("name")) == "asu_1_" + to_string(igdcc) + "_" + to_string(idif) + "_" + to_string(ichip) ) {
+                XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
+                // loop to find the spiroc2d_bitstream parameter
+                for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
+                  if( string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
+                    bitstream = param->GetText();
+                    found=true;
+                    break;
+                  }
+                }
               }
+              // If the bitstream was found exit the ASU loop
+              else if (found) break;
             }
           }
-          // If the bitstream was found exit the ASU loop
-          else if (found) break;
         }
       }
     }
