@@ -12,11 +12,11 @@
 
 #define M 5
 
-#define SELECT_NOISE     0
-#define SELECT_GAIN      1
-#define SELECT_PEDESTAL  2
-#define SELECT_RAWCHARGE 3
-#define SELECT_PRINT     4
+#define SELECT_NOISE        0
+#define SELECT_DIFF         1
+#define SELECT_CHARGE_NOHIT 2
+#define SELECT_CHARGE_HIT   3
+#define SELECT_PRINT        4
 
 #define AHS_SUCCESS                 0
 #define ERR_CANNOT_CREATE_DIRECTORY 1
@@ -24,6 +24,7 @@
 #define ERR_FAILED_CREATE_XML_FILE  3
 #define ERR_WG_ANA_HIST_SUMMARY     4
 #define ERR_EMPTY_INPUT_FILE        5
+#define ERR_FAILED_OPEN_XML_FILE    6
 
 using namespace std;
 
@@ -37,9 +38,7 @@ extern "C" {
                        const char * x_outputIMGDir,
                        int mode,
                        bool overwrite = false,
-                       bool print = false,
-                       unsigned n_chips = NCHIPS,
-                       unsigned n_chans = NCHANNELS);
+                       bool print = false);
   
 #ifdef __cplusplus
 }

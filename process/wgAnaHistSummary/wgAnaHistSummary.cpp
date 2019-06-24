@@ -16,8 +16,6 @@ void print_help(const char * program_name) {
     "  -f (char*) : input directory (mandatory)\n"
     "  -o (char*) : output directory (default: same as input directory)\n"
     "  -i (char*) : output directory for plots and images (default: WAGASCI_IMGDIR) "
-    "  -x (int)   : number of chips per DIF (default is 20)\n"
-    "  -y (int)   : number of channels per chip (default is 36)\n"
     "  -p         : print plots and images\n"
     "  -r         : overwrite mode\n"
     "  -m (int)   : mode (default:10)\n"
@@ -37,7 +35,6 @@ int main(int argc, char** argv){
 
   int opt;
   int mode = 10;
-  int n_chips = NCHIPS, n_chans = NCHANNELS;
   bool overwrite = false, print = false;
   wgConst con;
   string inputDirName("");
@@ -47,7 +44,7 @@ int main(int argc, char** argv){
   string logoutputDir(con.LOG_DIRECTORY);
   string outputIMGDirName(con.IMGDATA_DIRECTORY);
   
-  while((opt = getopt(argc, argv, "f:o:i:x:y:m:rph")) !=-1 ){
+  while((opt = getopt(argc, argv, "f:o:i:m:rph")) !=-1 ){
     switch(opt){
     case 'f':
       inputDirName = optarg;
@@ -59,12 +56,6 @@ int main(int argc, char** argv){
     case 'i':
       outputIMGDirName = optarg;
       break;	  
-    case 'x':
-      n_chips = atoi(optarg);
-      break;
-    case 'y':
-      n_chans = atoi(optarg);
-      break;
     case 'm':
       mode = atoi(optarg); 
       break;
@@ -88,9 +79,7 @@ int main(int argc, char** argv){
                                   outputIMGDirName.c_str(),
                                   mode,
                                   overwrite,
-                                  print,
-                                  n_chips,
-                                  n_chans)) != AHS_SUCCESS ) {
+                                  print)) != AHS_SUCCESS ) {
     Log.eWrite("[wgAnaHistSummary] wgAnaHistSummary returned error " + to_string(result));
     exit(1);
   }

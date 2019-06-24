@@ -12,8 +12,6 @@ Arguments
 - ``[-f]`` : input directory with xml files to read (mandatory)
 - ``[-o]`` : output directory for the xml summary files (default: same as input directory)
 - ``[-i]`` : output directory for plots and images (default: WAGASCI_IMGDIR)
-- ``[-x]`` : number of chips per DIF (default is 20)
-- ``[-y]`` : number of channels per chip (default is 36)
 - ``[-p]`` : print plots and images (default is false)
 - ``[-r]`` : overwrite mode (default is false)
 - ``[-m]`` : mode (default:10)
