@@ -10,11 +10,11 @@ extern const double threshold;     //initial threshold value
 extern const double max_threshold;   
 extern const double min_threshold;    
 
-extern const int N_low_pe;     //maximum number of peak search for low pe
-extern const int begin_low_pe; //begining value of fitting range for low pe
-extern const int end_low_pe;   //ending value of fitting range for low pe
-extern const int begin_low_pe_HG; //begining value of fitting range for low pe
-extern const int end_low_pe_HG;   //ending value of fitting range for low pe
+extern const int begin_pe; //begining value of fitting range for low pe
+extern const int end_pe;   //ending value of fitting range for low pe
+
+extern const int begin_pe_HG; //begining value of fitting range for low pe
+extern const int end_pe_HG;   //ending value of fitting range for low pe
 
 extern const int N_ped ;       //maximum number of peak search for pedestal
 extern const int begin_ped;    //begining value of fitting range for pedestal

@@ -8,15 +8,13 @@ const double threshold      = 0.03;   //initial threshold value
 const double max_threshold  = 0.05;   
 const double min_threshold  = 0.01;    
 
-const int N_low_pe         = 5;    // pre-gaussian-fit value of the peak for low_pe.
-const int begin_low_pe     = 10;   // begining value of fitting range for low_pe.
-const int end_low_pe       = 300;  // ending value of fitting range for low_pe.
+const int begin_pe     = 350;   // begining value of fitting range for charge_hit histogram
+const int end_pe       = 750;  // ending value of fitting range for charge_hit histogram
 
-const int begin_low_pe_HG     = 350;   // begining value of fitting range for low_pe.
-const int end_low_pe_HG       = 750;   // ending value of fitting range for low_pe.
+const int begin_pe_HG     = 350;   // begining value of fitting range for charge_hit_HG histogram
+const int end_pe_HG       = 750;   // ending value of fitting range for charge_hit_HG histogram
 
-const int N_pde            = 5;     // pre-gaussian-fit value of the peak for charge_nohit
-const int begin_ped        = 350;   // begining value of fitting range for charge_nohit 
+const int begin_ped        = 300;   // begining value of fitting range for charge_nohit 
 const int end_ped          = 700;   // ending value of fitting range for charge_nohit
 
 const int N_DarkNoise      = 2;

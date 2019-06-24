@@ -109,7 +109,7 @@ void wgFit::swap(int Npeaks, double* px, double* py){
 }
 
 //**********************************************************************
-void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
+void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
   if ( (! GetHist->Get_bcid_hit(ichip, ichan)) || (! GetHist->Get_spill()) ) {
     x[0] = NAN;
     x[1] = NAN;
@@ -160,32 +160,32 @@ void wgFit::NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print
   
   if ( print_flag ) {
     TString image;
-    image.Form("%s/chip%d/NoiseRate%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
+    image.Form("%s/chip%u/chan%u/NoiseRate%u_%u.png", outputIMGDir.c_str(), ichip, ichan, ichip, ichan);
     GetHist->Print_bcid(image);
   }
   delete step_function;
 }
 
 //**********************************************************************
-void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool print_flag) {
+void wgFit::charge_hit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag) {
 
-  if ( ! wgFit::GetHist->Get_charge_hit(ichip, ichan) ) {
+  if ( ! wgFit::GetHist->Get_charge_hit(ichip, ichan, icol) ) {
     x[0] = NAN;
     x[1] = NAN;
     x[2] = NAN;
     return;
   }
 
-  if(wgFit::GetHist->h_charge_hit->Integral(begin_low_pe,end_low_pe) < 1 )
+  if(wgFit::GetHist->h_charge_hit->Integral(begin_pe, end_pe) < 1 )
     {
 #ifdef DEBUG_WGFIT
       Log.eWrite("[wgFit::charge_hit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ")");
 #endif
-      x[0]=x[1]=x[2]=0.;
+      x[0] = x[1] = x[2] = 0;
       return;
     } 
-  // begin_low_pe and end_low_pe are defined in wgFitConst.cpp
-  wgFit::GetHist->h_charge_hit->GetXaxis()->SetRange(begin_low_pe,end_low_pe);
+  // begin_pe and end_pe are defined in wgFitConst.cpp
+  wgFit::GetHist->h_charge_hit->GetXaxis()->SetRange(begin_pe,end_pe);
 
   double mean={(double)GetHist->h_charge_hit->GetMaximumBin()};
   double peak={(double)GetHist->h_charge_hit->GetMaximum()};
@@ -210,7 +210,7 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image;
-    image.Form("%s/chip%d/charge_hit%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan);
+    image.Form("%s/chip%u/chan%u/charge_hit%u_%u_%u.png", outputIMGDir.c_str(), ichip, ichan, ichip, ichan, icol);
     GetHist->Print_charge(image);
   }
   delete gaussian;
@@ -219,7 +219,7 @@ void wgFit::low_pe_charge(unsigned ichip, unsigned ichan, double (&x)[3], bool p
 
 
 //**********************************************************************
-void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag) {
+void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag) {
 
   if ( ! wgFit::GetHist->Get_charge_hit_HG(ichip,ichan,icol) ) {
     x[0] = NAN;
@@ -228,7 +228,7 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
     return;
   }
   
-  if(wgFit::GetHist->h_charge_hit_HG->Integral(begin_low_pe_HG,end_low_pe_HG) < 1 )
+  if(wgFit::GetHist->h_charge_hit_HG->Integral(begin_pe_HG,end_pe_HG) < 1 )
     {
 #ifdef DEBUG_WGFIT
       Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
@@ -236,8 +236,8 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
       x[0]=x[1]=x[2]=0.;
       return;
     } 
-  // begin_low_pe_HG and end_low_pe_HG are defined in wgFitConst.cpp
-  wgFit::GetHist->h_charge_hit_HG->GetXaxis()->SetRange(begin_low_pe_HG,end_low_pe_HG);
+  // begin_pe_HG and end_pe_HG are defined in wgFitConst.cpp
+  wgFit::GetHist->h_charge_hit_HG->GetXaxis()->SetRange(begin_pe_HG,end_pe_HG);
   double mean=(double)GetHist->h_charge_hit_HG->GetMaximumBin();
   double peak=(double)GetHist->h_charge_hit_HG->GetMaximum();
 
@@ -261,7 +261,7 @@ void wgFit::low_pe_charge_HG(unsigned ichip, unsigned ichan, unsigned icol, doub
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image;
-    image.Form("%s/chip%d/HG%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
+    image.Form("%s/chip%u/chan%u/HG%u_%u_%u.png", outputIMGDir.c_str(), ichip, ichan, ichip, ichan, icol);
     GetHist->Print_charge_hit_HG(image);
   }
   delete gaussian;
@@ -320,16 +320,10 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
     
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image;
-    image.Form("%s/chip%d/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichip, ichan, icol);
+    image.Form("%s/chip%u/chan%u/nohit%d_%d_%d.png", outputIMGDir.c_str(), ichip, ichan, ichip, ichan, icol);
     GetHist->Print_charge_nohit(image);
   }
   
   delete gaussian;
   return;  
 }
-
-//**********************************************************************
-void wgFit::GainSelect(const unsigned ichip, const unsigned ichan, const unsigned icol, double (&x)[3], const bool print_flag) {
-  x[0]=x[1]=x[2]=NAN;
-}
-
