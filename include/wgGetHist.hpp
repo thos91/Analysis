@@ -49,9 +49,9 @@ public:
   bool Get_charge_hit_HG(unsigned int i, unsigned int j, unsigned int k);
   bool Get_charge_hit_LG(unsigned int i, unsigned int j, unsigned int k);
   bool Get_charge_nohit (unsigned int i, unsigned int j, unsigned int k);
+  bool Get_charge_hit   (unsigned int i, unsigned int j, unsigned int k);
   bool Get_time_hit     (unsigned int i, unsigned int j, unsigned int k);
   bool Get_time_nohit   (unsigned int i, unsigned int j, unsigned int k);
-  bool Get_charge_hit   (unsigned int i, unsigned int j);
   bool Get_bcid_hit     (unsigned int i, unsigned int j);
   bool Get_pe_hit       (unsigned int i, unsigned int j);
   bool Get_spill();
