@@ -95,8 +95,9 @@ public:
   /* -----------------------------------------------------------------------------
 <data>
     <config>
-        <chipid>*chip_number*</chipid>
-        <chanid>*chan_number*</chanid>
+        <difid>1</difid>
+        <chipid>1</chipid>
+        <chanid>1</chanid>
         <start_time>0</start_time>
         <stop_time>0</stop_time>
         <trigth>-1</trigth>
@@ -104,16 +105,22 @@ public:
         <inputDAC>-1</inputDAC>
         <HG>-1</HG>
         <LG>-1</LG>
-		<trig_adj>-1<trig_adj>
+	<trig_adj>-1<trig_adj>
     </config>
-    <ch>
-	    <col>0<col_0/>
-        <col>1<col_1/>
-		...
-    </ch>
+    <chan 1>
+	<col>1<col_1/>
+            <charge_nohit>-1</charge_nohit>
+            <sigma_nohit>-1</sigma_nohit>
+            <charge_hit>-1</charge_hit>
+            <sigma_hit>-1</sigma_hit>
+            <charge_hit_HG>-1</charge_hit_HG>
+            <sigma_hit_HG>-1</sigma_hit_HG>
+        <col>2<col_2/>
+	...
+    </chan 1>
 </data>
 -------------------------------------------------------------------------------- */
-  void Make(const string& filename, unsigned ichip, unsigned ichan);
+  void Make(const string& filename, unsigned idif, unsigned ichip, unsigned ichan);
 
   // wgEditXML::SetConfigValue
   // data -> config -> name
@@ -121,11 +128,11 @@ public:
 
   // wgEditXML::SetColValue
   // data -> ch -> col_%d -> name
-  void SetColValue(const string& name, int icol, double value, bool create_new = false);
+  void SetColValue(const string& name, int icol, int value, bool create_new = false);
 
   // wgEditXML::SetChValue
   // data -> ch -> name
-  void SetChValue(const string& name, double value, bool create_new = false);
+  void SetChValue(const string& name, int value, bool create_new = false);
 
   // wgEditXML::AddColElement
   // data -> ch -> col_%d -> name
@@ -137,11 +144,11 @@ public:
 
   // wgEditXML::GetColValue
   // data -> ch -> col_%d -> name
-  double GetColValue(const string& name, int icol);
+  int GetColValue(const string& name, int icol);
 
   // wgEditXML::GetChValue
   // data -> ch -> name
-  double GetChValue(const string& name);
+  int GetChValue(const string& name);
 
   // wgEditXML::GetConfigValue
   // data -> config -> name
@@ -156,26 +163,35 @@ public:
   /* -----------------------------------------------------------------------------
 <data>
     <config>
+        <difid>1</difid>
+        <chipid>1</chipid>
+        <n_chans>32</n_chans>
         <start_time>0</start_time>
         <stop_time>0</stop_time>
         <trigth>-1</trigth>
         <gainth>-1</gainth>
     </config>
-    <ch_0>
-        <fit>
-            <Gain>-1</Gain>
-            <Noise>-1</Noise>
-			<ped_0>-1</ped_0>
-			<ped_1>-1</ped_1>
-			...
-			<ped_15>-1</ped_15>
-        </fit>
+    <chan_1>
         <config>
+            <chanid>1</chanid>
             <inputDAC>-1</inputDAC>
             <ampDAC>-1</ampDAC>
             <adjDAC>-1</adjDAC>
         </config>
-    </ch_0>
+        <fit>
+            <noise>-1</noise>
+            <sigma_noise>-1</sigma_noise>
+            <pe_level>-1</pe_level>
+            <!-- for each column -->
+	    <charge_nohit_1>-1</charge_nohit_1>
+	    <sigma_nohit_1>-1</sigma_nohit_1>
+	    <charge_hit_1>-1</charge_hit_1>
+	    <sigma_hit_1>-1</sigma_hit_1>
+	    <diff_1>-1</diff_1>
+	    <sigma_diff_1>-1</sigma_diff_1>
+        </fit>
+
+    </chan_1>
 ...
 </data>
 ----------------------------------------------------------------------------- */
@@ -195,7 +211,7 @@ public:
 
   // wgEditXML::SUMMARY_SetPedFitValue
   // data -> ch_%d -> fit -> ped_%d
-  void SUMMARY_SetPedFitValue(double value[MEMDEPTH], int ichan, bool create_new = false);
+  void SUMMARY_SetPedFitValue(int value[MEMDEPTH], int ichan, bool create_new = false);
 
   // wgEditXML::SUMMARY_AddGlobalElement
   // data -> name
@@ -215,37 +231,37 @@ public:
 
   // wgEditXML::SUMMARY_GetChFitValue
   // data -> ch_%d -> fit -> name
-  double SUMMARY_GetChFitValue(const string& name, int ich);
+  int SUMMARY_GetChFitValue(const string& name, int ich);
 
   // wgEditXML::SUMMARY_GetPedFitValue
   // data -> ch_%d -> fit -> -> ped_%d
-  void SUMMARY_GetPedFitValue(double value[MEMDEPTH], int ich);
+  void SUMMARY_GetPedFitValue(int value[MEMDEPTH], int ich);
 
   //=======================================================================//
   //                         S-curve XML files                             //
   //=======================================================================//
   
   void SCURVE_Make(const string&);
-  void SCURVE_SetValue(const string&,int,double,bool);
-  double SCURVE_GetValue(const string&,int);
+  void SCURVE_SetValue(const string&,int,int,bool);
+  int SCURVE_GetValue(const string&,int);
 
   //=======================================================================//
   //                           ??? XML files                               //
   //=======================================================================//
   
   void OPT_Make(const string&);
-  void OPT_SetValue(const string&,int,int,int,double,bool);
-  double OPT_GetValue(const string&,int,int,int);
-  void OPT_SetChipValue(const string&,int,int,double,bool);
-  double OPT_GetChipValue(const string&,int,int);
+  void OPT_SetValue(const string&,int,int,int,int,bool);
+  int OPT_GetValue(const string&,int,int,int);
+  void OPT_SetChipValue(const string&,int,int,int,bool);
+  int OPT_GetChipValue(const string&,int,int);
 
   //=======================================================================//
   //                           ??? XML files                               //
   //=======================================================================//
   
   void PreCalib_Make(const string&);
-  void PreCalib_SetValue(const string&,int,int,int,double,bool);
-  double PreCalib_GetValue(const string&,int,int,int);
+  void PreCalib_SetValue(const string&,int,int,int,int,bool);
+  int PreCalib_GetValue(const string&,int,int,int);
 
   //=======================================================================//
   //               Gain and pedestal calibration XML files                 //
@@ -262,28 +278,37 @@ public:
     <n_chips>n_chips</n_chips>
     <n_chans>n_chans</n_chans>
     <dif_1>
-        <chip_0>
-             <ch_0>
+        <chip_1>
+             <chan_1>
+                  <!-- for each column -->
                   <pe1></pe1>
                   <pe2></pe2>
-                  <Gain></Gain>
-             </ch_0>
+                  <gain></gain>
+                  <sigma_gain></sigma_gain>
+                  <ped></ped>
+                  <sigma_ped></sigma_ped>
+                  <meas_ped></meas_ped>
+                  <sigma_meas_ped></sigma_meas_ped>
+             </chan_1>
              ...
-        </chip_0>
+        </chip_1>
         ...
     </dif_1>
     ...
 </data>
 -------------------------------------------------------------------------------- */
-  void Calib_Make(const string& filename, unsigned n_difs = NDIFS, unsigned n_chips = NCHIPS, unsigned n_chans = NCHANNELS);
+  void Calib_Make(const string& filename,
+                  unsigned n_difs,
+                  vector<unsigned> n_chips,
+                  vector<vector<unsigned>> n_chans);
 
   // wgEditXML::Calib_SetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
-  void Calib_SetValue(const string& name, int idif, int ichip, int ich, double value, bool create_new = false);
+  void Calib_SetValue(const string& name, int idif, int ichip, int ich, int value, bool create_new = false);
 
   // wgEditXML::Calib_GetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
-  double Calib_GetValue(const string& name,int idif, int ichip, int ich);
+  int Calib_GetValue(const string& name,int idif, int ichip, int ich);
 };
 
 #endif
