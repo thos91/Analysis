@@ -32,14 +32,10 @@ void print_help(const char * program_name) {
 	"   =========   fit modes   ========= \n\n"
 	"   1  : only dark noise\n"
 	"   2  : only pedestal\n"
-	"   3  : only charge_hit (low range)\n"
-	"   4  : only charge_HG  (low range)\n"
-	"   5  : only charge_HG  (high range)\n"
-	"   10 : dark noise + charge_hit (low range)\n"
-	"   11 : dark noise + pedestal + charge_hit (low range)\n"
-	"   12 : dark noise + pedestal + charge_HG  (low range)\n"
-	"   13 : dark noise + pedestal + charge_HG  (high range)\n"
-	"   14 : dark noise + pedestal + charge_HG  (low range) + charge_HG (high range)\n"
+	"   3  : only charge_hit\n"
+	"   4  : only charge_hitHG\n"
+	"   10 : dark noise + pedestal + charge_hit\n"
+	"   11 : dark noise + pedestal + charge_hit_HG\n"
 	"   20 : everything\n";
   exit(0);
 }

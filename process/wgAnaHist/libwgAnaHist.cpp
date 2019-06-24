@@ -30,27 +30,26 @@ using namespace wagasci_tools;
 
 //******************************************************************
 void ModeSelect(const int mode, bitset<M>& flag){
-  if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE]     = true;
-  if ( mode == 2 || mode >= 11 )               flag[SELECT_PEDESTAL]       = true;
-  if ( mode == 3 || mode == 10 || mode >= 20 ) flag[SELECT_CHARGE_LOW]     = true;
-  if ( mode == 4 || mode == 12 || mode >= 20 ) flag[SELECT_CHARGE_HG_LOW]  = true;
-  if ( mode == 5 || mode == 13 || mode >= 20 ) flag[SELECT_CHARGE_HG_HIGH] = true;
+  if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE] = true;
+  if ( mode == 2 || mode >= 10 )               flag[SELECT_PEDESTAL]   = true;
+  if ( mode == 3 || mode == 10 || mode >= 20 ) flag[SELECT_CHARGE]     = true;
+  if ( mode == 4 || mode == 11 || mode >= 20 ) flag[SELECT_CHARGE_HG]  = true;
   if ( mode < 0  || mode > 20 )
     throw invalid_argument("Mode " + to_string(mode) + " not recognized"); 
 }
 
 //******************************************************************
-int wgAnaHist(const char * x_inputFileName,
-              const char * x_configFileName,
-              const char * x_outputDir,
+int wgAnaHist(const char * x_inputFile,
+              const char * x_configFile,
+              const char * x_outputXMLDir,
               const char * x_outputIMGDir,
               int mode,
               const unsigned long flags_ulong,
-              const unsigned idif) {
+              const unsigned idif_id) {
 
-  string inputFileName(x_inputFileName);
-  string configFileName(x_configFileName);
-  string outputDir(x_outputDir);
+  string inputFile(x_inputFile);
+  string configFile(x_configFile);
+  string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
   wgEditXML Edit;
   CheckExist Check;
@@ -59,32 +58,25 @@ int wgAnaHist(const char * x_inputFileName,
 
   bitset<M> flags(flags_ulong);
   
-  if ( flags[SELECT_CHARGE_HG_HIGH] ) {
-    Log.eWrite("[wgAnaHist] the SELECT_CHARGE_HG_HIGH mode is not implemented yet");
-    flags[SELECT_CHARGE_HG_HIGH] = false;
-  }
-
   // Set the correct flags according to the mode
-  try {
-    ModeSelect(mode, flags);
-  }
+  try { ModeSelect(mode, flags); }
   catch (const exception& e) {
-    Log.eWrite("[wgAnaHist][" + outputDir + "] " + string(e.what()));
+    Log.eWrite("[wgAnaHist] Failed to " + string(e.what()));
     exit(1);
   }
 
   // =========== Arguments sanity check =========== //
 
-  if(inputFileName.empty() || !Check.RootFile(inputFileName)) {
-    Log.eWrite("[wgAnaHist] Input file not found : " + inputFileName);
+  if(inputFile.empty() || !Check.RootFile(inputFile)) {
+    Log.eWrite("[wgAnaHist] Input file not found : " + inputFile);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if ( flags[SELECT_CONFIG] && ( configFileName.empty() || !Check.XmlFile(configFileName)) ) {
-    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + configFileName);
+  if ( flags[SELECT_CONFIG] && ( configFile.empty() || !Check.XmlFile(configFile)) ) {
+    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + configFile);
     exit(1);
   }
-  if ( idif <= 0 || idif > NDIFS ) {
-    Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif) );
+  if ( idif_id <= 0 || idif_id > NDIFS ) {
+    Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif_id) );
     return ERR_WRONG_DIF_VALUE;
   }
 
@@ -92,13 +84,13 @@ int wgAnaHist(const char * x_inputFileName,
 
   Topology * topol;
   try {
-    topol = new Topology(configFileName);
+    topol = new Topology(configFile);
   }
   catch (const exception& e) {
     Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_TOPOLOGY;
   }
-  unsigned n_chips = topol->dif_map[to_string(idif)].size();
+  unsigned n_chips = topol->dif_map[to_string(idif_id)].size();
 
   if ( n_chips <= 0 || n_chips > NCHIPS ) {
     Log.eWrite("[wgAnaHist] wrong number of chips : " + to_string(n_chips) );
@@ -106,28 +98,22 @@ int wgAnaHist(const char * x_inputFileName,
   }
 
   // =========== Create output directories =========== //
-  
-  string DirName = GetNameBeforeLastUnderBar(inputFileName);
 
-  outputDir = outputDir + "/" + DirName;
-  outputIMGDir = outputIMGDir + "/" + DirName;
-
-  // ============ Create outputDir ============ //
-  if( !Check.Dir(outputDir) ) {
-    boost::filesystem::path dir(outputDir);
-    if( !boost::filesystem::create_directories(dir) ) {
-      Log.eWrite("[wgAnaHist][" + outputDir + "] failed to create directory");
-      return ERR_CANNOT_CREATE_DIRECTORY;
-    }
+  // ======= Create outputXMLDir ======= //
+  try { MakeDir(outputXMLDir); }
+  catch (const wgInvalidFile& e) {
+    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+    return ERR_CANNOT_CREATE_DIRECTORY;
   }
-  // ============ Create outputIMGDir ============ //
+  // ======= Create outputIMGDir ======= //
   if( flags[SELECT_PRINT] ) {
-    for ( unsigned ichip = 0; ichip < n_chips; ichip++ ) {
-      string img_dir(outputIMGDir + "/chip" + to_string(ichip));
-      if( !Check.Dir(img_dir) ) {
-        boost::filesystem::path dir(img_dir);
-        if( !boost::filesystem::create_directories(dir) ) {
-          Log.eWrite("[wgAnaHist][" + img_dir + "] failed to create directory");
+    for ( unsigned ichip = 1; ichip <= n_chips; ichip++ ) {
+      unsigned n_chans = stoi(topol->dif_map[to_string(idif_id)][to_string(ichip)]);
+      for ( unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++ ) {
+        string outputIMGChipChanDir(outputIMGDir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan_id));
+        try { MakeDir(outputIMGChipChanDir); }
+        catch (const wgInvalidFile& e) {
+          Log.eWrite("[wgAnaPedestal] " + string(e.what()));
           return ERR_CANNOT_CREATE_DIRECTORY;
         }
       }
@@ -141,23 +127,25 @@ int wgAnaHist(const char * x_inputFileName,
   // ======================================================== //
   
   try {
-    wgFit Fit(inputFileName, outputIMGDir);
+    wgFit Fit(inputFile, outputIMGDir);
 
     bool first_time = true;
     int start_time = 0;
     int stop_time = 0;
 
-    for (unsigned ichip = 0; ichip < n_chips; ichip++) {
-      unsigned n_chans = stoi(topol->dif_map[to_string(idif)][to_string(ichip + 1)]);
+    ///////////////////////////////////////////////////////////////////////////
+    //                               Chip loop                               //
+    ///////////////////////////////////////////////////////////////////////////
 
-      // ============ Create outputChipDir ============ //
-      string outputChipDir(outputDir + "/chip" + to_string(ichip));
-      if ( !Check.Dir(outputChipDir) ) {
-        boost::filesystem::path dir(outputChipDir);
-        if ( !boost::filesystem::create_directories(dir) ) {
-          Log.eWrite("[wgAnaHist][" + outputChipDir + "] failed to create directory");
-          return ERR_CANNOT_CREATE_DIRECTORY;
-        }
+    for (unsigned ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
+      unsigned n_chans = stoi(topol->dif_map[to_string(idif_id)][to_string(ichip_id)]);
+
+      // ============ Create outputXMLChipDir ============ //
+      string outputXMLChipDir(outputXMLDir + "/chip" + to_string(ichip_id));
+      try { MakeDir(outputXMLChipDir); }
+      catch (const wgInvalidFile& e) {
+        Log.eWrite("[wgAnaHist] " + string(e.what()));
+        return ERR_CANNOT_CREATE_DIRECTORY;
       }
 	
       // v[channel][0] = global 10-bit discriminator threshold
@@ -167,30 +155,33 @@ int wgAnaHist(const char * x_inputFileName,
       // v[channel][4] = adjustable 4-bit discriminator threshold
       vector<vector<int>> config; // n_chans * 5 parameters
 
-      Log.Write("[wgAnaHist] Analyzing chip " + to_string(ichip + 1));
-      // Read the SPIROC2D configuration parameters from the configFileName (the xml
+      Log.Write("[wgAnaHist] Analyzing chip " + to_string(ichip_id));
+      // Read the SPIROC2D configuration parameters from the configFile (the xml
       // configuration file used during acquisition) into the "config" vector.
       if( flags[SELECT_CONFIG] ) {
-        unsigned gdcc = topol->GetGdccDifPair(idif).first;
-        unsigned dif = topol->GetGdccDifPair(idif).second;
-        if ( ! Edit.GetConfig(configFileName, gdcc, dif, ichip + 1, n_chans, config) ) {
-          Log.eWrite("[wgAnaHist][" + configFileName + "] DIF " + to_string(idif) + ", chip " + to_string(ichip + 1) +
+        unsigned gdcc = topol->GetGdccDifPair(idif_id).first;
+        unsigned dif = topol->GetGdccDifPair(idif_id).second;
+        if ( ! Edit.GetConfig(configFile, gdcc, dif, ichip_id, n_chans, config) ) {
+          Log.eWrite("[wgAnaHist] DIF " + to_string(idif_id) + ", chip " + to_string(ichip_id) +
                      " : failed to get bitstream parameters");
           return ERR_FAILED_GET_BISTREAM;
         }
       }
 
-      // For the idif DIF and ichip chip, loop over all the channels
-      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+      /////////////////////////////////////////////////////////////////////////
+      //                             Channel loop                            //
+      /////////////////////////////////////////////////////////////////////////
+      
+      for(unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++) {
         // Open the outputxmlfile as an XML file
-        string outputxmlfile(outputChipDir + "/ch" + to_string(ichan) + ".xml");
+        string outputxmlfile(outputXMLChipDir + "/chan" + to_string(ichan_id) + ".xml");
         try {
           if( !Check.XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
-            Edit.Make(outputxmlfile, ichip, ichan);
+            Edit.Make(outputxmlfile, idif_id, ichip_id, ichan_id);
           Edit.Open(outputxmlfile);
         }
         catch (const exception& e) {
-          Log.eWrite("[wgAnaHist][" + outputxmlfile + "] Failed to open XML file : " + string(e.what()));
+          Log.eWrite("[wgAnaHist] Failed to open XML file : " + string(e.what()));
           return ERR_FAILED_OPEN_XML_FILE;
         }
 	  
@@ -204,88 +195,83 @@ int wgAnaHist(const char * x_inputFileName,
           }
           Edit.SetConfigValue(string("start_time"), start_time);
           Edit.SetConfigValue(string("stop_time"), stop_time);
+          Edit.SetConfigValue(string("difid"), idif_id);
+          Edit.SetConfigValue(string("chipid"), ichip_id);
+          Edit.SetConfigValue(string("chanid"), ichan_id);
 
           //************ SELECT_CONFIG ************//
 
           if ( flags[SELECT_CONFIG] ) {
             // Write the parameters values contained in the config vector into the
             // outputxmlfile
-            Edit.SetConfigValue(string("trigth"),   config[ichan][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("gainth"),   config[ichan][GLOBAL_GS_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("inputDAC"), config[ichan][ADJ_INPUTDAC_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("HG"),       config[ichan][ADJ_AMPDAC_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("trig_adj"), config[ichan][ADJ_THRESHOLD_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("trigth"),   config[ichan_id-1][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("gainth"),   config[ichan_id-1][GLOBAL_GS_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("inputDAC"), config[ichan_id-1][ADJ_INPUTDAC_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("HG"),       config[ichan_id-1][ADJ_AMPDAC_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("trig_adj"), config[ichan_id-1][ADJ_THRESHOLD_INDEX], CREATE_NEW_MODE);
           }
 
           //************* SELECT_DARK_NOISE *************//
 
           if ( flags[SELECT_DARK_NOISE] ) {  //for bcid
-            double x_bcid[2] = {0, 0};
-            // calculate the dark noise rate for chip "ichip" and channel "ichan" and
-            // save the mean and standard deviation in x_bcid[0] and x_bcid[1]
+            double fit_bcid[2] = {0, 0};
+            // calculate the dark noise rate for chip "ichip_id" and channel "ichan_id" and
+            // save the mean and standard deviation in fit_bcid[0] and fit_bcid[1]
             // respectively.
-            Fit.NoiseRate(ichip, ichan, x_bcid, flags[SELECT_PRINT]);
+            Fit.noise_rate(ichip_id, ichan_id, fit_bcid, flags[SELECT_PRINT]);
             // Save the noise rate and its standard deviation in the outputxmlfile xml
             // file
-            Edit.SetChValue(string("NoiseRate"),   x_bcid[0], CREATE_NEW_MODE); // mean
-            Edit.SetChValue(string("NoiseRate_e"), x_bcid[1], CREATE_NEW_MODE); // standard deviation
+            Edit.SetChValue(string("noise_rate"), fit_bcid[0], CREATE_NEW_MODE); // mean
+            Edit.SetChValue(string("sigma_rate"), fit_bcid[1], CREATE_NEW_MODE); // standard deviation
           }
 
           //************* SELECT_PEDESTAL *************//
 
           if ( flags[SELECT_PEDESTAL] ) {
-            double x_nohit[3] = {0, 0, 0};
-            for(int icol = 0; icol < MEMDEPTH; icol++) {
+            double fit_charge_nohit[3] = {0, 0, 0};
+            for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
               // Calculate the pedestal value and its sigma
-              Fit.charge_nohit(ichip, ichan, icol, x_nohit, flags[SELECT_PRINT]);
-              Edit.SetColValue(string("charge_nohit"), icol, x_nohit[0], CREATE_NEW_MODE);
-              Edit.SetColValue(string("sigma_nohit"),  icol, x_nohit[1], CREATE_NEW_MODE);
+              Fit.charge_nohit(ichip_id, ichan_id, icol_id, fit_charge_nohit, flags[SELECT_PRINT]);
+              Edit.SetColValue(string("charge_nohit"), icol_id, fit_charge_nohit[0], CREATE_NEW_MODE);
+              Edit.SetColValue(string("sigma_nohit"),  icol_id, fit_charge_nohit[1], CREATE_NEW_MODE);
             } 
           }
 
-          //************* SELECT_CHARGE_LOW *************//
+          //************* SELECT_CHARGE *************//
 
-          if ( flags[SELECT_CHARGE_LOW] ) {
-            double x_low[3] = {0, 0, 0};
-            Fit.low_pe_charge(ichip, ichan, x_low, flags[SELECT_PRINT]);
-            Edit.SetChValue(string("charge_low"),x_low[0], CREATE_NEW_MODE);
-            Edit.SetChValue(string("sigma_low") ,x_low[1], CREATE_NEW_MODE);
-          }
-
-          //************* SELECT_CHARGE_HG_LOW *************//
-
-          if ( flags[SELECT_CHARGE_HG_LOW] ) {
-            double x_low_HG[3] = {0, 0, 0};
-            for(int icol = 0; icol < MEMDEPTH; icol++) {
-              Fit.low_pe_charge_HG(ichip, ichan, icol, x_low_HG, flags[SELECT_PRINT]);
-              Edit.SetColValue(string("charge_lowHG"), icol, x_low_HG[0], CREATE_NEW_MODE);
-              Edit.SetColValue(string("sigma_lowHG"),  icol, x_low_HG[1], CREATE_NEW_MODE);
+          if ( flags[SELECT_CHARGE] ) {
+            double fit_charge[3] = {0, 0, 0};
+            for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+              Fit.charge_hit(ichip_id, ichan_id, icol_id, fit_charge, flags[SELECT_PRINT]);
+              Edit.SetColValue(string("charge_hit"), icol_id, fit_charge[0], CREATE_NEW_MODE);
+              Edit.SetColValue(string("sigma_hit") , icol_id, fit_charge[1], CREATE_NEW_MODE);
             }
           }
 
-          //************* SELECT_CHARGE_HG_HIGH *************//
+          //************* SELECT_CHARGE_HG *************//
 
-          if ( flags[SELECT_CHARGE_HG_HIGH] ) {
-            for(int icol = 0; icol < MEMDEPTH; icol++) {
-              double x_high_HG[3] = {0, 0};
-              Fit.GainSelect(ichip, ichan, icol, x_high_HG, flags[SELECT_PRINT]);
-              Edit.SetColValue(string("GS_eff_m"), icol, x_high_HG[0], CREATE_NEW_MODE);
-              Edit.SetColValue(string("GS_eff_e"), icol, x_high_HG[1], CREATE_NEW_MODE);
+          if ( flags[SELECT_CHARGE_HG] ) {
+            double fit_charge_HG[3] = {0, 0, 0};
+            for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+              Fit.charge_hit_HG(ichip_id, ichan_id, icol_id, fit_charge_HG, flags[SELECT_PRINT]);
+              Edit.SetColValue(string("charge_hit_HG"), icol_id, fit_charge_HG[0], CREATE_NEW_MODE);
+              Edit.SetColValue(string("sigma_hit_HG"),  icol_id, fit_charge_HG[1], CREATE_NEW_MODE);
             }
           }
+
           Edit.Write();
           Edit.Close();
         }
         catch (const exception& e) {
-          Log.eWrite("[wgAnaHist][" + outputxmlfile + "] chip " + to_string(ichip + 1) +
-                     ", chan " + to_string(ichan) + " : " + string(e.what()));
+          Log.eWrite("[wgAnaHist] chip " + to_string(ichip_id) +
+                     ", chan " + to_string(ichan_id) + " : " + string(e.what()));
           return ERR_FAILED_WRITE;
         } // try (write to xml files)
-      } // ichan
-    } //ichip
+      } // ichan_id
+    } //ichip_id
   } // try (wgFit)
   catch (const exception& e) {
-    Log.eWrite("[wgAnaHist][" + inputFileName + "] " + string(e.what()));
+    Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_FAILED_OPEN_HIST_FILE;
   }
   return AH_SUCCESS;
