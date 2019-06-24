@@ -23,17 +23,15 @@ CONF_FILE="${WAGASCI_MAINDIR}/configs/unit_tests/${RUN_NAME}.xml"
 TREE_FILE="${CURRENT_DIR}/${RUN_NAME}_tree.root"
 HIST_FILE="${CURRENT_DIR}/${RUN_NAME}_hist.root"
 ANA_DIR="${CURRENT_DIR}/AnaHist"
-ANA_SUMMARY_DIR="${CURRENT_DIR}/AnaSummary"
+ANA_SUMMARY_DIR="${CURRENT_DIR}/OnePE/wgAnaHistSummary/Xml/dif1"
 ANA_PEDESTAL_DIR="${CURRENT_DIR}/AnaPedestal"
 IMAGE_DIR="${CURRENT_DIR}/Images"
 
-ANA_MODE=12 # dark noise + pedestal + charge_HG
-ANA_SUMMARY_MODE=12  # dark noise + pedestal + charge_HG
-DIF=1
+ANA_MODE=20 # everything
+ANA_SUMMARY_MODE=12  # everything
 NCHIPS_DECODE=20
 NCHANNELS_DECODE=32
-NCHIPS_ANA=1
-NCHANNELS_ANA=32
+DIF=1
 
 echo " wgAnaPedestal unit test: input DAC 121 - 2 p.e."
 
@@ -54,12 +52,12 @@ if [ ! -d "${ANA_DIR}" ]; then
 fi
 if [ ! -d "${ANA_SUMMARY_DIR}" ]; then
     echo ""
-    echo " AnaHistSummary : ${ANAHISTSUMMARY}  -f  ${ANA_DIR}/${RUN_NAME}  -o  ${ANA_SUMMARY_DIR}/${RUN_NAME}  -i  ${IMAGE_DIR}  -x  ${NCHIPS_ANA}  -m  ${ANA_SUMMARY_MODE}  -y  ${NCHANNELS_ANA}  -r"
-                           "${ANAHISTSUMMARY}" -f "${ANA_DIR}/${RUN_NAME}" -o "${ANA_SUMMARY_DIR}/${RUN_NAME}" -i "${IMAGE_DIR}" -x "${NCHIPS_ANA}" -m "${ANA_SUMMARY_MODE}" -y "${NCHANNELS_ANA}" -r
+    echo " AnaHistSummary : ${ANAHISTSUMMARY}  -f  ${ANA_DIR}  -o  ${ANA_SUMMARY_DIR}  -m  ${ANA_SUMMARY_MODE}  -r"
+                           "${ANAHISTSUMMARY}" -f "${ANA_DIR}" -o "${ANA_SUMMARY_DIR}" -m "${ANA_SUMMARY_MODE}" -r
 fi
 
 #######################################################################################################################################################
 
 echo ""
-echo " AnaPedestal : ${ANAPEDESTAL}  -f  ${ANA_SUMMARY_DIR}/${RUN_NAME}  -o  ${ANA_PEDESTAL_DIR}  -i  ${IMAGE_DIR}  -n  ${DIF}  -x  ${NCHIPS_ANA}  -y  ${NCHANNELS_ANA}"
-                    "${ANAPEDESTAL}" -f "${ANA_SUMMARY_DIR}" -o "${ANA_PEDESTAL_DIR}" -i "${IMAGE_DIR}" -n "${DIF}" -x "${NCHIPS_ANA}" -y "${NCHANNELS_ANA}"
+echo " AnaPedestal : ${ANAPEDESTAL}  -f  ${CURRENT_DIR}  -o  ${ANA_PEDESTAL_DIR}  -i  ${IMAGE_DIR}"
+                    "${ANAPEDESTAL}" -f "${CURRENT_DIR}" -o "${ANA_PEDESTAL_DIR}" -i "${IMAGE_DIR}"
