@@ -18,6 +18,8 @@ namespace wagasci_tools {
   string GetNameBeforeLastUnderBar(const string& str);
   vector<string> ListFilesWithExtension(const string& inputDir,
                                         const string& extension = "");
+  unsigned HowManyFilesWithExtension(const string& inputDir, const string& extension);
+  unsigned HowManyDirectories(const string& inputDir);
   void MakeDir(const string& str);
 
 }

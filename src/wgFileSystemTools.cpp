@@ -7,6 +7,7 @@
 // boost includes
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
+#include <boost/lambda/bind.hpp>
 
 // user includes
 #include "wgErrorCode.hpp"
@@ -101,13 +102,40 @@ namespace wagasci_tools {
           if (GetExtension(entry.path().string()) == extension || extension.empty())
             file_list.push_back(entry.path().string());
       }
-      else throw wgInvalidFile(inputDir + " exists, but is not a regular file or directory");
+      else throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
     }
     else throw wgInvalidFile(inputDir + " does not exist");
 
     return file_list;   
   }
+  
+  //******************************************************************
+  unsigned HowManyFilesWithExtension(const string& inputDir, const string& extension) {
+    unsigned counter = 0;
 
+    if (boost::filesystem::exists(inputDir)) {
+      if (boost::filesystem::is_directory(inputDir)) {
+        for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
+          if (GetExtension(entry.path().string()) == extension || extension.empty())
+            counter++;
+      }
+      else throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+    }
+    else throw wgInvalidFile(inputDir + " does not exist");
+
+    return counter;
+  }
+
+   //******************************************************************
+  unsigned HowManyDirectories(const string& inputDir) {
+    boost::filesystem::path the_path(inputDir);
+    unsigned counter = std::count_if( boost::filesystem::directory_iterator(the_path),
+                                      boost::filesystem::directory_iterator(),
+                                      static_cast<bool(*)(const boost::filesystem::path&)>(boost::filesystem::is_directory) );
+    return counter;
+  } 
+  
+  //******************************************************************
   void MakeDir(const string& str) {
     CheckExist Check;
     if( !Check.Dir(str) ) {
