@@ -114,7 +114,7 @@
 
 #define ONE_PE 0
 #define TWO_PE 1
-#define THREE_PE 2
+#define N_PE   2
 
 // ============ wgMakeHist MACROS ============== //
 
