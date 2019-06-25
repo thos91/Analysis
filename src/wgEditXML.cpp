@@ -17,6 +17,7 @@
 #include "wgErrorCode.hpp"
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
+#include "wgTopology.hpp"
 #include "wgLogger.hpp"
 
 //**********************************************************************
@@ -101,8 +102,7 @@ void wgEditXML::Make(const string& filename, const unsigned idif, const unsigned
   config->InsertEndChild(trig_adj);
   trig_adj->InsertEndChild(trig_adj->GetDocument()->NewText("-1"));
 
-  snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan );
-  XMLElement* chan = xml->NewElement(str);
+  XMLElement* chan = xml->NewElement("chan");
   data->InsertEndChild(chan);
 
   for(unsigned k = 1; k <= MEMDEPTH; k++){
@@ -240,9 +240,9 @@ void wgEditXML::SetColValue(const string& name, const int icol, const int value,
   if (icol <= 0 || icol > MEMDEPTH) return;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement("ch");
+  XMLElement* chan = data->FirstChildElement("chan");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol );
-  XMLElement* col = ch->FirstChildElement(str);
+  XMLElement* col = chan->FirstChildElement(str);
   XMLElement* target = col->FirstChildElement(name.c_str());
   if ( target ) {
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
@@ -262,8 +262,8 @@ void wgEditXML::SetColValue(const string& name, const int icol, const int value,
 void wgEditXML::SetChValue(const string& name, const int value, const bool create_new){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement("ch");
-  XMLElement* target = ch->FirstChildElement(name.c_str());
+  XMLElement* chan = data->FirstChildElement("chan");
+  XMLElement* target = chan->FirstChildElement(name.c_str());
   if ( target ) {
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
     target->SetText(str);
@@ -271,7 +271,7 @@ void wgEditXML::SetChValue(const string& name, const int value, const bool creat
     if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(value);
-      ch->InsertEndChild(newElement); 
+      chan->InsertEndChild(newElement); 
     }else{
       Log.eWrite("[wgEditXML::SetChValue] Warning! Element " + name + " doesn't exist!");
     }
@@ -283,9 +283,9 @@ void wgEditXML::SetChValue(const string& name, const int value, const bool creat
 void wgEditXML::AddColElement(const string& name, const int icol) {
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement("ch");
+  XMLElement* chan = data->FirstChildElement("chan");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol );
-  XMLElement* col = ch->FirstChildElement(str);
+  XMLElement* col = chan->FirstChildElement(str);
   XMLElement* newElement = xml->NewElement(name.c_str());
   col->InsertEndChild(newElement);
 }
@@ -293,9 +293,9 @@ void wgEditXML::AddColElement(const string& name, const int icol) {
 //**********************************************************************
 void wgEditXML::AddChElement(const string& name) {
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement("ch");
+  XMLElement* chan = data->FirstChildElement("chan");
   XMLElement* newElement = xml->NewElement(name.c_str());
-  ch->InsertEndChild(newElement);
+  chan->InsertEndChild(newElement);
 }
 
 //**********************************************************************
@@ -303,9 +303,9 @@ int wgEditXML::GetColValue(const string& name,const int icol){
   if(icol<0 || icol>MEMDEPTH) return 0.0;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement("ch");
+  XMLElement* chan = data->FirstChildElement("chan");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol );
-  XMLElement* col = ch->FirstChildElement(str);
+  XMLElement* col = chan->FirstChildElement(str);
   XMLElement* target = col->FirstChildElement(name.c_str());
   if ( target ) {
     string value = target->GetText();
@@ -319,8 +319,8 @@ int wgEditXML::GetColValue(const string& name,const int icol){
 //**********************************************************************
 int wgEditXML::GetChValue(const string& name){
   XMLElement* data = xml->FirstChildElement("data");
-  XMLElement* ch = data->FirstChildElement("ch");
-  XMLElement* target = ch->FirstChildElement(name.c_str());
+  XMLElement* chan = data->FirstChildElement("chan");
+  XMLElement* target = chan->FirstChildElement(name.c_str());
   if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
@@ -499,8 +499,8 @@ void wgEditXML::SUMMARY_SetChConfigValue(const string& name, const int value, co
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan );
-  XMLElement* ch = data->FirstChildElement(str);
-  XMLElement* config = ch->FirstChildElement("config");
+  XMLElement* chan = data->FirstChildElement(str);
+  XMLElement* config = chan->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
@@ -520,8 +520,8 @@ void wgEditXML::SUMMARY_SetChFitValue(const string& name, const int value, const
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan );
-  XMLElement* ch = data->FirstChildElement(str);
-  XMLElement* config = ch->FirstChildElement("fit");
+  XMLElement* chan = data->FirstChildElement(str);
+  XMLElement* config = chan->FirstChildElement("fit");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if( target ) {
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value );
@@ -541,8 +541,8 @@ void wgEditXML::SUMMARY_SetPedFitValue(int value[MEMDEPTH], const int ichan, con
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan );
-  XMLElement* ch = data->FirstChildElement(str);
-  XMLElement* fit = ch->FirstChildElement("fit");
+  XMLElement* chan = data->FirstChildElement(str);
+  XMLElement* fit = chan->FirstChildElement("fit");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
     unsigned icol_id = icol + 1;
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol_id );
@@ -576,9 +576,9 @@ void wgEditXML::SUMMARY_AddChElement(const string& name, const int ich){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ich );
-  XMLElement* ch = data->FirstChildElement(str);
+  XMLElement* chan = data->FirstChildElement(str);
   XMLElement* newElement = xml->NewElement(name.c_str());
-  ch->InsertEndChild(newElement);
+  chan->InsertEndChild(newElement);
 }
 
 //**********************************************************************
@@ -600,8 +600,8 @@ int wgEditXML::SUMMARY_GetChConfigValue(const string& name, const int ich){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ich );
-  XMLElement* ch = data->FirstChildElement(str);
-  XMLElement* config = ch->FirstChildElement("config");
+  XMLElement* chan = data->FirstChildElement(str);
+  XMLElement* config = chan->FirstChildElement("config");
   XMLElement* target = config->FirstChildElement(name.c_str());
   if ( target ) {
     string value = target->GetText();
@@ -617,8 +617,8 @@ int wgEditXML::SUMMARY_GetChFitValue(const string& name, const int ich){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ich );
-  XMLElement* ch = data->FirstChildElement(str);
-  XMLElement* fit = ch->FirstChildElement("fit");
+  XMLElement* chan = data->FirstChildElement(str);
+  XMLElement* fit = chan->FirstChildElement("fit");
   XMLElement* target = fit->FirstChildElement(name.c_str());
   if ( target ) {
     string value = target->GetText();
@@ -634,8 +634,8 @@ void wgEditXML::SUMMARY_GetPedFitValue(int value[MEMDEPTH], const int ich){
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ich );
-  XMLElement* ch = data->FirstChildElement(str);
-  XMLElement* config = ch->FirstChildElement("fit");
+  XMLElement* chan = data->FirstChildElement(str);
+  XMLElement* config = chan->FirstChildElement("fit");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++){
     unsigned icol_id = icol + 1;
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol_id );
@@ -858,7 +858,7 @@ void wgEditXML::PreCalib_Make(const string& filename){
   XMLElement* data; 
   XMLElement* dif;
   XMLElement* chip;
-  XMLElement* ch;
+  XMLElement* chan;
   XMLElement* s_Gain;
   XMLElement* i_Gain;
 
@@ -876,12 +876,12 @@ void wgEditXML::PreCalib_Make(const string& filename){
       dif->InsertEndChild(chip);
       // ***** data > dif > chip > ch ***** //
       for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
-        ch = xml->NewElement(Form("chan_%d", ichan));    
-        chip->InsertEndChild(ch);
+        chan = xml->NewElement(Form("chan_%d", ichan));    
+        chip->InsertEndChild(chan);
         s_Gain = xml->NewElement("s_Gain");    
         i_Gain = xml->NewElement("i_Gain");    
-        ch->InsertEndChild(s_Gain);
-        ch->InsertEndChild(i_Gain);
+        chan->InsertEndChild(s_Gain);
+        chan->InsertEndChild(i_Gain);
       }
     }
   }
@@ -894,8 +894,8 @@ void wgEditXML::PreCalib_SetValue(const string& name, int idif, int ichip, int i
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
-  XMLElement* ch = chip->FirstChildElement(Form("chan_%d",ich));
-  XMLElement* target = ch->FirstChildElement(name.c_str());
+  XMLElement* chan = chip->FirstChildElement(Form("chan_%d",ich));
+  XMLElement* target = chan->FirstChildElement(name.c_str());
 
   if ( target ) {
     target->SetText(Form("%d",value));
@@ -903,7 +903,7 @@ void wgEditXML::PreCalib_SetValue(const string& name, int idif, int ichip, int i
     if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%d",value));
-      ch->InsertEndChild(newElement);
+      chan->InsertEndChild(newElement);
     }else{
       throw wgElementNotFound("Element " + name + " doesn't exist");
     }
@@ -915,8 +915,8 @@ int wgEditXML::PreCalib_GetValue(const string& name,int idif, int ichip, int ich
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
-  XMLElement* ch   = chip->FirstChildElement(Form("chan_%d",ich));
-  XMLElement* target = ch->FirstChildElement(name.c_str());
+  XMLElement* chan   = chip->FirstChildElement(Form("chan_%d",ich));
+  XMLElement* target = chan->FirstChildElement(name.c_str());
   if ( target ) {
     string value = target->GetText();
     return atof(value.c_str());
@@ -927,10 +927,7 @@ int wgEditXML::PreCalib_GetValue(const string& name,int idif, int ichip, int ich
 }
 
 //**********************************************************************
-void wgEditXML::Calib_Make(const string& filename,
-                           const unsigned n_difs,
-                           const vector<unsigned> n_chips,
-                           const vector<vector<unsigned>> n_chans){
+void wgEditXML::Calib_Make(const string& filename, Topology& topol){
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
@@ -942,28 +939,34 @@ void wgEditXML::Calib_Make(const string& filename,
   data = xml->NewElement("data");
   xml->InsertEndChild(data);
   difs = xml->NewElement("n_difs");
-  difs->SetText(to_string(n_difs).c_str());
+  difs->SetText(to_string(topol.n_difs).c_str());
   data->InsertEndChild(difs);
 
-  for(unsigned idif = 0; idif < n_difs; idif++) {
+  for(unsigned idif = 0; idif < topol.n_difs; idif++) {
     unsigned idif_id = idif + 1;
     // ***** data > dif ***** //
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif_id );
     dif = xml->NewElement(str);    
     data->InsertEndChild(dif);
     chips = xml->NewElement("n_chips");
-    chips->SetText(to_string(n_chips[idif]).c_str());
+
+    unsigned n_chips = topol.dif_map[to_string(idif)].size();
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chips);
+    chips->SetText(str);
     data->InsertEndChild(chips);
     // ***** data > dif > chip ***** //
-    for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
+    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       unsigned ichip_id = ichip + 1;
       chip = xml->NewElement(Form("chip_%d", ichip_id));    
       dif->InsertEndChild(chip);
+
+      unsigned n_chans = stoi(topol.dif_map[to_string(idif)][to_string(ichip)]);
       chans = xml->NewElement("n_chans");
-      chans->SetText(to_string(n_chans[idif][ichip]).c_str());
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chans);
+      chans->SetText(str);
       dif->InsertEndChild(chans);
       // ***** data > dif > chip > ch ***** //
-      for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
         unsigned ichan_id = ichan + 1;
         chan = xml->NewElement(Form("chan_%d", ichan_id));    
         chip->InsertEndChild(chan);
@@ -1019,8 +1022,8 @@ void wgEditXML::Calib_SetValue(const string& name, const int idif, const int ich
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
-  XMLElement* ch = chip->FirstChildElement(Form("chan_%d",ich));
-  XMLElement* target = ch->FirstChildElement(name.c_str());
+  XMLElement* chan = chip->FirstChildElement(Form("chan_%d",ich));
+  XMLElement* target = chan->FirstChildElement(name.c_str());
 
   if ( target ) {
     target->SetText(Form("%d", value));
@@ -1028,7 +1031,7 @@ void wgEditXML::Calib_SetValue(const string& name, const int idif, const int ich
     if(create_new == true){
       XMLElement* newElement = xml->NewElement(name.c_str());
       newElement->SetText(Form("%d", value));
-      ch->InsertEndChild(newElement);
+      chan->InsertEndChild(newElement);
     }else{
       throw wgElementNotFound("Element " + name + " doesn't exist");
     }
@@ -1040,8 +1043,8 @@ int wgEditXML::Calib_GetValue(const string& name,int idif, int ichip, int ich){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));
-  XMLElement* ch   = chip->FirstChildElement(Form("chan_%d",ich));
-  XMLElement* target = ch->FirstChildElement(name.c_str());
+  XMLElement* chan   = chip->FirstChildElement(Form("chan_%d",ich));
+  XMLElement* target = chan->FirstChildElement(name.c_str());
   string value;
   if (target) {
     value = target->GetText();

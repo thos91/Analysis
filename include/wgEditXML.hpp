@@ -7,6 +7,7 @@
 
 // user includes
 #include "tinyxml2.hpp"
+#include "wgTopology.hpp"
 #include "wgConst.hpp"
 
 #define XML_ELEMENT_STRING_LENGTH 32
@@ -127,27 +128,27 @@ public:
   void SetConfigValue(const string& name, int value, bool create_new = false);
 
   // wgEditXML::SetColValue
-  // data -> ch -> col_%d -> name
+  // data -> chan -> col_%d -> name
   void SetColValue(const string& name, int icol, int value, bool create_new = false);
 
   // wgEditXML::SetChValue
-  // data -> ch -> name
+  // data -> chan -> name
   void SetChValue(const string& name, int value, bool create_new = false);
 
   // wgEditXML::AddColElement
-  // data -> ch -> col_%d -> name
+  // data -> chan -> col_%d -> name
   void AddColElement(const string& name, int icol);
 
   // wgEditXML::AddChElement
-  // data -> ch -> name
+  // data -> chan -> name
   void AddChElement(const string& name);
 
   // wgEditXML::GetColValue
-  // data -> ch -> col_%d -> name
+  // data -> chan -> col_%d -> name
   int GetColValue(const string& name, int icol);
 
   // wgEditXML::GetChValue
-  // data -> ch -> name
+  // data -> chan -> name
   int GetChValue(const string& name);
 
   // wgEditXML::GetConfigValue
@@ -297,10 +298,7 @@ public:
     ...
 </data>
 -------------------------------------------------------------------------------- */
-  void Calib_Make(const string& filename,
-                  unsigned n_difs,
-                  vector<unsigned> n_chips,
-                  vector<vector<unsigned>> n_chans);
+  void Calib_Make(const string& filename, Topology& topol);
 
   // wgEditXML::Calib_SetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
