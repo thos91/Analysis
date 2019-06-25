@@ -100,56 +100,11 @@ int wgScurve(const char* x_inputDir,
   //                                                               //
   // ============================================================= //
   
-  vector<string> FileList = ListFilesWithExtension(inputDir, "xml"); 
-
-  int nchip=NCHIPS;
-  //int nchip=1;
+	Topology topol(run_directory_tree,inputDir);
   try{
-    for(int ichip=0;ichip<nchip;ichip++){
-      AnaXML(ReadFile,
-          outputXMLDir,
-          outputIMGDir,
-          ichip
-          );
-    }
-    Log.Write("end summarizeing ... " );
-    // delete Log;  
-  }
-  catch (const exception& e){
-    Log.eWrite("[wgScurve][" + inputDir + "] " + string(e.what()));
-    return ERR_WG_SCURVE;
-  }
-  return SCURVE_SUCCESS;
-}
+    for(unsigned idif=1;idif<topol.n_difs;idif++){
+    for(unsigned ichip=1;ichip<topol.dif_map[to_string(idif)].size();ichip++){
 
-//******************************************************************
-vector<string> GetIncludeFileName(const string& inputDir){
-  DIR *dp;
-  struct dirent *entry;
-  vector<string> openxmlfile;
-
-  dp = opendir(inputDir.c_str());
-  if(dp==NULL){
-    cout << " !! WARNING !! no data is in "<< inputDir << endl;
-    return openxmlfile;
-  }
-
-  while( (entry = readdir(dp))!=NULL ){
-    if((entry->d_name[0])!='.'){
-      openxmlfile.push_back(Form("%s/%s",inputDir.c_str(),entry->d_name));
-      cout << "ReadFile : " << inputDir << "/" << entry->d_name << endl;
-    }
-  }
-  closedir(dp);
-  return openxmlfile;
-} 
-
-//******************************************************************
-void AnaXML(vector<string> &inputFileName, string& outputXMLDir,string& outputIMGDir,int ichip){
-
-  cout << "*********************************"<<endl;    
-  cout << "       chip " << ichip << " start... " <<endl;   
-  cout << "*********************************"<<endl;    
   MakeXML(outputXMLDir,ichip);
 
   int FN=inputFileName.size();
@@ -220,7 +175,7 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDir,string& outputIM
     add_list_trigth=true;
     for(unsigned int l=0;l<list_inputDAC.size();l++){
       if(list_inputDAC[l]==*inputDAC[iFN]){
-        add_list_inputDAC=false;
+   iFN=0;iFN<FN;iFN++     add_list_inputDAC=false;
       }
     }
     for(unsigned int l=0;l<list_trigth.size();l++){
@@ -697,6 +652,41 @@ void AnaXML(vector<string> &inputFileName, string& outputXMLDir,string& outputIM
   }//dif
   cout << "Finish!" << endl;
 }
+          );
+    }
+    Log.Write("end summarizeing ... " );
+    // delete Log;  
+  }
+  catch (const exception& e){
+    Log.eWrite("[wgScurve][" + inputDir + "] " + string(e.what()));
+    return ERR_WG_SCURVE;
+  }
+  return SCURVE_SUCCESS;
+}
+
+//******************************************************************
+vector<string> GetIncludeFileName(const string& inputDir){
+  DIR *dp;
+  struct dirent *entry;
+  vector<string> openxmlfile;
+
+  dp = opendir(inputDir.c_str());
+  if(dp==NULL){
+    cout << " !! WARNING !! no data is in "<< inputDir << endl;
+    return openxmlfile;
+  }
+
+  while( (entry = readdir(dp))!=NULL ){
+    if((entry->d_name[0])!='.'){
+      openxmlfile.push_back(Form("%s/%s",inputDir.c_str(),entry->d_name));
+      cout << "ReadFile : " << inputDir << "/" << entry->d_name << endl;
+    }
+  }
+  closedir(dp);
+  return openxmlfile;
+} 
+
+//******************************************************************
 
 //******************************************************************
 double NoiseToPe(double noise){
@@ -711,20 +701,18 @@ double NoiseToPe(double noise){
 }
 
 //******************************************************************
-void MakeXML(string& outputXMLDir,int ichip){
-  string name;
-  wgEditXML *Edit = new wgEditXML();
-  for(int idif=0;idif<2;idif++){
-    name=Form("%s/dif%d",outputXMLDir.c_str(),idif+1);
-    MakeDir(name);
+void MakeXML(string& outputXMLDir,Topology topol){
+  wgEditXML Edit;
+  for(unsigned idif=1;idif<topol.n_difs;idif++){
+		for(unsigned ichip=1; ichip<topol.dif_map[to_string(idif)].size();ichip++){
+    	MakeDir(outputXMLDir + "/dif" + to_string(idif) + "/chip" + to_string(ichip));
     name=Form("%s/dif%d/chip%d",outputXMLDir.c_str(),idif+1,ichip);
     MakeDir(name);
     for(int ich=0;ich<32;ich++){
       name=Form("%s/dif%d/chip%d/ch%d.xml",outputXMLDir.c_str(),idif+1,ichip,ich);
-      Edit->SCURVE_Make(name);
+      Edit.SCURVE_Make(name);
     }
   }
-  delete Edit;
 }
 
 //******************************************************************

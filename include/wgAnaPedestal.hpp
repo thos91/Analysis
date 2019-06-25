@@ -22,7 +22,8 @@
 
 using namespace std;
 
-std::map<const unsigned, const string> run_directory_tree{ {ONE_PE, "/OnePE/wgAnaHistSummary/Xml"}, {TWO_PE, "/TwoPE/wgAnaHistSummary/Xml"} };
+typedef std::map<const unsigned, const string> DirectoryTreeMap;
+DiectoryTreeMap run_directory_tree{ {ONE_PE, "/OnePE/wgAnaHistSummary/Xml"}, {TWO_PE, "/TwoPE/wgAnaHistSummary/Xml"} };
 
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus

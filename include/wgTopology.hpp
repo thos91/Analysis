@@ -145,7 +145,7 @@ public:
 
   Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
-
+	Topology(DirectoryTreeMap run_directory_tree);
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
   string GetAbsDif(const string& gdcc, const string& dif);
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>] after converting the arguments into strings

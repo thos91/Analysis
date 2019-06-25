@@ -254,3 +254,106 @@ void Topology::PrintMapGdcc() {
   }
   std::cout << std::endl;
 }
+
+//**********************************************************************
+Topology::Topology(DirectoryTreeMap run_directory_tree, string input_run_dir):
+  m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
+
+  this->GetTopologyFromDirectoryTree(run_directory_tree, input_run_dir);
+  this->GetGdccDifMapping();
+  this->DifMapToGdccMap(); 
+  this->n_difs = this->dif_map.size();
+  for ( auto const & dif : this->dif_map) {
+    unsigned n_chips_tmp = 0;
+    for ( auto const & asu : dif.second) {
+      n_chips_tmp++;
+      if ( (unsigned) stoi(asu.second) > this->max_channels) max_channels = stoi(asu.second);
+    }
+    if (n_chips_tmp > this->max_chips) max_chips = n_chips_tmp;
+  }
+}
+
+}
+void Topology::GetTopologyFromDirectoryTree(DirectoryTreeMap run_directory_tree, string input_run_dir){
+	
+  // The topology for each acquisition (each photo-electron equivalent
+  // threshold) MUST be the same. I mean same number of DIFs, chips
+  // and channels
+  
+  unsigned n_difs;
+  vector<unsigned> n_chips;
+  vector<vector<unsigned>> n_chans;
+  
+  array<unsigned, run_directory_tree.size()> n_difs_x;
+  array<vector<unsigned>, run_directory_tree.size()> n_chips_x;
+  array<vector<vector<unsigned>>, run_directory_tree.size()> n_chans_x;
+
+  // Get topology for each acquisition
+  
+  for (auto const & it : run_directory_tree) {
+    unsigned x = it.first;
+    string x_directory = it.second;
+    n_difs_x[x] = HowManyDirectories(input_run_dir + x_directory);
+    if ( n_difs_x[x] == 0) {
+      Log.eWrite("[wgAnaPedestal] DIF directories not found");
+      return ERR_WRONG_DIF_VALUE;
+    }
+    for (unsigned idif = 0; idif < n_difs_x[x]; idif++) {
+      string idif_directory(input_run_dir + x_directory + "/dif" + to_string(idif + 1));
+      n_chips_x[x].push_back(HowManyFilesWithExtension(idif_directory, "xml"));
+      n_chans_x[x].push_back( vector<unsigned>() );
+      
+      for (unsigned ichip = 0; ichip < n_chips_x[x][idif]; ichip++) {
+        string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip + 1) + ".xml");
+        try { Edit.Open(xmlfile); }
+        catch (const exception& e) {
+          Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+          return ERR_FAILED_OPEN_XML_FILE;
+        }
+        n_chans_x[x][idif].push_back(Edit.SUMMARY_GetGlobalConfigValue("n_chans"));
+        Edit.Close();
+
+      }
+    }
+  }
+
+  // Copy the topology for the first case into the global topology
+
+  n_difs = n_difs_x[0];
+  for (unsigned idif = 0; idif < n_difs_x[0]; idif++) {
+    n_chips.push_back(n_chips_x[0][idif]);
+    n_chans.push_back( vector<unsigned>() );
+    for (unsigned ichip = 0; ichip < n_chips_x[0][idif]; ichip++) {
+      n_chans[idif].push_back( n_chans_x[0][idif][ichip] );
+    }
+  }
+
+  // Check that the topology for each acquisition is the same
+          
+  for (unsigned x = 0; x < run_directory_tree.size(); ++x) {
+    if (n_difs_x[x] != n_difs) {
+      Log.eWrite("There is something wrong with the number of DIFs detection");
+      return ERR_WRONG_DIF_VALUE;
+    }
+    for (unsigned idif = 0; idif < n_difs_x[x]; idif++) {
+      if ( n_chips_x[x][idif] != n_chips[idif] ) {
+        Log.eWrite("There is something wrong with the number of chips detection");
+        return ERR_WRONG_CHIP_VALUE;
+      }
+      for (unsigned ichip = 0; ichip < n_chips_x[x][idif]; ichip++) {
+        if ( n_chans_x[x][idif][ichip] != n_chans[idif][ichip] ) {
+          Log.eWrite("There is something wrong with the number of channels detection");
+          return ERR_WRONG_CHAN_VALUE;
+        }
+      }
+    }
+  }
+
+	for(unsigned idif=1; idif<n_difs; idif++){
+		for(unsigned ichip=1; ichip<n_chips[idif]; ichip++){
+			Topology::dif_map[to_string(idif)][to_string(ichip)] = n_chans[idif][ichip];
+		}
+	}
+}
+
+
