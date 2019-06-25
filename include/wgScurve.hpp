@@ -9,8 +9,7 @@
 
 // user includes
 #include "wgConst.hpp"
-
-// #define M 5
+#include "wgTopology.hpp"
 
 // #define SELECT_NOISE     0
 // #define SELECT_GAIN      1
@@ -37,10 +36,8 @@ extern "C" {
 }
 #endif
 
-double NoiseToPe(double); // where is this function used??
-void MakeXML(string& str,int ichip);
+void MakeScurveXML(string& outputXMLDir, Topology& topol);
 vector<string> GetIncludeFileName(const string& inputDirName);
-void AnaXML(vector<string> &inputDirName,string& outputXMLDirName,string& outputIMGDirName,int ichip);
 double Calcurate_Mean(vector<double>);
 double Calcurate_Sigma(vector<double>);
 
