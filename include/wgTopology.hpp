@@ -17,6 +17,7 @@ typedef std::map<string, std::map<string, std::map< string, string>>> TopologyMa
 typedef std::map<string, std::map< string, string>> TopologyMapDif;
 typedef std::map<std::pair<string, string>, string> GdccToDifMap;
 typedef std::map<string, std::pair< string, string>> DifToGdccMap;
+typedef std::map<const unsigned, const string> DirectoryTreeMap;
 
 enum class TopologySourceType {
   xml_file,
@@ -102,6 +103,17 @@ private:
   // then populated.
   void  GetTopologyFromString(const string& json_string);
 
+  // Get the topology from a directory tree and the xml files
+  // contained therein. It is useful only when reading the output of
+  // the wgAnaHistSummary program.
+  //
+  // input_run_dir is the directory where all the files corresponding
+  // to a certain run are contained. run_directory_tree is a map that
+  // associates to each integer starting from zero a path (relative to
+  // the input_run_dir) corresponding to the location of the Xml
+  // directory for each acquisition.
+  void GetTopologyFromDirectoryTree(string input_run_dir, DirectoryTreeMap run_directory_tree);
+
   // This function reads the JSON file
   // "/opt/calicoes/config/dif_mapping.txt" containing the mapping of
   // the (gdcc, dif) pair into the absolute dif number. Then the
@@ -145,7 +157,8 @@ public:
 
   Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
-	Topology(DirectoryTreeMap run_directory_tree);
+  Topology(string run_input_dir, DirectoryTreeMap run_directory_tree);
+  
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
   string GetAbsDif(const string& gdcc, const string& dif);
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>] after converting the arguments into strings

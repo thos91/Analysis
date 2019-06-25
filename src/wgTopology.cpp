@@ -17,7 +17,11 @@
 #include "wgFileSystemTools.hpp"
 #include "wgErrorCode.hpp"
 #include "wgLogger.hpp"
+#include "wgEditXML.hpp"
 #include "wgTopology.hpp"
+
+using namespace wagasci_tools;
+
 
 //**********************************************************************
 const char * GetTopologyCtypes(const char * x_configxml) {
@@ -256,10 +260,10 @@ void Topology::PrintMapGdcc() {
 }
 
 //**********************************************************************
-Topology::Topology(DirectoryTreeMap run_directory_tree, string input_run_dir):
+Topology::Topology(string input_run_dir, DirectoryTreeMap run_directory_tree) :
   m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
 
-  this->GetTopologyFromDirectoryTree(run_directory_tree, input_run_dir);
+  this->GetTopologyFromDirectoryTree( input_run_dir, run_directory_tree);
   this->GetGdccDifMapping();
   this->DifMapToGdccMap(); 
   this->n_difs = this->dif_map.size();
@@ -273,9 +277,25 @@ Topology::Topology(DirectoryTreeMap run_directory_tree, string input_run_dir):
   }
 }
 
-}
-void Topology::GetTopologyFromDirectoryTree(DirectoryTreeMap run_directory_tree, string input_run_dir){
-	
+//**********************************************************************
+void Topology::GetTopologyFromDirectoryTree(string input_run_dir, DirectoryTreeMap run_directory_tree) {
+
+  // Check the arguments
+  CheckExist check;
+  if (check.Dir(input_run_dir))
+    throw wgInvalidFile("[wgTopology] Input directory doesn't exist : " + input_run_dir);
+
+  unsigned n_acq = run_directory_tree.size();
+  if ( n_acq == 0 )
+    throw invalid_argument("[wgTopology] Empty run directory tree map");
+
+  unsigned cnt = 0;
+  for (auto const & it : run_directory_tree) {
+    if (it.first != cnt++)
+          throw invalid_argument("[wgTopology] run directory tree map must contain integers"
+                                 " in ascenting order starting from zero as the key");
+  }
+  
   // The topology for each acquisition (each photo-electron equivalent
   // threshold) MUST be the same. I mean same number of DIFs, chips
   // and channels
@@ -284,19 +304,18 @@ void Topology::GetTopologyFromDirectoryTree(DirectoryTreeMap run_directory_tree,
   vector<unsigned> n_chips;
   vector<vector<unsigned>> n_chans;
   
-  array<unsigned, run_directory_tree.size()> n_difs_x;
-  array<vector<unsigned>, run_directory_tree.size()> n_chips_x;
-  array<vector<vector<unsigned>>, run_directory_tree.size()> n_chans_x;
+  vector<unsigned> n_difs_x;
+  vector<vector<unsigned>> n_chips_x;
+  vector<vector<vector<unsigned>>> n_chans_x;
 
   // Get topology for each acquisition
-  
+  wgEditXML Edit;
   for (auto const & it : run_directory_tree) {
     unsigned x = it.first;
     string x_directory = it.second;
-    n_difs_x[x] = HowManyDirectories(input_run_dir + x_directory);
+    n_difs_x.push_back(HowManyDirectories(input_run_dir + x_directory));
     if ( n_difs_x[x] == 0) {
-      Log.eWrite("[wgAnaPedestal] DIF directories not found");
-      return ERR_WRONG_DIF_VALUE;
+      throw wgInvalidFile("[wgAnaPedestal] DIF directories not found");
     }
     for (unsigned idif = 0; idif < n_difs_x[x]; idif++) {
       string idif_directory(input_run_dir + x_directory + "/dif" + to_string(idif + 1));
@@ -307,12 +326,10 @@ void Topology::GetTopologyFromDirectoryTree(DirectoryTreeMap run_directory_tree,
         string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip + 1) + ".xml");
         try { Edit.Open(xmlfile); }
         catch (const exception& e) {
-          Log.eWrite("[wgAnaPedestal] " + string(e.what()));
-          return ERR_FAILED_OPEN_XML_FILE;
+          throw wgInvalidFile("[wgTopology] : " + string(e.what()));
         }
         n_chans_x[x][idif].push_back(Edit.SUMMARY_GetGlobalConfigValue("n_chans"));
         Edit.Close();
-
       }
     }
   }
@@ -332,28 +349,25 @@ void Topology::GetTopologyFromDirectoryTree(DirectoryTreeMap run_directory_tree,
           
   for (unsigned x = 0; x < run_directory_tree.size(); ++x) {
     if (n_difs_x[x] != n_difs) {
-      Log.eWrite("There is something wrong with the number of DIFs detection");
-      return ERR_WRONG_DIF_VALUE;
+      throw runtime_error("There is something wrong with the number of DIFs detection");
     }
     for (unsigned idif = 0; idif < n_difs_x[x]; idif++) {
       if ( n_chips_x[x][idif] != n_chips[idif] ) {
-        Log.eWrite("There is something wrong with the number of chips detection");
-        return ERR_WRONG_CHIP_VALUE;
+        throw runtime_error("There is something wrong with the number of chips detection");
       }
       for (unsigned ichip = 0; ichip < n_chips_x[x][idif]; ichip++) {
         if ( n_chans_x[x][idif][ichip] != n_chans[idif][ichip] ) {
-          Log.eWrite("There is something wrong with the number of channels detection");
-          return ERR_WRONG_CHAN_VALUE;
+          throw runtime_error("There is something wrong with the number of channels detection");
         }
       }
     }
   }
 
-	for(unsigned idif=1; idif<n_difs; idif++){
-		for(unsigned ichip=1; ichip<n_chips[idif]; ichip++){
-			Topology::dif_map[to_string(idif)][to_string(ichip)] = n_chans[idif][ichip];
-		}
-	}
+  for(unsigned idif = 1; idif < n_difs; idif++) {
+    for(unsigned ichip = 1; ichip < n_chips[idif]; ichip++) {
+      Topology::dif_map[to_string(idif)][to_string(ichip)] = n_chans[idif][ichip];
+    }
+  }
 }
 
 
