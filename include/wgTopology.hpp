@@ -13,8 +13,10 @@
 using namespace std;
 using namespace tinyxml2;
 
-typedef std::map<string, std::map<string, std::map< string, string>>> TopologyMapGdcc;
-typedef std::map<string, std::map< string, string>> TopologyMapDif;
+typedef std::map<string, std::map<string, std::map< string, string>>> StringTopologyMapGdcc;
+typedef std::map<string, std::map< string, string>> StringTopologyMapDif;
+typedef std::map<unsigned, std::map<unsigned, std::map< unsigned, unsigned>>> TopologyMapGdcc;
+typedef std::map<unsigned, std::map< unsigned, unsigned>> TopologyMapDif;
 typedef std::map<std::pair<string, string>, string> GdccToDifMap;
 typedef std::map<string, std::pair< string, string>> DifToGdccMap;
 typedef std::map<const unsigned, const string> DirectoryTreeMap;
@@ -61,6 +63,9 @@ extern "C" {
 // channels.
 
 class Topology {
+
+  friend const char * GetTopologyCtypes(const char * configxml);
+  
 private:
   // This file contains the GDCC,DIF to DIF mapping. This mapping is needed
   // because we want to label each DIF using an absolute number and not the
@@ -89,6 +94,9 @@ private:
   GdccToDifMap m_gdcc_to_dif_map = {};
   // Map from the absolute DIF number into the GDCC, DIF pair
   DifToGdccMap m_dif_to_gdcc_map = {};
+
+  StringTopologyMapGdcc m_string_gdcc_map = {};
+  StringTopologyMapDif m_string_dif_map = {};
   
   // The input value is the name of the Pyrame configuration file to
   // read. The number of GDCCs, DIFs, ASUs and channels is retrieved
@@ -129,6 +137,8 @@ private:
   // "gdcc_map". Must be called after the GetTopology* and
   // GetGdccDifMapping functions.
   void DifMapToGdccMap();
+
+  void StringToUnsigned(void);
   
 public:
   // These are the most important members of the class. Basically this
