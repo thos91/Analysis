@@ -6,6 +6,7 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgTopology.hpp"
 
 // errors
 #define APS_SUCCESS                 0
@@ -22,8 +23,7 @@
 
 using namespace std;
 
-typedef std::map<const unsigned, const string> DirectoryTreeMap;
-DiectoryTreeMap run_directory_tree{ {ONE_PE, "/OnePE/wgAnaHistSummary/Xml"}, {TWO_PE, "/TwoPE/wgAnaHistSummary/Xml"} };
+DirectoryTreeMap run_directory_tree{ {ONE_PE, "/OnePE/wgAnaHistSummary/Xml"}, {TWO_PE, "/TwoPE/wgAnaHistSummary/Xml"} };
 
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus

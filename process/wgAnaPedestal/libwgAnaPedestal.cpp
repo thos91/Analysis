@@ -89,79 +89,8 @@ int wgAnaPedestal(const char * x_input_run_dir,
   // threshold) MUST be the same. I mean same number of DIFs, chips
   // and channels
   
-  unsigned n_difs;
-  vector<unsigned> n_chips;
-  vector<vector<unsigned>> n_chans;
-  
-  array<unsigned, N_PE> n_difs_pe;
-  array<vector<unsigned>, N_PE> n_chips_pe;
-  array<vector<vector<unsigned>>, N_PE> n_chans_pe;
-
-  if ( run_directory_tree.size() != N_PE ) {
-    Log.eWrite("There is something wrong with the number of acquisitions");
-    return ERR_WRONG_PE_VALUE;
-  }
-
-  // Get topology for each acquisition
-  
-  for (auto const & it : run_directory_tree) {
-    unsigned pe = it.first;
-    string pe_directory = it.second;
-    n_difs_pe[pe] = HowManyDirectories(input_run_dir + pe_directory);
-    if ( n_difs_pe[pe] == 0) {
-      Log.eWrite("[wgAnaPedestal] DIF directories not found");
-      return ERR_WRONG_DIF_VALUE;
-    }
-    for (unsigned idif = 0; idif < n_difs_pe[pe]; idif++) {
-      string idif_directory(input_run_dir + pe_directory + "/dif" + to_string(idif + 1));
-      n_chips_pe[pe].push_back(HowManyFilesWithExtension(idif_directory, "xml"));
-      n_chans_pe[pe].push_back( vector<unsigned>() );
-      
-      for (unsigned ichip = 0; ichip < n_chips_pe[pe][idif]; ichip++) {
-        string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip + 1) + ".xml");
-        try { Edit.Open(xmlfile); }
-        catch (const exception& e) {
-          Log.eWrite("[wgAnaPedestal] " + string(e.what()));
-          return ERR_FAILED_OPEN_XML_FILE;
-        }
-        n_chans_pe[pe][idif].push_back(Edit.SUMMARY_GetGlobalConfigValue("n_chans"));
-        Edit.Close();
-
-      }
-    }
-  }
-
-  // Copy the topology for the one p.e. case into the global topology
-
-  n_difs = n_difs_pe[ONE_PE];
-  for (unsigned idif = 0; idif < n_difs_pe[ONE_PE]; idif++) {
-    n_chips.push_back(n_chips_pe[ONE_PE][idif]);
-    n_chans.push_back( vector<unsigned>() );
-    for (unsigned ichip = 0; ichip < n_chips_pe[ONE_PE][idif]; ichip++) {
-      n_chans[idif].push_back( n_chans_pe[ONE_PE][idif][ichip] );
-    }
-  }
-
-  // Check that the topology for each acquisition is the same
-          
-  for (unsigned pe = 0; pe < N_PE; ++pe) {
-    if (n_difs_pe[pe] != n_difs) {
-      Log.eWrite("There is something wrong with the number of DIFs detection");
-      return ERR_WRONG_DIF_VALUE;
-    }
-    for (unsigned idif = 0; idif < n_difs_pe[pe]; idif++) {
-      if ( n_chips_pe[pe][idif] != n_chips[idif] ) {
-        Log.eWrite("There is something wrong with the number of chips detection");
-        return ERR_WRONG_CHIP_VALUE;
-      }
-      for (unsigned ichip = 0; ichip < n_chips_pe[pe][idif]; ichip++) {
-        if ( n_chans_pe[pe][idif][ichip] != n_chans[idif][ichip] ) {
-          Log.eWrite("There is something wrong with the number of channels detection");
-          return ERR_WRONG_CHAN_VALUE;
-        }
-      }
-    }
-  }
+  Topology topol(input_run_dir, run_directory_tree);
+  unsigned n_difs = topol.n_difs;
 
   /********************************************************************************
    *       Reserve memory for charge/simga_nohit and charge/simga_hit             *
@@ -175,20 +104,22 @@ int wgAnaPedestal(const char * x_input_run_dir,
   vector<vector<vector<array<int, MEMDEPTH>>>> sigma_gain      (n_difs);
   
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    charge_nohit[idif].resize(n_chips[idif]);
-    sigma_nohit [idif].resize(n_chips[idif]);
-    charge_hit  [idif].resize(n_chips[idif]);
-    sigma_hit   [idif].resize(n_chips[idif]);
-    gain        [idif].resize(n_chips[idif]);
-    sigma_gain  [idif].resize(n_chips[idif]);
-    for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
-      charge_nohit[idif][ichip].resize(n_chans[idif][ichip]);
-      sigma_nohit [idif][ichip].resize(n_chans[idif][ichip]);
-      charge_hit  [idif][ichip].resize(n_chans[idif][ichip]);
-      sigma_hit   [idif][ichip].resize(n_chans[idif][ichip]);
-      gain        [idif][ichip].resize(n_chans[idif][ichip]);
-      sigma_gain  [idif][ichip].resize(n_chans[idif][ichip]);
-      for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
+    unsigned idif_id = idif + 1;
+    charge_nohit[idif].resize(topol.dif_map[idif_id].size());
+    sigma_nohit [idif].resize(topol.dif_map[idif_id].size());
+    charge_hit  [idif].resize(topol.dif_map[idif_id].size());
+    sigma_hit   [idif].resize(topol.dif_map[idif_id].size());
+    gain        [idif].resize(topol.dif_map[idif_id].size());
+    sigma_gain  [idif].resize(topol.dif_map[idif_id].size());
+    for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
+      unsigned ichip_id = ichip + 1;
+      charge_nohit[idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
+      sigma_nohit [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
+      charge_hit  [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
+      sigma_hit   [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
+      gain        [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
+      sigma_gain  [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
+      for(unsigned ichan = 0; ichan < (unsigned) topol.dif_map[idif_id][ichip_id]; ichan++) {
         charge_nohit[idif][ichip][ichan].resize(MEMDEPTH);
         sigma_nohit [idif][ichip][ichan].resize(MEMDEPTH);
         charge_hit  [idif][ichip][ichan].resize(MEMDEPTH);
@@ -209,7 +140,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
       unsigned idif_id = idif + 1;
       string idif_directory(input_run_dir + pe_directory + "/dif" + to_string(idif_id));
     
-      for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
+      for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
         unsigned ichip_id = ichip + 1;
         
         // ************* Open XML file ************* //
@@ -223,7 +154,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
         // ************* Read XML file ************* //
 	  
-        for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
+        for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
           unsigned ichan_id = ichan + 1;
           
           // ************* Detect the photo electron level ************* //
@@ -285,8 +216,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
   // ************* Fill the Gain and Gain2D histograms ************* //
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
-      for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
+    unsigned idif_id = idif + 1;
+    for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
+      unsigned ichip_id = ichip + 1;
+      for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           // Difference between the 2 p.e. peak and the 1 p.e. peak (i.e. the gain value)
           gain[idif][ichip][ichan][icol] = charge_hit[idif][ichip][ichan][icol][TWO_PE] - charge_hit[idif][ichip][ichan][icol][ONE_PE];
@@ -341,7 +274,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
   /********************** PEDESTAL_CARD.XML ************************/
   
   string xmlfile = output_xml_dir + "/pedestal_card.xml";
-  Edit.Calib_Make(xmlfile, n_difs, n_chips, n_chans);
+  Edit.Calib_Make(xmlfile, topol);
   try { Edit.Open(xmlfile); }
   catch (const exception& e) {
     Log.eWrite("[wgAnaPedestal] " + string(e.what()));
@@ -350,9 +283,9 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
     unsigned idif_id = idif + 1;
-    for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
+    for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
       unsigned ichip_id = ichip + 1;
-      for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
+      for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
         unsigned ichan_id = ichan + 1;
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           unsigned icol_id = icol + 1;
