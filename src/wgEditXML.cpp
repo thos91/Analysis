@@ -427,9 +427,9 @@ void wgEditXML::SUMMARY_Make(const string& filename, const unsigned n_chans) {
     fit[ichan] = xml->NewElement("fit");
     ch[ichan]->InsertEndChild(fit[ichan]);
 
-    noise[ichan] = xml->NewElement("noise");
+    noise[ichan] = xml->NewElement("noise_rate");
     fit[ichan]->InsertEndChild(noise[ichan]);
-    enoise[ichan] = xml->NewElement("sigma_noise");
+    enoise[ichan] = xml->NewElement("sigma_rate");
     fit[ichan]->InsertEndChild(enoise[ichan]);
     pe_level[ichan] = xml->NewElement("pe_level");
     fit[ichan]->InsertEndChild(pe_level[ichan]);

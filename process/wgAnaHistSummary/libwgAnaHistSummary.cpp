@@ -287,7 +287,7 @@ int wgAnaHistSummary(const char * x_inputDir,
         Edit.SUMMARY_SetChConfigValue(string("adjDAC"),   adjDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
         Edit.SUMMARY_SetChFitValue(string("pe_level"),    pe_level[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
         if(flags[SELECT_NOISE]) {
-          Edit.SUMMARY_SetChFitValue(string("noise"),         noise      [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+          Edit.SUMMARY_SetChFitValue(string("noise_rate"),    noise      [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
           Edit.SUMMARY_SetChFitValue(string("sigma_noise"),   noise_error[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
           if(flags[SELECT_PRINT]) h_Noise[ichip]->Fill(ichan, noise[ichip][ichan]);
         }
