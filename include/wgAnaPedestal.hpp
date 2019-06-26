@@ -23,7 +23,7 @@
 
 using namespace std;
 
-DirectoryTreeMap run_directory_tree{ {ONE_PE, "/OnePE/wgAnaHistSummary/Xml"}, {TWO_PE, "/TwoPE/wgAnaHistSummary/Xml"} };
+DirectoryTreeMapPedestal run_directory_tree{ {ONE_PE, "/OnePE/wgAnaHistSummary/Xml"}, {TWO_PE, "/TwoPE/wgAnaHistSummary/Xml"} };
 
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
