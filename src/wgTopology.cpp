@@ -504,7 +504,8 @@ void Topology::GetTopologyFromScurveTree(string input_run_dir, DirectoryTreeMapS
 
   for(unsigned idif = 1; idif < n_difs; idif++) {
     for(unsigned ichip = 1; ichip < n_chips[idif]; ichip++) {
-      this->m_string_dif_map[to_string(idif)][to_string(ichip)] = to_string(n_chans[idif][ichip]);
+      this->dif_map[to_string(idif)][to_string(ichip)] = to_string(n_chans[idif][ichip]);
+      this->m_string_dif_map[idif][ichip] = n_chans[idif][ichip];
     }
   }
 }
