@@ -18,9 +18,14 @@ namespace wagasci_tools {
   string GetNameBeforeLastUnderBar(const string& str);
   vector<string> ListFilesWithExtension(const string& inputDir,
                                         const string& extension = "");
+  vector<string> ListDirectories(const string& inputDir);
   unsigned HowManyFilesWithExtension(const string& inputDir, const string& extension);
   unsigned HowManyDirectories(const string& inputDir);
   void MakeDir(const string& str);
+
+  // extract the first unsigned integer from a string. If not found
+  // returns UINT_MAX
+  unsigned extractIntegerFromString(const string& str);
 
 }
 #endif

@@ -950,7 +950,7 @@ void wgEditXML::Calib_Make(const string& filename, Topology& topol){
     data->InsertEndChild(dif);
     chips = xml->NewElement("n_chips");
 
-    unsigned n_chips = topol.dif_map[to_string(idif)].size();
+    unsigned n_chips = topol.dif_map[idif].size();
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chips);
     chips->SetText(str);
     data->InsertEndChild(chips);
@@ -960,7 +960,7 @@ void wgEditXML::Calib_Make(const string& filename, Topology& topol){
       chip = xml->NewElement(Form("chip_%d", ichip_id));    
       dif->InsertEndChild(chip);
 
-      unsigned n_chans = stoi(topol.dif_map[to_string(idif)][to_string(ichip)]);
+      unsigned n_chans = topol.dif_map[idif][ichip];
       chans = xml->NewElement("n_chans");
       snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chans);
       chans->SetText(str);

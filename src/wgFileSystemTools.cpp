@@ -110,6 +110,23 @@ namespace wagasci_tools {
   }
   
   //******************************************************************
+  vector<string> ListDirectories(const string& inputDir) {
+    vector<string> directory_list;
+
+    if (boost::filesystem::exists(inputDir)) {
+      if (boost::filesystem::is_directory(inputDir)) {
+        for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
+          if (boost::filesystem::is_directory(entry))
+            directory_list.push_back(entry.path().string());
+      }
+      else throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+    }
+    else throw wgInvalidFile(inputDir + " does not exist");
+
+    return directory_list;
+  }
+  
+  //******************************************************************
   unsigned HowManyFilesWithExtension(const string& inputDir, const string& extension) {
     unsigned counter = 0;
 
@@ -144,6 +161,28 @@ namespace wagasci_tools {
         throw wgInvalidFile("Failed to create directory " + str);
       }
     }
+  }
+
+  //**********************************************************************
+  unsigned extractIntegerFromString(const string& str) { 
+    stringstream ss;     
+  
+    /* Storing the whole string into string stream */
+    ss << str; 
+  
+    /* Running loop till the end of the stream */
+    string temp; 
+    int found; 
+    while (!ss.eof()) { 
+  
+      /* extracting word by word from stream */
+      ss >> temp; 
+  
+      /* Checking the given word is integer or not */
+      if (stringstream(temp) >> found) 
+        return found;
+    }
+    return UINT_MAX;
   }
 
 } // namespace wagasci_tools

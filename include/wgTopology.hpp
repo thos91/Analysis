@@ -19,12 +19,12 @@ typedef std::map<unsigned, std::map<unsigned, std::map< unsigned, unsigned>>> To
 typedef std::map<unsigned, std::map< unsigned, unsigned>> TopologyMapDif;
 typedef std::map<std::pair<string, string>, string> GdccToDifMap;
 typedef std::map<string, std::pair< string, string>> DifToGdccMap;
-typedef std::map<const unsigned, const string> DirectoryTreeMapPedestal;
-typedef std::map<const unsigned, std::map<const unsigned,const string>> DirectoryTreeMapScurve;
 
 enum class TopologySourceType {
   xml_file,
-  json_string
+  json_string,
+  scurve_tree,
+  pedestal_tree
 };
 
 //=======================================================================//
@@ -122,7 +122,7 @@ private:
   // associates to each integer starting from zero a path (relative to
   // the input_run_dir) corresponding to the location of the Xml
   // directory for each acquisition.
-  void GetTopologyFromPedestalTree(string input_run_dir, DirectoryTreeMapPedestal run_directory_tree);
+  void GetTopologyFromPedestalTree(string input_run_dir);
 
   // Get the topology from a directory tree and the xml files
   // contained therein. It is useful only when reading the output of
@@ -134,7 +134,7 @@ private:
   // associates to each integer starting from zero a path (relative to
   // the input_run_dir) corresponding to the location of the Xml
   // directory for each acquisition.
-  void GetTopologyFromScurveTree(string input_run_dir, DirectoryTreeMapScurve run_directory_tree);
+  void GetTopologyFromScurveTree(string input_run_dir);
 
   // This function reads the JSON file
   // "/opt/calicoes/config/dif_mapping.txt" containing the mapping of
@@ -181,8 +181,6 @@ public:
 
   Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
-  Topology(string run_input_dir, DirectoryTreeMapPedestal run_directory_tree);
-  Topology(string run_input_dir, DirectoryTreeMapScurve run_directory_tree);
   
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
   string GetAbsDif(const string& gdcc, const string& dif);

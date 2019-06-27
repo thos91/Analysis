@@ -89,7 +89,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
   // threshold) MUST be the same. I mean same number of DIFs, chips
   // and channels
   
-  Topology topol(input_run_dir, run_directory_tree);
+  Topology topol(input_run_dir, TopologySourceType::pedestal_tree );
   unsigned n_difs = topol.n_difs;
 
   /********************************************************************************
@@ -132,14 +132,20 @@ int wgAnaPedestal(const char * x_input_run_dir,
    *                              Read XML files                                  *
    ********************************************************************************/
 
-  for (auto const & it : run_directory_tree) {
-    unsigned ipe = it.first;
-    string pe_directory = it.second;
-
-    for(unsigned idif = 0; idif < n_difs; idif++) {
-      unsigned idif_id = idif + 1;
-      string idif_directory(input_run_dir + pe_directory + "/dif" + to_string(idif_id));
+  for (auto & pe_directory : ListDirectories(input_run_dir)) {
+    unsigned pe_level_from_dir = extractIntegerFromString(GetName(pe_directory));
+    unsigned ipe;
+    if ( pe_level_from_dir == 1 ) ipe = ONE_PE;
+    else if ( pe_level_from_dir == 2 ) ipe = TWO_PE;
+    else throw runtime_error("[wgAnaPedestal] failed to read the p.e. level "
+                             "from the forlder name : " + pe_directory);
     
+    // DIF
+    pe_directory += "wgAnaHistSummary/Xml";
+    for (auto const & idif_directory : ListDirectories(pe_directory)) {
+      unsigned idif_id = extractIntegerFromString(GetName(idif_directory));
+      unsigned idif = idif_id - 1;
+      
       for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
         unsigned ichip_id = ichip + 1;
         
@@ -156,18 +162,15 @@ int wgAnaPedestal(const char * x_input_run_dir,
 	  
         for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
           unsigned ichan_id = ichan + 1;
-          
-          // ************* Detect the photo electron level ************* //
 
-          unsigned pe_level = 1;
-          try { pe_level = Edit.SUMMARY_GetChFitValue(string("pe_level"), ichan_id); }
+#ifdef DEBUG_WGANAPEDESTAL
+          unsigned pe_level_from_xml;
+          try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(string("pe_level"), ichan_id); }
           catch (const exception & e) {
             Log.eWrite("failed to read photo electrons equivalent threshold from XML file\n");
-            return ERR_WRONG_PE_VALUE;
+            return ERR_FAILED_OPEN_XML_FILE;
           }
-          pe_level--;  // "pe_level" starts from 1 while the local variable "pe" starts from 0
-#ifdef DEBUG_WGANAPEDESTAL
-          if ( ipe != pe_level ) {
+          if ( pe_level_from_dir != pe_level_from_xml ) {
             Log.eWrite("Photo electrons equivalent threshold read from XML file and corrected value are different\n");
           }
 #endif // DEBUG_WGANAPEDESTAL
