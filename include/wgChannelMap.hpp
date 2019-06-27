@@ -19,13 +19,13 @@ typedef struct Map
 {
   Map();
   Map(size_t n_difs, size_t n_chips, size_t n_chans);
-  i3vector view; // [NumDif][NumChip][NumChipCh];
-  i3vector pln;  // [NumDif][NumChip][NumChipCh];
-  i3vector ch;   // [NumDif][NumChip][NumChipCh];
-  i3vector grid; // [NumDif][NumChip][NumChipCh];
-  d3vector x;    // [NumDif][NumChip][NumChipCh];
-  d3vector y;    // [NumDif][NumChip][NumChipCh];
-  d3vector z;    // [NumDif][NumChip][NumChipCh];
+  i3vector view; // [NDIFS][NCHIPS][NCHANNELS];
+  i3vector pln;  // [NDIFS][NCHIPS][NCHANNELS];
+  i3vector ch;   // [NDIFS][NCHIPS][NCHANNELS];
+  i3vector grid; // [NDIFS][NCHIPS][NCHANNELS];
+  d3vector x;    // [NDIFS][NCHIPS][NCHANNELS];
+  d3vector y;    // [NDIFS][NCHIPS][NCHANNELS];
+  d3vector z;    // [NDIFS][NCHIPS][NCHANNELS];
 } Map_t;
 
 typedef struct MapInv
@@ -64,9 +64,9 @@ private:
   static const int SPIROC_pln[32][2];
   static const int SPIROC_ch[32][2];
 private:
-  static const int    DifView    [NumDif];
-  static const string MPPCch     [NumChipCh];
-  static const int    ChipAlloc  [NumDif][NumChip][NumView];
+  static const int    DifView    [2];
+  static const string MPPCch     [32];
+  static const int    ChipAlloc  [2][20][2];
  
 public:
   bool ChipchToMPPCch(const int chip_ch, string& mppc_ch);

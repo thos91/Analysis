@@ -19,7 +19,7 @@
 using namespace std;
 
 //******************************************************************************
-Map::Map() : Map(NumDif, NumChip, NumChipCh) {}
+Map::Map() : Map(NDIFS, NCHIPS, NCHANNELS) {}
 Map::Map(size_t n_difs, size_t n_chips, size_t n_chans) {
   view.Initialize(n_difs, n_chips, n_chans);
   pln.Initialize(n_difs, n_chips, n_chans);
@@ -174,7 +174,7 @@ const int wgChannelMap::SPIROC_ch[32][2] ={
 };
 
 //******************************************************************************
-const int wgChannelMap::SPIROC_pln[32][2] ={
+const int wgChannelMap::SPIROC_pln[32][2] = {
   {0,1},{0,1},{1,0},{1,0},
   {0,1},{0,1},{1,0},{1,0},
   {0,1},{0,1},{1,0},{1,0},
@@ -200,7 +200,7 @@ void wgChannelMap::SPIROCtoTOP(int spiroc_ch, int &pln, int &ch){
 const int wgChannelMap::DifView[2] = {TopView,SideView};
 
 //******************************************************************************
-const string wgChannelMap::MPPCch[32] ={
+const string wgChannelMap::MPPCch[32] = {
   "B1","B2","B3","B4",
   "A1","A2","A3","A4",
   "C4","C2","D4","D2",
@@ -466,8 +466,8 @@ Map_t wgChannelMap::load_mapping(){
   //reading mapping
   vector<int> pln, ch, grid;
   vector<double> x, y, z;
-  for(size_t idif = 0; idif < NumDif; idif++) {
-    for(size_t ichip = 0; ichip < NumChip; ichip++) {
+  for(size_t idif = 0; idif < NDIFS; idif++) {
+    for(size_t ichip = 0; ichip < NCHIPS; ichip++) {
       this->GetMap( idif,
                     ichip,
                     map_struct.pln [idif][ichip].size(),
@@ -478,16 +478,16 @@ Map_t wgChannelMap::load_mapping(){
                     map_struct.x   [idif][ichip].data(),
                     map_struct.y   [idif][ichip].data(),
                     map_struct.z   [idif][ichip].data());
-      for(int ich = 1; ich < NumChipCh; ich++) {
+      for(int ich = 1; ich < NCHANNELS; ich++) {
         map_struct.view[idif][ichip][ich] = map_struct.view[idif][ichip][0];
       }
     }
   }
 
 #ifdef DEBUG_CHMAP
-  for(int idif=0;idif<NumDif;idif++){
-    for(int ichip=0;ichip<NumChip;ichip++){
-      for(int ich=0;ich<NumChipCh;ich++){
+  for(int idif=0;idif<NDIFS;idif++){
+    for(int ichip=0;ichip<NCHIPS;ichip++){
+      for(int ich=0;ich<NCHANNELS;ich++){
         cout << "dif=" << idif << ", chip=" << ichip << ", ch=" << ich << ", view=" << map_struct.view[idif][ichip][ich] << ", pln=" << map_struct.pln[idif][ichip][ich] << ", ch=" << map_struct.ch[idif][ichip][ich] << endl;
       }
     }
@@ -502,14 +502,14 @@ MapInv_t wgChannelMap::load_mapping_inv() { return this->load_mapping_inv(32); }
 MapInv_t wgChannelMap::load_mapping_inv(size_t n_chans){
   MapInv_t mapinv_struct;
   //reading mapping
-  for(int idif=0;idif<NumDif;idif++){
-    for(int ichip=0;ichip<NumChip;ichip++){
+  for(int idif=0;idif<NDIFS;idif++){
+    for(int ichip=0;ichip<NCHIPS;ichip++){
       int view;
       vector<int> pln(n_chans), ch(n_chans), grid(n_chans);
       vector<double> x(n_chans), y(n_chans), z(n_chans);
       this->GetMap(idif, ichip, n_chans, view, pln.data(), ch.data(), grid.data(), x.data(), y.data(), z.data());
         
-      for(int ich=0;ich<NumChipCh;ich++){
+      for(int ich=0;ich<NCHANNELS;ich++){
         mapinv_struct.dif[view][pln[ich]][ch[ich]] = idif;
         mapinv_struct.chip[view][pln[ich]][ch[ich]] = ichip;
         mapinv_struct.chipch[view][pln[ich]][ch[ich]] = ich;
