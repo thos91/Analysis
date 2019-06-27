@@ -15,39 +15,31 @@
 // user includes
 #include "wgContiguousVectors.hpp"
 
-#define NumDif        2
-#define NumChip       20
-#define NumChipSMRD   3
-#define NumChipChFull 36
-#define NumChipCh     32
-#define NumSca        16
-#define BCIDwidth     580 //ns
-#define NumReconAxis 2
+using namespace std;
 
-#define MAX_NUM_BCID_CLUSTER 10
-#define MAX_NUM_HIT          1000
-#define MAX_NUM_TRACK        50
-#define MAX_NUM_TRACKHIT     250
+// ================================================================ //
+//                                                                  //
+//            ============ SPIROC2D MACROS ==============           //
+//                                                                  //
+// ================================================================ //
 
-#define MAX_NUMCH_WG  1280 //8 tracking planes
-#define MAX_NUMCH_ING 616 //11 tracking planes, 4 veto planes
-#define MAX_NUMCH_PM  1204 //18 tracking planes, 4 veto planes
-
-#define MAX_NUM_INGHIT   1000 //within a spill
-#define MAX_NUM_INGRECON 100 // within a spill
-#define NUM_CYC          8
+const uint16_t CHIPHEAD   = 4;
+const uint16_t CHIPTRAIL  = 4;
+const uint16_t CHIPENDTAG = 2;
+const uint16_t CHIPIDSIZE = 1;
+const uint16_t NCHANNELS  = 36;
+const uint16_t MEMDEPTH   = 16;
+const uint16_t NCHIPS     = 20;
+const uint16_t NCHIPSSMRD = 3;
+const uint16_t NDIFS      = 8;
 
 #define NON_BEAM_SPILL 0 // non beam spill bit (spill_flag)
 #define BEAM_SPILL     1 // beam spill bit (spill_flag)
 
 #define MAX_EVENT 99999999
 
-// ============ wgEditXML MACROS ============== //
-
-#define NO_CREATE_NEW_MODE false
-#define CREATE_NEW_MODE    true
-
-// ============ SPIROC2D MACROS ============== //
+#define BCIDwidth     580 //ns
+#define NumReconAxis 2
 
 #define HIT_BIT        1    // there was a hit (over threshold)
 #define NO_HIT_BIT     0    // there was no hit (under threshold)
@@ -121,17 +113,17 @@
 #define MAX_BCID_BIN  12288
 #define MAX_12BIT_BIN 4096
 
-using namespace std;
+// ============ wgEditXML MACROS ============== //
 
-//row data fomat
-const uint16_t CHIPHEAD   = 4;
-const uint16_t CHIPENDTAG = 2;
-const uint16_t CHIPIDSIZE = 1;
-const uint16_t NCHANNELS  = NumChipChFull;
-const uint16_t MEMDEPTH   = NumSca;
-const uint16_t NCHIPS     = NumChip;
-const uint16_t NCHIPSSMRD = NumChipSMRD;
-const uint16_t NDIFS      = NumDif;
+#define NO_CREATE_NEW_MODE false
+#define CREATE_NEW_MODE    true
+
+
+// ===================================================================== //
+//                                                                       //
+//                             Raw Data Class                            //
+//                                                                       //
+// ===================================================================== //
 
 //define data fomat
 typedef vector<vector<vector<vector<double>>>> d4vector;
@@ -185,6 +177,25 @@ public:
   ~Raw_t();
   void clear();
 };
+
+// ===================================================================== //
+//                                                                       //
+//                                Hit Class                              //
+//                                                                       //
+// ===================================================================== //
+
+#define MAX_NUM_BCID_CLUSTER 10
+#define MAX_NUM_HIT          1000
+#define MAX_NUM_TRACK        50
+#define MAX_NUM_TRACKHIT     250
+
+#define MAX_NUMCH_WG  1280 //8 tracking planes
+#define MAX_NUMCH_ING 616 //11 tracking planes, 4 veto planes
+#define MAX_NUMCH_PM  1204 //18 tracking planes, 4 veto planes
+
+#define MAX_NUM_INGHIT   1000 //within a spill
+#define MAX_NUM_INGRECON 100 // within a spill
+#define NUM_CYC          8
 
 class Hit_t
 {
