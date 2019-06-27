@@ -1,3 +1,6 @@
+// A
+// A
+// A
 // system includes
 #include <string>
 #include <fstream>
@@ -47,9 +50,7 @@ using namespace wagasci_tools;
 //******************************************************************
 int wgScurve(const char* x_inputDir,
              const char* x_outputXMLDir,
-             const char* x_outputIMGDir,
-             const char* x_topologyString,
-						 DirectoryTreeMap run_directory_tree) {
+             const char* x_outputIMGDir){
 
   // ============================================================= //
   //                                                               //
@@ -60,7 +61,6 @@ int wgScurve(const char* x_inputDir,
   string inputDir    (x_inputDir);
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
-  string topologyString(x_topologyString);
 
   CheckExist check;
   wgConst con;
@@ -107,21 +107,29 @@ int wgScurve(const char* x_inputDir,
 		// get topology from directory tree 
 		// get the number of dif, chip, channel 
   	Topology topol(inputDir, run_directory_tree);
+//		unsigned 									n_inpuDAC = run_directory_tree.size();
+//		unsigned									n_threshold = run_directpry_tree[0].size();
 		unsigned 									n_difs = topol.n_dfis;
 		vector<unsigned> 					n_chips;
 		vector<vector<unsigned>> 	n_chans;
 		for(idif = 0; idif < n_difs; idif++){
 			n_chips[idif] = topol.dif_map[idif].size();
 			for(ichip = 0; ichip < n_chips[idif]; ichip++){
-				n_chans[idif][ichips] = topol.dif_map[idif][ichip].size();
+				n_chans[idif][ichip] = topol.dif_map[idif][ichip].size();
 			}
 		}
+
 
   	// make output xml files under the outputXMLdirectory
   	MakeScurveXML(outputXMLDir,n_difs,n_chips,n_chans);
 		// define variables
-		vector<vector<vector<vector<vector<unsigned>>>>> 	noise;
-		vector<vector<vector<vector<vector<unsigned>>>>> 	noise_sigma;
+		vector<vector<vector<vector<vector<double>>>>> 	noise;
+		vector<vector<vector<vector<vector<double>>>>> 	noise_sigma;
+		vector<vector<unsigned>> 												threshold;
+		vector<unsigned> 																inputDAC;
+		vector<vector<vector<vector<double>>>> 					pe1;
+		vector<vector<vector<vector<double>>>> 					pe2;
+		vector<vector<vector<vector<double>>>> 					pe3;
 
   	/********************************************************************************
   	 *                              Read XML files                                  *
@@ -139,7 +147,7 @@ int wgScurve(const char* x_inputDir,
   	    	unsigned idif_id = idif + 1;
   	    	string idif_directory(input_run_dir + threshold_directory + "/dif" + to_string(idif_id));
   	  
-  	    	for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
+  	    	for(unsigned ichip = 0; ichip < nchips[idif]; ichip++) {
   	    	  unsigned ichip_id = ichip + 1;
   	    	  
   	    	  // ************* Open XML file ************* //
@@ -151,27 +159,99 @@ int wgScurve(const char* x_inputDir,
   	    	  }
 
   	    	  // ************* Read XML file ************* //
-  	    	  for(unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ichan++) {
+  	    	  for(unsigned ichan = 0; ichan < nchans[idif][ichip]; ichan++) {
   	    	    unsigned ichan_id = ichan + 1;
   	    	   	// get noise rate for each channel 
 							noise[i_iDAC][i_threshold][idif][ichip][ichan] = Edit.SUMMARY_GetChFitValue("noise",ichan_id);
 							noise_sigma[i_iDAC][i_threshold][idif][ichip][ichan] = Edit.SUMMARY_GetChFitValue("sigma_noise",ichan_id);
+							threshold[i_iDAC][i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
+							inputDAC[i_iDAC] = Edit.SUMMARY_GetGlobalConfigValue("inputDAC");
   	    	  }
   	    	  Edit.Close();
-  	    	}  	// end loop for chip
-				}  	// end loop for dif
-  	  }  	// end loop for threshold
-  	} 	// end loop for inputDAC
+  	    	}  	// chip
+				}  	// dif
+  	  }  	// threshold
+  	} 	// inputDAC
 		
 
   	/********************************************************************************
-  	 *                              Draw S-curve                                    *
+  	 *                        Draw and fit the S-curve                              *
   	 ********************************************************************************/
+		
+
+		for(unsigned idif = 0; idif < n_difs; idif++){
+  		unsigned idif_id = idif + 1;
+  	
+  		for(unsigned ichip = 0; ichip < nchips[idif]; ichip++) {
+  		  unsigned ichip_id = ichip + 1;
+  		  
+  		  for(unsigned ichan = 0; ichan < nchans[idif][ichip]; ichan++) {
+  		    unsigned ichan_id = ichan + 1;
+							
+					for (auto const & x : run_directory_tree) {
+  					unsigned i_iDAC = x.first;
+						std::map iDAC_map = x.second;
+  					
+						TCanvas *c1 = new TCanvas("c1","c1");
+						c1->SetLogy();
+						
+						// tentative variables for x, y and their errors
+						vector<double> gx,gy,gxe,gye;
+
+						for(auto const & y : iDAC_map) {
+							unsigned i_threshold = y.first;
+
+							gx.push_back(threshold[i_iDAC][i_threshold]);
+							gy.push_back(noise[i_iDAC][i_threshold][idif][ichip][icha]);
+							gxe.push_back(0);
+							gye.push_back(noise_sigma[i_iDAC][i_threshold][idif][ichip][ichan]);
+						}
+						
+						double* gx_pointer=&(gx.at(0));
+						double* gy_pointer=&(gy.at(0));
+						double* gxe_pointer=&(gxe.at(0));
+						double* gye_pointer=&(gye.at(0));
+ 						// ************* Draw S-curve Graph ************* //
+						TGraphErrors* Scurve  = new TGraphErrors(gx.size(),
+																										 gx_pointer,
+																										 gy_pointer,
+																										 gxe_pointer,
+																										 gye_pointer);
+						string title;
+						title = "Dif"+to_string(idif_id)+"_Chip"+to_string(ichip_id)+"_Channel"+to_string(ichan_id)+"_InputDAC"+to_string(inputDAC[i_iDAC])+";Threshold;Noise rate";
+						Scurve->SetTitle(title);
+						Scurve->Draw("ap");
+
+ 						// ************* Fit S-curve ************* //
+						TF1* fit = new TF1("fit","   ",120,170);  ////// <<-- need to decide fitting function
+						fit->SetParameter( , );
+
+						Scurve->Fit("fit","rl");
+						// option "r" is for using the range defined in TF1
+						// option "l" is for using likelihood method
+						fit->Draw("same");
+
+ 						// ************* Save S-curve Graph as png ************* //
+						string image;
+						image = "Dif"+to_string(idif_id)+"_Chip"+to_string(ichip_id)+"_Channel"+to_string(ichan_id)+"_InputDAC"+to_string(inputDAC[i_iDAC])+".png";
+						c1->Print(image);
+						delete fit;
+						delete Scurve;
+						delete c1;
+
+  	    	} 	// inputDAC
+				}  	// channel
+  	  }  	// chip
+  	} 	// dif
 
 
   	/********************************************************************************
-  	 *                              Fit  S-curve                                    *
+  	 *                           threshold_card.xml                                 *
   	 ********************************************************************************/
+
+		string xmlfile = output_xml_dir + "/thrreshold_card.xml";
+
+
 
 
 		cout << "Finish!" << endl;
