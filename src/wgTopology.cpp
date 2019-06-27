@@ -467,20 +467,20 @@ void Topology::GetTopologyFromScurveTree(string input_run_dir) {
   for (auto const& iDAC : n_chans_t) {
     unsigned iiDAC = iDAC.first;
     
-    for (auto const& th : n_chans_t) {
+    for (auto const& th : iDAC.second) {
       unsigned ith = th.first;
       for (auto const& dif : th.second) {
         unsigned idif_id = dif.first;
         if (n_chans_t[iiDAC][ith].size() != this->dif_map.size()) {
-          throw runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + to_string(iiDAC) + "threshold = " + to_string(ith) + ", idif_id = " + idif_id);
+          throw runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + to_string(iiDAC) + ", threshold = " + to_string(ith) + ", idif_id = " + idif_id);
         }
         for (auto const& chip : dif.second) {
           unsigned ichip_id = chip.first;
           if (n_chans_t[iiDAC][ith][idif_id].size() != this->dif_map[idif_id].size() ) {
-            throw runtime_error("There is something wrong with the number of chips detection : iDAC = " + to_string(iiDAC) + "threshold = " + to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+            throw runtime_error("There is something wrong with the number of chips detection : iDAC = " + to_string(iiDAC) + ", threshold = " + to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
           }
           if (n_chans_t[iiDAC][ith][idif_id][ichip_id] != this->dif_map[idif_id][ichip_id]) {
-            throw runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + to_string(iiDAC) + "threshold = " + to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+            throw runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + to_string(iiDAC) + ", threshold = " + to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
           }
         }
       }
