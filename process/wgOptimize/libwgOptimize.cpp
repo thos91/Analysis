@@ -168,13 +168,13 @@ int wgOptimize(const char * x_threshold_card,
   // ================ Edit the SPIROC2D configuration files for every GDCC, DIF, ASU, channel ================= //
 
   try {
-    for(auto const & igdcc : topol->gdcc_map) {
-      for ( auto const & idif : igdcc.second) {
-        unsigned u_idif = topol->GetAbsDif(stoi(igdcc.first), stoi(idif.first)) - 1;
-        for ( auto const & ichip : idif.second) {
-          unsigned u_ichip = stoi(ichip.first) - 1;
-          string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + igdcc.first +
-                            "_dif" + idif.first + "_chip" + ichip.first + ".txt");
+    for(auto const & igdcc_id : topol->gdcc_map) {
+      for ( auto const & idif_id : igdcc_id.second) {
+        unsigned idif = topol->GetAbsDif(igdcc_id.first, idif_id.first) - 1;
+        for ( auto const & ichip_id : idif_id.second) {
+          unsigned ichip = ichip_id.first - 1;
+          string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + igdcc_id.first +
+                            "_dif" + idif_id.first + "_chip" + ichip_id.first + ".txt");
 
           if( !check.TxtFile(configName) ) {
             Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);
@@ -185,7 +185,7 @@ int wgOptimize(const char * x_threshold_card,
           // In mode 0 edit the threshold of each chip to the optimal value taken
           // from threshold_card.xml
           if( mode == OP_THRESHOLD_MODE ) {
-            EditCon.Change_trigth(threshold[u_idif][u_ichip]);
+            EditCon.Change_trigth(threshold[idif][ichip]);
           }
 	  
           // In mode 1 edit the inputDAC of each channel of each chip to the
@@ -193,16 +193,16 @@ int wgOptimize(const char * x_threshold_card,
           else if( mode == OP_INPUTDAC_MODE ) {
             double mean_inputDAC = 0.;
 
-            for(unsigned ichan = 0; ichan < (unsigned) stoi(ichip.second); ichan++) {
+            for(unsigned ichan = 0; ichan < ichip_id.second; ichan++) {
               double inputDAC = 0.;
               try {
-                if(s_Gain[u_idif][u_ichip][ichan] == 0.) {
+                if(s_Gain[idif][ichip][ichan] == 0.) {
                   inputDAC = 121.;
                   mean_inputDAC += inputDAC;
                 }
                 else {
                   // This is the inputDAC value corresponding to a Gain of 40
-                  inputDAC = (40. - i_Gain[u_idif][u_ichip][ichan]) / s_Gain[u_idif][u_ichip][ichan];
+                  inputDAC = (40. - i_Gain[idif][ichip][ichan]) / s_Gain[idif][ichip][ichan];
                   if (inputDAC < 1.)   inputDAC = 1.;
                   if (inputDAC > 250.) inputDAC = 250.;
                   mean_inputDAC += inputDAC;
@@ -212,8 +212,8 @@ int wgOptimize(const char * x_threshold_card,
               }
               catch (const exception& e) {
                 Log.eWrite("[wgOptimize] error setting the optimized inputDAC " + to_string(inputDAC) +
-                           "( igdcc " + igdcc.first + "idif " + idif.first + ", chip " + ichip.first +
-                           ", channel " + to_string(ichan) + ") : " + e.what());
+                           "( igdcc " + to_string(igdcc_id.first) + "idif " + to_string(idif_id.first) +
+                           ", chip " + to_string(ichip_id.first) + ", channel " + to_string(ichan) + ") : " + e.what());
                 return ERR_INPUTDAC_WRITE;
               }
             } // chan loop
@@ -225,12 +225,12 @@ int wgOptimize(const char * x_threshold_card,
             try {
               if ( pe < 3 ) {
                 // Use the slope and intercept of the inputDAC(x) vs threshold(y) graph
-                thresholdDAC = s_th[u_idif][u_ichip] * mean_inputDAC + i_th[u_idif][u_ichip];
+                thresholdDAC = s_th[idif][ichip] * mean_inputDAC + i_th[idif][ichip];
                 thresholdDAC = round(thresholdDAC);
               }
               else if( pe == 3) {
                 // For 2.5. p.e. just read the threshold from the threshold card file
-                thresholdDAC = threshold[u_idif][u_ichip];
+                thresholdDAC = threshold[idif][ichip];
                 thresholdDAC = round(thresholdDAC);
               }
               // Set the global threshold of the chip
@@ -238,7 +238,8 @@ int wgOptimize(const char * x_threshold_card,
             }
             catch (const exception& e) {
               Log.eWrite("[wgOptimize] error setting the optimized threshold " + to_string(thresholdDAC) +
-                         "( igdcc " + igdcc.first + "idif " + idif.first + ", chip " + ichip.first + e.what());
+                         "( igdcc " + to_string(igdcc_id.first) + "idif " + to_string(idif_id.first) +
+                         ", chip " + to_string(ichip_id.first) + e.what());
               return ERR_THRESHOLD_WRITE;
             }
           }

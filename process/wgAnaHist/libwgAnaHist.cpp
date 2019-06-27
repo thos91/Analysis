@@ -90,7 +90,7 @@ int wgAnaHist(const char * x_inputFile,
     Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_TOPOLOGY;
   }
-  unsigned n_chips = topol->dif_map[to_string(idif_id)].size();
+  unsigned n_chips = topol->dif_map[idif_id].size();
 
   if ( n_chips <= 0 || n_chips > NCHIPS ) {
     Log.eWrite("[wgAnaHist] wrong number of chips : " + to_string(n_chips) );
@@ -108,7 +108,7 @@ int wgAnaHist(const char * x_inputFile,
   // ======= Create outputIMGDir ======= //
   if( flags[SELECT_PRINT] ) {
     for ( unsigned ichip = 1; ichip <= n_chips; ichip++ ) {
-      unsigned n_chans = stoi(topol->dif_map[to_string(idif_id)][to_string(ichip)]);
+      unsigned n_chans = topol->dif_map[idif_id][ichip];
       for ( unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++ ) {
         string outputIMGChipChanDir(outputIMGDir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan_id));
         try { MakeDir(outputIMGChipChanDir); }
@@ -138,7 +138,7 @@ int wgAnaHist(const char * x_inputFile,
     ///////////////////////////////////////////////////////////////////////////
 
     for (unsigned ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
-      unsigned n_chans = stoi(topol->dif_map[to_string(idif_id)][to_string(ichip_id)]);
+      unsigned n_chans = topol->dif_map[idif_id][ichip_id];
 
       // ============ Create outputXMLChipDir ============ //
       string outputXMLChipDir(outputXMLDir + "/chip" + to_string(ichip_id));
