@@ -3,7 +3,7 @@
 #include <exception>
 
 // user includes
-#include "ContiguousVectors.h"
+#include "ContiguousVectors.hpp"
 #include "wgConst.hpp"
 
 #define TEST_SIZE1 100
