@@ -1,5 +1,7 @@
 // system C++ includes
 #include <string>
+#include <sstream>
+#include <algorithm>
 
 // system C includes
 #include <dirent.h>
@@ -164,24 +166,14 @@ namespace wagasci_tools {
   }
 
   //**********************************************************************
+
   unsigned extractIntegerFromString(const string& str) { 
-    stringstream ss;     
-  
-    /* Storing the whole string into string stream */
-    ss << str; 
-  
-    /* Running loop till the end of the stream */
-    string temp; 
-    int found; 
-    while (!ss.eof()) { 
-  
-      /* extracting word by word from stream */
-      ss >> temp; 
-  
-      /* Checking the given word is integer or not */
-      if (stringstream(temp) >> found) 
-        return found;
-    }
+    std::size_t const n = str.find_first_of("0123456789");
+    if (n != std::string::npos)
+      {
+        std::size_t const m = str.find_first_not_of("0123456789", n);
+        return stoi(str.substr(n, m != std::string::npos ? m-n : m));
+      }
     return UINT_MAX;
   }
 
