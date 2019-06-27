@@ -8,7 +8,7 @@
 // user includes
 #include "wgConst.hpp"
 
-// #define DEBUG_DECODE
+#define DEBUG_DECODE
 #define DE_SUCCESS                       0
 #define ERR_CANNOT_CREATE_DIRECTORY      1
 #define ERR_CANNOT_OVERWRITE_OUTPUT_FILE 2
@@ -53,39 +53,42 @@ extern "C" {
   // wgDecoder
   // Main decoder function (here is were all the fun happens)
   int wgDecoder(const char * x_inputFileName,
-				const char * x_calibFileName,
-				const char * x_pedFileName,
-				const char * x_tdcFileName,
-				const char * x_outputDir,
-				bool overwrite,
-				unsigned maxEvt,
-				unsigned dif = 0,
-				unsigned n_chips = NCHIPS,
-				unsigned n_channels = NCHANNELS);
-
-  // check_ChipHeader
-  /* Checks if the ChipHeader is well formed. If the number of chip is greater
-	 than "n_chips" or if the size of "head" vector is less than offset + 4, the
-	 0xFFFF value is returned and the "checkid_exist" flag is set to
-	 false. Otherwise, if there are other missing 2Bytes in the header, the
-	 "Missing_Header" counter is increased for any 2Bytes that are missing. */
-  uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offset, bool& checkid_exist, int& Missing_Header);
-
-  // check_ChipID
-  /* Check that the chip id is not less that zero and greater than 40 */ 
-  bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
-
-  // tdc2time
-  /* If the detector is calibrated (if the TDC coefficient file is present) this
-	 function converts the raw TDC into an absolute time in nanoseconds */
-  void tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt);
-
-  // rd_clear
-  // Clear the Raw_t rd arrays
-  void rd_clear(Raw_t &rd);
+                const char * x_calibFileName,
+                const char * x_pedFileName,
+                const char * x_tdcFileName,
+                const char * x_outputDir,
+                bool overwrite,
+                unsigned maxEvt,
+                unsigned dif = 0,
+                unsigned n_chips = NCHIPS,
+                unsigned n_channels = NCHANNELS);
 
 #ifdef __cplusplus
 }
 #endif
+
+#define HOW_MANY_FAILED_TRIES 10
+unsigned setOffset(string & inputFile);
+
+// check_ChipHeader
+/* Checks if the ChipHeader is well formed. If the number of chip is greater
+   than "n_chips" or if the size of "head" vector is less than offset + 4, the
+   0xFFFF value is returned and the "checkid_exist" flag is set to
+   false. Otherwise, if there are other missing 2Bytes in the header, the
+   "Missing_Header" counter is increased for any 2Bytes that are missing. */
+uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offset, bool& checkid_exist, int& Missing_Header);
+
+// check_ChipID
+/* Check that the chip id is not less that zero and greater than 40 */ 
+bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
+
+// tdc2time
+/* If the detector is calibrated (if the TDC coefficient file is present) this
+   function converts the raw TDC into an absolute time in nanoseconds */
+void tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt);
+
+// rd_clear
+// Clear the Raw_t rd arrays
+void rd_clear(Raw_t &rd);
 
 #endif // WG_DECODER_HPP_
