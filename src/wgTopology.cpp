@@ -61,10 +61,10 @@ void FreeTopologyCtypes(char * topology_string) {
 }
 
 Topology::Topology(const char * configxml, TopologySourceType source_type) :
-  Topology(string(configxml), source_type) {}
+    Topology(string(configxml), source_type) {}
 
 Topology::Topology(string source, TopologySourceType source_type) :
-  m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
+    m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
 
   if ( source_type == TopologySourceType::xml_file ) {
     this->GetTopologyFromFile(source);

@@ -66,6 +66,7 @@ extern "C" {
 class Topology {
 
   friend const char * GetTopologyCtypes(const char * configxml);
+  friend const char * FreeTopologyCtypes(const char * configxml);
   
 private:
   // This file contains the GDCC,DIF to DIF mapping. This mapping is needed
@@ -95,8 +96,9 @@ private:
   GdccToDifMap m_gdcc_to_dif_map = {};
   // Map from the absolute DIF number into the GDCC, DIF pair
   DifToGdccMap m_dif_to_gdcc_map = {};
-
+  // String version of the gdcc_map
   StringTopologyMapGdcc m_string_gdcc_map = {};
+  // String version of the dif_map
   StringTopologyMapDif m_string_dif_map = {};
   
   // The input value is the name of the Pyrame configuration file to
@@ -116,7 +118,7 @@ private:
   // contained therein. It is useful only when reading the output of
   // the wgAnaHistSummary program.
   // This works for wgAnaPedestal.
-	//
+  //
   // input_run_dir is the directory where all the files corresponding
   // to a certain run are contained. run_directory_tree is a map that
   // associates to each integer starting from zero a path (relative to
@@ -128,7 +130,7 @@ private:
   // contained therein. It is useful only when reading the output of
   // the wgAnaHistSummary program. 
   // This works for wgScurve.
-	//
+  //
   // input_run_dir is the directory where all the files corresponding
   // to a certain run are contained. run_directory_tree is a map that
   // associates to each integer starting from zero a path (relative to
@@ -147,17 +149,23 @@ private:
   // "dif_map". Must be called after the GetTopology* and
   // GetGdccDifMapping functions.
   void GdccMapToDifMap();
+
   // Transform the TopologyMapDif "dif_map" into the TopologyMapGdcc
   // "gdcc_map". Must be called after the GetTopology* and
   // GetGdccDifMapping functions.
   void DifMapToGdccMap();
 
+  // copy the string version m_string_gdcc_map and m_string_dif_map
+  // into the gdcc_map and dif_map respectively
   void StringToUnsigned(void);
   
 public:
   // These are the most important members of the class. Basically this
   // the only thing that the user must be concerned with.
+  //
+  // dif_map = absolute dif -> chip -> number of channels
   TopologyMapDif dif_map = {};
+  // gdcc_map = gdcc -> dif -> chip -> number of channels
   TopologyMapGdcc gdcc_map = {};
   // Number of DIFs
   unsigned n_difs = 0;
@@ -171,14 +179,26 @@ public:
   //
   //     First GetTopologyFromFile is called. Then GetGdccDifMapping
   //     is called. Then the TopologyMapGdcc is converted to
-  //     TopologyMapDif using the GdccMapToDifMap method
+  //     TopologyMapDif using the GdccMapToDifMap method.
   //
   // - TopologySourceType::json_string
   //
   //     GetTopologyFromString is called. Then GetGdccDifMapping is
   //     called. Then the TopologyMapDif is converted to
-  //     TopologyMapGdcc using the DifMapToGdccMap method
-
+  //     TopologyMapGdcc using the DifMapToGdccMap method.
+  //
+  // - TopologySourceType::pedestal_tree
+  //
+  //     GetTopologyFromPedestalTree is called. Then GetGdccDifMapping is
+  //     called. Then the TopologyMapDif is converted to
+  //     TopologyMapGdcc using the DifMapToGdccMap method.
+  //
+  // - TopologySourceType::scurve_tree
+  //
+  //     GetTopologyFromScurveTree is called. Then GetGdccDifMapping is
+  //     called. Then the TopologyMapDif is converted to
+  //     TopologyMapGdcc using the DifMapToGdccMap method.
+  
   Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   
