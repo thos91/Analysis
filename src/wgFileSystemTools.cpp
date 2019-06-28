@@ -182,9 +182,18 @@ unsigned extractIntegerFromString(const string& str) {
   return UINT_MAX;
 }
 
+//**********************************************************************
+bool findStringIC(const std::string & strHaystack, const std::string & strNeedle)
+{
+  auto it = std::search(
+    strHaystack.begin(), strHaystack.end(),
+    strNeedle.begin(),   strNeedle.end(),
+    [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); }
+  );
+  return (it != strHaystack.end() );
+}
+
 namespace check_exist {
-
-
 
 //**********************************************************************
 bool GenericFile(const string& filename, const string & ext)

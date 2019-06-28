@@ -136,10 +136,9 @@ Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans) {
   y.Initialize(n_chips, n_chans);
   z.Initialize(n_chips, n_chans);
   pedestal.Initialize(n_chips, n_chans, MEMDEPTH);
-  ped_nohit.Initialize(n_chips, n_chans, MEMDEPTH);
   pe.Initialize(n_chips, n_chans, MEMDEPTH);
   time_ns.Initialize(n_chips, n_chans, MEMDEPTH);
-  gain.Initialize(n_chips, n_chans);
+  gain.Initialize(n_chips, n_chans, MEMDEPTH);
   tdc_slope.Initialize(n_chips, n_chans, 2);
   tdc_intcpt.Initialize(n_chips, n_chans, 2);
   this->clear();
@@ -174,7 +173,6 @@ void Raw_t::clear(){
   Raw_t::y.fill                                                  (NAN);
   Raw_t::z.fill                                                  (NAN);
   Raw_t::pedestal.fill                                            (-1);
-  Raw_t::ped_nohit.fill                                           (-1);
   Raw_t::pe.fill                                                  (-1);
   Raw_t::time_ns.fill                                             (-1);
   Raw_t::gain.fill                                                (-1);

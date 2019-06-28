@@ -53,6 +53,9 @@ void MakeDir(const std::string& str);
 // returns UINT_MAX
 unsigned extractIntegerFromString(const std::string& str);
 
+// Try to find in the Haystack the Needle - ignore case
+bool findStringIC(const std::string & strHaystack, const std::string & strNeedle);
+
 namespace check_exist {
 
 // return true if the file exists, otherwise false

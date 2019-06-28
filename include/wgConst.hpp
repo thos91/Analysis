@@ -36,7 +36,7 @@ const uint16_t NDIFS      = 8;
 #define NON_BEAM_SPILL 0 // non beam spill bit (spill_flag)
 #define BEAM_SPILL     1 // beam spill bit (spill_flag)
 
-#define MAX_EVENT 99999999
+#define MAX_EVENT UINT_MAX;
 
 #define BCIDwidth     580 //ns
 #define NumReconAxis 2
@@ -161,10 +161,9 @@ public:
   d2vector y;                // [NumChip][NumChipChFull];
   d2vector z;                // [NumChip][NumChipChFull];
   d3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
-  d3vector ped_nohit;        // [NumChip][NumChipChFull][NumSca];
   d3vector pe;               // [NumChip][NumChipChFull][NumSca];
   d3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
-  d2vector gain;             // [NumChip][NumChipChFull];
+  d3vector gain;             // [NumChip][NumChipChFull][NumSca];
   d3vector tdc_slope;        // [NumChip][NumChipChFull][2];
   d3vector tdc_intcpt;       // [NumChip][NumChipChFull][2];
 

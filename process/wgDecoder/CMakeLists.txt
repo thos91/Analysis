@@ -1,5 +1,7 @@
 set(process wgDecoder)
 
+set(raw_emulator wgRawEmulator)
+
 ################ Compiler flags ################
 
 if(MSVC)
@@ -53,7 +55,7 @@ install(TARGETS lib${process} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../../lib)
 
 #####################################################################
 #                                                                   #
-#                          Executable                               #
+#                          Executables                              #
 #                                                                   #
 #####################################################################
 
@@ -64,3 +66,11 @@ target_link_libraries(${process} lib${process})
 
 # install the executable in the bin folder
 install(TARGETS ${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+
+add_executable(${raw_emulator} ${raw_emulator}.cpp)
+
+# Link with ...
+target_link_libraries(${raw_emulator} lib${process})
+
+# install the executable in the bin folder
+install(TARGETS ${raw_emulator} DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")

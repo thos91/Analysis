@@ -31,6 +31,7 @@
 #define M 16
 #define x00FF bitset<M>(0x00FF)
 #define x0FFF bitset<M>(0x0FFF)
+#define xFF00 bitset<M>(0xFF00)
 #define xF000 bitset<M>(0xF000)
 #define x2020 bitset<M>(0x2020)
 #define x5053 bitset<M>(0x5053)
@@ -45,18 +46,18 @@
 
 using namespace std;
 
+const string PEDESTAL_CARD("/cards/pedestal_card.xml");
+const string ADC_CALIBRATION_CARD("/cards/adc_calibration_card.xml");
+const string TDC_CALIBRATION_CARD("/cards/tdc_calibration_card.xml");
+
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  // wgDecoder
-  // Main decoder function (here is were all the fun happens)
-  int wgDecoder(const char * x_inputFileName,
-                const char * x_calibFileName,
-                const char * x_pedFileName,
-                const char * x_tdcFileName,
-                const char * x_outputDir,
+  int wgDecoder(const char * x_input_file,
+                const char * x_calibration_dir,
+                const char * x_output_dir,
                 bool overwrite,
                 unsigned maxEvt,
                 unsigned dif = 0,

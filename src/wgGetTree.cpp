@@ -146,8 +146,6 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
 	  tree_in->SetBranchAddress("gain",         rdin.gain.data());
 	if (BranchExists("pedestal"))
 	  tree_in->SetBranchAddress("pedestal",     rdin.pedestal.data());
-	if (BranchExists("ped_nohit"))
-	  tree_in->SetBranchAddress("ped_nohit",    rdin.ped_nohit.data());
 	if (BranchExists("tdc_slope"))
 	  tree_in->SetBranchAddress("tdc_slope",    rdin.tdc_slope.data());
 	if (BranchExists("tdc_intcpt"))

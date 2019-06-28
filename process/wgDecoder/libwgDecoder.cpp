@@ -24,7 +24,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgGetCalibData.hpp"
 #include "wgChannelMap.hpp"
@@ -34,217 +34,188 @@
 using namespace std;
 using namespace wagasci_tools;
 
-int wgDecoder(const char * x_inputFile,
-              const char * x_calibFile,
-              const char * x_pedFile,
-              const char * x_tdcFile,
-              const char * x_outputDir,
+int wgDecoder(const char * x_input_raw_file,
+              const char * x_calibration_dir,
+              const char * x_output_dir,
               const bool overwrite,
               unsigned maxEvt,
               unsigned dif,
               unsigned n_chips,
               unsigned n_channels) {
 
-  string inputFile(x_inputFile);
-  string calibFile(x_calibFile);
-  string pedFile(x_pedFile);
-  string tdcFile(x_tdcFile);
-  string outputDir(x_outputDir);
+  string input_raw_file(x_input_raw_file);
+  string calibration_dir(x_calibration_dir);
+  string output_dir(x_output_dir);
+  string output_file_name = GetName(input_raw_file)+"_tree.root";
+  wgConst con;
 
+  // ===================================================================== //
+  //                         Arguments sanity check                        //
+  // ===================================================================== //
+
+  // ======== maxEvt ========= //
+  
   if ( maxEvt == 0 ) {
     maxEvt = MAX_EVENT;
   }
-  
-  CheckExist check;
-  wgConst con;
-  string outputFile = GetName(inputFile)+"_tree.root";
 
-  if( inputFile.empty() || !check.RawFile(inputFile) ) { 
-    Log.eWrite("[wgDecoder] Input file doesn't exist : " + inputFile);
+  // ======== input_raw_file ========= //
+  
+  if (input_raw_file.empty() || !check_exist::RawFile(input_raw_file)) { 
+    Log.eWrite("[wgDecoder] Input file doesn't exist : " + input_raw_file);
     return ERR_INPUT_FILE_NOT_FOUND;
   }
 
-  if(calibFile.empty()) {
-    calibFile = con.CONF_DIRECTORY + "/cards/calibration_card.xml";
-  }
-  if(pedFile.empty()) {
-    pedFile = con.CONF_DIRECTORY + "/cards/pedestal_card.xml";
-  }
-  if(tdcFile.empty()) {
-    tdcFile = con.CONF_DIRECTORY + "/cards/tdc_coefficient_card.xml";
+  // ======== pedestal_card ========= //
+
+  if (calibration_dir.empty()) {
+    calibration_dir = con.CONF_DIRECTORY;
   }
 
-  if( dif > NDIFS ) {
-    Log.eWrite("[wgDecoder] The number of chips per DIF must be {1-" + to_string(NCHIPS) + "}");
+  // ======== dif ========= //
+
+  if (dif > NDIFS) {
+    Log.eWrite("[wgDecoder] The DIF number must be {1-" + to_string(NDIFS) + "}");
     exit(1);
   }
+  
+  // ======== n_chips ========= //
+
+  if( n_chips > NCHIPS ) {
+    Log.eWrite("[wgDecoder] The number of chips per DIF must be {1-"
+               + to_string(NCHIPS) + "}");
+    exit(1);
+  }
+  if ( n_chips == 0 ) n_chips = NCHIPS;
+
+  // ======== n_channels ========= //
+  
   if( n_channels > NCHANNELS ) {
-    Log.eWrite("[wgDecoder] The number of channels per DIF must be {1-" + to_string(NCHANNELS) + "}");
+    Log.eWrite("[wgDecoder] The number of channels per DIF must be {1-"
+               + to_string(NCHANNELS) + "}");
     exit(1);
   }
+  if ( n_channels == 0 ) n_channels = NCHANNELS;
+  
+  // ============ pyrame_log_file ============ //
 
   // This is not the output log file but the log file that should be already
   // present in the input folder and was created together with the .raw file
-  string logfile  = GetName(inputFile);
-  int pos             = logfile.rfind("_ecal_dif_") ;
-  logfile      = GetPath(inputFile) + logfile.substr(0, pos ) + ".log";
+  string pyrame_log_file  = GetName(input_raw_file);
+  size_t pos  = pyrame_log_file.rfind("_ecal_dif_") ;
+  pyrame_log_file = GetPath(input_raw_file) + pyrame_log_file.substr(0, pos) + ".log";
 
-
-  // ============ Create outputDir ============ //
-  try { MakeDir(outputDir); }
+  // ============ Create output_dir ============ //
+  
+  try { MakeDir(output_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[Decoder] " + string(e.what()));
     return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
-  Log.Write("[Decoder] READING FILE     :" + inputFile      );
-  Log.Write("[Decoder] OUTPUT TREE FILE :" + outputFile );
-  Log.Write("[Decoder] OUTPUT DIRECTORY :" + outputDir      );
+  Log.Write("[Decoder] READING FILE     :" + input_raw_file      );
+  Log.Write("[Decoder] OUTPUT TREE FILE :" + output_file_name );
+  Log.Write("[Decoder] OUTPUT DIRECTORY :" + output_dir      );
 
-
-
-
-
-
-
-  unsigned offset = setOffset(inputFile);
-
-
-
-
-
-
-
+  // ===================================================================== //
+  //                  Allocate the raw data Raw_t class                    //
+  // ===================================================================== //
   
-  TFile * outputTFile;
-
-  if (!overwrite){
-    outputTFile = new TFile((outputDir + "/" + outputFile).c_str(), "create");
-    if ( !outputTFile->IsOpen() ) {
-      Log.eWrite("[Decoder] Error:" + outputDir + "/" + outputFile + " already exists!");
-      return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
-    }
-  }
-  else outputTFile = new TFile((outputDir + "/" + outputFile).c_str(), "recreate");
-
-  Log.Write("[Decoder] " + outputDir + "/" + outputFile + " is being created");
-
   Raw_t rd(n_chips, n_channels);
   rd.spill      = -1;
   rd.spill_flag = n_chips;
 
+  // ===================================================================== //
+  //                        DIF number detection                           //
+  // ===================================================================== //
+
   // If the number of DIFs is not provided as an argument, try to infer it from
   // the file name
-  if ( dif == 0 ) {
-    pos = inputFile.find("dif_1_1_") + 8;
-    if(inputFile[pos] == '1') {
-      dif = 1;
-    }
-    else if(inputFile[pos] == '2') {
-      dif = 2;
-    }
-    else {
+  if (dif == 0) {
+    if ((pos = input_raw_file.find("dif_1_1_")) != string::npos)
+      try {
+        dif = stoi(input_raw_file.substr(pos + 8, pos + 9));
+      } catch (const invalid_argument & e) {
+        Log.eWrite("[Decoder] failed to read the DIF number from the file name : " + string(e.what()));
+      } else if ((pos = input_raw_file.find("dif")) != string::npos)
+      try {
+        dif = stoi(input_raw_file.substr(pos + 3, pos + 4));
+      } catch (const invalid_argument & e) {
+        Log.eWrite("[Decoder] failed to read the DIF number from the file name : " + string(e.what()));
+      } else {
       Log.eWrite("[Decoder] Error: DIF ID number not given nor found");
       return ERR_WRONG_DIF_VALUE;
     }
   }
 
-  // If the number of chips is not provided as an argument, use the global macro
-  // defined in the wgConst.hpp header
-  if ( n_chips == 0 ) n_chips = NCHIPS;
-
-  // If the number of channels per chip is not provided as an argument, use the
-  // global macro defined in the wgConst.hpp header
-  if ( n_channels == 0 ) n_channels = NCHANNELS;
-
+  // ===================================================================== //
+  //                             Get mapping                               //
+  // ===================================================================== //
+  
   // Get the geometrical information (position in space) for each channel
-  wgChannelMap *Map = new wgChannelMap();
+  wgChannelMap Map;
   {
     vector<int> pln, ch, grid;
     vector<double> x, y, z;
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-      Map->GetMap( dif - 1,
-                   ichip,
-                   rd.pln [ichip].size(),
-                   rd.view,
-                   rd.pln [ichip].data(),
-                   rd.ch  [ichip].data(),
-                   rd.grid[ichip].data(),
-                   rd.x   [ichip].data(),
-                   rd.y   [ichip].data(),
-                   rd.z   [ichip].data());
+      Map.GetMap( dif,
+                  ichip,
+                  rd.pln [ichip].size(),
+                  rd.view,
+                  rd.pln [ichip].data(),
+                  rd.ch  [ichip].data(),
+                  rd.grid[ichip].data(),
+                  rd.x   [ichip].data(),
+                  rd.y   [ichip].data(),
+                  rd.z   [ichip].data());
     }
   }
-  delete Map;
 
-  // Read the value of pedestal, TDC ramp and gain from the calibration file
-  wgGetCalibData *getcalib = new wgGetCalibData();
-  bool charge_calibration = false, time_calibration = false; 
+  // ===================================================================== //
+  //                        Get calibration data                           //
+  // ===================================================================== //
+  
+  // Read the value of pedestal, TDC ramp and gain from the calibration files
+  bool pedestal_is_calibrated = false;
+  bool adc_is_calibrated = false;
+  bool tdc_is_calibrated = false;
   try {
-    if (pedFile.empty()) throw wgInvalidFile("pedestal card file not given");
-    else getcalib->Get_Pedestal(pedFile, dif, rd.pedestal, rd.ped_nohit);
-    if (calibFile.empty()) throw wgInvalidFile("calibration card file not given");
-    else getcalib->Get_Gain(calibFile, dif, rd.gain);
-    charge_calibration = true;
-  } catch (const exception& e) {
-    Log.eWrite(e.what());
-    charge_calibration = false;
-  } catch (...) {
-    charge_calibration = false;
-  }
-  try {
-    if (tdcFile.empty()) throw wgInvalidFile("TDC coefficient card file not given");
-    else getcalib->Get_TdcCoeff(tdcFile, dif, rd.tdc_slope, rd.tdc_intcpt);
-    time_calibration = true;
-  } catch (const exception& e) {
-    Log.eWrite(e.what());
-    time_calibration = false;
-  } catch (...) {
-    time_calibration = false;
-  }
-  delete getcalib;
-
-  unsigned int iEvt = 0;
-  unsigned int ineff_data = 0;
-
-  //int acqNumber = 0;
-  int nChips    = 0;
-  int nChipData = 0;
-
-  // 2 bytes (16 bits) are the smallest data unit in all the headers and trailers
-  bitset<M> rawData;
-  // The last four rawData values are kept in the lastFour array
-  bitset<M> lastFourLines[4];
-
-  uint16_t SPILL_NUMBER      = 0;
-  uint16_t SPILL_MODE        = 0;
-  uint32_t SPILL_COUNT       = 0;
-  uint32_t LAST_SPILL_COUNT  = 0;
-  uint16_t LAST_SPILL_NUMBER = 0;
-  bool FILL_FLAG        = false;
-
-  bool spillInsertTag   = false;
-  bool endOfChipTag     = false;
-  bool endOfSpillTag    = false;
-  bool First_Event      = false;
-
-  vector<bitset<M>> rawDataStack;
-
-  ifstream ifs;
-  ifs.open(inputFile.c_str(), ios_base::in | ios_base::binary);
-  if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
-    return ERR_FAILED_OPEN_RAW_FILE;
+    wgGetCalibData calib(calibration_dir, dif);
+    try {
+      if ((pedestal_is_calibrated = calib.isPedestalCalibrated()))
+        calib.GetPedestal(dif, rd.pedestal);
+    } catch (const exception & e ) {
+      pedestal_is_calibrated = false;
+      Log.Write("[wgDecoder] pedestal is not calibrated yet : " + string(e.what()));
+    }
+    try {
+      if ((adc_is_calibrated = calib.isADCCalibrated()))
+        calib.GetADC(dif, rd.gain);
+    } catch (const exception & e ) {
+      adc_is_calibrated = false;
+      Log.Write("[wgDecoder] ADC is not calibrated yet : " + string(e.what()));
+    }
+    try {
+      if ((tdc_is_calibrated = calib.isTDCCalibrated()))
+        calib.GetTDC(dif, rd.tdc_slope, rd.tdc_intcpt);
+    } catch (const exception & e ) {
+      tdc_is_calibrated = false;
+      Log.Write("[wgDecoder] TDC is not calibrated yet : " + string(e.what()));
+    }  
+  } catch (const exception & e ) {
+    Log.Write("[wgDecoder] detector is not calibrated yet : " + string(e.what())); 
   }
 
-  // Move to ROOT tree
-  outputTFile->cd();
+  // ===================================================================== //
+  //                        Read Pyrame log file                           //
+  // ===================================================================== //
 
-  if( check.LogFile(logfile) ) {
+  if( check_exist::LogFile(pyrame_log_file) ) {
+    
     // Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
     vector<int> v_log(4,0);
     wgEditXML *Edit = new wgEditXML();
-    Edit->GetLog(logfile, v_log);
+    Edit->GetLog(pyrame_log_file, v_log);
     delete Edit;
 
     time_t current_time = time(0);
@@ -273,15 +244,16 @@ int wgDecoder(const char * x_inputFile,
     TH1D * h_nb_lost_pkts = new TH1D("nb_lost_pkts","Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
     h_nb_lost_pkts -> Fill(v_log[3]);
 
-    h_start_time   -> Write();
-    h_stop_time    -> Write();
-    h_nb_data_pkts -> Write();
-    h_nb_lost_pkts -> Write();
+    h_start_time  ->Write();
+    h_stop_time   ->Write();
+    h_nb_data_pkts->Write();
+    h_nb_lost_pkts->Write();
   }
-  else Log.eWrite("LOGFILE:" + logfile + " doesn't exist!");
+  else Log.eWrite("PYRAME_LOG_FILE:" + pyrame_log_file + " doesn't exist!");
 
-  // gInterpreter->GenerateDictionary("vector<double>", "vector");
-  // gInterpreter->GenerateDictionary("vector<int>", "vector");
+  // ===================================================================== //
+  //                      Create TTree branches                            //
+  // ===================================================================== //
 
   TTree * tree = new TTree("tree", "ROOT tree containing decoded data");
   tree->Branch("spill"       ,&rd.spill            ,Form("spill/I"                                                 ));
@@ -306,33 +278,82 @@ int wgDecoder(const char * x_inputFile,
   tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, n_channels           ));
   tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, n_channels           ));
   tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, n_channels           ));
-  if (charge_calibration) {
-    tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, n_channels, MEMDEPTH ));
-    tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d]/D"           ,n_chips, n_channels           ));
+  if (pedestal_is_calibrated) {
     tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
-    tree->Branch("ped_nohit" ,rd.ped_nohit.data()  ,Form("ped_nohit[%d][%d][%d]/D"  ,n_chips, n_channels, MEMDEPTH ));
   }
-  if (time_calibration) {
+  if (adc_is_calibrated) {
+    tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, n_channels, MEMDEPTH ));
+    tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d][%d]/D"       ,n_chips, n_channels, MEMDEPTH ));
+  }
+  if (tdc_is_calibrated) {
     tree->Branch("time_ns"   ,rd.time_ns.data()    ,Form("time_ns[%d][%d][%d]/D"    ,n_chips, n_channels, MEMDEPTH ));
     tree->Branch("tdc_slope" ,rd.tdc_slope.data()  ,Form("tdc_slope[%d][%d][%d]/D"  ,n_chips, n_channels, 2        ));
     tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/D" ,n_chips, n_channels, 2        ));
   }
-  // =====================================================
-  //     ============================================
-  //              Start reading binary file
-  //     ============================================
-  // =====================================================
 
-  Log.Write("[Decoder] *****  Start reading file  *****");
+  // ===================================================================== //
+  //                         Create the output file                        //
+  // ===================================================================== //
 
+  TFile * outputTFile;
+  TString output_file_path(output_dir + "/" + output_file_name);
+  if (!overwrite) {
+    if (check_exist::RootFile(output_file_path)) {
+      Log.eWrite("[Decoder] Error:" + string(output_file_path.Data()) +
+                 " already exists!");
+      return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
+    }
+    outputTFile = new TFile(output_file_path, "create");
+  } else {
+    outputTFile = new TFile(output_file_path, "recreate");
+  }
+  
+  // ===================================================================== //
+  //     ============================================================      //
+  //                          READ THE RAW FILE                            //
+  //     ============================================================      //
+  // ===================================================================== //
+
+  unsigned ievent = 0;
+  unsigned bad_data = 0;
+
+  int n_found_chips = 0;
+  int chip_raw_data_line_count = 0;
+
+  // 2 bytes (16 bits) are the smallest data unit
+  bitset<M> rawData;
+  vector<bitset<M>> rawDataStack;
+  // The last four rawData values are kept in the lastFourLines array
+  bitset<M> lastFourLines[4];
+
+  uint16_t SPILL_NUMBER      = 0;
+  uint16_t SPILL_MODE        = 0;
+  uint32_t SPILL_COUNT       = 0;
+  uint32_t LAST_SPILL_COUNT  = 0;
+  uint16_t LAST_SPILL_NUMBER = 0;
+  bool FILL_FLAG        = false;
+
+  bool spillInsertTag   = false;
+  bool endOfChipTag     = false;
+  bool endOfSpillTag    = false;
+  bool First_Event      = false;
+
+  unsigned offset = setOffset(input_raw_file);
+  
   // Pretend that we just reached the end of a previous spill so that the
   // first spill header is correctly recognized
   endOfSpillTag = true;
   lastFourLines[0] = x2020;
-	
-  while (ifs.read((char*) &rawData, M / 8) && iEvt < maxEvt) {
+
+  ifstream ifs(input_raw_file, ios_base::in | ios_base::binary);
+  if (!ifs.is_open()) {
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    return ERR_FAILED_OPEN_RAW_FILE;
+  }
+  
+  while (ifs.read((char*) &rawData, M / 8) && ievent < maxEvt) {
     rawDataStack.push_back(rawData);
-    nChipData++;
+    chip_raw_data_line_count++;
 
     // IMPORTANT :
     // SPILL insert  --> start with 0xFFFB
@@ -412,7 +433,7 @@ int wgDecoder(const char * x_inputFile,
       if( !First_Event ) First_Event = true;
       if( endOfSpillTag ) {
         //Read SPILL information
-        nChips            = 0;
+        n_found_chips            = 0;
         LAST_SPILL_COUNT  = SPILL_COUNT;
         // Spill count most significant byte
         bitset<2*M> spill_count_msb = lastFourLines[0].to_ulong();
@@ -452,7 +473,7 @@ int wgDecoder(const char * x_inputFile,
     // **************************************************************//
 	  
     if (lastFourLines[2] == x2020 && lastFourLines[1] == xFFFD){
-      nChipData = 0;
+      chip_raw_data_line_count = 0;
     }
 
     // **************************************************************//
@@ -460,16 +481,16 @@ int wgDecoder(const char * x_inputFile,
     // **************************************************************//
 
     if (lastFourLines[1] == xFFFE && rawData == x2020){
-      nChips++;
-      if (nChipData >= 74) {
+      n_found_chips++;
+      if (chip_raw_data_line_count >= 74) {
         // when 1 column or more is filled
         // if only 1 column 
         // => 36 charges + 36 time + 1 BCID + 1 chipID = 74
         // +2 +3 (header/trailer) = 79
         // let's replace this magic number 
       }else{          
-        Log.eWrite("[Decoder] Warning : nChipData is too small (nChipData is " + to_string(nChipData) + " words), acq id = " +
-                   to_string(SPILL_COUNT) + ", chip number = " + to_string(nChips + 1));
+        Log.eWrite("[Decoder] Warning : chip_raw_data_line_count is too small (chip_raw_data_line_count is " + to_string(chip_raw_data_line_count) + " words), acq id = " +
+                   to_string(SPILL_COUNT) + ", chip number = " + to_string(n_found_chips + 1));
         rd.spill_flag--;
       }
     }
@@ -482,15 +503,15 @@ int wgDecoder(const char * x_inputFile,
 
       // Read the number of chips from the spill trailer
       uint16_t nbchip = ( rawData & x00FF ).to_ulong();
-      if( nChips != nbchip ) {
+      if( n_found_chips != nbchip ) {
         // maybe one word was skipped
         nbchip = ( lastFourLines[0] & x00FF ).to_ulong();
-        if( nChips != nbchip ){
-          Log.eWrite("[Decoder] Warning : number of chips mismatch : (chips found) nChips = " + to_string(nChips) +
+        if( n_found_chips != nbchip ){
+          Log.eWrite("[Decoder] Warning : number of chips mismatch : (chips found) n_found_chips = " + to_string(n_found_chips) +
                      ", (spill trailer) nbchip = " + to_string(nbchip) + ", acq id = " + to_string(SPILL_COUNT));
         }
       }
-      if (nChips > 0) {
+      if (n_found_chips > 0) {
         //=================  read Event ====================  //
 
         vector<bitset<M>>& eventData  = rawDataStack;
@@ -553,7 +574,7 @@ int wgDecoder(const char * x_inputFile,
               Log.eWrite("[Decoder] Warning : chip ID not found or invalid : current ChipID = " + to_string(currentChipID) +
                          ", read ChipID = " + to_string((eventData[i] & x00FF).to_ulong()) + ", acq id = " + to_string(SPILL_COUNT)); 
               bool matchChipID = false;
-              if( lastChipID[0] + 1 < nChips && lastChipID[0] > 0 ) {
+              if( lastChipID[0] + 1 < n_found_chips && lastChipID[0] > 0 ) {
                 if( currentChipID == lastChipID[1] + 1) {
                   for(unsigned int i_int = i; i_int < i + CHIPHEAD; i_int++) {
                     if(eventData[i_int] == xFFFD) {
@@ -567,7 +588,7 @@ int wgDecoder(const char * x_inputFile,
                 }
               }
               else if( lastChipID[0] == 0 ) {
-                if(nChips==1) {
+                if(n_found_chips==1) {
                   rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP;
                 }
                 else {
@@ -582,7 +603,7 @@ int wgDecoder(const char * x_inputFile,
                   }
                 }
               }
-              else if( lastChipID[0] == nChips - 1 ) {
+              else if( lastChipID[0] == n_found_chips - 1 ) {
                 if(currentChipID == lastChipID[1] + 1) {
                   rd.debug[currentChipID] += DEBUG_MISSING_CHIP_TRAILER;
                   matchChipID = true;
@@ -619,7 +640,7 @@ int wgDecoder(const char * x_inputFile,
                 rd.debug[currentChipID] += DEBUG_BAD_CHIPDATA_SIZE;
                 last = eventData[i].to_ulong();
                 isValidChip = false;
-                ineff_data++;
+                bad_data++;
                 continue;
               }
               else if(nColumns > MEMDEPTH) {
@@ -667,21 +688,21 @@ int wgDecoder(const char * x_inputFile,
                     //extract gain (0: low gain, 1: high gain)
                     rd.gs    [currentChipID][ichan][ibc] = eventData[j][13];
                     // Only if the detector is already calibrated fill the histograms
-                    if (charge_calibration) {
+                    if (pedestal_is_calibrated && adc_is_calibrated) {
                       //extract pe
                       if( rd.chipid[currentChipID] >= 0 && rd.chipid[currentChipID] < (int) n_chips ) {
                         if( rd.gs[currentChipID][ichan][ibc] == HIGH_GAIN_BIT ) { // High Gain
                           rd.pe[currentChipID][ichan][ibc] = HIGH_GAIN_NORM * ( rd.charge[currentChipID][ichan][ibc] - rd.pedestal[rd.chipid[currentChipID]][ichan][ibc] ) /
-                            rd.gain[rd.chipid[currentChipID]][ichan];
+                                                             rd.gain[rd.chipid[currentChipID]][ichan][ibc];
                         }
                         else if( rd.gs[currentChipID][ichan][ibc] == LOW_GAIN_BIT ) { // Low Gain
                           rd.pe[currentChipID][ichan][ibc] = LOW_GAIN_NORM * ( rd.charge[currentChipID][ichan][ibc] - rd.pedestal[rd.chipid[currentChipID]][ichan][ibc] ) /
-                            rd.gain[rd.chipid[currentChipID]][ichan];
+                                                             rd.gain[rd.chipid[currentChipID]][ichan][ibc];
                         }
                         else {
                           stringstream ss;
                           ss << "[Decoder] Warning : BAD GAIN BIT! " <<
-                            "gs[" << currentChipID << "][" << ichan << "][" << ibc << "] = " << rd.gs[currentChipID][ichan][ibc];
+                              "gs[" << currentChipID << "][" << ichan << "][" << ibc << "] = " << rd.gs[currentChipID][ichan][ibc];
                           Log.eWrite(ss.str());
                           rd.pe[currentChipID][ichan][ibc] = -100.;
                         }
@@ -691,7 +712,7 @@ int wgDecoder(const char * x_inputFile,
                   else if (ibc >= MEMDEPTH || ichan >= NCHANNELS) {
                     stringstream ss;
                     ss << "[Decoder] Warning : BAD CHANNEL OR COLUMN NUMBER! " <<
-                      "chip = " << currentChipID << ", channel = " << ichan << ", column = " << ibc;
+                        "chip = " << currentChipID << ", channel = " << ichan << ", column = " << ibc;
                     Log.eWrite(ss.str());
                   }
                   ichan++;  
@@ -715,11 +736,11 @@ int wgDecoder(const char * x_inputFile,
           last = eventData[i].to_ulong();;
         } // loop on all the elements of eventData
 
-          // ============================================
-          //           Finished reading event
-          // ============================================
+        // ============================================
+        //           Finished reading event
+        // ============================================
 
-        if (time_calibration) {
+        if (tdc_is_calibrated) {
           tdc2time(rd.time_ns, rd.time, rd.bcid, rd.tdc_slope, rd.tdc_intcpt);
         }
         
@@ -730,8 +751,8 @@ int wgDecoder(const char * x_inputFile,
         for(unsigned ichip = 0; ichip < n_chips; ichip++) v_chipid[ichip] = -1;
         rd_clear(rd);
 
-        if( iEvt % 1000 == 0 ) Log.Write("Entry number ... " + to_string(iEvt));
-        iEvt++;
+        if( ievent % 1000 == 0 ) Log.Write("Entry number ... " + to_string(ievent));
+        ievent++;
       }
       else {
         Log.eWrite("[Decoder] Warning : number of chips less than zero : spill count = " + to_string(rd.spill_count));
@@ -777,8 +798,8 @@ int wgDecoder(const char * x_inputFile,
   } // while (ifs.read(...
 
   Log.Write("[Decoder] *****  Finished reading file  *****");
-  Log.Write("[Decoder] *****  with " + to_string(iEvt) + " entries  *****");
-  Log.Write("[Decoder] *****  BAD data : " + to_string(ineff_data) + " *****");
+  Log.Write("[Decoder] *****  with " + to_string(ievent) + " entries  *****");
+  Log.Write("[Decoder] *****  BAD data : " + to_string(bad_data) + " *****");
 
   outputTFile->cd();
   tree->Write();
@@ -876,16 +897,15 @@ void rd_clear(Raw_t &rd) {
   rd.gs.fill(-1);
   rd.hit.fill(-1);
   rd.pedestal.fill(-100);
-  rd.ped_nohit.fill(-100);
   rd.pe.fill(-100);
   rd.time_ns.fill(-100);
   rd.tdc_slope.fill(0);
   rd.tdc_intcpt.fill(-100);
 }
 
-unsigned setOffset(string & inputFile) {
+unsigned setOffset(string & input_raw_file) {
   ifstream ifs;
-  ifs.open(inputFile.c_str(), ios_base::in | ios_base::binary);
+  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
   if (!ifs.is_open()) {
     Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
     return ERR_FAILED_OPEN_RAW_FILE;

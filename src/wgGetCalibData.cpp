@@ -3,150 +3,134 @@
 
 // user includes
 #include "wgGetCalibData.hpp"
+#include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgEditXML.hpp"
 #include "wgExceptions.hpp"
 
+using namespace wagasci_tools;
+
+
 //******************************************************************************
-int wgGetCalibData::Get_Pedestal(const string& pedFileName, unsigned dif, d3vector& pedestal, d3vector& ped_nohit) {
-
-  if( pedFileName == "" || !check_exist::XmlFile(pedFileName)){
-	throw wgInvalidFile(Form("Pedestal file not found or invalid (%s)", pedFileName.c_str()));
-  }
-  delete check;
-
-  // Number of channels where the pedestal or ped_nohit could not be found
-  int n_not_found = 0;
-
-  // Pedestal when there is no hit
-  wgEditXML *Edit = new wgEditXML();
-  Edit->Open(pedFileName);
-  for(unsigned int ichip = 0; ichip < ped_nohit.size(); ichip++) {
-    for(unsigned int ich = 0; ich < ped_nohit[ichip].size(); ich++) {
-      for(unsigned int icol = 0; icol < ped_nohit[ich].size(); icol++) {
-		string name;
-		try {
-		  name=Form("ped_nohit_%d", icol);
-		  ped_nohit[ichip][ich][icol] = Edit->Calib_GetValue(name, dif, ichip, ich);
-		}
-		catch (const wgElementNotFound& e) {
-		  ped_nohit[ichip][ich][icol] = 1.;
-		  n_not_found++;
-		}
-	  }
-	}
-  }
-
-  // Pedestal when there is a hit
-  for(unsigned int ichip = 0; ichip < pedestal.size(); ichip++) {
-    for(unsigned int ich = 0; ich < pedestal[ichip].size(); ich++) {
-      for(unsigned int icol = 0; icol < pedestal[ich].size(); icol++) {
-		string name;
-		try {
-		  name=Form("ped_%d",icol);
-		  pedestal[ichip][ich][icol]=Edit->Calib_GetValue(name, dif, ichip, ich);
-		}
-		catch (const wgElementNotFound& e) {
-		  ped_nohit[ichip][ich][icol] = 1.;
-		  n_not_found++;
-		}
-	  }
-	}
-  }
-  Edit->Close();
-  delete Edit;
-  return n_not_found;
+wgGetCalibData::wgGetCalibData(unsigned dif) : m_dif(dif) {
+  wgConst con;
+  wgGetCalibData(con.CONF_DIRECTORY, m_dif);
 }
 
 //******************************************************************************
-int wgGetCalibData::Get_TdcCoeff(const string& tdcFileName, unsigned dif, d3vector& slope, d3vector& intcpt) {
-  CheckExist *check  =  new CheckExist;
-  if(tdcFileName=="" || !check->XmlFile(tdcFileName)){
-	throw wgInvalidFile (Form("TDC calibration card file not found or invalid (%s)", tdcFileName.c_str()));
-  }
-  delete check;
-
-  int n_not_found = 0;
-  
-  wgEditXML *Edit = new wgEditXML();
-  Edit->Open(tdcFileName);
-  for(unsigned int ichip = 0; ichip < slope.size(); ichip++){
-    for(unsigned int ich = 0; ich < slope[ichip].size(); ich++){
-	  string name;
-	  try {		
-		name="slope_even";
-		slope[ichip][ich][TDC_RAMP_EVEN] = Edit->Calib_GetValue(name, dif, ichip, ich);
-	  }
-	  catch (const wgElementNotFound& e) {
-		slope[ichip][ich][TDC_RAMP_EVEN] = 1.;
-		n_not_found++;
-	  }
-	  try {
-        name="slope_odd";
-        slope[ichip][ich][TDC_RAMP_ODD] = Edit->Calib_GetValue(name, dif, ichip, ich);
-	  }
-	  catch (const wgElementNotFound& e) {
-		slope[ichip][ich][TDC_RAMP_ODD] = 1.;
-		n_not_found++;
-	  }
-	}
-  }
-  for(unsigned int ichip = 0; ichip < intcpt.size(); ichip++){
-    for(unsigned int ich = 0; ich < intcpt[ichip].size(); ich++){
-	  string name;
-	  try {
-        name="intcpt_even";
-        intcpt[ichip][ich][TDC_RAMP_EVEN] = Edit->Calib_GetValue(name, dif, ichip, ich);
-	  }
-	  catch (const wgElementNotFound& e) {
-		intcpt[ichip][ich][TDC_RAMP_EVEN] = 1.;
-		n_not_found++;
-	  }
-	  try {
-        name="intcpt_odd";
-        intcpt[ichip][ich][TDC_RAMP_ODD] = Edit->Calib_GetValue(name, dif, ichip, ich);
-	  }
-	  catch (const wgElementNotFound& e) {
-		intcpt[ichip][ich][TDC_RAMP_ODD] = 1.;
-		n_not_found++;
-	  }
-	}
-  }
-  Edit->Close();
-  delete Edit;
-  return n_not_found;
+wgGetCalibData::wgGetCalibData(const string& calibration_dir, unsigned dif) :
+    m_dif(dif), m_calibration_dir(calibration_dir) {
+  if (!check_exist::Dir(m_calibration_dir))
+    throw wgInvalidFile("[wgGetCaibData] calibration directory not found : " + m_calibration_dir);
+  m_have_pedestal_calibration = FindPedestalCard();
+  m_have_adc_calibration      = FindADCCalibrationCard();
+  m_have_tdc_calibration      = FindTDCCalibrationCard();
 }
 
 //******************************************************************************
-int wgGetCalibData::Get_Gain(const string& calibFileName, const unsigned dif, d2vector& gain) {
-  CheckExist *check  =  new CheckExist;
-  if(calibFileName == "" || !check->XmlFile(calibFileName)){
-	throw wgInvalidFile (Form("Calibration card file not found or invalid (%s)", calibFileName.c_str()));
-  }
-  delete check;
-
-  // Number of channels where the gain info could not be found
-  int n_not_found = 0;
-  
-  wgEditXML *Edit = new wgEditXML();
-  Edit->Open(calibFileName);
-  for(unsigned int ichip = 0; ichip < gain.size(); ichip++){
-    for(unsigned int ich = 0; ich < gain[ichip].size(); ich++){
-	  string name("");
-	  try {
-		name=Form("Gain");
-		gain[ichip][ich]=Edit->Calib_GetValue(name, dif, ichip, ich);
-	  }
-	  catch (const wgElementNotFound& e) {
-		gain[ichip][ich] = 1.;
-		n_not_found++;
-	  }
+bool wgGetCalibData::FindPedestalCard() {
+  for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
+    if (findStringIC(xmlfile, "ped")) {
+      m_pedestal_card = xmlfile;
+      return true;
     }
   }
-  Edit->Close();
-  delete Edit;
-  return n_not_found;
+  return false;
 }
 
+//******************************************************************************
+bool wgGetCalibData::FindADCCalibrationCard() {
+  for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
+    if (findStringIC(xmlfile, "adc") || findStringIC(xmlfile, "gain")) {
+      m_adc_calibration_card = xmlfile;
+      return true;
+    }
+  }
+  return false;
+}
+
+//******************************************************************************
+bool wgGetCalibData::FindTDCCalibrationCard() {
+  for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
+    if (findStringIC(xmlfile, "tdc") || findStringIC(xmlfile, "time")) {
+      m_tdc_calibration_card = xmlfile;
+      return true;
+    }
+  }
+  return false;
+}
+
+//******************************************************************************
+int wgGetCalibData::GetPedestal(unsigned dif_id, d3vector& pedestal) {
+
+  int count = 0;
+  // Pedestal when there is no hit
+  wgEditXML Edit;
+  Edit.Open(m_pedestal_card);
+  unsigned n_chips = Edit.Pedestal_GetDifConfigValue("n_chips", dif_id);
+  if (n_chips != pedestal.size())
+    throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
+                                + to_string(pedestal.size())
+                                + ") and number of chips in pedestal card ("
+                                + to_string(n_chips) + ") mismatch for DIF "
+                                + to_string(dif_id));
+  
+  for(unsigned int ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
+    unsigned n_chans = Edit.Pedestal_GetChipConfigValue("n_chans", dif_id, ichip_id);
+    if (n_chans != pedestal[ichip_id].size())
+      throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
+                                  + to_string(pedestal[ichip_id].size())
+                                  + ") and number of channels in pedestal card ("
+                                  + to_string(n_chans) + ") mismatch for DIF "
+                                  + to_string(dif_id) + " and chip " + to_string(ichip_id));
+
+    for(unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++) {
+      if (pedestal[ichip_id][ichan_id].size() != MEMDEPTH)
+        throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
+                                    + to_string(pedestal.size())
+                                    + ") and number of columns ("
+                                    + to_string(MEMDEPTH) + ") mismatch for DIF "
+                                    + to_string(dif_id) + ", chip " + to_string(ichip_id)
+                                    + " and channel"  + to_string(ichan_id));
+      
+      for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+        try {
+          pedestal[ichip_id][ichip_id][icol_id] = Edit.Pedestal_GetChanValue(
+              "pedestal_%d" + to_string(icol_id), dif_id, ichip_id, ichan_id);
+          count++;
+        } catch (const wgElementNotFound& e) {
+          pedestal[ichip_id][ichan_id][icol_id] = -1;
+        }
+      }
+    }
+  }
+  Edit.Close();
+  return count;
+}
+
+//******************************************************************************
+int wgGetCalibData::GetTDC(const unsigned dif, d3vector& slope, d3vector& intcpt) {
+  return 0;
+}
+
+//******************************************************************************
+int wgGetCalibData::GetADC(const unsigned dif, d3vector& gain) {
+  return 0;
+}
+
+//******************************************************************************
+bool wgGetCalibData::isPedestalCalibrated() {
+  return m_have_pedestal_calibration;
+}
+
+//******************************************************************************
+bool wgGetCalibData::isADCCalibrated() {
+  return m_have_adc_calibration;
+}
+
+//******************************************************************************
+bool wgGetCalibData::isTDCCalibrated() {
+  return m_have_tdc_calibration;
+}
