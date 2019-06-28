@@ -5,7 +5,7 @@
 #include <getopt.h>
 // user includes
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
 #include "wgAnaPedestal.hpp"

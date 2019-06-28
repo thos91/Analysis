@@ -23,7 +23,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
 #include "wgFitConst.hpp"
@@ -45,10 +45,10 @@ void ModeSelect(int mode, bitset<M>& flags) {
 //******************************************************************
 void MakeSummaryXmlFile(const string& dir, const bool overwrite, const unsigned ichip, const unsigned n_chans) {
   wgEditXML Edit;
-  CheckExist check;
+  
   string outputxmlfile("");
   outputxmlfile = dir + "/Summary_chip" + to_string(ichip) + ".xml";
-  if( (check.XmlFile(outputxmlfile) && overwrite) || !check.XmlFile(outputxmlfile) )
+  if( (check_exist::XmlFile(outputxmlfile) && overwrite) || !check_exist::XmlFile(outputxmlfile) )
     Edit.SUMMARY_Make(outputxmlfile, n_chans);
   else
     throw wgInvalidFile("File " + outputxmlfile + " already exists and overwrite mode is not set");
@@ -66,10 +66,10 @@ int wgAnaHistSummary(const char * x_inputDir,
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
 
-  CheckExist check;
+  
   wgColor wgColor;
 
-  if(inputDir.empty() || !check.Dir(inputDir)) {
+  if(inputDir.empty() || !check_exist::Dir(inputDir)) {
     Log.eWrite("[wgAnaHistSummary] No input directory");
     return ERR_EMPTY_INPUT_FILE;
   }

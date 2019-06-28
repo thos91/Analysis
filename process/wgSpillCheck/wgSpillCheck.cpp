@@ -73,7 +73,7 @@ int main(int argc, char** argv){
         outputDirName = optarg; 
         break;
       case 'h':
-        cout <<"This program is for data quality check. "<<endl;
+        cout <<"This program is for data quality check_exist:: "<<endl;
         cout <<"You can take several option..."<<endl;
         cout <<"  -h               : help"<<endl;
         cout <<"  -f <inputDir>    : Input Directory (default: RECON_DIRECTORY)" << endl;

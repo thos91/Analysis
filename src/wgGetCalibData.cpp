@@ -6,14 +6,13 @@
 #include "wgFileSystemTools.hpp"
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
 #include "wgEditXML.hpp"
 #include "wgExceptions.hpp"
 
 //******************************************************************************
 int wgGetCalibData::Get_Pedestal(const string& pedFileName, unsigned dif, d3vector& pedestal, d3vector& ped_nohit) {
-CheckExist *check  =  new CheckExist;
-  if( pedFileName == "" || !check->XmlFile(pedFileName)){
+
+  if( pedFileName == "" || !check_exist::XmlFile(pedFileName)){
 	throw wgInvalidFile(Form("Pedestal file not found or invalid (%s)", pedFileName.c_str()));
   }
   delete check;

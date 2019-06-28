@@ -19,7 +19,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgEditConfig.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgLogger.hpp"
@@ -37,12 +37,12 @@ wgEditConfig::wgEditConfig(const string& input, bool bitstream_string){
   
 //*********************************************************************************
 vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
-  CheckExist check;
+  
   if (spiroc2d_csv.empty()) {
 	wgConst con;
 	spiroc2d_csv = string(con.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
-  if (!check.CsvFile(spiroc2d_csv))
+  if (!check_exist::CsvFile(spiroc2d_csv))
 	throw wgInvalidFile("[wgEditConfig::GetCSV][" + spiroc2d_csv + "] file not found");
   ifstream ifs(spiroc2d_csv.c_str());
 	  
@@ -76,7 +76,7 @@ vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
 void wgEditConfig::Get_MPPCinfo(int ichip){ 
   wgConst con;
   
-  CheckExist check;
+  
   string mppc_csv(con.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
   string line;
   vector<string> tmp_mppc_map;
@@ -84,7 +84,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
   int tmp_serial,tmp_ch;
   int mppc_map[NCHIPS];
 
-  if ( !check.CsvFile(mppc_csv) )
+  if ( !check_exist::CsvFile(mppc_csv) )
 	throw wgInvalidFile("[Get_MPPCinfo][" + mppc_csv + "] mppc_csv file not found");
   ifstream ifs(mppc_csv);
   
@@ -95,7 +95,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
   }
 
   string mppc_root(con.CALICOES_DIRECTORY + "/config/spiroc2d/arraymppc_data.root");
-  if ( !check.RootFile(mppc_root) )
+  if ( !check_exist::RootFile(mppc_root) )
 	throw wgInvalidFile("[Get_MPPCinfo][" + mppc_root + "] arraymppc_data.root file not found");
   TFile *fmppc = new TFile(mppc_root.c_str(), "read");
   TTree *mppc = (TTree*)fmppc->Get("mppc");

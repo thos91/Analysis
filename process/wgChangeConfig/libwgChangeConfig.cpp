@@ -18,7 +18,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgFitConst.hpp"
 #include "wgEditConfig.hpp"
 #include "wgChangeConfig.hpp"
@@ -35,19 +35,19 @@ int wgChangeConfig(const char * x_inputFile,
                    const int chip,
                    const int channel) {
   
-  CheckExist Check;
+  
   bitset<WG_CHANGE_CONFIG_FLAGS> flags(flags_ulong);
   string inputFile(x_inputFile);
   string outputFile(x_outputFile);
 
   if(flags[OVERWRITE_FLAG] && outputFile.empty()) outputFile = inputFile;
   
-  if(inputFile.empty() || !Check.TxtFile(inputFile)) {
+  if(inputFile.empty() || !check_exist::TxtFile(inputFile)) {
     Log.eWrite("[wgChangeConfig] input file doesn't exists : " + inputFile);
     return ERR_INPUT_FILE_NOT_FOUND;
   }
 
-  if(!flags[OVERWRITE_FLAG] && flags[EDIT_FLAG] && Check.TxtFile(outputFile)) {
+  if(!flags[OVERWRITE_FLAG] && flags[EDIT_FLAG] && check_exist::TxtFile(outputFile)) {
     Log.eWrite("[wgChangeConfig] overwrite flag must be set in edit mode");
     return ERR_OVERWRITE_FLAG_NOT_SET;
   }

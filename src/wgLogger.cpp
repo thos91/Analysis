@@ -12,7 +12,7 @@
 #include <boost/filesystem.hpp>
 
 // user includes
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
@@ -36,8 +36,8 @@ wgLogger::wgLogger(const string& log_dir)
 	} else dir = log_dir;
   
 	// If the log directory is not found, create it
-	CheckExist check;
-	if ( !check.Dir(dir) ) {
+	
+	if ( !check_exist::Dir(dir) ) {
 	  boost::filesystem::path dir_path(dir);
 	  if( !boost::filesystem::create_directories(dir_path) ) {
 		string error_message("[wgTools][" + dir + "] failed to create directory");

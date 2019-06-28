@@ -27,7 +27,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
@@ -50,9 +50,9 @@ int wgAnaPedestal(const char * x_input_run_dir,
   string output_img_dir(x_output_img_dir);
   
   wgConst con;
-  CheckExist Check;
+  
 
-  if (input_run_dir.empty() || !Check.Dir(input_run_dir)) {
+  if (input_run_dir.empty() || !check_exist::Dir(input_run_dir)) {
     Log.eWrite("[wgAnaPedestal] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }

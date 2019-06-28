@@ -12,7 +12,6 @@
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgGetHist.hpp"
-#include "wgErrorCode.hpp"
 
 #define DEBUG_WGFIT
 

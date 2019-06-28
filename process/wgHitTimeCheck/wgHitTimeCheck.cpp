@@ -60,7 +60,7 @@ int main(int argc, char** argv){
         }
         break;
       default:
-        cout <<"This program is for data quality check. "<<endl;
+        cout <<"This program is for data quality check_exist:: "<<endl;
         cout <<"You can take several option..."<<endl;
         cout <<"  -h         : help"<<endl;
         cout <<"  -f (char*) : choose run name you wanna read(must)"<<endl;

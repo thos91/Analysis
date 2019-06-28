@@ -35,7 +35,7 @@
 #include "wgDetectorDimension.hpp"
 #include "wgChannelMap.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgDisp.hpp"
 
 //**************************************************************

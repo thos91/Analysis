@@ -27,7 +27,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
 #include "wgFit.hpp"
@@ -47,7 +47,7 @@ int wgPreCalib(const char * x_inputDir,
 			   const unsigned n_chips,
 			   const unsigned n_chans) {
   
-  CheckExist Check;
+  
   wgConst con;
   string inputDir(x_inputDir);
   string outputXMLDir(x_outputXMLDir);
@@ -63,7 +63,7 @@ int wgPreCalib(const char * x_inputDir,
   // ============ Create outputXMLDir ============ //
   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 	string dir_name(outputXMLDir + "/chip" + to_string(ichip));
-	if( !Check.Dir(dir_name) ) {
+	if( !check_exist::Dir(dir_name) ) {
 	  boost::filesystem::path dir(dir_name);
 	  if( !boost::filesystem::create_directories(dir) ) {
 		Log.eWrite("[wgPreCalib][" + dir_name + "] failed to create directory");
@@ -74,7 +74,7 @@ int wgPreCalib(const char * x_inputDir,
   // ============ Create outputIMGDir ============ //
   for(unsigned idif = 0; idif < n_difs; idif++) {
 	string dir_name(outputIMGDir + "/dif" + to_string(idif + 1));
-	if( !Check.Dir(dir_name) ) {
+	if( !check_exist::Dir(dir_name) ) {
 	  boost::filesystem::path dir(dir_name);
 	  if( !boost::filesystem::create_directories(dir) ) {
 		Log.eWrite("[wgPreCalib][" + dir_name + "] failed to create directory");

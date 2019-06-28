@@ -14,7 +14,7 @@
 #include "wgConst.hpp"
 #include "wgEditXML.hpp"
 #include "wgEditConfig.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgTopology.hpp"
@@ -27,8 +27,8 @@ void wgEditXML::Write(){
 
 //**********************************************************************
 void wgEditXML::Open(const string& filename){
-  CheckExist Check;
-  if(!Check.XmlFile(filename))
+  
+  if(!check_exist::XmlFile(filename))
     throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
   wgEditXML::filename=filename; 
   wgEditXML::xml = new XMLDocument();
@@ -124,9 +124,9 @@ bool wgEditXML::GetConfig(const string& configxml,
   try {
     bool found=false;
     string bitstream("");
-    CheckExist Check;
+    
 
-    if(!Check.XmlFile(configxml))
+    if(!check_exist::XmlFile(configxml))
       throw wgInvalidFile(configxml + " wasn't found or is not valid");
     if(ichip > NCHIPS)
       throw std::invalid_argument("ichip is greater than " + to_string(NCHIPS));

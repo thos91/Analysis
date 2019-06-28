@@ -5,7 +5,7 @@
 #include <getopt.h>
 
 // user includes
-#include "wgErrorCode.hpp"
+
 #include "wgFileSystemTools.hpp"
 #include "wgMakeHist.hpp"
 #include "wgLogger.hpp"
@@ -26,7 +26,7 @@ void print_help(const char * program_name) {
 
 int main(int argc, char** argv) {
 
-  CheckExist check;
+  
 
   // Get environment variables
   wgConst con;
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     switch(opt){
 	case 'f':
 	  inputFileName=optarg;
-	  if(!check.RootFile(inputFileName)){ 
+	  if(!check_exist::RootFile(inputFileName)){ 
 		Log.eWrite("[wgMakeHist] " + inputFileName + " not found");
 		exit(1);
 	  }

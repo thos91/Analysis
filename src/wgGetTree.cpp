@@ -7,7 +7,7 @@
 // user includes
 #include "wgGetTree.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
 
@@ -41,9 +41,9 @@ wgGetTree::wgGetTree(const string& root_file_name, IngRecon_t& ingrecon) {
 //************************************************************************
 void wgGetTree::Open(const string& root_file_name) {
   // Check if the ROOT file exists
-  CheckExist Check;
+  
   wgGetTree::finputname = root_file_name;
-  if(!Check.RootFile(root_file_name))
+  if(!check_exist::RootFile(root_file_name))
     throw wgInvalidFile( "[wgGetTree::Open] failed to open " + root_file_name );
   // Check if the ROOT file is already opened
   try {

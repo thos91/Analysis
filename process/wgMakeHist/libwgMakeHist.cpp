@@ -17,7 +17,7 @@
 #include "wgFileSystemTools.hpp"
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgMakeHist.hpp"
 #include "wgLogger.hpp"
 
@@ -42,8 +42,8 @@ int wgMakeHist(const char * x_inputFileName,
   Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + GetName(outputDir)          + "  *****");
   Log.Write("[wgMakeHist] *****  LOG FILE         : " + GetName(logfilename)        + "  *****");
   
-  CheckExist check;
-  if(!check.RootFile(inputFileName)) {
+  
+  if(!check_exist::RootFile(inputFileName)) {
     Log.eWrite("[wgMakeHist] Input file " + inputFileName + " not found");
     return ERR_EMPTY_INPUT_FILE;
   }
