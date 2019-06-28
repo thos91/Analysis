@@ -36,6 +36,7 @@
 //#define DEBUG_WGFIT
 
 using namespace std;
+using namespace wagasci_tools;
 
 Double_t gauss(Double_t *x, Double_t *p){
   return p[0]*exp(-(((x[0]-p[1])/p[2]))*((x[0]-p[1])/p[2])*0.50);

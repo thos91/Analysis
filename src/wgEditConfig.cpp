@@ -27,6 +27,7 @@
 //#define DEBUG_WG_EDIT_CONFIG
 
 using namespace std;
+using namespace wagasci_tools;
 
 //*********************************************************************************
 wgEditConfig::wgEditConfig(const string& input, bool bitstream_string){

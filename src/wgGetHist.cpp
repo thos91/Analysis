@@ -15,6 +15,7 @@
 #include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 //************************************************************************
 wgGetHist::wgGetHist(const string& str) {

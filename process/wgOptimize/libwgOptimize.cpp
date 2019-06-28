@@ -17,6 +17,7 @@
 #include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 int wgOptimize(const char * x_threshold_card,
                const char * x_calibration_card,

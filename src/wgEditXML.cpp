@@ -20,6 +20,8 @@
 #include "wgTopology.hpp"
 #include "wgLogger.hpp"
 
+using namespace wagasci_tools;
+
 //**********************************************************************
 void wgEditXML::Write(){
   xml->SaveFile(wgEditXML::filename.c_str());

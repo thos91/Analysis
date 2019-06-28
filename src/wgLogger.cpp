@@ -12,10 +12,12 @@
 #include <boost/filesystem.hpp>
 
 // user includes
-
+#include "wgFileSystemTools.hpp"
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 //==================== wgLogger Class ====================//
 

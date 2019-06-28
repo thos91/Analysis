@@ -5,10 +5,11 @@
 #include <getopt.h>
 
 // user includes
-
 #include "wgFileSystemTools.hpp"
 #include "wgMakeHist.hpp"
 #include "wgLogger.hpp"
+
+using namespace wagasci_tools;
 
 // print_help
 // prints an help message with all the arguments taken by the program
@@ -25,9 +26,6 @@ void print_help(const char * program_name) {
 }
 
 int main(int argc, char** argv) {
-
-  
-
   // Get environment variables
   wgConst con;
   

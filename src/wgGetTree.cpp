@@ -12,6 +12,7 @@
 #include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 //************************************************************************
 
@@ -194,13 +195,11 @@ void wgGetTree::SetTreeFile(Hit_t& hit){
 //************************************************************************
 bool wgGetTree::MakeTreeFile(const string& str, Hit_t& hit){
   if(!wgGetTree::foutput){
-    CheckExist *Check = new CheckExist;
     wgGetTree::foutputname = str;
-    if(!Check->RootFile(str)){
+    if(!check_exist::RootFile(str)){
       Log.eWrite( "ERROR!! FAIL TO SET TREEFILE" );
       return false;
     }
-    delete Check;
     wgGetTree::foutput  = new TFile(str.c_str(),"recreate");
     wgGetTree::tree_out = new TTree("tree","tree");
   }
@@ -262,13 +261,11 @@ void wgGetTree::SetTreeFile(Recon_t& recon){
 //************************************************************************
 bool wgGetTree::MakeTreeFile(const string& str, Recon_t& recon){
   if(!wgGetTree::foutput){
-    CheckExist *Check = new CheckExist;
     wgGetTree::foutputname = str;
-    if(!Check->RootFile(str)){
+    if(!check_exist::RootFile(str)){
       Log.eWrite( "ERROR!! FAIL TO SET TREEFILE" );
       return false;
     }
-    delete Check;
     wgGetTree::foutput  = new TFile(str.c_str(),"recreate");
     wgGetTree::tree_out = new TTree("tree","tree");
   }
@@ -339,13 +336,11 @@ void wgGetTree::SetTreeFile(Track_t& track){
 //************************************************************************
 bool wgGetTree::MakeTreeFile(const string& str, Track_t& track){
   if(!wgGetTree::foutput){
-    CheckExist *Check = new CheckExist;
     wgGetTree::foutputname = str;
-    if(!Check->RootFile(str)){
+    if(!check_exist::RootFile(str)){
       Log.eWrite( "ERROR!! FAIL TO SET TREEFILE" );
       return false;
     }
-    delete Check;
     wgGetTree::foutput  = new TFile(str.c_str(),"recreate");
     wgGetTree::tree_out = new TTree("tree","tree");
   }
