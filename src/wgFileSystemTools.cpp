@@ -101,13 +101,15 @@ namespace wagasci_tools {
     if (boost::filesystem::exists(inputDir)) {
       if (boost::filesystem::is_directory(inputDir)) {
         for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
-          if (GetExtension(entry.path().string()) == extension || extension.empty())
+          if (GetExtension(entry.path().string()) == extension || extension.empty()) {
             file_list.push_back(entry.path().string());
+          }
+       } else {
+        throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
       }
-      else throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+    } else {
+      throw wgInvalidFile(inputDir + " does not exist");
     }
-    else throw wgInvalidFile(inputDir + " does not exist");
-
     return file_list;   
   }
   
@@ -120,11 +122,12 @@ namespace wagasci_tools {
         for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
           if (boost::filesystem::is_directory(entry))
             directory_list.push_back(entry.path().string());
+      } else {
+        throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
       }
-      else throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+    } else {
+      throw wgInvalidFile(inputDir + " does not exist");
     }
-    else throw wgInvalidFile(inputDir + " does not exist");
-
     return directory_list;
   }
   
@@ -166,7 +169,6 @@ namespace wagasci_tools {
   }
 
   //**********************************************************************
-
   unsigned extractIntegerFromString(const string& str) { 
     std::size_t const n = str.find_first_of("0123456789");
     if (n != std::string::npos)
