@@ -56,9 +56,8 @@ std::streampos ReadLine(std::istream& is, std::bitset<M>& raw_data) {
   return is.tellg();
 }
 
-std::streampos ReadChunk(std::istream& is, std::vector<std::bitset<M>>& raw_data) {
-  if (raw_data.size() == 0)
-    throw std::invalid_argument("need a non zero size vector");
+template<std::size_t SIZE>
+std::streampos ReadChunk(std::istream& is, std::array<std::bitset<M>, SIZE>& raw_data) {
   for (unsigned i = 0; i < raw_data.size(); ++i) {
     is.read((char*) &raw_data[i], M / 8);
     if (is) throw wgInvalidFile("EOF");
@@ -70,59 +69,131 @@ std::streampos ReadChunk(std::istream& is, std::vector<std::bitset<M>>& raw_data
 
 bool MarkerSeeker::SeekSpillNumber(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(SPILL_NUMBER_LENGTH);
+  std::array<std::bitset<M>, SPILL_NUMBER_LENGTH> raw_data;
   std::streampos stop_read = ReadChunk(is, raw_data);
-  if (raw_data[0] == SPILL_NUMBER_MARKER) {
+  // Everything should be fine
+  if ((raw_data[0] == SPILL_NUMBER_MARKER) &&
+      (raw_data[2] != SPILL_HEADER_MARKER)) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = SpillNumber;
     return true;
   }
+  // This means that the spill number of spill flag was skipped. In
+  // that case we just ignore the spill number section and go on with
+  // reading the spill header section
+  else if (raw_data[SPILL_NUMBER_LENGTH - 1] == SPILL_HEADER_MARKER) {
+    // rewind just before the spill header
+    is.seekg(- M / 8, ios::cur);
+    return false;
+  }
+  // In any other case just rewind to the beginning and try again with
+  // another seeker
   is.seekg(start_read);
   return false;
 }
 
+template < typename T, std::size_t SIZE>
+std::pair<bool, int> FindInArray(const std::array<T, SIZE>& array_of_elements, const T& element) {
+  std::pair<bool, int > result;
+ 
+  // Find given element in vector
+  auto it = std::find(array_of_elements.begin(), array_of_elements.end(), element);
+ 
+  if (it != array_of_elements.end()) {
+    result.second = distance(array_of_elements.begin(), it);
+    result.first = true;
+  }
+  else {
+    result.first = false;
+    result.second = -1;
+  }
+ 
+  return result;
+}
   
 bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(SPILL_HEADER_LENGTH);
+  std::array<std::bitset<M>, SPILL_HEADER_LENGTH> raw_data;
   std::streampos stop_read = ReadChunk(is, raw_data);
 
-  bool has_header_marker; // find in vector
-  // position header
-  bool has_SP_marker;  // find in vector
-  // position SP
-  bool has_IL_marker;  // find in vector
-  bool has_space_marker; // find in vector
-  if (has_header_marker && has_SP_marker && has_IL_marker && has_space_marker) {
+  std::pair<bool, int> header_marker = FindInArray(raw_data, SPILL_HEADER_MARKER);
+  std::pair<bool, int> SP_marker     = FindInArray(raw_data, SP_MARKER);
+  std::pair<bool, int> IL_marker     = FindInArray(raw_data, IL_MARKER);
+  std::pair<bool, int> space_marker  = FindInArray(raw_data, SPACE_MARKER);
+
+  // If everything is in place just return and call it a day
+  if (header_marker.first && SP_marker.first && IL_marker.first && space_marker.first &&
+      (space_marker.second - header_marker.second == SPILL_HEADER_LENGTH) ) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = SpillHeader;
     return true;
-  } else if (has_header_marker && has_SP_marker && (/* position header - position SP == 2*/)) {
-    // we can still work with that
+    // we can still work with a partially corrupted header, if it has
+    // the header marker and the SP marker and they are correctly
+    // spaced.
+  } else if (header_marker.first && SP_marker.first &&
+             (SP_marker.second - header_marker.second == 2)) {
+    // Just make sure that the chip header is following in the next 10
+    // lines.
     is.seekg(start_read);
     unsigned i = 0;
     std::bitset<M> raw_data_line;
-    do {
-      stop_read = ReadLine(is, raw_data_line);
-    } while (raw_data_line != CHIP_HEADER_MARKER && i < 10);
+    do { ReadLine(is, raw_data_line); }
+    while (raw_data_line != CHIP_HEADER_MARKER && i++ < 10);
     if (i < 10) {
-        m_current_section.start = start_read;
-        m_current_section.stop = stop_read; // -1
-        m_current_section.type = SpillHeader;
-        return true;
-      }
+      is.seekg(- M / 8, ios::cur);
+      m_current_section.start = start_read;
+      m_current_section.stop = is.tellg();
+      m_current_section.type = SpillHeader;
+      return true;
     }
-  } 
-
-  
+  }
+  // In all other cases just rewind and try with another seeker  
   is.seekg(start_read);
   return false;
 }
 
 bool MarkerSeeker::SeekChipHeader(std::istream& is) {
-  return true;
+  std::streampos start_read = is.tellg();
+  std::vector<std::bitset<M>> raw_data(CHIP_HEADER_LENGTH);
+  std::streampos stop_read = ReadChunk(is, raw_data);
+
+  std::pair<bool, int> header_marker = FindInVector(raw_data, SPILL_HEADER_MARKER);
+  std::pair<bool, int> SP_marker     = FindInVector(raw_data, SP_MARKER);
+  std::pair<bool, int> IL_marker     = FindInVector(raw_data, IL_MARKER);
+  std::pair<bool, int> space_marker  = FindInVector(raw_data, SPACE_MARKER);
+
+  // If everything is in place just return and call it a day
+  if (header_marker.first && SP_marker.first && IL_marker.first && space_marker.first &&
+      (space_marker.second - header_marker.second == SPILL_HEADER_LENGTH) ) {
+    m_current_section.start = start_read;
+    m_current_section.stop = stop_read;
+    m_current_section.type = SpillHeader;
+    return true;
+    // we can still work with a partially corrupted header, if it has
+    // the header marker and the SP marker and they are correctly
+    // spaced.
+  } else if (header_marker.first && SP_marker.first &&
+             (SP_marker.second - header_marker.second == 2)) {
+    // Just make sure that the chip header is following in the next 10
+    // lines.
+    is.seekg(start_read);
+    unsigned i = 0;
+    std::bitset<M> raw_data_line;
+    do { ReadLine(is, raw_data_line); }
+    while (raw_data_line != CHIP_HEADER_MARKER && i++ < 10);
+    if (i < 10) {
+      is.seekg(- M / 8, ios::cur);
+      m_current_section.start = start_read;
+      m_current_section.stop = is.tellg();
+      m_current_section.type = SpillHeader;
+      return true;
+    }
+  }
+  // In all other cases just rewind and try with another seeker  
+  is.seekg(start_read);
+  return false;
 }
 
 bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
