@@ -80,18 +80,18 @@ int main(int argc, char** argv) {
 
   if (batch == true) Log.WhereToLog = LOGFILE;
   
-  int retcode;
-  if ( (retcode = wgDecoder(inputFile.c_str(),
-                            calibDir.c_str(),
-                            outputDir.c_str(),
-                            overwrite,
-                            max_n_events,
-                            dif,
-                            n_chips,
-                            n_channels)) != DE_SUCCESS ) {
-    Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
-    exit(1);
-  }
+  // int retcode;
+  // if ( (retcode = wgDecoder(inputFile.c_str(),
+  //                           calibDir.c_str(),
+  //                           outputDir.c_str(),
+  //                           overwrite,
+  //                           max_n_events,
+  //                           dif,
+  //                           n_chips,
+  //                           n_channels)) != DE_SUCCESS ) {
+  //   Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
+  //   exit(1);
+  // }
     
   exit(0);
 }

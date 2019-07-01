@@ -1,95 +1,118 @@
-#ifndef WG_DECODER_HPP_
-#define WG_DECODER_HPP_
+#ifndef WGDECODERNEW_H
+#define WGDECODERNEW_H
 
 // system includes
-#include <string>
-#include <bits/stdc++.h>
+#include <bitset>
+#include <istream>
+#include <functional>
 
 // user includes
 #include "wgConst.hpp"
 
-#define DEBUG_DECODE
-#define DE_SUCCESS                       0
-#define ERR_CANNOT_CREATE_DIRECTORY      1
-#define ERR_CANNOT_OVERWRITE_OUTPUT_FILE 2
-#define ERR_WRONG_DIF_VALUE              3
-#define ERR_FAILED_OPEN_RAW_FILE         4
-#define ERR_INPUT_FILE_NOT_FOUND         5
-
-// Debug macros that will fill the debug histogram
-#define DEBUG_NODATA 1
-#define DEBUG_GOOD_SPILLGAP 2
-#define DEBUG_BAD_SPILLGAP 4
-#define DEBUG_BAD_CHIPNUM 8
-#define DEBUG_BAD_CHIPDATA_SIZE 16
-#define DEBUG_MISSING_CHIPID_TAG 32
-#define DEBUG_MISSING_CHIP_HEADER 64
-#define DEBUG_MISSING_CHIP_TRAILER 128
-#define DEBUG_MISSING_CHIP_TRAILER_ONLY_ONE_CHIP 256
+#define NUM_MARKER_TYPES 6
 
 // bitset macros
 #define M 16
-#define x00FF bitset<M>(0x00FF)
-#define x0FFF bitset<M>(0x0FFF)
-#define xFF00 bitset<M>(0xFF00)
-#define xF000 bitset<M>(0xF000)
-#define x2020 bitset<M>(0x2020)
-#define x5053 bitset<M>(0x5053)
-#define x4C49 bitset<M>(0x4C49)
-#define x4843 bitset<M>(0x4843)
-#define x5049 bitset<M>(0x5049)
-#define xFFFF bitset<M>(0xFFFF)
-#define xFFFE bitset<M>(0xFFFE)
-#define xFFFD bitset<M>(0xFFFD)
-#define xFFFC bitset<M>(0xFFFC)
-#define xFFFB bitset<M>(0xFFFB)
 
-using namespace std;
+// markers
+#define SPILL_NUMBER_MARKER  bitset<M>(0xFFFB)
+#define SPILL_HEADER_MARKER  bitset<M>(0xFFFC)
+#define CHIP_HEADER_MARKER   bitset<M>(0xFFFD)
+#define CHIP_TRAILER_MARKER  bitset<M>(0xFFFE)
+#define SPILL_TRAILER_MARKER bitset<M>(0xFFFF)
+#define SPACE_MARKER         bitset<M>(0x2020)
+#define SP_MARKER            bitset<M>(0x5053)
+#define IL_MARKER            bitset<M>(0x4C49)
+#define CH_MARKER            bitset<M>(0x4843)
+#define IP_MARKER            bitset<M>(0x5049)
 
-const string PEDESTAL_CARD("/cards/pedestal_card.xml");
-const string ADC_CALIBRATION_CARD("/cards/adc_calibration_card.xml");
-const string TDC_CALIBRATION_CARD("/cards/tdc_calibration_card.xml");
+// masks
+#define x000F                bitset<M>(0x00FF)
+#define x00FF                bitset<M>(0x00FF)
+#define x0FFF                bitset<M>(0x0FFF)
+#define xFFF0                bitset<M>(0x0FFF)
+#define xFF00                bitset<M>(0xFF00)
+#define xF000                bitset<M>(0xF000)
 
-// This is needed to call the following functions from Python using ctypes
-#ifdef __cplusplus
-extern "C" {
-#endif
+///////////////////////////////////////////////////////////////////////////////
+//                            RawDataConfig class                            //
+///////////////////////////////////////////////////////////////////////////////
 
-  int wgDecoder(const char * x_input_file,
-                const char * x_calibration_dir,
-                const char * x_output_dir,
-                bool overwrite,
-                unsigned maxEvt,
-                unsigned dif = 0,
-                unsigned n_chips = NCHIPS,
-                unsigned n_channels = NCHANNELS);
+class RawDataConfig {
 
-#ifdef __cplusplus
-}
-#endif
+ public:
+  const unsigned n_chips = NCHIPS;
+  const unsigned n_channels = NCHANNELS;
+  const unsigned n_chip_id = 1;
+  const unsigned max_event = MAX_EVENT;
+  RawDataConfig();
+  RawDataConfig(unsigned n_chips, unsigned n_channels, unsigned n_chip_id);
+};
 
-#define HOW_MANY_FAILED_TRIES 10
-unsigned setOffset(string & inputFile);
+///////////////////////////////////////////////////////////////////////////////
+//                             MarkerSeeker class                            //
+///////////////////////////////////////////////////////////////////////////////
 
-// check_ChipHeader
-/* Checks if the ChipHeader is well formed. If the number of chip is greater
-   than "n_chips" or if the size of "head" vector is less than offset + 4, the
-   0xFFFF value is returned and the "checkid_exist" flag is set to
-   false. Otherwise, if there are other missing 2Bytes in the header, the
-   "Missing_Header" counter is increased for any 2Bytes that are missing. */
-uint16_t check_ChipHeader(unsigned n_chips, vector<bitset<M>>& head, size_t offset, bool& checkid_exist, int& Missing_Header);
+class MarkerSeeker {
 
-// check_ChipID
-/* Check that the chip id is not less that zero and greater than 40 */ 
-bool check_ChipID(int16_t v_chipid, uint16_t n_chips);
+ public:
 
-// tdc2time
-/* If the detector is calibrated (if the TDC coefficient file is present) this
-   function converts the raw TDC into an absolute time in nanoseconds */
-void tdc2time(d3vector &time_ns, i3vector &time, i2vector &bcid, d3vector &slope, d3vector &intcpt);
+  // Used for array indexes!  Don't change the numbers!
+  enum MarkerType {
+    SpillNumber = 0,
+    SpillHeader,
+    ChipHeader,
+    RawData,
+    ChipTrailer,
+    SpillTrailer
+  };
 
-// rd_clear
-// Clear the Raw_t rd arrays
-void rd_clear(Raw_t &rd);
+  struct Section {
+    std::streampos start;
+    std::streampos stop;
+    MarkerType type;
+  };
 
-#endif // WG_DECODER_HPP_
+  MarkerSeeker(const RawDataConfig &config);
+
+  Section GetNextSection(std::istream& is, unsigned current_chip);
+
+ private:
+
+  static const std::size_t m_num_marker_types = NUM_MARKER_TYPES;
+  typedef std::function<bool(std::istream& is)> seeker;
+  std::array<seeker, m_num_marker_types> m_seekers_ring;
+  RawDataConfig m_config;
+  int m_last_section_type = MarkerType::SpillNumber;
+  Section m_current_section;
+
+  bool SeekSpillNumber (std::istream& is);
+  bool SeekSpillHeader (std::istream& is);
+  bool SeekChipHeader  (std::istream& is);
+  bool SeekChipTrailer (std::istream& is);
+  bool SeekSpillTrailer(std::istream& is);
+  bool SeekRawData     (std::istream& is);
+
+  unsigned NextSectionType(const unsigned last_section_type, unsigned& current_chip);
+  
+  void InitializeRing();
+};
+
+///////////////////////////////////////////////////////////////////////////////
+//                             EventReader class                             //
+///////////////////////////////////////////////////////////////////////////////
+
+class EventReader {
+
+ private:
+
+  Raw_t rd;
+
+  void ReadSpillNumber (std::istream& is);
+  void ReadSpillHeader (std::istream& is);
+  void ReadChipHeader  (std::istream& is);
+  void ReadChipTrailer (std::istream& is);
+  void ReadSpillTrailer(std::istream& is);
+};
+
+#endif /* WGDECODERNEW_H */

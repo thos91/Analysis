@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <climits>
 
 // ROOT includes
 #include <TROOT.h>
@@ -23,20 +24,23 @@ using namespace std;
 //                                                                  //
 // ================================================================ //
 
-const uint16_t CHIPHEAD   = 4;
-const uint16_t CHIPTRAIL  = 4;
-const uint16_t CHIPENDTAG = 2;
-const uint16_t CHIPIDSIZE = 1;
-const uint16_t NCHANNELS  = 36;
-const uint16_t MEMDEPTH   = 16;
-const uint16_t NCHIPS     = 20;
-const uint16_t NCHIPSSMRD = 3;
-const uint16_t NDIFS      = 8;
+const unsigned CHIP_HEADER_LENGTH   = 5;
+const unsigned CHIP_TRAILER_LENGTH  = 4;
+const unsigned SPILL_HEADER_LENGTH  = 6;
+const unsigned SPILL_TRAILER_LENGTH = 7;
+const unsigned SPILL_NUMBER_LENGTH  = 3;
 
-#define NON_BEAM_SPILL 0 // non beam spill bit (spill_flag)
-#define BEAM_SPILL     1 // beam spill bit (spill_flag)
+const unsigned NDIFS      = 8;
+const unsigned NCHIPS     = 20;
+const unsigned NCHANNELS  = 36;
+const unsigned MEMDEPTH   = 16;
 
-#define MAX_EVENT UINT_MAX;
+const unsigned MAX_EVENT = UINT_MAX;
+
+enum SPILL_TYPE {
+  NON_BEAM_SPILL = 0,  // non beam spill bit (spill_flag)
+  BEAM_SPILL     = 1   // beam spill bit (spill_flag)
+};
 
 #define BCIDwidth     580 //ns
 #define NumReconAxis 2
