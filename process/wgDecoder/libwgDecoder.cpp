@@ -94,10 +94,10 @@ bool MarkerSeeker::SeekSpillNumber(std::istream& is) {
 }
 
 template < typename T, std::size_t SIZE>
-std::pair<bool, int> FindInArray(const std::array<T, SIZE>& array_of_elements, const T& element) {
-  std::pair<bool, int > result;
+std::pair<bool, std::size_t> FindInArray(const std::array<T, SIZE>& array_of_elements, const T& element) {
+  std::pair<bool, std::size_t > result;
  
-  // Find given element in vector
+  // Find given element in std::array
   auto it = std::find(array_of_elements.begin(), array_of_elements.end(), element);
  
   if (it != array_of_elements.end()) {
@@ -108,23 +108,24 @@ std::pair<bool, int> FindInArray(const std::array<T, SIZE>& array_of_elements, c
     result.first = false;
     result.second = -1;
   }
- 
   return result;
 }
-  
+
 bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::array<std::bitset<M>, SPILL_HEADER_LENGTH> raw_data;
   std::streampos stop_read = ReadChunk(is, raw_data);
 
-  std::pair<bool, int> header_marker = FindInArray(raw_data, SPILL_HEADER_MARKER);
-  std::pair<bool, int> SP_marker     = FindInArray(raw_data, SP_MARKER);
-  std::pair<bool, int> IL_marker     = FindInArray(raw_data, IL_MARKER);
-  std::pair<bool, int> space_marker  = FindInArray(raw_data, SPACE_MARKER);
+  bool has_header_marker, has_SP_marker, has_IL_marker, has_space_marker;
+  std::size_t header_marker_pos, SP_marker_pos, IL_marker_pos, space_marker_pos;
+  std::tie(has_header_marker, header_marker_pos) = FindInArray(raw_data, SPILL_HEADER_MARKER);
+  std::tie(has_SP_marker, SP_marker_pos) = FindInArray(raw_data, SP_MARKER);
+  std::tie(has_IL_marker, IL_marker_pos) = FindInArray(raw_data, IL_MARKER);
+  std::tie(has_space_marker, space_marker_pos) = FindInArray(raw_data, SPACE_MARKER);
 
   // If everything is in place just return and call it a day
-  if (header_marker.first && SP_marker.first && IL_marker.first && space_marker.first &&
-      (space_marker.second - header_marker.second == SPILL_HEADER_LENGTH) ) {
+  if (has_header_marker && has_SP_marker && has_IL_marker && has_space_marker &&
+      (space_marker_pos - header_marker_pos == SPILL_HEADER_LENGTH) ) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = SpillHeader;
@@ -132,8 +133,8 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
     // we can still work with a partially corrupted header, if it has
     // the header marker and the SP marker and they are correctly
     // spaced.
-  } else if (header_marker.first && SP_marker.first &&
-             (SP_marker.second - header_marker.second == 2)) {
+  } else if (has_header_marker && has_SP_marker &&
+             (SP_marker_pos - header_marker_pos == 2)) {
     // Just make sure that the chip header is following in the next 10
     // lines.
     is.seekg(start_read);
@@ -149,6 +150,21 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
       return true;
     }
   }
+  // else all is lost and try to find the next section
+  else if (has_header_marker) {
+     unsigned i = 0;
+    std::bitset<M> raw_data_line;
+    do { ReadLine(is, raw_data_line); }
+    while (raw_data_line != CHIP_HEADER_MARKER && i++ < 10);
+    if (i < 10) {
+      is.seekg(- M / 8, ios::cur);
+      m_current_section.start = start_read;
+      m_current_section.stop = is.tellg();
+      m_current_section.type = SpillHeader;
+      return true;
+    }
+  }
+  
   // In all other cases just rewind and try with another seeker  
   is.seekg(start_read);
   return false;
@@ -156,51 +172,106 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
 
 bool MarkerSeeker::SeekChipHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(CHIP_HEADER_LENGTH);
+  std::array<std::bitset<M>, CHIP_HEADER_LENGTH> raw_data;
   std::streampos stop_read = ReadChunk(is, raw_data);
 
-  std::pair<bool, int> header_marker = FindInVector(raw_data, SPILL_HEADER_MARKER);
-  std::pair<bool, int> SP_marker     = FindInVector(raw_data, SP_MARKER);
-  std::pair<bool, int> IL_marker     = FindInVector(raw_data, IL_MARKER);
-  std::pair<bool, int> space_marker  = FindInVector(raw_data, SPACE_MARKER);
+  bool has_header_marker, has_CH_marker, has_IP_marker, has_space_marker;
+  std::size_t header_marker_pos, CH_marker_pos, IP_marker_pos, space_marker_pos;
+  std::tie(has_header_marker,header_marker_pos) = FindInArray(raw_data, CHIP_HEADER_MARKER);
+  std::tie(has_CH_marker, CH_marker_pos) = FindInArray(raw_data, CH_MARKER);
+  std::tie(has_IP_marker, IP_marker_pos) = FindInArray(raw_data, IP_MARKER);
+  std::tie(has_space_marker, space_marker_pos) = FindInArray(raw_data, SPACE_MARKER);
 
-  // If everything is in place just return and call it a day
-  if (header_marker.first && SP_marker.first && IL_marker.first && space_marker.first &&
-      (space_marker.second - header_marker.second == SPILL_HEADER_LENGTH) ) {
+  // If everything is in place just return true and call it a day
+  if (has_header_marker && has_CH_marker && has_IP_marker && has_space_marker &&
+      (space_marker_pos - header_marker_pos == CHIP_HEADER_LENGTH)) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
-    m_current_section.type = SpillHeader;
+    m_current_section.type = ChipHeader;
     return true;
     // we can still work with a partially corrupted header, if it has
-    // the header marker and the SP marker and they are correctly
+    // the header marker and the CH marker and they are correctly
     // spaced.
-  } else if (header_marker.first && SP_marker.first &&
-             (SP_marker.second - header_marker.second == 2)) {
-    // Just make sure that the chip header is following in the next 10
-    // lines.
-    is.seekg(start_read);
-    unsigned i = 0;
-    std::bitset<M> raw_data_line;
-    do { ReadLine(is, raw_data_line); }
-    while (raw_data_line != CHIP_HEADER_MARKER && i++ < 10);
-    if (i < 10) {
+  } else if (has_header_marker && has_CH_marker &&
+             (CH_marker_pos - header_marker_pos == 2)) {
+    // XOR between IP_marker and space_marker (execute only when one
+    // is true and the other is false). In that case we just have to
+    // rewind one line and we are good to go.
+    if (has_IP_marker != has_space_marker) {
       is.seekg(- M / 8, ios::cur);
       m_current_section.start = start_read;
       m_current_section.stop = is.tellg();
-      m_current_section.type = SpillHeader;
+      m_current_section.type = ChipHeader;
       return true;
     }
+    // If both are false rewind two lines and go on.
+    else if (!has_IP_marker && !has_CH_marker ) {
+      is.seekg(- 2 * M / 8, ios::cur);
+      m_current_section.start = start_read;
+      m_current_section.stop = is.tellg();
+      m_current_section.type = ChipHeader;
+      return true;
+    }
+    // as a last resort try to recover from an heavily corrupted chip
+    // header by skipping it altogether. Try to guess the end of the
+    // corrupted chip header by looking for the first and last
+    // markers.
+  } else if (has_header_marker && has_space_marker) {
+    is.seekg(start_read + std::streampos(space_marker_pos * M / 8));
+    return false;
+  } else if (has_header_marker && has_IP_marker) {
+    is.seekg(start_read + std::streampos(IP_marker_pos * M / 8));
+    return false;
+  } else if (has_header_marker && has_CH_marker) {
+    is.seekg(start_read + std::streampos(CH_marker_pos * M / 8));
+    return false;
   }
+  
   // In all other cases just rewind and try with another seeker  
   is.seekg(start_read);
   return false;
 }
 
 bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
-  return true;
+  std::streampos start_read = is.tellg();
+  std::array<std::bitset<M>, CHIP_TRAILER_LENGTH> raw_data;
+  std::streampos stop_read = ReadChunk(is, raw_data);
+  // Everything is good
+  if (raw_data[0] == CHIP_TRAILER_MARKER &&
+     raw_data[2] == SPACE_MARKER &&
+     raw_data[3] == SPACE_MARKER) {
+    m_current_section.start = start_read;
+    m_current_section.stop = stop_read;
+    m_current_section.type = ChipTrailer;
+    return true;
+  }
+  // If one of the x2020 spaces is missing
+  else if (raw_data[0] == CHIP_TRAILER_MARKER &&
+           raw_data[2] == SPACE_MARKER) {
+    is.seekg(- M / 8, ios::cur);
+    m_current_section.start = start_read;
+    m_current_section.stop = is.tellg();
+    m_current_section.type = ChipTrailer;
+    return true;
+  }
+  else if (raw_data[0] == CHIP_TRAILER_MARKER &&
+           raw_data[1] == SPACE_MARKER &&
+           raw_data[2] == SPACE_MARKER) {
+    is.seekg(- M / 8, ios::cur);
+    return false;
+  }
+  else if (raw_data[0] == CHIP_TRAILER_MARKER &&
+           raw_data[1] == SPACE_MARKER) {
+    is.seekg(- 2 * M / 8, ios::cur);
+    return false;
+  }
+  // In all other cases just rewind and try with another seeker  
+  is.seekg(start_read);
+  return false;
 }
 
 bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
+  
   return true;
 }
 
