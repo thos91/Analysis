@@ -1,18 +1,5 @@
-#ifndef LIBWGDECODERUTILITIES_CPP_
-#define LIBWGDECODERUTILITIES_CPP_
-
-// system includes
-#include <bitset>
-#include <istream>
-#include <vector>
-
-// user includes
-#include "wgDecoder.hpp"
-#include "wgExceptions.hpp"
-
-///////////////////////////////////////////////////////////////////////////////
-//                             Utility functions                             //
-///////////////////////////////////////////////////////////////////////////////
+#ifndef WGDECODERUTILS_TPP_
+#define WGDECODERUTILS_TPP_
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                  ReadLine                                 //
@@ -60,15 +47,7 @@ std::pair<bool, std::size_t> FindInArray(const std::array<T, SIZE>& array_of_ele
   }
   return result;
 }
-}
 
-///////////////////////////////////////////////////////////////////////////////
-//                            RawDataConfig class                            //
-///////////////////////////////////////////////////////////////////////////////
+} // namespace wagasci_decoder_utils
 
-RawDataConfig::RawDataConfig() {}
-RawDataConfig::RawDataConfig(unsigned n_chips, unsigned n_channels, unsigned n_chip_id)
-    : n_chips(n_chips), n_channels(n_channels), n_chip_id(n_chip_id) {}
-
-
-#endif /* LIBWGDECODERUTILITIES_CPP_ */
+#endif /* WGDECODERUTILS_TPP_ */

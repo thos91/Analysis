@@ -296,7 +296,7 @@ string wgEditConfig::DeToBi(const string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_inputDAC(const int chan, int value) {
+void wgEditConfig::Change_inputDAC(const unsigned chan, int value) {
   if(chan < 0 || chan > NCHANNELS) {
 	throw invalid_argument("channel is out of range : " + to_string(chan));
   }
@@ -322,7 +322,7 @@ void wgEditConfig::Change_inputDAC(const int chan, int value) {
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_ampDAC(const int chan, const int value) {
+void wgEditConfig::Change_ampDAC(const unsigned chan, const int value) {
   if(value < 0 || value > MAX_VALUE_6BITS) {
 	throw invalid_argument("value is out of range : " + to_string(value));
   }
@@ -343,7 +343,7 @@ void wgEditConfig::Change_ampDAC(const int chan, const int value) {
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_trigadj(const int chan, const int value) {
+void wgEditConfig::Change_trigadj(const unsigned chan, const int value) {
   if(value < 0 || value > MAX_VALUE_4BITS) {
 	throw invalid_argument("value is out of range : " + to_string(value));
   }
@@ -384,21 +384,21 @@ void wgEditConfig::Change_gainth(const int value){
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_inputDAC(const int chan){
+int wgEditConfig::Get_inputDAC(const unsigned chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET, ADJ_INPUTDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_ampDAC(const int chan){
+int wgEditConfig::Get_ampDAC(const unsigned chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_AMPDAC_START + chan * ADJ_AMPDAC_OFFSET, ADJ_AMPDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_trigadj(const int chan){
+int wgEditConfig::Get_trigadj(const unsigned chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_THRESHOLD_START + chan * ADJ_THRESHOLD_OFFSET, ADJ_THRESHOLD_LENGTH ) ) );

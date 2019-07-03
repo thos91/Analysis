@@ -36,7 +36,7 @@ include_directories(${ROOT_INCLUDE_DIRS})
 #####################################################################
 
 # Compile them as a static library .a
-add_library(lib${process} SHARED lib${process}.cpp)
+add_library(lib${process} SHARED lib${process}.cpp lib${process}Seeker.cpp lib${process}Reader.cpp)
 set_target_properties(lib${process} PROPERTIES OUTPUT_NAME "${process}")
 
 # Link with ...

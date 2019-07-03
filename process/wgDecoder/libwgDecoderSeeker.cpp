@@ -5,8 +5,8 @@
 
 // user includes
 #include "wgDecoder.hpp"
+#include "wgDecoderSeeker.hpp"
 #include "wgLogger.hpp"
-#include "wgDecoderUtils.tpp"
 
 namespace wg_utils = wagasci_decoder_utils;
 
@@ -246,6 +246,7 @@ bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
            raw_data_line != SPILL_HEADER_MARKER &&
            i++ < 10);
     if (i < 10) {
+      Log.eWrite("[wgDecoder] A spill trailer was corrupted or not found at byte " + to_string(start_read));
       is.seekg(- M / 8, ios::cur);
       return false;
     }
@@ -260,8 +261,55 @@ bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
 ///////////////////////////////////////////////////////////////////////////////
 
 bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
-  
-  return true;
+
+  std::streampos start_read = is.tellg();
+  std::array<std::bitset<M>, SPILL_TRAILER_LENGTH> raw_data;
+  std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
+  // Everything is good
+  if (raw_data[0] == SPILL_TRAILER_MARKER &&
+      raw_data[1] == raw_data[4] &&
+      raw_data[2] == raw_data[5] &&
+      raw_data[3] & xFF00 == x0000 &&      
+      raw_data[6] == SPACE_MARKER) {
+    m_current_section.start = start_read;
+    m_current_section.stop = stop_read;
+    m_current_section.type = SpillTrailer;
+    return true;
+  } else {
+    Log.eWrite("[wgDecoder] A spill trailer was corrupted or not found at byte " + to_string(start_read));
+    bool has_trailer_marker, has_space_marker;
+    std::size_t trailer_marker_pos, space_marker_pos;
+    std::tie(has_trailer_marker, trailer_marker_pos) = wg_utils::FindInArray(raw_data, SPILL_TRAILER_MARKER);
+    std::tie(has_space_marker, space_marker_pos) = wg_utils::FindInArray(raw_data, SPACE_MARKER);
+    if (has_trailer_marker && has_space_marker) {
+      // Just make sure that the chip header is following in the next 10
+      // lines.
+      is.seekg(start_read);
+      unsigned i = 0;
+      std::bitset<M> raw_data_line;
+      do { wg_utils::ReadLine(is, raw_data_line); }
+      while (raw_data_line != SPILL_NUMBER_MARKER &&
+             raw_data_line != SPILL_HEADER_MARKER &&
+             i++ < 10);
+      if (i < 10) {
+        is.seekg(- M / 8, ios::cur);
+        // If the header marker and the space x2020 marker are spaced
+        // at least 3 positions there is still hope to extract
+        // something meaningful from the spill trailer
+        if (space_marker_pos - header_marker_pos > 3) {
+        m_current_section.start = start_read;
+        m_current_section.stop = is.tellg();
+        m_current_section.type = SpillHeader;
+        return true;
+        } else {
+          return false;
+        }
+      }
+    }
+  }
+  // In all other cases just rewind and try with another seeker  
+  is.seekg(start_read);
+  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,4 +332,3 @@ void MarkerSeeker::InitializeRing() {
   m_seekers_ring[MarkerType::ChipTrailer]  = std::bind(&MarkerSeeker::SeekChipTrailer,  this, std::placeholders::_1);
   m_seekers_ring[MarkerType::SpillTrailer] = std::bind(&MarkerSeeker::SeekSpillTrailer, this, std::placeholders::_1);
 }
-
