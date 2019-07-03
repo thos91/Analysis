@@ -83,7 +83,7 @@ class MarkerSeeker {
   typedef std::function<bool(std::istream& is)> seeker;
   std::array<seeker, m_num_marker_types> m_seekers_ring;
   RawDataConfig m_config;
-  int m_last_section_type = MarkerType::SpillNumber;
+  unsigned m_last_section_type = MarkerType::SpillNumber;
   Section m_current_section;
 
   bool SeekSpillNumber (std::istream& is);
