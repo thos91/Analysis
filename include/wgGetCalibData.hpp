@@ -23,14 +23,14 @@ private:
   const unsigned m_dif;
   const std::string m_calibration_dir;
   std::string m_pedestal_card;
-  std::string m_adc_calibration_card;
+  std::string m_gain_card;
   std::string m_tdc_calibration_card;
   bool m_have_pedestal_calibration = false;
-  bool m_have_adc_calibration = false;
+  bool m_have_gain_calibration = false;
   bool m_have_tdc_calibration = false;
 
   bool FindPedestalCard();
-  bool FindADCCalibrationCard();
+  bool FindGainCard();
   bool FindTDCCalibrationCard();
   
 public:
@@ -57,10 +57,10 @@ public:
   // Get the gain from the gain calibration card file calibFileName
   // One arrays is filled (for the DIF "dif"):
   //                         gain[n_chips][n_chans][n_cols]
-  int GetADC(const unsigned dif, d3vector& gain);
+  int GetGain(const unsigned dif, d3vector& gain);
 
   bool isPedestalCalibrated();
-  bool isADCCalibrated();
+  bool isGainCalibrated();
   bool isTDCCalibrated();
 };
 

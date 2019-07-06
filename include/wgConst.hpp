@@ -24,18 +24,26 @@ using namespace std;
 //                                                                  //
 // ================================================================ //
 
-const unsigned CHIP_HEADER_LENGTH   = 5;
-const unsigned CHIP_TRAILER_LENGTH  = 4;
-const unsigned SPILL_HEADER_LENGTH  = 6;
-const unsigned SPILL_TRAILER_LENGTH = 7;
-const unsigned SPILL_NUMBER_LENGTH  = 3;
-
 const unsigned NDIFS      = 8;
 const unsigned NCHIPS     = 20;
 const unsigned NCHANNELS  = 36;
 const unsigned MEMDEPTH   = 16;
 
+const unsigned CHIP_HEADER_LENGTH   = 5;
+const unsigned CHIP_TRAILER_LENGTH  = 4;
+const unsigned SPILL_HEADER_LENGTH  = 6;
+const unsigned SPILL_TRAILER_LENGTH = 7;
+const unsigned SPILL_NUMBER_LENGTH  = 3;
+const unsigned CHIP_ID_LENGTH       = 1;
+  // One column length in 16 bits lines (but the BCID)
+  // 1 BCID              +
+  // n_channels times    +
+  // n_channels charges
+  const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
+
 const unsigned MAX_EVENT = UINT_MAX;
+const unsigned N_DEBUG_SPILL = 8;
+const unsigned N_DEBUG_CHIP = 5;
 
 enum SPILL_TYPE {
   NON_BEAM_SPILL = 0,  // non beam spill bit (spill_flag)
@@ -52,6 +60,8 @@ enum SPILL_TYPE {
 #define HIGH_GAIN_NORM 1.08 // Normalization for the high gain
 #define LOW_GAIN_NORM  10.8 // Normalization for the low gain
 
+#define MAX_VALUE_16BITS 65535
+#define MAX_VALUE_12BITS 4095
 #define MAX_VALUE_10BITS 1023
 #define MAX_VALUE_8BITS  255
 #define MAX_VALUE_6BITS  63
@@ -142,34 +152,34 @@ typedef vector<int> ivector;
 class Raw_t
 {
 public:
-  int spill;
+  int spill_number;
   int spill_mode;
   int spill_count;
-  int spill_flag;
-  ivector chipid;            // [NumChip];    //ASU 
-  ivector chipid_tag;        // [NumChip];    //DIF
-  ivector chip;              // [NumChip];
-  ivector chipch;            //          [NumChipChFull];
-  ivector col;               //                         [NumSca];
-  i3vector charge;           // [NumChip][NumChipChFull][NumSca];
-  i3vector time;             // [NumChip][NumChipChFull][NumSca];
-  i2vector bcid;             // [NumChip]               [NumSca];
-  i3vector hit;              // [NumChip][NumChipChFull][NumSca];
-  i3vector gs;               // [NumChip][NumChipChFull][NumSca];
-  ivector debug;             // [NumChip];
+  ivector chipid;            // [NCHIPS];    //ASU 
+  ivector difid;             // [NCHIPS];    //DIF
+  ivector chip;              // [NCHIPS];
+  ivector chan;              //          [NCHANNELS];
+  ivector col;               //                    [MEMDEPTH];
+  i3vector charge;           // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i3vector time;             // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i2vector bcid;             // [NCHIPS]           [MEMDEPTH];
+  i3vector hit;              // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i3vector gs;               // [NCHIPS][NCHANNELS][MEMDEPTH];
+  ivector  debug_spill;      //                              [N_DEBUG_SPILL]   
+  i2vector debug_chip;       // [NCHIPS];                    [N_DEBUG_CHIP];
   int view;
-  i2vector pln;              // [NumChip][NumChipChFull];
-  i2vector ch;               // [NumChip][NumChipChFull];
-  i2vector grid;             // [NumChip][NumChipChFull];
-  d2vector x;                // [NumChip][NumChipChFull];
-  d2vector y;                // [NumChip][NumChipChFull];
-  d2vector z;                // [NumChip][NumChipChFull];
-  d3vector pedestal;         // [NumChip][NumChipChFull][NumSca];
-  d3vector pe;               // [NumChip][NumChipChFull][NumSca];
-  d3vector time_ns;          // [NumChip][NumChipChFull][NumSca];
-  d3vector gain;             // [NumChip][NumChipChFull][NumSca];
-  d3vector tdc_slope;        // [NumChip][NumChipChFull][2];
-  d3vector tdc_intcpt;       // [NumChip][NumChipChFull][2];
+  i2vector pln;              // [NCHIPS][NCHANNELS];
+  i2vector ch;               // [NCHIPS][NCHANNELS];
+  i2vector grid;             // [NCHIPS][NCHANNELS];
+  d2vector x;                // [NCHIPS][NCHANNELS];
+  d2vector y;                // [NCHIPS][NCHANNELS];
+  d2vector z;                // [NCHIPS][NCHANNELS];
+  d3vector pedestal;         // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3vector pe;               // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3vector time_ns;          // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3vector gain;             // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3vector tdc_slope;        // [NCHIPS][NCHANNELS][2];
+  d3vector tdc_intcpt;       // [NCHIPS][NCHANNELS][2];
 
   int n_chips;
   int n_chans;

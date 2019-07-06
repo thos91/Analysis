@@ -45,7 +45,7 @@ int wgDecoder(const char * x_input_raw_file,
   string input_raw_file(x_input_raw_file);
   string calibration_dir(x_calibration_dir);
   string output_dir(x_output_dir);
-  string output_file_name = GetName(input_raw_file)+"_tree.root";
+  string output_file_name = GetName(input_raw_file) + "_tree.root";
   wgConst con;
 
   // ===================================================================== //
@@ -112,17 +112,9 @@ int wgDecoder(const char * x_input_raw_file,
     return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
-  Log.Write("[Decoder] READING FILE     :" + input_raw_file      );
-  Log.Write("[Decoder] OUTPUT TREE FILE :" + output_file_name );
-  Log.Write("[Decoder] OUTPUT DIRECTORY :" + output_dir      );
-
-  // ===================================================================== //
-  //                  Allocate the raw data Raw_t class                    //
-  // ===================================================================== //
-  
-  Raw_t rd(n_chips, n_channels);
-  rd.spill      = -1;
-  rd.spill_flag = n_chips;
+  Log.Write("[Decoder] READING FILE     : " + input_raw_file      );
+  Log.Write("[Decoder] OUTPUT TREE FILE : " + output_file_name );
+  Log.Write("[Decoder] OUTPUT DIRECTORY : " + output_dir      );
 
   // ===================================================================== //
   //                        DIF number detection                           //
@@ -147,6 +139,12 @@ int wgDecoder(const char * x_input_raw_file,
     }
   }
 
+  // ===================================================================== //
+  //                  Allocate the raw data Raw_t class                    //
+  // ===================================================================== //
+  
+  Raw_t rd(n_chips, n_channels);
+  
   // ===================================================================== //
   //                             Get mapping                               //
   // ===================================================================== //
@@ -176,6 +174,7 @@ int wgDecoder(const char * x_input_raw_file,
   
   // Read the value of pedestal, TDC ramp and gain from the calibration files
   bool pedestal_is_calibrated = false;
+  bool gain_is_calibrated = false;
   bool adc_is_calibrated = false;
   bool tdc_is_calibrated = false;
   try {
@@ -188,8 +187,8 @@ int wgDecoder(const char * x_input_raw_file,
       Log.Write("[wgDecoder] pedestal is not calibrated yet : " + string(e.what()));
     }
     try {
-      if ((adc_is_calibrated = calib.isADCCalibrated()))
-        calib.GetADC(dif, rd.gain);
+      if ((gain_is_calibrated = calib.isGainCalibrated()))
+        calib.GetGain(dif, rd.gain);
     } catch (const exception & e ) {
       adc_is_calibrated = false;
       Log.Write("[wgDecoder] ADC is not calibrated yet : " + string(e.what()));
@@ -204,6 +203,7 @@ int wgDecoder(const char * x_input_raw_file,
   } catch (const exception & e ) {
     Log.Write("[wgDecoder] detector is not calibrated yet : " + string(e.what())); 
   }
+  adc_is_calibrated = pedestal_is_calibrated && gain_is_calibrated;
 
   // ===================================================================== //
   //                        Read Pyrame log file                           //
@@ -230,18 +230,18 @@ int wgDecoder(const char * x_input_raw_file,
 
     // Start time of the acquisition that produced the .raw file
     TH1D * h_start_time = new TH1D("start_time", "Time the acquisition started", DATETIME_BIN, DATETIME_STR, DATETIME_END);
-    h_start_time -> Fill(v_log[0], v_log[0]);
-    h_start_time -> Fill(v_log[0] + 1, v_log[0] - DATETIME_END);
+    h_start_time->Fill(v_log[0], v_log[0]);
+    h_start_time->Fill(v_log[0] + 1, v_log[0] - DATETIME_END);
     // Stop time of the acquisition that produced the .raw file
-    TH1D * h_stop_time = new TH1D("stop_time","Time the acquisition stopped", DATETIME_BIN, DATETIME_STR, DATETIME_END);
-    h_stop_time -> Fill(v_log[1], v_log[1]);
-    h_stop_time -> Fill(v_log[1] + 1, v_log[1] - DATETIME_END);
+    TH1D * h_stop_time = new TH1D("stop_time", "Time the acquisition stopped", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    h_stop_time->Fill(v_log[1], v_log[1]);
+    h_stop_time->Fill(v_log[1] + 1, v_log[1] - DATETIME_END);
     // Number of data packets acquired as reported by Pyrame in the acquisition log file
-    TH1D * h_nb_data_pkts = new TH1D("nb_data_pkts","Number of data packets", DATETIME_BIN, DATETIME_STR, DATETIME_END);
-    h_nb_data_pkts -> Fill(v_log[2]);
+    TH1D * h_nb_data_pkts = new TH1D("nb_data_pkts", "Number of data packets", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    h_nb_data_pkts->Fill(v_log[2]);
     // Number of lost packets acquired as reported by Pyrame in the acquisition log file
-    TH1D * h_nb_lost_pkts = new TH1D("nb_lost_pkts","Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
-    h_nb_lost_pkts -> Fill(v_log[3]);
+    TH1D * h_nb_lost_pkts = new TH1D("nb_lost_pkts", "Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    h_nb_lost_pkts->Fill(v_log[3]);
 
     h_start_time  ->Write();
     h_stop_time   ->Write();
@@ -255,21 +255,20 @@ int wgDecoder(const char * x_input_raw_file,
   // ===================================================================== //
 
   TTree * tree = new TTree("tree", "ROOT tree containing decoded data");
-  tree->Branch("spill"       ,&rd.spill            ,"spill/I"                                                       );
+  tree->Branch("spill_number",&rd.spill_number     ,"spill_number/I"                                                );
   tree->Branch("spill_mode"  ,&rd.spill_mode       ,"spill_mode/I"                                                  );
-  tree->Branch("spill_flag"  ,&rd.spill_flag       ,"spill_flag/I"                                                  );
   tree->Branch("spill_count" ,&rd.spill_count      ,"spill_count/I"                                                 );
   tree->Branch("bcid"        ,rd.bcid.data()       ,Form("bcid[%d][%d]/I"           ,n_chips,             MEMDEPTH ));
   tree->Branch("charge"      ,rd.charge.data()     ,Form("charge[%d][%d][%d]/I"     ,n_chips, n_channels, MEMDEPTH ));
   tree->Branch("time"        ,rd.time.data()       ,Form("time[%d][%d][%d]/I"       ,n_chips, n_channels, MEMDEPTH ));
   tree->Branch("gs"          ,rd.gs.data()         ,Form("gs[%d][%d][%d]/I"         ,n_chips, n_channels, MEMDEPTH ));
   tree->Branch("hit"         ,rd.hit.data()        ,Form("hit[%d][%d][%d]/I"        ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("chipid_tag"  ,rd.chipid_tag.data() ,Form("chipid_tag[%d]/I"         ,n_chips                       ));
   tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                       ));
   tree->Branch("col"         ,rd.col.data()        ,Form("col[%d]/I"                ,                     MEMDEPTH ));
-  tree->Branch("chipch"      ,rd.chipch.data()     ,Form("chipch[%d]/I"             ,         n_channels           ));
+  tree->Branch("chipch"      ,rd.chan.data()       ,Form("chan[%d]/I"               ,         n_channels           ));
   tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                       ));
-  tree->Branch("debug"       ,rd.debug.data()      ,Form("debug[%d]/I"              ,n_chips                       ));
+  tree->Branch("debug_chip"  ,rd.debug_chip.data() ,Form("debug_chip[%d][%d]/I"     ,n_chips, N_DEBUG_CHIP         ));
+  tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        , N_DEBUG_SPILL                ));
   tree->Branch("view"        ,&rd.view             ,"view/I"                                                        );
   tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, n_channels           ));
   tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, n_channels           ));
@@ -277,10 +276,8 @@ int wgDecoder(const char * x_input_raw_file,
   tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, n_channels           ));
   tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, n_channels           ));
   tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, n_channels           ));
-  if (pedestal_is_calibrated) {
-    tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
-  }
   if (adc_is_calibrated) {
+    tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
     tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, n_channels, MEMDEPTH ));
     tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d][%d]/D"       ,n_chips, n_channels, MEMDEPTH ));
   }
@@ -306,7 +303,19 @@ int wgDecoder(const char * x_input_raw_file,
   } else {
     outputTFile = new TFile(output_file_path, "recreate");
   }
-  
+
+  // ===================================================================== //
+  //                Allocate the RawDataConfig class object                //
+  // ===================================================================== //
+
+  RawDataConfig config(n_chips,
+                       n_channels,
+                       wagasci_decoder_utils::GetNumChipID(input_raw_file),
+                       MAX_EVENT,
+                       wagasci_decoder_utils::HasSpillNumber(input_raw_file),
+                       adc_is_calibrated,
+                       tdc_is_calibrated);
+
   // ===================================================================== //
   //     ============================================================      //
   //                          READ THE RAW FILE                            //
@@ -314,6 +323,8 @@ int wgDecoder(const char * x_input_raw_file,
   // ===================================================================== //
 
 
+
+  
 
 
   

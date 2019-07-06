@@ -31,12 +31,13 @@ class MarkerSeeker {
   struct Section {
     std::streampos start;
     std::streampos stop;
+    unsigned ichip;
     MarkerType type;
   };
 
   MarkerSeeker(const RawDataConfig &config);
 
-  Section GetNextSection(std::istream& is, unsigned current_chip);
+  Section SeekNextSection(std::istream& is, unsigned current_chip);
 
  private:
 
@@ -54,9 +55,11 @@ class MarkerSeeker {
   bool SeekSpillTrailer(std::istream& is);
   bool SeekRawData     (std::istream& is);
 
-  unsigned NextSectionType(const unsigned last_section_type, unsigned& current_chip);
+  unsigned NextSectionType(const unsigned last_section_type, const unsigned ichip);
   
   void InitializeRing();
 };
+
+unsigned GetNumberOfLinesToRead(const MarkerSeeker::Section & section);
 
 #endif /* WGDECODERNEW_H */

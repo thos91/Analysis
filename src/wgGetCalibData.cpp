@@ -25,7 +25,7 @@ wgGetCalibData::wgGetCalibData(const string& calibration_dir, unsigned dif) :
   if (!check_exist::Dir(m_calibration_dir))
     throw wgInvalidFile("[wgGetCaibData] calibration directory not found : " + m_calibration_dir);
   m_have_pedestal_calibration = FindPedestalCard();
-  m_have_adc_calibration      = FindADCCalibrationCard();
+  m_have_gain_calibration     = FindGainCard();
   m_have_tdc_calibration      = FindTDCCalibrationCard();
 }
 
@@ -41,10 +41,10 @@ bool wgGetCalibData::FindPedestalCard() {
 }
 
 //******************************************************************************
-bool wgGetCalibData::FindADCCalibrationCard() {
+bool wgGetCalibData::FindGainCard() {
   for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
     if (findStringIC(xmlfile, "adc") || findStringIC(xmlfile, "gain")) {
-      m_adc_calibration_card = xmlfile;
+      m_gain_calibration_card = xmlfile;
       return true;
     }
   }
@@ -116,7 +116,7 @@ int wgGetCalibData::GetTDC(const unsigned dif, d3vector& slope, d3vector& intcpt
 }
 
 //******************************************************************************
-int wgGetCalibData::GetADC(const unsigned dif, d3vector& gain) {
+int wgGetCalibData::GetGain(const unsigned dif, d3vector& gain) {
   return 0;
 }
 
@@ -126,8 +126,8 @@ bool wgGetCalibData::isPedestalCalibrated() {
 }
 
 //******************************************************************************
-bool wgGetCalibData::isADCCalibrated() {
-  return m_have_adc_calibration;
+bool wgGetCalibData::isGainCalibrated() {
+  return m_have_gain_calibration;
 }
 
 //******************************************************************************
