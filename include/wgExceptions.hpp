@@ -17,6 +17,19 @@ public:
   }
 };
 
+// This exception is thrown when a the EOF is found when reading a file
+class wgEOF : public std::exception
+{
+private:
+  std::string what_message = " ";
+public:
+  explicit wgEOF(std::string message) : what_message(message) { }
+  const char* what() const noexcept override
+  {
+	return what_message.c_str();
+  }
+};
+
 // This exception is thrown while scanning a file for a specific value and the
 // value is not found
 class wgElementNotFound : public std::exception
