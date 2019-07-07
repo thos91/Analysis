@@ -239,7 +239,7 @@ void wgEditXML::SetConfigValue(const string& name, const int value, const bool c
 
 //**********************************************************************
 void wgEditXML::SetColValue(const string& name, const int icol, const int value, const bool create_new) {
-  if (icol <= 0 || icol > MEMDEPTH) return;
+  if (icol <= 0 || (unsigned) icol > MEMDEPTH) return;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* chan = data->FirstChildElement("chan");
@@ -301,8 +301,8 @@ void wgEditXML::AddChElement(const string& name) {
 }
 
 //**********************************************************************
-int wgEditXML::GetColValue(const string& name,const int icol){
-  if(icol<0 || icol>MEMDEPTH) return 0.0;
+int wgEditXML::GetColValue(const string& name, const int icol){
+  if(icol <= 0 || (unsigned) icol > MEMDEPTH) return 0.0;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* chan = data->FirstChildElement("chan");
