@@ -96,10 +96,8 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
   if(finput == NULL || finput->IsOpen() == kFALSE)
     throw wgInvalidFile("TFile " + finputname + " is not open!");
   try {
-	if (BranchExists("spill"))
-	  tree_in->SetBranchAddress("spill",       &rdin.spill);
-	if (BranchExists("spill_flag"))
-	  tree_in->SetBranchAddress("spill_flag",  &rdin.spill_flag);
+	if (BranchExists("spill_number"))
+	  tree_in->SetBranchAddress("spill_number",&rdin.spill_number);
 	if (BranchExists("spill_mode"))
 	  tree_in->SetBranchAddress("spill_mode",  &rdin.spill_mode);
 	if (BranchExists("spill_count"))
@@ -118,12 +116,14 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
 	  tree_in->SetBranchAddress("chipid",       rdin.chipid.data());
 	if (BranchExists("col"))
 	  tree_in->SetBranchAddress("col",          rdin.col.data());
-	if (BranchExists("chipch"))
-	  tree_in->SetBranchAddress("chipch",       rdin.chipch.data());
+	if (BranchExists("chan"))
+	  tree_in->SetBranchAddress("chan",         rdin.chan.data());
 	if (BranchExists("chip"))
 	  tree_in->SetBranchAddress("chip",         rdin.chip.data());
-	if (BranchExists("debug"))
-	  tree_in->SetBranchAddress("debug",        rdin.debug.data());
+	if (BranchExists("debug_chip"))
+	  tree_in->SetBranchAddress("debug_chip",   rdin.debug_chip.data());
+        if (BranchExists("debug_spill"))
+	  tree_in->SetBranchAddress("debug_spill",  rdin.debug_spill.data());
 	if (BranchExists("view"))
 	  tree_in->SetBranchAddress("view",        &rdin.view);
 	if (BranchExists("pln"))
