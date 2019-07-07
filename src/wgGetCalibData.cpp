@@ -44,7 +44,7 @@ bool wgGetCalibData::FindPedestalCard() {
 bool wgGetCalibData::FindGainCard() {
   for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
     if (findStringIC(xmlfile, "adc") || findStringIC(xmlfile, "gain")) {
-      m_gain_calibration_card = xmlfile;
+      m_gain_card = xmlfile;
       return true;
     }
   }
