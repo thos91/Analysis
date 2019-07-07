@@ -9,6 +9,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgDecoder.hpp"
+#include "wgDecoderUtils.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 //                             MarkerSeeker class                            //
@@ -20,34 +21,36 @@ class MarkerSeeker {
 
   // Used for array indexes!  Don't change the numbers!
   enum MarkerType {
-    SpillNumber = 0,
-    SpillHeader,
+    SpillHeader = 0,
     ChipHeader,
     RawData,
     ChipTrailer,
-    SpillTrailer
+    SpillTrailer,
+    SpillNumber
   };
 
   struct Section {
     std::streampos start;
     std::streampos stop;
-    unsigned ichip;
-    MarkerType type;
+    unsigned ichip = 0;
+    unsigned ispill = 0;
+    unsigned type;
   };
 
   MarkerSeeker(const RawDataConfig &config);
 
-  Section SeekNextSection(std::istream& is, unsigned current_chip);
+  Section SeekNextSection(std::istream& is);
 
  private:
 
-  static const std::size_t m_num_marker_types = NUM_MARKER_TYPES;
-  typedef std::function<bool(std::istream& is)> seeker;
-  std::array<seeker, m_num_marker_types> m_seekers_ring;
-  RawDataConfig m_config;
-  unsigned m_last_section_type = MarkerType::SpillNumber;
-  Section m_current_section;
+  std::size_t m_num_marker_types;
 
+  typedef std::function<bool(std::istream& is)> seeker;
+  std::array<seeker, NUM_MARKER_TYPES> m_seekers_ring;
+
+  RawDataConfig m_config;
+  Section m_current_section;
+  
   bool SeekSpillNumber (std::istream& is);
   bool SeekSpillHeader (std::istream& is);
   bool SeekChipHeader  (std::istream& is);
@@ -55,7 +58,7 @@ class MarkerSeeker {
   bool SeekSpillTrailer(std::istream& is);
   bool SeekRawData     (std::istream& is);
 
-  unsigned NextSectionType(const unsigned last_section_type, const unsigned ichip);
+  unsigned NextSectionType(unsigned last_section_type);
   
   void InitializeRing();
 };

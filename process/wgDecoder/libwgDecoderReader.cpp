@@ -8,6 +8,7 @@
 #include "wgDecoder.hpp"
 #include "wgDecoderReader.hpp"
 #include "wgDecoderSeeker.hpp"
+#include "wgDecoderUtils.hpp"
 
 namespace wg_utils = wagasci_decoder_utils;
 
@@ -15,13 +16,20 @@ namespace wg_utils = wagasci_decoder_utils;
 //                             EventReader class                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-EventReader::EventReader(const RawDataConfig& config) :
-    m_config(config.n_chips, config.n_channels, config.n_chip_id),
-    m_rd(config.n_chips, config.n_channels) {}
+EventReader::EventReader(const RawDataConfig& config, TTree * tree) :
+    m_config(config), m_rd(config.n_chips, config.n_channels), m_tree(tree) {
+    if (m_config.has_spill_number) {
+    m_num_marker_types = NUM_MARKER_TYPES;
+  } else {
+    m_num_marker_types = NUM_MARKER_TYPES - 1;
+  }
+    if (m_tree == NULL)
+      throw std::runtime_error("pointer to TTree is NULL");
+}
 
 void EventReader::ReadSpillNumber(std::istream& is, const MarkerSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<M>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
   wg_utils::ReadChunk(is, raw_data);
   
   // raw_data[0] is the SPILL_NUMBER_MARKER
@@ -35,8 +43,8 @@ void EventReader::ReadSpillNumber(std::istream& is, const MarkerSeeker::Section&
     // want to check if the same spill number is used twice or if we
     // have a spill gap (non consecutive spill number)
     if (m_rd.spill_mode == BEAM_SPILL) {
-      unsigned spill_number_gap = m_rd.spill_number - m_config.last_spill_number;    
-      m_config.last_spill_number = m_rd.spill_number;
+      unsigned spill_number_gap = m_rd.spill_number - m_last_spill_number;    
+      m_last_spill_number = m_rd.spill_number;
       if (spill_number_gap == 0) {
         m_rd.debug_spill[DEBUG_SAME_SPILL_NUMBER]++;
       } else if (spill_number_gap != 1) {
@@ -48,23 +56,23 @@ void EventReader::ReadSpillNumber(std::istream& is, const MarkerSeeker::Section&
 
 void EventReader::ReadSpillHeader(std::istream& is, const MarkerSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<M>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
   wg_utils::ReadChunk(is, raw_data);
   // raw_data[0] is the SPILL_HEADER_MARKER
   // Spill count most significant byte
-  bitset<2*M> spill_count_msb = raw_data[1].to_ulong();
-  spill_count_msb <<= M;
+  bitset<2*BITS_PER_LINE> spill_count_msb = raw_data[1].to_ulong();
+  spill_count_msb <<= BITS_PER_LINE;
   // Spill count least significant byte
-  bitset<2*M> spill_count_lsb = raw_data[2].to_ulong();
+  bitset<2*BITS_PER_LINE> spill_count_lsb = raw_data[2].to_ulong();
   m_rd.spill_count = (spill_count_msb | spill_count_lsb).to_ullong();
 
-  if (m_config.spill_insert_flag) {
+  if (m_config.has_spill_number) {
     m_rd.spill_number = m_rd.spill_count;
     m_rd.spill_mode   = BEAM_SPILL;
   }
 
-  unsigned spill_count_gap = m_rd.spill_count - m_config.last_spill_count;    
-  m_config.last_spill_count = m_rd.spill_number;
+  unsigned spill_count_gap = m_rd.spill_count - m_last_spill_count;    
+  m_last_spill_count = m_rd.spill_count;
   if (spill_count_gap == 0) {
     m_rd.debug_spill[DEBUG_SAME_SPILL_COUNT]++;
   } else if (spill_count_gap != 1) {
@@ -74,7 +82,7 @@ void EventReader::ReadSpillHeader(std::istream& is, const MarkerSeeker::Section&
 
 void EventReader::ReadChipHeader(std::istream& is, const MarkerSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<M>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
   wg_utils::ReadChunk(is, raw_data);
 
   m_rd.chipid[section.ichip] = raw_data[1].to_ulong();
@@ -86,7 +94,7 @@ void EventReader::ReadChipHeader(std::istream& is, const MarkerSeeker::Section& 
 
 void EventReader::ReadChipTrailer(std::istream& is, const MarkerSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<M>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
   wg_utils::ReadChunk(is, raw_data);
 
   unsigned chipid = raw_data[1].to_ulong();
@@ -98,15 +106,15 @@ void EventReader::ReadChipTrailer(std::istream& is, const MarkerSeeker::Section&
 
 void EventReader::ReadSpillTrailer(std::istream& is, const MarkerSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<M>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
   wg_utils::ReadChunk(is, raw_data);
 
   // raw_data[0] is the SPILL_TRAILER_MARKER
   // Spill count most significant byte
-  bitset<2*M> spill_count_msb1 = raw_data[1].to_ulong();
-  spill_count_msb1 <<= M;
+  bitset<2*BITS_PER_LINE> spill_count_msb1 = raw_data[1].to_ulong();
+  spill_count_msb1 <<= BITS_PER_LINE;
   // Spill count least significant byte
-  bitset<2*M> spill_count_lsb1 = raw_data[2].to_ulong();
+  bitset<2*BITS_PER_LINE> spill_count_lsb1 = raw_data[2].to_ulong();
   m_rd.spill_count = (spill_count_msb1 | spill_count_lsb1).to_ullong();
   
   unsigned n_found_chips = ( raw_data[3] & x00FF ).to_ulong(); 
@@ -115,10 +123,10 @@ void EventReader::ReadSpillTrailer(std::istream& is, const MarkerSeeker::Section
   }
   
   if (raw_data.size() == SPILL_TRAILER_LENGTH) {
-    bitset<2*M> spill_count_msb2 = raw_data[4].to_ulong();
-    spill_count_msb2 <<= M;
+    bitset<2*BITS_PER_LINE> spill_count_msb2 = raw_data[4].to_ulong();
+    spill_count_msb2 <<= BITS_PER_LINE;
     // Spill count least significant byte
-    bitset<2*M> spill_count_lsb2 = raw_data[5].to_ulong();
+    bitset<2*BITS_PER_LINE> spill_count_lsb2 = raw_data[5].to_ulong();
     unsigned spill_count2 = (spill_count_msb2 | spill_count_lsb2).to_ullong();
     
     if ((unsigned) m_rd.spill_count != spill_count2) {
@@ -129,23 +137,26 @@ void EventReader::ReadSpillTrailer(std::istream& is, const MarkerSeeker::Section
 
 void EventReader::ReadRawData(std::istream& is, const MarkerSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<M>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
   wg_utils::ReadChunk(is, raw_data);
 
-  unsigned n_columns = raw_data.size() - CHIP_ID_LENGTH / ONE_COLUMN_LENGTH;
+  unsigned n_columns = raw_data.size() - m_config.n_chip_id / ONE_COLUMN_LENGTH;
 
-  for (std::vector<std::bitset<M>>::reverse_iterator iraw_data = raw_data.rbegin(); 
-       iraw_data != raw_data.rend(); ++iraw_data) {
+  for (std::vector<std::bitset<BITS_PER_LINE>>::reverse_iterator iraw_data = raw_data.rbegin(); 
+       iraw_data != raw_data.rend();) {
 
     // CHIPID
-    unsigned chipid = (*iraw_data & x00FF).to_ulong();
-    if (chipid > m_config.n_chips) {
-      m_rd.debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
-    } else if ((unsigned) m_rd.chipid[section.ichip] != chipid) {
-      m_rd.debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
-      m_rd.chipid[section.ichip] = chipid;
-    } else  {
-      m_rd.chipid[section.ichip] = chipid;
+    std::vector<unsigned> chipid(m_config.n_chip_id);
+    for (auto ichipid : chipid) {
+      ichipid = (*(iraw_data++) & x00FF).to_ulong();
+      if (ichipid > m_config.n_chips) {
+        m_rd.debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
+      } else if ((unsigned) m_rd.chipid[section.ichip] != ichipid) {
+        m_rd.debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
+        m_rd.chipid[section.ichip] = ichipid;
+      } else  {
+        m_rd.chipid[section.ichip] = ichipid;
+      }
     }
     
     // BCID
@@ -159,13 +170,13 @@ void EventReader::ReadRawData(std::istream& is, const MarkerSeeker::Section& sec
 
       for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
         // CHARGE
-        m_rd.charge [section.ichip][ichan][icol] = (*iraw_data & x0FFF).to_ulong();
+        m_rd.charge [section.ichip][ichan][icol] = (*(iraw_data++) & x0FFF).to_ulong();
         if (m_rd.charge[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
           m_rd.debug_chip[section.ichip][DEBUG_WRONG_ADC]++;
         // HIT (0: no hit, 1: hit)
-        m_rd.hit    [section.ichip][ichan][icol] = (*iraw_data)[12];
+        m_rd.hit    [section.ichip][ichan][icol] = (*(iraw_data++))[12];
         // GAIN (0: low gain, 1: high gain)
-        m_rd.gs     [section.ichip][ichan][icol] = (*iraw_data)[13];
+        m_rd.gs     [section.ichip][ichan][icol] = (*(iraw_data++))[13];
         // Only if the detector is already calibrated fill the histograms
         if (m_config.adc_is_calibrated) {
           // P.E.
@@ -182,37 +193,40 @@ void EventReader::ReadRawData(std::istream& is, const MarkerSeeker::Section& sec
 
       for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
         // TIME
-        m_rd.time[section.ichip][ichan][icol] = (*iraw_data & x0FFF).to_ulong();
+        m_rd.time[section.ichip][ichan][icol] = (*(iraw_data++) & x0FFF).to_ulong();
         if (m_rd.time[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
           m_rd.debug_chip[section.ichip][DEBUG_WRONG_TDC]++;
         if (m_config.tdc_is_calibrated) {
           ;// TODO: TDC calibration
         }
-        if (m_rd.hit[section.ichip][ichan][icol] != (*iraw_data)[12]) {
+        if (m_rd.hit[section.ichip][ichan][icol] != (*(iraw_data++))[12]) {
           m_rd.debug_chip[section.ichip][DEBUG_WRONG_HIT_BIT]++;
         }
-        if (m_rd.gs [section.ichip][ichan][icol] != (*iraw_data)[13]) {
+        if (m_rd.gs [section.ichip][ichan][icol] != (*(iraw_data++))[13]) {
           m_rd.debug_chip[section.ichip][DEBUG_WRONG_GAIN_BIT]++;
         }
       }
     }
   }
+  FillTree();
 }
 
-void EventReader::ReadNextSection(std::istream& is, MarkerSeeker::Section section) {
+void EventReader::ReadNextSection(std::istream& is, const MarkerSeeker::Section section) {
   m_readers_ring[section.type](is, section);
 }
 
-void EventReader::FillTree(TTree * tree) {
-  tree->Fill();
+void EventReader::FillTree() {
+  if (m_tree->Fill() < 0)
+    throw std::runtime_error("Failed to fill the TTree");
   m_rd.clear();
 }
 
 void EventReader::InitializeRing() {
-  m_readers_ring[MarkerSeeker::MarkerType::SpillNumber]  = std::bind(&EventReader::ReadSpillNumber,  this, std::placeholders::_1, std::placeholders::_2);
   m_readers_ring[MarkerSeeker::MarkerType::SpillHeader]  = std::bind(&EventReader::ReadSpillHeader,  this, std::placeholders::_1, std::placeholders::_2);
   m_readers_ring[MarkerSeeker::MarkerType::ChipHeader]   = std::bind(&EventReader::ReadChipHeader,   this, std::placeholders::_1, std::placeholders::_2);
   m_readers_ring[MarkerSeeker::MarkerType::RawData]      = std::bind(&EventReader::ReadRawData,      this, std::placeholders::_1, std::placeholders::_2);
   m_readers_ring[MarkerSeeker::MarkerType::ChipTrailer]  = std::bind(&EventReader::ReadChipTrailer,  this, std::placeholders::_1, std::placeholders::_2);
   m_readers_ring[MarkerSeeker::MarkerType::SpillTrailer] = std::bind(&EventReader::ReadSpillTrailer, this, std::placeholders::_1, std::placeholders::_2);
+  if (m_config.has_spill_number)
+    m_readers_ring[MarkerSeeker::MarkerType::SpillNumber]  = std::bind(&EventReader::ReadSpillNumber,  this, std::placeholders::_1, std::placeholders::_2);
 }

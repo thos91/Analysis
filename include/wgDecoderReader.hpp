@@ -11,6 +11,24 @@
 #include "wgDecoder.hpp"
 #include "wgDecoderSeeker.hpp"
 
+// Debug macros that will fill the debug histogram
+// spill
+#define DEBUG_SPILL_MODE        0
+#define DEBUG_SAME_SPILL_NUMBER 1
+#define DEBUG_SPILL_NUMBER_GAP  2
+#define DEBUG_SAME_SPILL_COUNT  3
+#define DEBUG_SPILL_COUNT_GAP   4
+#define DEBUG_WRONG_CHIPID      5
+#define DEBUG_SPILL_TRAILER     6
+#define DEBUG_WRONG_NCHIPS      7
+
+// chip
+#define DEBUG_WRONG_BCID        0
+#define DEBUG_WRONG_HIT_BIT     1
+#define DEBUG_WRONG_GAIN_BIT    2
+#define DEBUG_WRONG_ADC         3
+#define DEBUG_WRONG_TDC         4
+
 ///////////////////////////////////////////////////////////////////////////////
 //                             EventReader class                             //
 ///////////////////////////////////////////////////////////////////////////////
@@ -18,18 +36,21 @@
 class EventReader {
  public:
 
-  EventReader(const RawDataConfig& config);
+  EventReader(const RawDataConfig& config, TTree * tree);
   
-  void ReadNextSection(std::istream& is, MarkerSeeker::Section section);
+  void ReadNextSection(std::istream& is, const MarkerSeeker::Section section);
   
  private:
 
   RawDataConfig m_config;
   Raw_t m_rd;
-
-  static const std::size_t m_num_marker_types = NUM_MARKER_TYPES;
+  TTree * m_tree;
+  unsigned m_last_spill_number = 0;
+  unsigned m_last_spill_count = 0;
+  
+  std::size_t m_num_marker_types;
   typedef std::function<void(std::istream& is, const MarkerSeeker::Section& section)> reader;
-  std::array<reader, m_num_marker_types> m_readers_ring;
+  std::array<reader, NUM_MARKER_TYPES> m_readers_ring;
   
   void ReadSpillNumber (std::istream& is, const MarkerSeeker::Section& section);
   void ReadSpillHeader (std::istream& is, const MarkerSeeker::Section& section);
@@ -39,6 +60,8 @@ class EventReader {
   void ReadRawData     (std::istream& is, const MarkerSeeker::Section& section);
 
   void InitializeRing();
+
+  void FillTree();
 };
 
 #endif /* WGDECODERREADER_HPP_ */

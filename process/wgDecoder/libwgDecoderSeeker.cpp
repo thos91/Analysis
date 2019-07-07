@@ -7,6 +7,7 @@
 #include "wgConst.hpp"
 #include "wgDecoder.hpp"
 #include "wgDecoderSeeker.hpp"
+#include "wgDecoderUtils.hpp"
 #include "wgLogger.hpp"
 
 namespace wg_utils = wagasci_decoder_utils;
@@ -16,6 +17,12 @@ namespace wg_utils = wagasci_decoder_utils;
 ///////////////////////////////////////////////////////////////////////////////
 
 MarkerSeeker::MarkerSeeker(const RawDataConfig &config) : m_config(config) {
+  if (m_config.has_spill_number) {
+    m_num_marker_types = NUM_MARKER_TYPES;
+  } else {
+    m_num_marker_types = NUM_MARKER_TYPES - 1;
+  }
+  m_current_section.type = MarkerType::SpillTrailer;
   InitializeRing();
 }
 
@@ -23,26 +30,24 @@ MarkerSeeker::MarkerSeeker(const RawDataConfig &config) : m_config(config) {
 //                               GetNextSection                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-MarkerSeeker::Section MarkerSeeker::SeekNextSection(std::istream& is, const unsigned current_chip) {
-  unsigned section_type = m_last_section_type;
+MarkerSeeker::Section MarkerSeeker::SeekNextSection(std::istream& is) {
   bool found = false;
+  unsigned last_section_type = m_current_section.type;
+  
   do {
-    section_type = NextSectionType(section_type, current_chip);
-    found = m_seekers_ring[section_type](is);
-  } while (found && (section_type != m_last_section_type));
+    m_current_section.type = NextSectionType(last_section_type);
+    found = m_seekers_ring[m_current_section.type](is);
+  } while (!found && (m_current_section.type != last_section_type));
 
   if (!found) {
-    std::bitset<M> raw_data_line;
+    std::bitset<BITS_PER_LINE> raw_data_line;
     wg_utils::ReadLine(is, raw_data_line);
     stringstream res;
     res << hex << uppercase << raw_data_line.to_ulong();
     Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized. Skipping it.");
-    return this->GetNextSection(is, current_chip);
+    return this->SeekNextSection(is);
   }
   
-  m_last_section_type = section_type;
-  m_current_section.ichip = current_chip;
-    
   return m_current_section;
 }
 
@@ -50,17 +55,15 @@ MarkerSeeker::Section MarkerSeeker::SeekNextSection(std::istream& is, const unsi
 //                              NextSectionType                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-unsigned MarkerSeeker::NextSectionType(const unsigned last_section_type, unsigned current_chip) {
+unsigned MarkerSeeker::NextSectionType(const unsigned last_section_type) {
   // Select what is the next section to look for. Only if the last
   // section whas a chip trailer we need to be cautious because we may
   // need to go back to the ChipHeader and increment the current_chip
   // by one
-  if (last_section_type == ChipTrailer && current_chip < m_config.n_chips) {
-    current_chip++;
+  if ((last_section_type == ChipTrailer) && (m_current_section.ichip < m_config.n_chips - 1))
     return ChipHeader;
-  } else {
-    return last_section_type + 1 % m_num_marker_types;
-  }
+  else
+    return m_current_section.type + 1 % m_num_marker_types;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -69,23 +72,30 @@ unsigned MarkerSeeker::NextSectionType(const unsigned last_section_type, unsigne
 
 bool MarkerSeeker::SeekSpillNumber(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(SPILL_NUMBER_LENGTH);
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(SPILL_NUMBER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
   // Everything should be fine
-  if ((raw_data[0] == SPILL_NUMBER_MARKER) &&
-      (raw_data[2] != SPILL_HEADER_MARKER)) {
+  if (((m_current_section.ispill != 0 && raw_data[0] == SPILL_NUMBER_MARKER) ||
+      (m_current_section.ispill == 0 && raw_data[0] == FIRST_SPILL_MARKER)) &&
+      raw_data[2] != SPILL_HEADER_MARKER) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = SpillNumber;
     return true;
-  }
-  // This means that the spill number or spill flag was skipped. In
-  // that case we just ignore the spill number section and go on with
-  // reading the spill header section
-  else if (raw_data[SPILL_NUMBER_LENGTH - 1] == SPILL_HEADER_MARKER) {
-    // rewind just before the spill header
-    is.seekg(- BYTES_PER_LINE, ios::cur);
-    return false;
+  } else {
+    // Else the spill number section is corrupted or missing. In that
+    // case we just ignore it and go on with reading the spill header
+    // section if we found it in the following 10 lines
+    unsigned i = 0;
+    std::bitset<BITS_PER_LINE> raw_data_line;
+    do { wg_utils::ReadLine(is, raw_data_line); }
+    while (raw_data_line != SPILL_HEADER_MARKER && i++ < 10);
+    if (i < 10) {
+      // rewind just before the spill header
+      is.seekg(- BYTES_PER_LINE, ios::cur);
+      m_current_section.type = SpillNumber;
+      return false;
+    }
   }
   // In any other case just rewind to the beginning and try again with
   // another seeker
@@ -99,7 +109,7 @@ bool MarkerSeeker::SeekSpillNumber(std::istream& is) {
 
 bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(SPILL_HEADER_LENGTH);
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(SPILL_HEADER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
 
   bool has_header_marker, has_SP_marker, has_IL_marker, has_space_marker;
@@ -125,7 +135,7 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
     // lines.
     is.seekg(start_read);
     unsigned i = 0;
-    std::bitset<M> raw_data_line;
+    std::bitset<BITS_PER_LINE> raw_data_line;
     do { wg_utils::ReadLine(is, raw_data_line); }
     while (raw_data_line != CHIP_HEADER_MARKER && i++ < 10);
     if (i < 10) {
@@ -139,7 +149,7 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
   // else all is lost and try to find the next section
   else if (has_header_marker) {
     unsigned i = 0;
-    std::bitset<M> raw_data_line;
+    std::bitset<BITS_PER_LINE> raw_data_line;
     do { wg_utils::ReadLine(is, raw_data_line); }
     while (raw_data_line != CHIP_HEADER_MARKER && i++ < 10);
     if (i < 10) {
@@ -159,7 +169,7 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
 
 bool MarkerSeeker::SeekChipHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(CHIP_HEADER_LENGTH);
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(CHIP_HEADER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
 
   bool has_header_marker, has_CH_marker, has_IP_marker, has_space_marker;
@@ -227,7 +237,7 @@ bool MarkerSeeker::SeekChipHeader(std::istream& is) {
 
 bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(CHIP_TRAILER_LENGTH);
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(CHIP_TRAILER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
   // Everything is good
   if (raw_data[0] == CHIP_TRAILER_MARKER &&
@@ -236,13 +246,14 @@ bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = ChipTrailer;
+    ++m_current_section.ichip;
     return true;
   }
   // If the chip trailer is corrupted we may as well skip it and go
   // straightly to the next section
   else if (raw_data[0] == CHIP_TRAILER_MARKER) {
     unsigned i = 0;
-    std::bitset<M> raw_data_line;
+    std::bitset<BITS_PER_LINE> raw_data_line;
     do { wg_utils::ReadLine(is, raw_data_line); }
     while (raw_data_line != CHIP_HEADER_MARKER &&
            raw_data_line != SPILL_NUMBER_MARKER &&
@@ -251,6 +262,7 @@ bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
     if (i < 10) {
       Log.eWrite("[wgDecoder] A spill trailer was corrupted or not found at byte " + to_string(start_read));
       is.seekg(- BYTES_PER_LINE, ios::cur);
+      ++m_current_section.ichip;
       return false;
     }
   }   
@@ -265,7 +277,7 @@ bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
 
 bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
   std::streampos start_read = is.tellg();
-  std::vector<std::bitset<M>> raw_data(SPILL_TRAILER_LENGTH);
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(SPILL_TRAILER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
   // Everything is good
   if ((raw_data[0] == SPILL_TRAILER_MARKER) &&
@@ -276,6 +288,7 @@ bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = SpillTrailer;
+    ++m_current_section.ispill;
     return true;
   } else {
     Log.eWrite("[wgDecoder] A spill trailer was corrupted or not found at byte " + to_string(start_read));
@@ -284,26 +297,38 @@ bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
     std::tie(has_trailer_marker, trailer_marker_pos) = wg_utils::FindInVector(raw_data, SPILL_TRAILER_MARKER);
     std::tie(has_space_marker, space_marker_pos) = wg_utils::FindInVector(raw_data, SPACE_MARKER);
     if (has_trailer_marker && has_space_marker) {
-      // Just make sure that the chip header is following in the next 10
-      // lines.
+
       is.seekg(start_read);
       unsigned i = 0;
-      std::bitset<M> raw_data_line;
+      std::bitset<BITS_PER_LINE> raw_data_line;
+      
+      if (m_config.has_spill_number) {
+      // Just make sure that the spill number is following in the next
+      // 10 lines.
       do { wg_utils::ReadLine(is, raw_data_line); }
-      while ((raw_data_line != SPILL_NUMBER_MARKER) &&
-             (raw_data_line != SPILL_HEADER_MARKER) &&
-             i++ < 10);
+      while ((raw_data_line != SPILL_NUMBER_MARKER) && i++ < 10);
+      
+      } else {
+        // Just make sure that the spill header is following in the next
+      // 10 lines.
+      do { wg_utils::ReadLine(is, raw_data_line); }
+      while ((raw_data_line != SPILL_HEADER_MARKER) && i++ < 10);
+      }
+      
       if (i < 10) {
         is.seekg(- BYTES_PER_LINE, ios::cur);
-        // If the header marker and the space x2020 marker are spaced
+        // If the trailer marker and the space x2020 marker are spaced
         // at least 3 positions there is still hope to extract
         // something meaningful from the spill trailer
         if (space_marker_pos - trailer_marker_pos > 3) {
           m_current_section.start = start_read;
           m_current_section.stop = is.tellg();
-          m_current_section.type = SpillHeader;
+          m_current_section.type = SpillTrailer;
+          ++m_current_section.ispill;
           return true;
         } else {
+          // The spill trailer is beyond any hope of recovery. Skip it.
+          ++m_current_section.ispill;
           return false;
         }
       }
@@ -320,7 +345,7 @@ bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
 
 bool MarkerSeeker::SeekRawData(std::istream& is) {
   std::streampos start_read = is.tellg();
-  bitset<M> raw_data_line;
+  std::bitset<BITS_PER_LINE> raw_data_line;
   unsigned n_raw_data = 0;
 
   is.seekg(- BYTES_PER_LINE, ios::cur);
@@ -335,7 +360,7 @@ bool MarkerSeeker::SeekRawData(std::istream& is) {
   }
   while (raw_data_line != CHIP_TRAILER_MARKER);
 
-  if (n_raw_data - CHIP_ID_LENGTH % ONE_COLUMN_LENGTH == 0) {
+  if (n_raw_data - m_config.n_chip_id % ONE_COLUMN_LENGTH == 0) {
     m_current_section.start = start_read;
     m_current_section.stop = is.tellg();
     m_current_section.type = RawData;
@@ -350,12 +375,13 @@ bool MarkerSeeker::SeekRawData(std::istream& is) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void MarkerSeeker::InitializeRing() {
-  m_seekers_ring[MarkerType::SpillNumber]  = std::bind(&MarkerSeeker::SeekSpillNumber,  this, std::placeholders::_1);
   m_seekers_ring[MarkerType::SpillHeader]  = std::bind(&MarkerSeeker::SeekSpillHeader,  this, std::placeholders::_1);
   m_seekers_ring[MarkerType::ChipHeader]   = std::bind(&MarkerSeeker::SeekChipHeader,   this, std::placeholders::_1);
   m_seekers_ring[MarkerType::RawData]      = std::bind(&MarkerSeeker::SeekRawData,      this, std::placeholders::_1);
   m_seekers_ring[MarkerType::ChipTrailer]  = std::bind(&MarkerSeeker::SeekChipTrailer,  this, std::placeholders::_1);
   m_seekers_ring[MarkerType::SpillTrailer] = std::bind(&MarkerSeeker::SeekSpillTrailer, this, std::placeholders::_1);
+  if (m_config.has_spill_number)
+    m_seekers_ring[MarkerType::SpillNumber]  = std::bind(&MarkerSeeker::SeekSpillNumber,  this, std::placeholders::_1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

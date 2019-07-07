@@ -21,7 +21,6 @@ void print_help(const char * program_name) {
       "  -n (int)   : DIF number (must be 1-8)\n"
       "  -x (int)   : number of ASU chips per DIF (must be 1-20)\n"
       "  -y (int)   : number of channels per chip (must be 1-36)\n"
-      "  -e (int)   : maximum number of spills to record (default = UINT_MAX)"
       "  -r         : overwrite mode\n"
       "  -b         : batch (silent) mode\n";
   exit(0);
@@ -39,7 +38,6 @@ int main(int argc, char** argv) {
   unsigned n_chips = 0;
   unsigned n_channels = 0;
   unsigned dif = 0;
-  unsigned max_n_events = 0;
 
   while((opt = getopt(argc,argv, "f:c:o:n:x:y:rbh")) !=-1) {
     switch (opt) {
@@ -61,9 +59,6 @@ int main(int argc, char** argv) {
       case 'y':
         n_channels = atoi(optarg);
         break;
-      case 'e':
-        max_n_events = atoi(optarg);
-        break;
       case 'r':
         overwrite = true;
         break;
@@ -80,18 +75,17 @@ int main(int argc, char** argv) {
 
   if (batch == true) Log.WhereToLog = LOGFILE;
   
-  // int retcode;
-  // if ( (retcode = wgDecoder(inputFile.c_str(),
-  //                           calibDir.c_str(),
-  //                           outputDir.c_str(),
-  //                           overwrite,
-  //                           max_n_events,
-  //                           dif,
-  //                           n_chips,
-  //                           n_channels)) != DE_SUCCESS ) {
-  //   Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
-  //   exit(1);
-  // }
+  int retcode;
+  if ( (retcode = wgDecoder(inputFile.c_str(),
+                            calibDir.c_str(),
+                            outputDir.c_str(),
+                            overwrite,
+                            dif,
+                            n_chips,
+                            n_channels)) != DE_SUCCESS ) {
+    Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
+    exit(1);
+  }
     
   exit(0);
 }

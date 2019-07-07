@@ -28,6 +28,9 @@
 #include "wgGetCalibData.hpp"
 #include "wgChannelMap.hpp"
 #include "wgDecoder.hpp"
+#include "wgDecoderSeeker.hpp"
+#include "wgDecoderReader.hpp"
+#include "wgDecoderUtils.hpp"
 #include "wgLogger.hpp"
 
 using namespace std;
@@ -37,7 +40,6 @@ int wgDecoder(const char * x_input_raw_file,
               const char * x_calibration_dir,
               const char * x_output_dir,
               const bool overwrite,
-              unsigned maxEvt,
               unsigned dif,
               unsigned n_chips,
               unsigned n_channels) {
@@ -51,12 +53,6 @@ int wgDecoder(const char * x_input_raw_file,
   // ===================================================================== //
   //                         Arguments sanity check                        //
   // ===================================================================== //
-
-  // ======== maxEvt ========= //
-  
-  if ( maxEvt == 0 ) {
-    maxEvt = MAX_EVENT;
-  }
 
   // ======== input_raw_file ========= //
   
@@ -140,6 +136,23 @@ int wgDecoder(const char * x_input_raw_file,
   }
 
   // ===================================================================== //
+  //                         Create the output file                        //
+  // ===================================================================== //
+
+  TFile * outputTFile;
+  TString output_file_path(output_dir + "/" + output_file_name);
+  if (!overwrite) {
+    if (check_exist::RootFile(output_file_path)) {
+      Log.eWrite("[Decoder] Error:" + string(output_file_path.Data()) +
+                 " already exists!");
+      return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
+    }
+    outputTFile = new TFile(output_file_path, "create");
+  } else {
+    outputTFile = new TFile(output_file_path, "recreate");
+  }
+
+  // ===================================================================== //
   //                  Allocate the raw data Raw_t class                    //
   // ===================================================================== //
   
@@ -213,40 +226,44 @@ int wgDecoder(const char * x_input_raw_file,
     
     // Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
     vector<int> v_log(4,0);
-    wgEditXML *Edit = new wgEditXML();
-    Edit->GetLog(pyrame_log_file, v_log);
-    delete Edit;
+    wgEditXML edit;
+    edit.GetLog(pyrame_log_file, v_log);
 
     time_t current_time = time(0);
     tm *tm = localtime(&current_time);
-    string this_year(Form("%04d-%02d-%02d-%02d-%02d", tm->tm_year+1900, 1, 1, 0, 0));
-    string next_year(Form("%04d-%02d-%02d-%02d-%02d", tm->tm_year+1900+1, 1, 1, 0, 0));
+    string this_year(Form("%04d-%02d-%02d-%02d-%02d", tm->tm_year + 1900, 1, 1, 0, 0));
+    string next_year(Form("%04d-%02d-%02d-%02d-%02d", tm->tm_year + 1900 + 1, 1, 1, 0, 0));
     struct tm date;
     strptime(this_year.c_str(), "%Y-%m-%d-%H-%M", &date);
-    int DATETIME_STR = (int) mktime(&date);
+    int datetime_str = (int) mktime(&date);
     strptime(next_year.c_str(), "%Y-%m-%d-%H-%M", &date);
-    int DATETIME_END = (int) mktime(&date);
-    int DATETIME_BIN = DATETIME_END - DATETIME_STR;
+    int datetime_end = (int) mktime(&date);
+    int datetime_bin = datetime_end - datetime_str;
 
     // Start time of the acquisition that produced the .raw file
-    TH1D * h_start_time = new TH1D("start_time", "Time the acquisition started", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    TH1D * h_start_time = new TH1D("start_time", "Time the acquisition started", datetime_bin, datetime_str, datetime_end);
     h_start_time->Fill(v_log[0], v_log[0]);
-    h_start_time->Fill(v_log[0] + 1, v_log[0] - DATETIME_END);
+    h_start_time->Fill(v_log[0] + 1, v_log[0] - datetime_end);
     // Stop time of the acquisition that produced the .raw file
-    TH1D * h_stop_time = new TH1D("stop_time", "Time the acquisition stopped", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    TH1D * h_stop_time = new TH1D("stop_time", "Time the acquisition stopped", datetime_bin, datetime_str, datetime_end);
     h_stop_time->Fill(v_log[1], v_log[1]);
-    h_stop_time->Fill(v_log[1] + 1, v_log[1] - DATETIME_END);
+    h_stop_time->Fill(v_log[1] + 1, v_log[1] - datetime_end);
     // Number of data packets acquired as reported by Pyrame in the acquisition log file
-    TH1D * h_nb_data_pkts = new TH1D("nb_data_pkts", "Number of data packets", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    TH1D * h_nb_data_pkts = new TH1D("nb_data_pkts", "Number of data packets", datetime_bin, datetime_str, datetime_end);
     h_nb_data_pkts->Fill(v_log[2]);
     // Number of lost packets acquired as reported by Pyrame in the acquisition log file
-    TH1D * h_nb_lost_pkts = new TH1D("nb_lost_pkts", "Number of lost packests", DATETIME_BIN, DATETIME_STR, DATETIME_END);
+    TH1D * h_nb_lost_pkts = new TH1D("nb_lost_pkts", "Number of lost packests", datetime_bin, datetime_str, datetime_end);
     h_nb_lost_pkts->Fill(v_log[3]);
 
+    outputTFile->cd();
     h_start_time  ->Write();
     h_stop_time   ->Write();
     h_nb_data_pkts->Write();
     h_nb_lost_pkts->Write();
+    delete h_start_time;
+    delete h_stop_time;
+    delete h_nb_data_pkts;
+    delete h_nb_lost_pkts;
   }
   else Log.eWrite("PYRAME_LOG_FILE: " + pyrame_log_file + " doesn't exist!");
 
@@ -268,7 +285,7 @@ int wgDecoder(const char * x_input_raw_file,
   tree->Branch("chipch"      ,rd.chan.data()       ,Form("chan[%d]/I"               ,         n_channels           ));
   tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                       ));
   tree->Branch("debug_chip"  ,rd.debug_chip.data() ,Form("debug_chip[%d][%d]/I"     ,n_chips, N_DEBUG_CHIP         ));
-  tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        , N_DEBUG_SPILL                ));
+  tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        ,N_DEBUG_SPILL                 ));
   tree->Branch("view"        ,&rd.view             ,"view/I"                                                        );
   tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, n_channels           ));
   tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, n_channels           ));
@@ -287,22 +304,6 @@ int wgDecoder(const char * x_input_raw_file,
     tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/D" ,n_chips, n_channels, 2        ));
   }
 
-  // ===================================================================== //
-  //                         Create the output file                        //
-  // ===================================================================== //
-
-  TFile * outputTFile;
-  TString output_file_path(output_dir + "/" + output_file_name);
-  if (!overwrite) {
-    if (check_exist::RootFile(output_file_path)) {
-      Log.eWrite("[Decoder] Error:" + string(output_file_path.Data()) +
-                 " already exists!");
-      return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
-    }
-    outputTFile = new TFile(output_file_path, "create");
-  } else {
-    outputTFile = new TFile(output_file_path, "recreate");
-  }
 
   // ===================================================================== //
   //                Allocate the RawDataConfig class object                //
@@ -311,7 +312,6 @@ int wgDecoder(const char * x_input_raw_file,
   RawDataConfig config(n_chips,
                        n_channels,
                        wagasci_decoder_utils::GetNumChipID(input_raw_file),
-                       MAX_EVENT,
                        wagasci_decoder_utils::HasSpillNumber(input_raw_file),
                        adc_is_calibrated,
                        tdc_is_calibrated);
@@ -322,19 +322,57 @@ int wgDecoder(const char * x_input_raw_file,
   //     ============================================================      //
   // ===================================================================== //
 
+  ifstream ifs;
+  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  if (!ifs.is_open()) {
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    return ERR_FAILED_OPEN_RAW_FILE;
+  }
 
+  unsigned n_good_spills = 0, n_bad_spills = 0;
+  int result;
+  try {
+    MarkerSeeker seeker(config);
+    EventReader reader(config, tree);
+    unsigned n_good_spills = 0, n_bad_spills = 0;
+    unsigned current_spill_count = 0, last_spill_count = 0;
+    
+    while (true) {
+      MarkerSeeker::Section current_section = seeker.SeekNextSection(ifs);
+      reader.ReadNextSection(ifs, current_section);
+      if (current_section.type == MarkerSeeker::MarkerType::RawData) {
+        current_spill_count = current_section.ispill;
+        if (current_spill_count == last_spill_count + 1)
+          ++n_good_spills;
+        else
+          ++n_bad_spills;
+        last_spill_count = current_spill_count;
+      }
+      if (n_good_spills + n_bad_spills % 1000 == 0) {
+        Log.Write("[wgDecoder] Decoded " + to_string(n_good_spills + n_bad_spills) + " spills");
+      }
+    }
+  } catch (const wgEOF& e) {
+    Log.Write("[Decoder] ***** " + string(e.what()) + "  *****");
+    result = DE_SUCCESS;
+  } catch (const exception& e) {
+    Log.Write("[Decoder] Error while reading raw data : " + string(e.what()));
+    result = ERR_READING_RAW_FILE;
+  }
 
+  // ===================================================================== //
+  //                           Close everything                            //
+  // ===================================================================== //
   
+  Log.Write("[Decoder] *****  GOOD spills : " + to_string(n_good_spills) + " spills *****");
+  Log.Write("[Decoder] *****  BAD  spills : " + to_string(n_bad_spills) + " spills *****");
 
-
-  
-  Log.Write("[Decoder] *****  Finished reading file  *****");
-  Log.Write("[Decoder] *****  with " + to_string(ievent) + " entries  *****");
-  Log.Write("[Decoder] *****  BAD data : " + to_string(bad_data) + " *****");
-
+  ifs.close();
   outputTFile->cd();
   tree->Write();
   outputTFile->Close();
-  Log.Write("[Decoder] Decode is finished");
-  return DE_SUCCESS;
+  delete outputTFile;
+  delete tree;
+
+  return result;
 }
