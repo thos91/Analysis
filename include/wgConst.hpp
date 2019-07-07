@@ -34,12 +34,12 @@ const unsigned CHIP_TRAILER_LENGTH  = 4;
 const unsigned SPILL_HEADER_LENGTH  = 6;
 const unsigned SPILL_TRAILER_LENGTH = 7;
 const unsigned SPILL_NUMBER_LENGTH  = 3;
-const unsigned CHIP_ID_LENGTH       = 1;
-  // One column length in 16 bits lines (but the BCID)
-  // 1 BCID              +
-  // n_channels times    +
-  // n_channels charges
-  const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
+
+// One column length in 16 bits lines (but the BCID)
+// 1 BCID              +
+// n_channels times    +
+// n_channels charges
+const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
 
 const unsigned MAX_EVENT = UINT_MAX;
 const unsigned N_DEBUG_SPILL = 8;
