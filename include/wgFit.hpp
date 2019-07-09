@@ -78,5 +78,9 @@ public:
 
   // Copy the passed string into the outputIMGDir private member 
   void SetoutputIMGDir(const string&);
+
+  // wgFit::scurve
+  // Fit the noise rate s-curve for each inputDAC, chip "ichip" and channel "ichan".
+  void scurve(TGraphErrors* Scurve, double& pe1_t, double& pe2_t, bool print_flag = false);
 };
 #endif

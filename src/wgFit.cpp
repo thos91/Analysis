@@ -327,3 +327,52 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   delete gaussian;
   return;  
 }
+
+
+//**********************************************************************
+void wgFit::scurve(TGraphErrors* Scurve, double& pe1_t, double& pe2_t, bool print_flag) {
+
+	// Fitting function for Scurve is summation of two sigmoid functions (and a constant).
+	const char* fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
+	double c0=50000, c1=1, c2=155, c3=5000, c4=1, c5=135, c6=300;
+
+	TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
+	fit_scurve->SetParameters(c0,c1,c2,c3,c4,c5,c6);
+	fit_scurve->SetParLimits(0,30000,70000);
+	fit_scurve->SetParLimits(2,145,160);
+	fit_scurve->SetParLimits(3,2000,7000);
+	fit_scurve->SetParLimits(5,130,145);
+	fit_scurve->SetParLimits(6,100,500);
+	
+	Scurve->Fit(fit_scurve,"");
+	
+	// From the fitting parameters, calcurate each p.e. level.
+	// Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
+	// variables a and b indicates the center point of each sigmoid function.
+	// Set 1.5 pe as the middle point between two sigmoid functions' center.
+	double a = fit_scurve->GetParametr(5);
+	double b = fit_scurve->GetParametr(2);
+	pe1_t =  (  a + b) / 2;
+	pe2_t =  (3*a + b) / 2;
+
+  if( print_flag && (!outputIMGDir.empty()) ) {
+    TString image;
+		image = outputIMGDir.c_str() + "/Dif"+to_string(idif_id)
+						+"/Chip"+to_string(ichip_id)+"/Channel"+to_string(ichan_id)
+						+"/InputDAC"+to_string(inputDAC[i_iDAC])+"_fit.png";
+  	TCanvas * canvas = new TCanvas("canvas", "canvas");
+  	canvas->SetCanvasSize(1024,768);
+  	canvas->SetLogy();
+  	Scurve->Draw("ap*");
+  	fit_scurve->Draw("same");
+  	canvas->Print(image);
+  	delete canvas; 
+	}
+
+	
+
+	delete fit_scurve;
+
+
+}
+
