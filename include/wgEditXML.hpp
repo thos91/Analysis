@@ -242,19 +242,19 @@ public:
   //                         S-curve XML files                             //
   //=======================================================================//
   
-  void SCURVE_Make(const string&);
-  void SCURVE_SetValue(const string&,int,int,bool);
-  int SCURVE_GetValue(const string&,int);
+  //void SCURVE_Make(const string&);
+  //void SCURVE_SetValue(const string&,int,int,bool);
+  //int SCURVE_GetValue(const string&,int);
 
   //=======================================================================//
-  //                           ??? XML files                               //
+  //                        Threshold XML files                            //
   //=======================================================================//
   
-  void OPT_Make(const string&);
-  void OPT_SetValue(const string&,int,int,int,int,bool);
-  int OPT_GetValue(const string&,int,int,int);
-  void OPT_SetChipValue(const string&,int,int,int,bool);
-  int OPT_GetChipValue(const string&,int,int);
+  void OPT_Make(const string&,vector<unsigned>,unsigned,vector<unsigned>,vector<vector<unsigned>>);
+  void OPT_SetValue(const string&,int,int,int,int,double,bool);
+  double OPT_GetValue(const string&,int,int,int,int);
+  void OPT_SetChanValue(const string&,int,int,int,double,bool);
+  double OPT_GetChanValue(const string&,int,int,int);
 
   //=======================================================================//
   //                           ??? XML files                               //
