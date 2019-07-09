@@ -10,12 +10,12 @@
 // user includes
 #include "wgDecoder.hpp"
 
-std::vector<std::bitset<BITS_PER_LINE>> SpillNumber(unsigned spill_id, unsigned spill_flag) {
+std::vector<std::bitset<BITS_PER_LINE>> SpillNumber(unsigned spill_id, unsigned spill_mode) {
   std::vector<std::bitset<BITS_PER_LINE>> spill_number;
 
   spill_number.push_back(SPILL_NUMBER_MARKER); // Marker
   spill_number.push_back(std::bitset<BITS_PER_LINE>(spill_id)); // spill ID
-  spill_number.push_back(std::bitset<BITS_PER_LINE>(spill_flag)); // spill flag
+  spill_number.push_back(std::bitset<BITS_PER_LINE>(spill_mode)); // spill flag
 
   return spill_number;
 }
@@ -127,31 +127,31 @@ void WriteToBinary(std::ofstream & os, std::vector<std::bitset<BITS_PER_LINE>> r
   }
 }
 
-class RawEmulator {
+class RawEmulatorConfig {
 
  public:
   unsigned n_spills = 1;
   unsigned n_chips = 1;
-  unsigned n_channels = 1;
   unsigned n_columns = 1;
   unsigned n_chip_id = 1;
-  unsigned spill_flag = BEAM_SPILL;
+  unsigned spill_mode = BEAM_SPILL;
+  bool has_spill_number = false;
   unsigned time = 1;
   unsigned charge = 1;
   unsigned bcid = 1;
   bool gain = true;
   bool hit = true;
-  RawEmulator() {};
-  RawEmulator(unsigned n_spills) : n_spills(n_spills) {}
-  RawEmulator(unsigned n_spills, unsigned n_chips, unsigned n_channels, unsigned n_columns, unsigned n_chip_id)
-      : n_spills(n_spills), n_chips(n_chips), n_channels(n_channels), n_columns(n_columns), n_chip_id(n_chip_id) {}
-  RawEmulator(unsigned n_spills, unsigned n_chips, unsigned n_channels, unsigned n_columns, unsigned n_chip_id,
-              unsigned spill_flag, unsigned time, unsigned charge, unsigned bcid)
-      : n_spills(n_spills), n_chips(n_chips), n_channels(n_channels), n_columns(n_columns), n_chip_id(n_chip_id),
-        spill_flag(spill_flag), time(time), charge(charge), bcid(bcid) {}
+  RawEmulatorConfig() {};
+  RawEmulatorConfig(unsigned n_spills) : n_spills(n_spills) {}
+  RawEmulatorConfig(unsigned n_spills, unsigned n_chips, unsigned n_columns, unsigned n_chip_id)
+      : n_spills(n_spills), n_chips(n_chips), n_columns(n_columns), n_chip_id(n_chip_id) {}
+  RawEmulatorConfig(unsigned n_spills, unsigned n_chips,  unsigned n_columns, unsigned n_chip_id,
+                    unsigned spill_mode, bool has_spill_number, unsigned time, unsigned charge, unsigned bcid)
+      : n_spills(n_spills), n_chips(n_chips), n_columns(n_columns), n_chip_id(n_chip_id),
+        spill_mode(spill_mode), has_spill_number(has_spill_number), time(time), charge(charge), bcid(bcid) {}
 };
 
-int wgRawEmulator(const string & output_file, RawEmulator & raw) {
+int wgRawEmulator(const string & output_file, RawEmulatorConfig & raw) {
 
   std::ofstream os;
   
@@ -160,7 +160,7 @@ int wgRawEmulator(const string & output_file, RawEmulator & raw) {
     
     for (unsigned ispill = 1; ispill <= raw.n_spills; ++ispill) {
 
-      WriteToBinary(os, SpillNumber(ispill, raw.spill_flag));
+      if (raw.has_spill_number) WriteToBinary(os, SpillNumber(ispill, raw.spill_mode));
       WriteToBinary(os, SpillHeader(ispill));
 
       for (unsigned ichip = 1; ichip <= raw.n_chips; ++ichip) {
@@ -216,6 +216,10 @@ int main(int argc, char** argv) {
     return 1;
   }
   
-  RawEmulator raw;
+  RawEmulatorConfig raw;
+  raw.n_spills = 10;
+  raw.n_chips = 20;
+  raw.n_chip_id = 1;
+  raw.has_spill_number = false;
   wgRawEmulator(output_file, raw);
 }

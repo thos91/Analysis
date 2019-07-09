@@ -18,9 +18,8 @@
 #define DEBUG_SPILL_NUMBER_GAP  2
 #define DEBUG_SAME_SPILL_COUNT  3
 #define DEBUG_SPILL_COUNT_GAP   4
-#define DEBUG_WRONG_CHIPID      5
-#define DEBUG_SPILL_TRAILER     6
-#define DEBUG_WRONG_NCHIPS      7
+#define DEBUG_SPILL_TRAILER     5
+#define DEBUG_WRONG_NCHIPS      6
 
 // chip
 #define DEBUG_WRONG_BCID        0
@@ -28,6 +27,7 @@
 #define DEBUG_WRONG_GAIN_BIT    2
 #define DEBUG_WRONG_ADC         3
 #define DEBUG_WRONG_TDC         4
+#define DEBUG_WRONG_CHIPID      5
 
 ///////////////////////////////////////////////////////////////////////////////
 //                             EventReader class                             //
@@ -36,15 +36,15 @@
 class EventReader {
  public:
 
-  EventReader(const RawDataConfig& config, TTree * tree);
+  EventReader(const RawDataConfig& config, TTree * tree, Raw_t & rd);
   
   void ReadNextSection(std::istream& is, const MarkerSeeker::Section section);
   
  private:
 
   RawDataConfig m_config;
-  Raw_t m_rd;
   TTree * m_tree;
+  std::reference_wrapper<Raw_t> m_rd;
   unsigned m_last_spill_number = 0;
   unsigned m_last_spill_count = 0;
   

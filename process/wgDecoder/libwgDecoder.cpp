@@ -40,15 +40,14 @@ int wgDecoder(const char * x_input_raw_file,
               const char * x_calibration_dir,
               const char * x_output_dir,
               const bool overwrite,
+              const bool compatibility_mode,
               unsigned dif,
-              unsigned n_chips,
-              unsigned n_channels) {
+              unsigned n_chips) {
 
   string input_raw_file(x_input_raw_file);
   string calibration_dir(x_calibration_dir);
   string output_dir(x_output_dir);
   string output_file_name = GetName(input_raw_file) + "_tree.root";
-  wgConst con;
 
   // ===================================================================== //
   //                         Arguments sanity check                        //
@@ -61,9 +60,10 @@ int wgDecoder(const char * x_input_raw_file,
     return ERR_INPUT_FILE_NOT_FOUND;
   }
 
-  // ======== pedestal_card ========= //
+  // ======== calibration_dir ========= //
 
   if (calibration_dir.empty()) {
+    wgConst con;
     calibration_dir = con.CONF_DIRECTORY;
   }
 
@@ -76,22 +76,15 @@ int wgDecoder(const char * x_input_raw_file,
   
   // ======== n_chips ========= //
 
+  if ( n_chips == 0 ) {
+    n_chips = wagasci_decoder_utils::GetNumChips(input_raw_file);
+  }
   if( n_chips > NCHIPS ) {
     Log.eWrite("[wgDecoder] The number of chips per DIF must be {1-"
                + to_string(NCHIPS) + "}");
     exit(1);
   }
-  if ( n_chips == 0 ) n_chips = NCHIPS;
 
-  // ======== n_channels ========= //
-  
-  if( n_channels > NCHANNELS ) {
-    Log.eWrite("[wgDecoder] The number of channels per DIF must be {1-"
-               + to_string(NCHANNELS) + "}");
-    exit(1);
-  }
-  if ( n_channels == 0 ) n_channels = NCHANNELS;
-  
   // ============ pyrame_log_file ============ //
 
   // This is not the output log file but the log file that should be already
@@ -104,13 +97,13 @@ int wgDecoder(const char * x_input_raw_file,
   
   try { MakeDir(output_dir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[Decoder] " + string(e.what()));
+    Log.eWrite("[wgDecoder] " + string(e.what()));
     return ERR_CANNOT_CREATE_DIRECTORY;
   }
 
-  Log.Write("[Decoder] READING FILE     : " + input_raw_file      );
-  Log.Write("[Decoder] OUTPUT TREE FILE : " + output_file_name );
-  Log.Write("[Decoder] OUTPUT DIRECTORY : " + output_dir      );
+  Log.Write("[wgDecoder] READING FILE     : " + input_raw_file      );
+  Log.Write("[wgDecoder] OUTPUT TREE FILE : " + output_file_name );
+  Log.Write("[wgDecoder] OUTPUT DIRECTORY : " + output_dir      );
 
   // ===================================================================== //
   //                        DIF number detection                           //
@@ -123,14 +116,14 @@ int wgDecoder(const char * x_input_raw_file,
       try {
         dif = stoi(input_raw_file.substr(pos + 8, pos + 9));
       } catch (const invalid_argument & e) {
-        Log.eWrite("[Decoder] failed to read the DIF number from the file name : " + string(e.what()));
+        Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + string(e.what()));
       } else if ((pos = input_raw_file.find("dif")) != string::npos)
       try {
         dif = stoi(input_raw_file.substr(pos + 3, pos + 4));
       } catch (const invalid_argument & e) {
-        Log.eWrite("[Decoder] failed to read the DIF number from the file name : " + string(e.what()));
+        Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + string(e.what()));
       } else {
-      Log.eWrite("[Decoder] Error: DIF ID number not given nor found");
+      Log.eWrite("[wgDecoder] Error: DIF ID number not given nor found");
       return ERR_WRONG_DIF_VALUE;
     }
   }
@@ -143,7 +136,7 @@ int wgDecoder(const char * x_input_raw_file,
   TString output_file_path(output_dir + "/" + output_file_name);
   if (!overwrite) {
     if (check_exist::RootFile(output_file_path)) {
-      Log.eWrite("[Decoder] Error:" + string(output_file_path.Data()) +
+      Log.eWrite("[wgDecoder] Error:" + string(output_file_path.Data()) +
                  " already exists!");
       return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
     }
@@ -156,31 +149,8 @@ int wgDecoder(const char * x_input_raw_file,
   //                  Allocate the raw data Raw_t class                    //
   // ===================================================================== //
   
-  Raw_t rd(n_chips, n_channels);
+  Raw_t rd(n_chips);
   
-  // ===================================================================== //
-  //                             Get mapping                               //
-  // ===================================================================== //
-  
-  // Get the geometrical information (position in space) for each channel
-  wgChannelMap Map;
-  {
-    vector<int> pln, ch, grid;
-    vector<double> x, y, z;
-    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-      Map.GetMap( dif,
-                  ichip,
-                  rd.pln [ichip].size(),
-                  rd.view,
-                  rd.pln [ichip].data(),
-                  rd.ch  [ichip].data(),
-                  rd.grid[ichip].data(),
-                  rd.x   [ichip].data(),
-                  rd.y   [ichip].data(),
-                  rd.z   [ichip].data());
-    }
-  }
-
   // ===================================================================== //
   //                        Get calibration data                           //
   // ===================================================================== //
@@ -218,6 +188,29 @@ int wgDecoder(const char * x_input_raw_file,
   }
   adc_is_calibrated = pedestal_is_calibrated && gain_is_calibrated;
 
+  // ===================================================================== //
+  //                             Get mapping                               //
+  // ===================================================================== //
+  
+  // Get the geometrical information (position in space) for each channel
+  wgChannelMap Map;
+  if (adc_is_calibrated) {
+    vector<int> pln, ch, grid;
+    vector<double> x, y, z;
+    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+      Map.GetMap( dif,
+                  ichip,
+                  rd.pln [ichip].size(),
+                  rd.view,
+                  rd.pln [ichip].data(),
+                  rd.ch  [ichip].data(),
+                  rd.grid[ichip].data(),
+                  rd.x   [ichip].data(),
+                  rd.y   [ichip].data(),
+                  rd.z   [ichip].data());
+    }
+  }
+  
   // ===================================================================== //
   //                        Read Pyrame log file                           //
   // ===================================================================== //
@@ -265,43 +258,43 @@ int wgDecoder(const char * x_input_raw_file,
     delete h_nb_data_pkts;
     delete h_nb_lost_pkts;
   }
-  else Log.eWrite("PYRAME_LOG_FILE: " + pyrame_log_file + " doesn't exist!");
+  else Log.eWrite("[wgDecoder ] Pyrame log file : " + pyrame_log_file + " doesn't exist!");
 
   // ===================================================================== //
   //                      Create TTree branches                            //
   // ===================================================================== //
 
   TTree * tree = new TTree("tree", "ROOT tree containing decoded data");
-  tree->Branch("spill_number",&rd.spill_number     ,"spill_number/I"                                                );
-  tree->Branch("spill_mode"  ,&rd.spill_mode       ,"spill_mode/I"                                                  );
-  tree->Branch("spill_count" ,&rd.spill_count      ,"spill_count/I"                                                 );
-  tree->Branch("bcid"        ,rd.bcid.data()       ,Form("bcid[%d][%d]/I"           ,n_chips,             MEMDEPTH ));
-  tree->Branch("charge"      ,rd.charge.data()     ,Form("charge[%d][%d][%d]/I"     ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("time"        ,rd.time.data()       ,Form("time[%d][%d][%d]/I"       ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("gs"          ,rd.gs.data()         ,Form("gs[%d][%d][%d]/I"         ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("hit"         ,rd.hit.data()        ,Form("hit[%d][%d][%d]/I"        ,n_chips, n_channels, MEMDEPTH ));
-  tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                       ));
-  tree->Branch("col"         ,rd.col.data()        ,Form("col[%d]/I"                ,                     MEMDEPTH ));
-  tree->Branch("chipch"      ,rd.chan.data()       ,Form("chan[%d]/I"               ,         n_channels           ));
-  tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                       ));
-  tree->Branch("debug_chip"  ,rd.debug_chip.data() ,Form("debug_chip[%d][%d]/I"     ,n_chips, N_DEBUG_CHIP         ));
-  tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        ,N_DEBUG_SPILL                 ));
-  tree->Branch("view"        ,&rd.view             ,"view/I"                                                        );
-  tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, n_channels           ));
-  tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, n_channels           ));
-  tree->Branch("grid"        ,rd.grid.data()       ,Form("grid[%d][%d]/I"           ,n_chips, n_channels           ));
-  tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, n_channels           ));
-  tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, n_channels           ));
-  tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, n_channels           ));
+  tree->Branch("spill_number",&rd.spill_number     ,"spill_number/I"                                               );
+  tree->Branch("spill_mode"  ,&rd.spill_mode       ,"spill_mode/I"                                                 );
+  tree->Branch("spill_count" ,&rd.spill_count      ,"spill_count/I"                                                );
+  tree->Branch("bcid"        ,rd.bcid.data()       ,Form("bcid[%d][%d]/I"           ,n_chips,            MEMDEPTH ));
+  tree->Branch("charge"      ,rd.charge.data()     ,Form("charge[%d][%d][%d]/I"     ,n_chips, NCHANNELS, MEMDEPTH ));
+  tree->Branch("time"        ,rd.time.data()       ,Form("time[%d][%d][%d]/I"       ,n_chips, NCHANNELS, MEMDEPTH ));
+  tree->Branch("gs"          ,rd.gs.data()         ,Form("gs[%d][%d][%d]/I"         ,n_chips, NCHANNELS, MEMDEPTH ));
+  tree->Branch("hit"         ,rd.hit.data()        ,Form("hit[%d][%d][%d]/I"        ,n_chips, NCHANNELS, MEMDEPTH ));
+  tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                      ));
+  tree->Branch("col"         ,rd.col.data()        ,Form("col[%d]/I"                ,                    MEMDEPTH ));
+  tree->Branch("chipch"      ,rd.chan.data()       ,Form("chan[%d]/I"               ,         NCHANNELS           ));
+  tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                      ));
+  tree->Branch("debug_chip"  ,rd.debug_chip.data() ,Form("debug_chip[%d][%d]/I"     ,n_chips, N_DEBUG_CHIP        ));
+  tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        ,N_DEBUG_SPILL                ));
+  tree->Branch("view"        ,&rd.view             ,"view/I"                                                       );
+  tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, NCHANNELS           ));
+  tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, NCHANNELS           ));
+  tree->Branch("grid"        ,rd.grid.data()       ,Form("grid[%d][%d]/I"           ,n_chips, NCHANNELS           ));
+  tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, NCHANNELS           ));
+  tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, NCHANNELS           ));
+  tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, NCHANNELS           ));
   if (adc_is_calibrated) {
-    tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, n_channels, MEMDEPTH ));
-    tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, n_channels, MEMDEPTH ));
-    tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d][%d]/D"       ,n_chips, n_channels, MEMDEPTH ));
+    tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, NCHANNELS, MEMDEPTH ));
+    tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, NCHANNELS, MEMDEPTH ));
+    tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d][%d]/D"       ,n_chips, NCHANNELS, MEMDEPTH ));
   }
   if (tdc_is_calibrated) {
-    tree->Branch("time_ns"   ,rd.time_ns.data()    ,Form("time_ns[%d][%d][%d]/D"    ,n_chips, n_channels, MEMDEPTH ));
-    tree->Branch("tdc_slope" ,rd.tdc_slope.data()  ,Form("tdc_slope[%d][%d][%d]/D"  ,n_chips, n_channels, 2        ));
-    tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/D" ,n_chips, n_channels, 2        ));
+    tree->Branch("time_ns"   ,rd.time_ns.data()    ,Form("time_ns[%d][%d][%d]/D"    ,n_chips, NCHANNELS, MEMDEPTH ));
+    tree->Branch("tdc_slope" ,rd.tdc_slope.data()  ,Form("tdc_slope[%d][%d][%d]/D"  ,n_chips, NCHANNELS, 2        ));
+    tree->Branch("tdc_intcpt",rd.tdc_intcpt.data() ,Form("tdc_intcpt[%d][%d][%d]/D" ,n_chips, NCHANNELS, 2        ));
   }
 
 
@@ -309,9 +302,12 @@ int wgDecoder(const char * x_input_raw_file,
   //                Allocate the RawDataConfig class object                //
   // ===================================================================== //
 
+  unsigned n_chip_id;
+  if (compatibility_mode) n_chip_id = 1;
+  else n_chip_id = wagasci_decoder_utils::GetNumChipID(input_raw_file);
   RawDataConfig config(n_chips,
-                       n_channels,
-                       wagasci_decoder_utils::GetNumChipID(input_raw_file),
+                       NCHANNELS,
+                       n_chip_id,
                        wagasci_decoder_utils::HasSpillNumber(input_raw_file),
                        adc_is_calibrated,
                        tdc_is_calibrated);
@@ -333,30 +329,48 @@ int wgDecoder(const char * x_input_raw_file,
   int result;
   try {
     MarkerSeeker seeker(config);
-    EventReader reader(config, tree);
-    unsigned n_good_spills = 0, n_bad_spills = 0;
-    unsigned current_spill_count = 0, last_spill_count = 0;
-    
+    EventReader reader(config, tree, rd);
+    int last_spill_count = -1;
+    unsigned last_section_type = 0;
     while (true) {
+
+      // ============ Seek and read next section ============ //
+      
       MarkerSeeker::Section current_section = seeker.SeekNextSection(ifs);
       reader.ReadNextSection(ifs, current_section);
+
+      // ============ If the raw data was correctly read  ============ //
+      // ============ this is a good spill otherwise this ============ //
+      // ============ is a bad spill.                     ============ //
+      
       if (current_section.type == MarkerSeeker::MarkerType::RawData) {
-        current_spill_count = current_section.ispill;
-        if (current_spill_count == last_spill_count + 1)
+        if (current_section.ispill == (unsigned) last_spill_count + 1) {
           ++n_good_spills;
-        else
-          ++n_bad_spills;
-        last_spill_count = current_spill_count;
+        } else {
+          n_bad_spills += current_section.ispill - last_spill_count;
+        }
+        last_spill_count = current_section.ispill;
+      } else if (current_section.type == MarkerSeeker::MarkerType::ChipTrailer &&
+                 last_section_type != MarkerSeeker::MarkerType::RawData) {
+        n_bad_spills += current_section.ispill - last_spill_count;
+        last_spill_count = current_section.ispill;
       }
-      if (n_good_spills + n_bad_spills % 1000 == 0) {
-        Log.Write("[wgDecoder] Decoded " + to_string(n_good_spills + n_bad_spills) + " spills");
+
+      // ============ Print the progress every 1000 spills ============ //
+      
+      if (current_section.type == MarkerSeeker::MarkerType::SpillTrailer) {
+        rd.clear();
+        if ((n_good_spills + n_bad_spills) % 1000 == 0) {
+          Log.Write("[wgDecoder] Decoded " + to_string(n_good_spills + n_bad_spills) + " spills");
+        }
       }
+      
+      last_section_type = current_section.type;
     }
   } catch (const wgEOF& e) {
-    Log.Write("[Decoder] ***** " + string(e.what()) + "  *****");
     result = DE_SUCCESS;
   } catch (const exception& e) {
-    Log.Write("[Decoder] Error while reading raw data : " + string(e.what()));
+    Log.eWrite("[wgDecoder] Error while reading raw data : " + string(e.what()));
     result = ERR_READING_RAW_FILE;
   }
 
@@ -364,15 +378,15 @@ int wgDecoder(const char * x_input_raw_file,
   //                           Close everything                            //
   // ===================================================================== //
   
-  Log.Write("[Decoder] *****  GOOD spills : " + to_string(n_good_spills) + " spills *****");
-  Log.Write("[Decoder] *****  BAD  spills : " + to_string(n_bad_spills) + " spills *****");
+  Log.Write("[wgDecoder] *****  GOOD spills : " + to_string(n_good_spills) + " spills *****");
+  Log.Write("[wgDecoder] *****  BAD  spills : " + to_string(n_bad_spills) + " spills *****");
 
   ifs.close();
   outputTFile->cd();
   tree->Write();
+  outputTFile->Write();
   outputTFile->Close();
   delete outputTFile;
-  delete tree;
 
   return result;
 }

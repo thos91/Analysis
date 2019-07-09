@@ -48,10 +48,10 @@ extern "C" {
 int wgDecoder(const char * x_input_raw_file,
               const char * x_calibration_dir,
               const char * x_output_dir,
-              const bool overwrite,
-              unsigned dif,
-              unsigned n_chips,
-              unsigned n_channels);
+              bool overwrite = false,
+              bool compatibility_mode = false,
+              unsigned dif = 1,
+              unsigned n_chips = 0);
   
 #ifdef __cplusplus
 }

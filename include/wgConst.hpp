@@ -42,8 +42,8 @@ const unsigned SPILL_NUMBER_LENGTH  = 3;
 const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
 
 const unsigned MAX_EVENT = UINT_MAX;
-const unsigned N_DEBUG_SPILL = 8;
-const unsigned N_DEBUG_CHIP = 5;
+const unsigned N_DEBUG_SPILL = 7;
+const unsigned N_DEBUG_CHIP = 6;
 
 enum SPILL_TYPE {
   NON_BEAM_SPILL = 0,  // non beam spill bit (spill_flag)
@@ -186,8 +186,8 @@ public:
   int n_cols;
 
   Raw_t();
+  Raw_t(size_t n_chips);
   Raw_t(size_t n_chips, size_t n_chans);
-  ~Raw_t();
   void clear();
 };
 

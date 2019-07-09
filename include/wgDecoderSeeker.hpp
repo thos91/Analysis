@@ -50,6 +50,8 @@ class MarkerSeeker {
 
   RawDataConfig m_config;
   Section m_current_section;
+  unsigned m_last_ispill = 0;
+  unsigned m_last_ichip = 0;
   
   bool SeekSpillNumber (std::istream& is);
   bool SeekSpillHeader (std::istream& is);
@@ -58,7 +60,7 @@ class MarkerSeeker {
   bool SeekSpillTrailer(std::istream& is);
   bool SeekRawData     (std::istream& is);
 
-  unsigned NextSectionType(unsigned last_section_type);
+  unsigned NextSectionType(unsigned last_section_type, bool last_section_was_found);
   
   void InitializeRing();
 };

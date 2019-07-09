@@ -19,5 +19,4 @@ NCHANNELS=32
 
 echo " wgDecoder unit test:"
 echo " Command : ${DECODER} -f ${INPUT_RAW} -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r"
-
-${DECODER} -f ${INPUT_RAW} -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r
+                 ${DECODER} -f ${INPUT_RAW} -o ${OUTPUT_DIR} -x ${NCHIPS} -y ${NCHANNELS} -r

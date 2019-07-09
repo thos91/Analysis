@@ -10,28 +10,35 @@ Arguments
 =========
 
 - ``[-h]`` : prints an help message
-- ``[-f]`` : selects the input raw file to read
-- ``[-i]`` : selects the calibration file to read
-- ``[-o]`` : selects the output directory for the ROOT file (if not given, the
-  environment variable WAGASCI_DECODEDIR is used instead)
-- ``[-r]`` : overwrite mode (overwrite the ROOT file if present)
+- ``[-f]`` : input raw file to read (mandatory)
+- ``[-c]`` : directory containing the calibration card files (default = WAGASCI_CONFDIR)
+- ``[-o]`` : output directory for the ROOT file (default = WAGASCI_DECODEDIR)
+- ``[-n]`` : DIF number 1-8 (default 1-8)\n"
+- ``[-x]`` : number of ASU chips per DIF 1-20. By default the decoder automatically detects the number of ASU chips.\n"
+- ``[-r]`` : overwrite mode (default = false). Overwrite the ROOT tree file.
+- ``[-q]`` : compatibility mode for old data (default = false). Use for raw data files acquired before the first half of 2018. Even if not set, the decoder tries to detect the old raw data format automatically.
+- ``[-b]`` : silent mode (default = false). If set, nothing is printed on the stardard output. The output is still printed on the log file.
 
 Histograms
 ==========
 
-- ``spill`` : spill number (for each event)
+The following histograms are directly extracted from the raw data. All the other histograms are calculated from the calibration data.
+
+- ``spill_number`` : spill number (for each event)
 - ``spill_mode`` : 0 for non-beam spill, 1 for beam spill (for each event)
 - ``spill_count`` : number of spill acquired during this acquisition (until that
   particular event)
-- ``spill_flag`` : for each event counts the number of chips that were correctly read
-
-- ``bcid`` : the bunch crossing identification time (16 bit integer)
-- ``hit`` : if the hit bit in the raw data (for each chip and each channel) is set to
-  one we have a hit, if it set to zero we don't have a hit
-- ``gain`` : if the gain bit in the raw data (for each chip and each channel) is
+- ``bcid[<n_chips>][<n_columns>]`` : the bunch crossing identification time (16 bit integer)
+- ``charge[<n_chips>][<n_channels>][<n_columns>]`` : ADC counts
+- ``time[<n_chips>][<n_channels>][<n_columns>]`` : TDC counts
+- ``gain[<n_chips>][<n_channels>][<n_columns>]`` : if the gain bit in the raw data (for each chip and each channel) is
   set to one the high gain preamplifier is used, if it set to zero the low gain
+- ``hit[<n_chips>][<n_channels>][<n_columns>]`` : if the hit bit in the raw data (for each chip and each channel) is set to
+  one we have a hit, if it set to zero we don't have a hit
+
   preamplifier is used.
-- ``debug`` : for each DEBUG macro defined in Decoder.cpp that bin is increased by one
+
+- ``debug_chip[<n_chips>]`` : for each chip DEBUG macro defined in wgDecoderReader.hpp that bin is increased by one
+- ``debug_spill`` : for each spill DEBUG macro defined in wgDecoderReader.hpp that bin is increased by one
   every time that the relative error occurres
-- ``chipid`` : chip ID tag as it is recorded in the chip trailer.
-- ``chipid_tag`` : chip ID tag as it is recorded in the chip header (if not found the software tries to guess it)
+- ``chipid[<n_chips>]`` : chip ID tag as it is recorded in the chip trailer.

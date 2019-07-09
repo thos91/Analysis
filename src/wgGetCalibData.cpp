@@ -23,7 +23,7 @@ wgGetCalibData::wgGetCalibData(unsigned dif) : m_dif(dif) {
 wgGetCalibData::wgGetCalibData(const string& calibration_dir, unsigned dif) :
     m_dif(dif), m_calibration_dir(calibration_dir) {
   if (!check_exist::Dir(m_calibration_dir))
-    throw wgInvalidFile("[wgGetCaibData] calibration directory not found : " + m_calibration_dir);
+    throw wgInvalidFile("[wgGetCalibData] calibration directory not found : " + m_calibration_dir);
   m_have_pedestal_calibration = FindPedestalCard();
   m_have_gain_calibration     = FindGainCard();
   m_have_tdc_calibration      = FindTDCCalibrationCard();

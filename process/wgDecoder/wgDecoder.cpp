@@ -15,31 +15,30 @@ void print_help(const char * program_name) {
   cout << "this program decodes a .raw file into a .root file\n"
       "usage example: " << program_name << " -f inputfile.raw -r\n"
       "  -h         : help\n"
-      "  -f (char*) : input .raw file that you want to read (mandatory)\n"
-      "  -c (char*) : directory containing the calibration card files\n"
+      "  -f (char*) : input .raw file to read (mandatory)\n"
+      "  -c (char*) : directory containing the calibration card files (default = WAGASCI_CONFDIR)\n"
       "  -o (char*) : output directory (default = WAGASCI_DECODEDIR)\n"
-      "  -n (int)   : DIF number (must be 1-8)\n"
-      "  -x (int)   : number of ASU chips per DIF (must be 1-20)\n"
-      "  -y (int)   : number of channels per chip (must be 1-36)\n"
-      "  -r         : overwrite mode\n"
-      "  -b         : batch (silent) mode\n";
+      "  -n (int)   : DIF number 1-8 (default = 1)\n"
+      "  -x (int)   : number of ASU chips per DIF 1-20 (default = autodetected)\n"
+      "  -r         : overwrite mode (default = false)\n"
+      "  -q         : compatibility mode for old data (default = false)\n"
+      "  -b         : silent mode (default = false)\n";
   exit(0);
 }
 
 int main(int argc, char** argv) {
   string inputFile("");
   string calibDir("");
-  string outputFile("");
   string outputDir("");
 
   int opt;
   bool overwrite = false;
   bool batch = false;
+  bool compatibility_mode = false;
   unsigned n_chips = 0;
-  unsigned n_channels = 0;
   unsigned dif = 0;
 
-  while((opt = getopt(argc,argv, "f:c:o:n:x:y:rbh")) !=-1) {
+  while((opt = getopt(argc,argv, "f:c:o:n:x:y:rbqh")) !=-1) {
     switch (opt) {
       case 'f':
         inputFile = optarg;
@@ -56,12 +55,12 @@ int main(int argc, char** argv) {
       case 'x':
         n_chips = atoi(optarg);
         break;
-      case 'y':
-        n_channels = atoi(optarg);
-        break;
       case 'r':
         overwrite = true;
         break;
+      case 'q':
+        compatibility_mode = true;
+        break; 
       case 'b':
         batch = true;
         break;
@@ -80,9 +79,9 @@ int main(int argc, char** argv) {
                             calibDir.c_str(),
                             outputDir.c_str(),
                             overwrite,
+                            compatibility_mode,
                             dif,
-                            n_chips,
-                            n_channels)) != DE_SUCCESS ) {
+                            n_chips)) != DE_SUCCESS ) {
     Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
     exit(1);
   }

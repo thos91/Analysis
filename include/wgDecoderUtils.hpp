@@ -21,6 +21,7 @@ std::pair<bool, std::size_t> FindInVector(const std::vector<std::bitset<BITS_PER
                                           const std::bitset<BITS_PER_LINE>& element);
 unsigned GetNumChipID(string & input_raw_file);
 bool HasSpillNumber(string & input_raw_file);
+unsigned GetNumChips(string & input_raw_file);
 
 }
 

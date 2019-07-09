@@ -4,6 +4,9 @@
 #include <functional>
 #include <vector>
 
+// system C includes
+#include <csignal>
+
 // user includes
 #include "wgConst.hpp"
 #include "wgExceptions.hpp"
@@ -19,7 +22,7 @@ namespace wagasci_decoder_utils {
 
 std::streampos ReadLine(std::istream& is, std::bitset<BITS_PER_LINE>& raw_data) {
   is.read((char*) &raw_data, BYTES_PER_LINE);
-  if (is) throw wgEOF("EOF reached : number of bytes read is " + to_string(is.tellg()));
+  if (is.eof()) throw wgEOF("EOF reached");
   return is.tellg();
 }
 
@@ -30,7 +33,7 @@ std::streampos ReadLine(std::istream& is, std::bitset<BITS_PER_LINE>& raw_data) 
 std::streampos ReadChunk(std::istream& is, std::vector<std::bitset<BITS_PER_LINE>>& raw_data) {
   for (unsigned i = 0; i < raw_data.size(); ++i) {
     is.read((char*) &raw_data[i], BYTES_PER_LINE);
-    if (is) throw wgEOF("EOF reached : number of bytes read is " + to_string(is.tellg()));
+    if (is.eof()) throw wgEOF("EOF reached");
   }
   return is.tellg();
 }
@@ -100,7 +103,7 @@ bool HasSpillNumber(string & input_raw_file) {
   ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
   if (!ifs.is_open()) {
     Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
-    return ERR_FAILED_OPEN_RAW_FILE;
+    return false;
   }
   
   bitset<BITS_PER_LINE> raw_data;
@@ -115,6 +118,49 @@ bool HasSpillNumber(string & input_raw_file) {
 
   ifs.close();
   return found;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                 GetNumChips                               //
+///////////////////////////////////////////////////////////////////////////////
+
+unsigned GetNumChips(string & input_raw_file) {
+  
+  ifstream ifs;
+  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  if (!ifs.is_open()) {
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    return ERR_FAILED_OPEN_RAW_FILE;
+  }
+  
+  std::bitset<BITS_PER_LINE> raw_data;
+  std::vector<unsigned> n_chips_vec;
+
+  unsigned counter = 0;
+  
+  while ( ifs.read((char * ) &raw_data, BYTES_PER_LINE) && counter < 10 ) {
+    if (raw_data == SPILL_TRAILER_MARKER) {
+      ++counter;
+      ifs.seekg(2 * BYTES_PER_LINE, ios::cur);
+      ifs.read((char * ) &raw_data, BYTES_PER_LINE);
+      n_chips_vec.push_back(raw_data.to_ulong());
+      }
+    }
+  ifs.close();
+  
+  if (n_chips_vec.size() == 0) return 0;
+
+  unsigned max = 0;
+  unsigned most_common_n_chips = -1;
+  map<unsigned, unsigned> m;
+  for (auto vi = n_chips_vec.begin(); vi != n_chips_vec.end(); vi++) {
+    m[*vi]++;
+    if (m[*vi] > max) {
+      max = m[*vi]; 
+      most_common_n_chips = *vi;
+    }
+  }
+  return most_common_n_chips;
 }
 
 } // namespace wagasci_decoder_utils
