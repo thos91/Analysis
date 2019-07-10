@@ -16,6 +16,7 @@
 #include <TTree.h>
 #include <TMath.h>
 #include <TGraph.h>
+#include <TGraphErrors.h>
 #include <TCanvas.h>
 #include <stdio.h>
 #include <TROOT.h>
@@ -80,6 +81,9 @@ wgFit::wgFit(const string& x_inputfile) {
   }
   wgFit::outputIMGDir = con.IMGDATA_DIRECTORY;
 }
+
+//**********************************************************************
+wgFit::wgFit(TGraphErrors* Scurve){};
 
 //**********************************************************************
 wgFit::~wgFit(){
@@ -330,7 +334,15 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
 
 
 //**********************************************************************
-void wgFit::scurve(TGraphErrors* Scurve, double& pe1_t, double& pe2_t, bool print_flag) {
+void wgFit::scurve(TGraphErrors* Scurve, 
+										double& pe1_t, 
+										double& pe2_t, 
+										unsigned idif_id, 
+										unsigned ichip_id, 
+										unsigned ichan_id, 
+										unsigned inputDAC,
+										string outputIMGDir, 
+										bool print_flag) {
 
 	// Fitting function for Scurve is summation of two sigmoid functions (and a constant).
 	const char* fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
@@ -350,16 +362,16 @@ void wgFit::scurve(TGraphErrors* Scurve, double& pe1_t, double& pe2_t, bool prin
 	// Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
 	// variables a and b indicates the center point of each sigmoid function.
 	// Set 1.5 pe as the middle point between two sigmoid functions' center.
-	double a = fit_scurve->GetParametr(5);
-	double b = fit_scurve->GetParametr(2);
+	double a = fit_scurve->GetParameter(5);
+	double b = fit_scurve->GetParameter(2);
 	pe1_t =  (  a + b) / 2;
 	pe2_t =  (3*a + b) / 2;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image;
-		image = outputIMGDir.c_str() + "/Dif"+to_string(idif_id)
+		image = outputIMGDir + "/Dif"+to_string(idif_id)
 						+"/Chip"+to_string(ichip_id)+"/Channel"+to_string(ichan_id)
-						+"/InputDAC"+to_string(inputDAC[i_iDAC])+"_fit.png";
+						+"/InputDAC"+to_string(inputDAC)+"_fit.png";
   	TCanvas * canvas = new TCanvas("canvas", "canvas");
   	canvas->SetCanvasSize(1024,768);
   	canvas->SetLogy();
@@ -368,8 +380,6 @@ void wgFit::scurve(TGraphErrors* Scurve, double& pe1_t, double& pe2_t, bool prin
   	canvas->Print(image);
   	delete canvas; 
 	}
-
-	
 
 	delete fit_scurve;
 

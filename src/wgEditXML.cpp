@@ -728,7 +728,7 @@ void wgEditXML::SUMMARY_GetPedFitValue(int value[MEMDEPTH], const int ich){
 
 //**********************************************************************
 void wgEditXML::OPT_Make(	const string& 						filename, 
-													vector<unsigned> 					inputDACs;
+													vector<unsigned> 					inputDACs,
 													unsigned 									n_difs,
 													vector<unsigned> 					n_chips,
 													vector<vector<unsigned>> 	n_chans){
@@ -740,6 +740,7 @@ void wgEditXML::OPT_Make(	const string& 						filename,
   XMLElement* data; 
   XMLElement* dif;
   XMLElement* chip;
+  XMLElement* chan;
   XMLElement* s_th[2];
   XMLElement* i_th[2];
   XMLElement* inputDAC;
@@ -752,18 +753,15 @@ void wgEditXML::OPT_Make(	const string& 						filename,
 
   for(unsigned int idif=0;idif<n_difs;idif++){
     // ***** data > dif ***** //
-		string dif_name = "dif_" + to_string(idif+1);
-    dif = xml->NewElement(dif_name);    
+    dif = xml->NewElement(Form("dif_%d",idif+1));    
     data->InsertEndChild(dif);
     for(unsigned int ichip=0;ichip<n_chips[idif];ichip++){
     	// ***** data > dif > chip ***** //
-			string chip_name = "chip_" + to_string(ichip+1);
-      chip = xml->NewElement(chip_name);    
+      chip = xml->NewElement(Form("chip_%d",ichip+1));    
       dif->InsertEndChild(chip);
     	for(unsigned int ichan=0;ichan<n_chans[idif][ichip];ichan++){
     		// ***** data > dif > chip > channel ***** //
-				string chan_name = "chan_" + to_string(ichan);
-    	  chan = xml->NewElement(chan_name);    
+    	  chan = xml->NewElement(Form("chan_%d",ichan+1));    
     	  dif->InsertEndChild(chan);
     	  s_th[0] = xml->NewElement("s_th1");    
     	  i_th[0] = xml->NewElement("i_th1");    
@@ -775,12 +773,10 @@ void wgEditXML::OPT_Make(	const string& 						filename,
     	  chan->InsertEndChild(i_th[1]);
     	  for(unsigned int iDAC=0;iDAC<inputDACs.size();iDAC++){
     	    // ***** data > dif > chip > channel > inputDAC ***** //
-					string inputDAC_name = "inputDAC_" + to_string(inputDACs[iDAC]);
-    	    inputDAC = xml->NewElement(inputDAC_name);    
+    	    inputDAC = xml->NewElement(Form("inputDAC_%d",inputDACs[iDAC]));    
     	    chip->InsertEndChild(inputDAC);
     	    for(unsigned int pe=0;pe<2;pe++){
-						string threshold_name = "threshold_" + to_string(pe+1);
-    	      threshold = xml->NewElement(threshold_name);    
+    	      threshold = xml->NewElement(Form("threshold_%d",pe+1));    
     	      inputDAC->InsertEndChild(threshold);
     	    }
     	  }
@@ -837,7 +833,7 @@ double wgEditXML::OPT_GetValue(const string& name,int idif, int ichip, int ichan
 }
 
 //**********************************************************************
-void wgEditXML::OPT_SetChanValue(const string& name,int idif, int ichip, ,int ichan, double value, bool create_new){
+void wgEditXML::OPT_SetChanValue(const string& name,int idif, int ichip, int ichan, double value, bool create_new){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* dif  = data->FirstChildElement(Form("dif_%d",idif));
   XMLElement* chip = dif->FirstChildElement(Form("chip_%d",ichip));

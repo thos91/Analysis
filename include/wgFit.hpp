@@ -7,6 +7,7 @@
 
 // ROOT includes
 #include "TROOT.h"
+#include "TGraphErrors.h"
 
 // user includes
 #include "wgConst.hpp"
@@ -30,6 +31,7 @@ public:
   // Just call the GetHist constructor. Exceptions may be thrown.
   wgFit(const string& inputfile);
   wgFit(const string& inputfile, const string& outputIMGDir);
+	wgFit(TGraphErrors* Scurve);
   // delete wgFit::GetHist;
   ~wgFit();
   
@@ -81,6 +83,14 @@ public:
 
   // wgFit::scurve
   // Fit the noise rate s-curve for each inputDAC, chip "ichip" and channel "ichan".
-  void scurve(TGraphErrors* Scurve, double& pe1_t, double& pe2_t, bool print_flag = false);
+	void scurve(TGraphErrors* Scurve, 
+							double& pe1_t, 
+							double& pe2_t, 
+							unsigned idif_id, 
+							unsigned ichip_id, 
+							unsigned ichan_id, 
+							unsigned inputDAC,
+							string outputIMGDir, 
+							bool print_flag = false);
 };
 #endif

@@ -62,7 +62,6 @@ int wgScurve(const char* x_inputDir,
   CheckExist check;
   wgConst con;
 	wgEditXML Edit;
-	wgFit Fit;
 
   // ============ Check directories ============ //
   if( inputDir.empty() || !check.Dir(inputDir) ) { 
@@ -107,30 +106,36 @@ int wgScurve(const char* x_inputDir,
   	Topology topol(inputDir, TopologySourceType::scurve_tree );
 		const unsigned 						n_inputDAC  = ListDirectories(inputDir).size();
 		const unsigned						n_threshold = ListDirectories(inputDir).at(0).size();
-		unsigned 									n_difs = topol.n_dfis;
+		unsigned 									n_difs = topol.n_difs;
 		vector<unsigned> 					n_chips;
 		vector<vector<unsigned>> 	n_chans;
-		for(idif = 0; idif < n_difs; idif++){
+		for(unsigned idif = 0; idif < n_difs; idif++){
 			n_chips[idif] = topol.dif_map[idif+1].size();
-			for(ichip = 0; ichip < n_chips[idif]; ichip++){
-				n_chans[idif][ichip] = topol.dif_map[idif+1][ichip+1].size();
+			for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++){
+				n_chans[idif][ichip] = topol.dif_map[idif+1][ichip+1];
 			}
 		}
 
-		// Define variables,
-		vector<unsigned> 																inputDAC		(ndifs);
-		vector<vector<unsigned>> 												threshold		(ndifs);
-		vector<vector<vector<double>>>									slope1			(ndifs);
-		vector<vector<vector<double>>>									slope2			(ndifs);
-		vector<vector<vector<double>>>									intercept1	(ndifs);
-		vector<vector<vector<double>>>									intercept1	(ndifs);
-		vector<vector<vector<vector<double>>>> 					pe1					(ndifs);
-		vector<vector<vector<vector<double>>>> 					pe2					(ndifs);
-		vector<vector<vector<vector<vector<double>>>>> 	noise				(ndifs);
-		vector<vector<vector<vector<vector<double>>>>> 	noise_sigma	(ndifs);
+		// inputDAC[] and threshold[] contain true values for each index.
+		// Be careful that i_iDAC and i_threshold are only the index 
+		// to get the true value in thie code. We may be able to get 
+		// inputDAC and threshold values from the filename, but we will
+		// obtain them by reading the xml file. It is better not to depend
+		// on system environment as far as possible.
+		vector<unsigned> 																inputDAC(n_inputDAC);
+		vector<unsigned> 																threshold(n_threshold);
+
+		// Define variables for storing values,
+		vector<vector<vector<double>>>									slope1			(n_difs);
+		vector<vector<vector<double>>>									slope2			(n_difs);
+		vector<vector<vector<double>>>									intercept1	(n_difs);
+		vector<vector<vector<double>>>									intercept2	(n_difs);
+		vector<vector<vector<vector<double>>>> 					pe1					(n_difs);
+		vector<vector<vector<vector<double>>>> 					pe2					(n_difs);
+		vector<vector<vector<vector<vector<double>>>>> 	noise				(n_difs);
+		vector<vector<vector<vector<vector<double>>>>> 	noise_sigma	(n_difs);
 		//  and resize them.
 		for(unsigned idif = 0; idif < n_difs; idif++){
-			threshold		[idif].resize(n_chips[idif]);
 			slope1			[idif].resize(n_chips[idif]);
 			slope2			[idif].resize(n_chips[idif]);
 			intercept1	[idif].resize(n_chips[idif]);
@@ -165,13 +170,14 @@ int wgScurve(const char* x_inputDir,
   	 *                              Read XML files                                  *
   	 ********************************************************************************/
   	
+		unsigned i_iDAC = 0;  // index for inputDAC
 		// input DAC
+		vector<string> iDAC_dir_list = ListDirectories(inputDir);
   	for (auto const & iDAC_directory : iDAC_dir_list) {
-  	  unsigned i_iDAC = iDAC_directory.getIndex();
   	  vector<string> th_dir_list = ListDirectories(iDAC_directory);
+			unsigned i_threshold = 0;  // index for threshold
   	  // threshold
   	  for (auto & th_directory : th_dir_list) {
-  	    unsigned i_threshold = th_directory.getIndex();
   	    // DIF
   	    th_directory += "/wgAnaHistSummary/Xml";
   	    vector<string> dif_dir_list = ListDirectories(th_directory);
@@ -191,46 +197,49 @@ int wgScurve(const char* x_inputDir,
   	    	    return ERR_FAILED_OPEN_XML_FILE;
   	    	  }
   	    	  // ************* Read XML file ************* //
-						threshold[i_iDAC][i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
+						threshold[i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
 						inputDAC[i_iDAC] = Edit.SUMMARY_GetGlobalConfigValue("inputDAC");
-  	    	  for(unsigned ichan = 0; ichan < nchans[idif][ichip]; ichan++) {
+  	    	  // channel
+						for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
   	    	    unsigned ichan_id = ichan + 1;
   	    	   	// get noise rate for each channel 
 							noise[idif][ichip][ichan][i_iDAC][i_threshold]  = Edit.SUMMARY_GetChFitValue("noise",ichan_id);
 							noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_noise",ichan_id);
-  	    	  }
+  	    	  }  // channel
   	    	  Edit.Close();
   	    	}  	// chip
 				}  	// dif
-  	  }  	// threshold
-  	} 	// inputDAC
+  	  	i_threshold++;
+			}  	// threshold
+  		i_iDAC++;
+		} 	// inputDAC
 		
 
   	/********************************************************************************
   	 *                        Draw and fit the S-curve                              *
   	 ********************************************************************************/
 		
+		// DIF
 		for(unsigned idif = 0; idif < n_difs; idif++){
   		unsigned idif_id = idif + 1;
-  	
-  		for(unsigned ichip = 0; ichip < nchips[idif]; ichip++) {
+  		// chip
+  		for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
   		  unsigned ichip_id = ichip + 1;
-
-  		  for(unsigned ichan = 0; ichan < nchans[idif][ichip]; ichan++) {
+				// channel
+  		  for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
   		    unsigned ichan_id = ichan + 1;
-					
+					// input DAC
 					for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; i_iDAC++){
   					
 						TCanvas *c1 = new TCanvas("c1","c1");
 						c1->SetLogy();
-						
-						// tentative variables for x, y and their errors 
-						// which are used to draw TGraphErrors
+						// These are tentative variables for x, y and their errors used to draw the graph.
 						vector<double> gx,gy,gxe,gye;
-						
+
+						// threshold
 						for(unsigned i_threshold=0; i_threshold < n_threshold; i_threshold++){
 
-							gx.push_back(threshold[i_iDAC][i_threshold]);
+							gx.push_back(threshold[i_threshold]);
 							gy.push_back(noise[idif][ichip][ichan][i_iDAC][i_threshold]);
 							gxe.push_back(0);
 							gye.push_back(noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold]);
@@ -244,12 +253,13 @@ int wgScurve(const char* x_inputDir,
 										+ "_Channel" + to_string(ichan_id)
 										+ "_InputDAC" + to_string(inputDAC[i_iDAC]) 
 										+ ";Threshold;Noise rate";
-						Scurve->SetTitle(title);
+						Scurve->SetTitle(title.c_str());
 						Scurve->Draw("ap*");
 
  						// ************* Fit S-curve ************* //
-						double pe1_t, pe2__t;
-						Fit.scurve(Scurve,pe1_t,pe2_t);
+						double pe1_t, pe2_t;
+						wgFit FitScurve(Scurve);
+						FitScurve.scurve(Scurve,pe1_t,pe2_t,idif_id,ichip_id,ichan_id,inputDAC[i_iDAC],outputIMGDir);
 						pe1[idif][ichip][ichan].push_back(pe1_t);
 						pe2[idif][ichip][ichan].push_back(pe2_t);
 
@@ -258,22 +268,29 @@ int wgScurve(const char* x_inputDir,
 						image = outputIMGDir + "/Dif" + to_string(idif_id)
 										+ "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
 										+ "/InputDAC" + to_string(inputDAC[i_iDAC]) + ".png";
-						c1->Print(image);
+						c1->Print(image.c_str());
 						
 						delete Scurve;
 						delete c1;
-  	    	} 	// inputDAC
+					} 	// inputDAC
 
 					// ************ Linear fit of 1.5pe threshold vs inputDAC plot ************ //
 					TCanvas *c2 = new TCanvas("c2","c2");
-
-					TGraph* PELinear1 = new TGraph(	n_inputDAC,&inputDAC[0],&pe1[idif][ichip][ichan][0]);
+					
+					// These are tentative variables for x, y used to draw the graph.
+					vector<double> gx,gy1,gy2;
+					for(unsigned i_iDAC=0; i_iDAC < n_inputDAC; i_iDAC++){
+						gx.push_back(inputDAC[i_iDAC]);
+						gy1.push_back(pe1[idif][ichip][ichan][i_iDAC]);
+						gy2.push_back(pe2[idif][ichip][ichan][i_iDAC]);
+					}
+					TGraph* PELinear1 = new TGraph(gx.size(), &gx[0], &gy1[0]);
 					string title;
 					title = "Dif" + to_string(idif_id)
 									+ "_Chip" + to_string(ichip_id)
 									+ "_Channel" + to_string(ichan_id)
 									+ ";InputDAC;1.5 pe threshold";
-					PELinear1->SetTitle(title);
+					PELinear1->SetTitle(title.c_str());
 					PELinear1->Draw("ap*");
 
 					TF1* fit1 = new TF1("fit1", "[0]*x + [1]", 1, 241);
@@ -281,24 +298,23 @@ int wgScurve(const char* x_inputDir,
 					PELinear1->Fit(fit1,"rl");
 					fit1->Draw("same");
 					slope1   [idif][ichip].push_back(fit1->GetParameter(0));
-					inercept1[idif][ichip].push_back(fit1->GetParameter(1));
+					intercept1[idif][ichip].push_back(fit1->GetParameter(1));
 	
  					// ************* Save plot as png ************* //
 					string image;
 					image = outputIMGDir + "/Dif" + to_string(idif_id)
 									+ "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
 									+ "/PE1vsInputDAC.png";
-					c2->Print(image);
+					c2->Print(image.c_str());
 					c2->Clear();
 
 					// ************ Linear fit of 2.5pe threshold vs inputDAC plot ************ //
-					TGraph* PELinear2 = new TGraph(	n_inputDAC,&inputDAC[0],&pe2[idif][ichip][ichan][0]);
-					string title;
+					TGraph* PELinear2 = new TGraph(gx.size(), &gx[0], &gy2[0]);
 					title = "Dif" + to_string(idif_id)
 									+ "_Chip" + to_string(ichip_id)
 									+ "_Channel" + to_string(ichan_id)
 									+ ";InputDAC;2.5 pe threshold";
-					PELinear2->SetTitle(title);
+					PELinear2->SetTitle(title.c_str());
 					PELinear2->Draw("ap*");
 
 					TF1* fit2 = new TF1("fit2", "[0]*x + [1]", 1, 241);
@@ -306,16 +322,18 @@ int wgScurve(const char* x_inputDir,
 					PELinear2->Fit(fit2,"rl");
 					fit2->Draw("same");
 					slope2   [idif][ichip].push_back(fit2->GetParameter(0));
-					inercept2[idif][ichip].push_back(fit2->GetParameter(1));
+					intercept2[idif][ichip].push_back(fit2->GetParameter(1));
 
  					// ************* Save plot as png ************* //
 					image = outputIMGDir + "/Dif" + to_string(idif_id)
 									+ "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
 									+ "/PE2vsInputDAC.png";
-					c2->Print(image);
+					c2->Print(image.c_str());
 					
-					delete PELinear1, PELinear2;
-					delete fit1,fit2;
+					delete PELinear1;
+					delete PELinear2;
+					delete fit1;
+					delete fit2;
 					delete c2;
 
 				}  	// channel
@@ -334,13 +352,12 @@ int wgScurve(const char* x_inputDir,
   	  return ERR_FAILED_OPEN_XML_FILE;
   	}
 
-  	wgEditXML Edit;
 		Edit.OPT_Make(xmlfile,inputDAC,n_difs,n_chips,n_chans);
 
 		for(unsigned idif = 0; idif < n_difs; idif++){
   		unsigned idif_id = idif + 1;
   	
-  		for(unsigned ichip = 0; ichip < nchips[idif]; ichip++) {
+  		for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++) {
   		  unsigned ichip_id = ichip + 1;
 
   			for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++) {
@@ -351,12 +368,11 @@ int wgScurve(const char* x_inputDir,
 					Edit.OPT_SetChanValue(string("s_th2"), idif_id, ichip_id, ichan_id, slope2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 					Edit.OPT_SetChanValue(string("i_th2"), idif_id, ichip_id, ichan_id, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
-						for(unsigned i_iDAC = 0; i_iDAC < inputDAC.size(); i_iDAC++){
-							// Set the 2.5 pe and 1.5 pe level of ftting the scurve.
-  			  		Edit.OPT_SetValue(string("threshold_1"), idif_id, ichip_id, ichan_id, i_iDAC, pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
-  			  		Edit.OPT_SetValue(string("threshold_2"), idif_id, ichip_id, ichan_id, i_iDAC, pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
-  			  	}
-					}
+					for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; i_iDAC++){
+						// Set the 2.5 pe and 1.5 pe level of ftting the scurve.
+  			  	Edit.OPT_SetValue(string("threshold_1"), idif_id, ichip_id, ichan_id, i_iDAC, pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+  			  	Edit.OPT_SetValue(string("threshold_2"), idif_id, ichip_id, ichan_id, i_iDAC, pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+  			  }
   			}
   		}
 		}
@@ -375,99 +391,99 @@ int wgScurve(const char* x_inputDir,
 }
 
 //******************************************************************
-vector<string> GetIncludeFileName(const string& inputDir){
-  DIR *dp;
-  struct dirent *entry;
-  vector<string> openxmlfile;
-
-  dp = opendir(inputDir.c_str());
-  if(dp==NULL){
-    cout << " !! WARNING !! no data is in "<< inputDir << endl;
-    return openxmlfile;
-  }
-
-  while( (entry = readdir(dp))!=NULL ){
-    if((entry->d_name[0])!='.'){
-      openxmlfile.push_back(Form("%s/%s",inputDir.c_str(),entry->d_name));
-      cout << "ReadFile : " << inputDir << "/" << entry->d_name << endl;
-    }
-  }
-  closedir(dp);
-  return openxmlfile;
-} 
+// vector<string> GetIncludeFileName(const string& inputDir){
+//   DIR *dp;
+//   struct dirent *entry;
+//   vector<string> openxmlfile;
+// 
+//   dp = opendir(inputDir.c_str());
+//   if(dp==NULL){
+//     cout << " !! WARNING !! no data is in "<< inputDir << endl;
+//     return openxmlfile;
+//   }
+// 
+//   while( (entry = readdir(dp))!=NULL ){
+//     if((entry->d_name[0])!='.'){
+//       openxmlfile.push_back(Form("%s/%s",inputDir.c_str(),entry->d_name));
+//       cout << "ReadFile : " << inputDir << "/" << entry->d_name << endl;
+//     }
+//   }
+//   closedir(dp);
+//   return openxmlfile;
+// } 
 
 //******************************************************************
 // make output xml files below the outputXMLdirectory
-void MakeScurveXML(string& outputXMLDir, 
-		               unsigned n_difs, 
-									 vector<unsigned> n_chips, 
-									 vector<vector<unsigned>> n_chans) {
-  wgEditXML Edit;
-  for(unsigned idif_id = 1; idif_id < n_difs+1; idif_id++) {
-    for(unsigned ichip_id = 1; ichip_id < n_chips[n_difs]+1; ichip_id++) {
-      MakeDir(outputXMLDir + "/dif" + to_string(idif_id) + "/chip" + to_string(ichip_id));
-      for(unsigned ichan_id = 1; ichan_id < n_chans[n_difs][n_chips]+1; ichan_id++) {
-        Edit.SCURVE_Make(outputXMLDir + "/dif" + to_string(idif_id) + "/chip" + to_string(ichip_id) + "/chan" + to_string(ichan_id) + ".xml");
-      }
-    }
-  }
-}
+// void MakeScurveXML(string& outputXMLDir, 
+// 		               unsigned n_difs, 
+// 									 vector<unsigned> n_chips, 
+// 									 vector<vector<unsigned>> n_chans) {
+//   wgEditXML Edit;
+//   for(unsigned idif_id = 1; idif_id < n_difs+1; idif_id++) {
+//     for(unsigned ichip_id = 1; ichip_id < n_chips[idif_id-1]+1; ichip_id++) {
+//       MakeDir(outputXMLDir + "/dif" + to_string(idif_id) + "/chip" + to_string(ichip_id));
+//       for(unsigned ichan_id = 1; ichan_id < n_chans[idif_id-1][ichip_id-1]+1; ichan_id++) {
+//         Edit.SCURVE_Make(outputXMLDir + "/dif" + to_string(idif_id) + "/chip" + to_string(ichip_id) + "/chan" + to_string(ichan_id) + ".xml");
+//       }
+//     }
+//   }
+// }
 
 //******************************************************************
-double Calcurate_Mean(vector<double> v){
-  double mean=0;
-  double size=v.size();
-  double max=0.;
-  double min=0.;
-  double col[(int)size];
-  for(unsigned int i=0;i<v.size();i++){col[i]=0.;}
-  if(v.size()==0){return 0.;}
-  if(v.size()==1){return v[0];}
-  for(unsigned int i=0;i<v.size();i++){
-    int rank=0;
-    for(unsigned int i2=0;i2<v.size();i2++){
-      if(v[i]>v[i2])rank++;
-    }
-    col[rank]=v[i];
-  }
-  for(unsigned int i=0;i<v.size()-1;i++){
-    if(col[i+1] > col[i]+2){
-      size=i;
-    }
-  }
-  max=v[(int)size-1];
-  min=v[0];
-  mean=((max+min)/2.);
-  return mean;
-}
+// double Calcurate_Mean(vector<double> v){
+//   double mean=0;
+//   double size=v.size();
+//   double max=0.;
+//   double min=0.;
+//   double col[(int)size];
+//   for(unsigned int i=0;i<v.size();i++){col[i]=0.;}
+//   if(v.size()==0){return 0.;}
+//   if(v.size()==1){return v[0];}
+//   for(unsigned int i=0;i<v.size();i++){
+//     int rank=0;
+//     for(unsigned int i2=0;i2<v.size();i2++){
+//       if(v[i]>v[i2])rank++;
+//     }
+//     col[rank]=v[i];
+//   }
+//   for(unsigned int i=0;i<v.size()-1;i++){
+//     if(col[i+1] > col[i]+2){
+//       size=i;
+//     }
+//   }
+//   max=v[(int)size-1];
+//   min=v[0];
+//   mean=((max+min)/2.);
+//   return mean;
+// }
 
 //******************************************************************
-double Calcurate_Sigma(vector<double> v){
-  double mean=0;
-  double size=v.size();
-  double max=0.;
-  double min=0.;
-  double col[(int)size];
-  for(unsigned int i=0;i<v.size();i++){col[i]=0.;}
-  if(v.size()==0){return 0.;}
-  if(v.size()==1){return v[0];}
-  for(unsigned int i=0;i<v.size();i++){
-    int rank=0;
-    for(unsigned int i2=0;i2<v.size();i2++){
-      if(v[i]>v[i2])rank++;
-    }
-    col[rank]=v[i];
-  }
-  for(unsigned int i=0;i<v.size()-1;i++){
-    if(col[i+1] > col[i]+2){
-      size=i;
-    }
-  }
-  max=v[(int)size-1];
-  min=v[0];
-  mean=((max-min)/2.);
-  return mean;
-}
+// double Calcurate_Sigma(vector<double> v){
+//   double mean=0;
+//   double size=v.size();
+//   double max=0.;
+//   double min=0.;
+//   double col[(int)size];
+//   for(unsigned int i=0;i<v.size();i++){col[i]=0.;}
+//   if(v.size()==0){return 0.;}
+//   if(v.size()==1){return v[0];}
+//   for(unsigned int i=0;i<v.size();i++){
+//     int rank=0;
+//     for(unsigned int i2=0;i2<v.size();i2++){
+//       if(v[i]>v[i2])rank++;
+//     }
+//     col[rank]=v[i];
+//   }
+//   for(unsigned int i=0;i<v.size()-1;i++){
+//     if(col[i+1] > col[i]+2){
+//       size=i;
+//     }
+//   }
+//   max=v[(int)size-1];
+//   min=v[0];
+//   mean=((max-min)/2.);
+//   return mean;
+// }
 
 
  
