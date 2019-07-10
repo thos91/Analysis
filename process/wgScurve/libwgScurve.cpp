@@ -99,74 +99,105 @@ int wgScurve(const char* x_inputDir,
   try{
 
   	/********************************************************************************
-  	 *                         Include directory tree                               *
+  	 *                  Get directory tree and set varicables                       *
   	 ********************************************************************************/
   	
-		// get topology from directory tree 
-		// get the number of dif, chip, channel 
-  	Topology topol(inputDir, run_directory_tree);
-		unsigned const						n_inputDAC = run_directory_tree.size();
-		unsigned									n_threshold = run_directpry_tree[0].size();
+		// Get topology from input directory.
+		// Get the number of dif, chip, channel, imputDAC and threshold. 
+  	Topology topol(inputDir, TopologySourceType::scurve_tree );
+		const unsigned 						n_inputDAC  = ListDirectories(inputDir).size();
+		const unsigned						n_threshold = ListDirectories(inputDir).at(0).size();
 		unsigned 									n_difs = topol.n_dfis;
 		vector<unsigned> 					n_chips;
 		vector<vector<unsigned>> 	n_chans;
 		for(idif = 0; idif < n_difs; idif++){
-			n_chips[idif] = topol.dif_map[idif].size();
+			n_chips[idif] = topol.dif_map[idif+1].size();
 			for(ichip = 0; ichip < n_chips[idif]; ichip++){
-				n_chans[idif][ichip] = topol.dif_map[idif][ichip].size();
+				n_chans[idif][ichip] = topol.dif_map[idif+1][ichip+1].size();
 			}
 		}
 
-
-  	// make output xml files under the outputXMLdirectory
-  	MakeScurveXML(outputXMLDir,n_difs,n_chips,n_chans);
-		// define variables
-		vector<vector<vector<vector<vector<double>>>>> 	noise;
-		vector<vector<vector<vector<vector<double>>>>> 	noise_sigma;
-		vector<vector<unsigned>> 												threshold;
-		vector<unsigned> 																inputDAC;
-		vector<vector<vector<vector<double>>>> 					pe1(ndifs);
-		vector<vector<vector<vector<double>>>> 					pe2(ndifs);
-		vector<vector<vector<double>>>									slope1(ndifs);
-		vector<vector<vector<double>>>									slope2(ndifs);
-		vector<vector<vector<double>>>									intercept1(ndifs);
-		vector<vector<vector<double>>>									intercept1(ndifs);
+		// Define variables,
+		vector<unsigned> 																inputDAC		(ndifs);
+		vector<vector<unsigned>> 												threshold		(ndifs);
+		vector<vector<vector<double>>>									slope1			(ndifs);
+		vector<vector<vector<double>>>									slope2			(ndifs);
+		vector<vector<vector<double>>>									intercept1	(ndifs);
+		vector<vector<vector<double>>>									intercept1	(ndifs);
+		vector<vector<vector<vector<double>>>> 					pe1					(ndifs);
+		vector<vector<vector<vector<double>>>> 					pe2					(ndifs);
+		vector<vector<vector<vector<vector<double>>>>> 	noise				(ndifs);
+		vector<vector<vector<vector<vector<double>>>>> 	noise_sigma	(ndifs);
+		//  and resize them.
+		for(unsigned idif = 0; idif < n_difs; idif++){
+			threshold		[idif].resize(n_chips[idif]);
+			slope1			[idif].resize(n_chips[idif]);
+			slope2			[idif].resize(n_chips[idif]);
+			intercept1	[idif].resize(n_chips[idif]);
+			intercept2	[idif].resize(n_chips[idif]);
+			pe1					[idif].resize(n_chips[idif]);
+			pe2					[idif].resize(n_chips[idif]);
+			noise				[idif].resize(n_chips[idif]);
+			noise_sigma	[idif].resize(n_chips[idif]);
+			for(unsigned ichip = 0; ichip < n_chips[idif]; ichip++){
+				slope1			[idif][ichip].resize(n_chans[idif][ichip]);
+				slope2			[idif][ichip].resize(n_chans[idif][ichip]);
+				intercept1	[idif][ichip].resize(n_chans[idif][ichip]);
+				intercept2	[idif][ichip].resize(n_chans[idif][ichip]);
+				pe1					[idif][ichip].resize(n_chans[idif][ichip]);
+				pe2					[idif][ichip].resize(n_chans[idif][ichip]);
+				noise				[idif][ichip].resize(n_chans[idif][ichip]);
+				noise_sigma	[idif][ichip].resize(n_chans[idif][ichip]);
+				for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ichan++){
+					pe1					[idif][ichip][ichan].resize(n_inputDAC);
+					pe2					[idif][ichip][ichan].resize(n_inputDAC);
+					noise				[idif][ichip][ichan].resize(n_inputDAC);
+					noise_sigma	[idif][ichip][ichan].resize(n_inputDAC);
+					for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; i_iDAC++){
+						noise				[idif][ichip][ichan][i_iDAC].resize(n_threshold);
+						noise_sigma	[idif][ichip][ichan][i_iDAC].resize(n_threshold);
+					}
+				}
+			}
+		}
 
   	/********************************************************************************
   	 *                              Read XML files                                  *
   	 ********************************************************************************/
-
-  	for (auto const & x : run_directory_tree) {
-  	  unsigned i_iDAC = x.first;
-			std::map iDAC_map = x.second;
-
-  	  for(auto const & y : iDAC_map) {
-				unsigned i_threshold = y.first;
-				string threshold_directory = y.second;
-
-				for(unsigned idif = 0; idif < n_difs; idif++){
-  	    	unsigned idif_id = idif + 1;
-  	    	string idif_directory(input_run_dir + threshold_directory + "/dif" + to_string(idif_id));
-  	  
-  	    	for(unsigned ichip = 0; ichip < nchips[idif]; ichip++) {
-  	    	  unsigned ichip_id = ichip + 1;
+  	
+		// input DAC
+  	for (auto const & iDAC_directory : iDAC_dir_list) {
+  	  unsigned i_iDAC = iDAC_directory.getIndex();
+  	  vector<string> th_dir_list = ListDirectories(iDAC_directory);
+  	  // threshold
+  	  for (auto & th_directory : th_dir_list) {
+  	    unsigned i_threshold = th_directory.getIndex();
+  	    // DIF
+  	    th_directory += "/wgAnaHistSummary/Xml";
+  	    vector<string> dif_dir_list = ListDirectories(th_directory);
+  	    for (auto const & idif_directory : dif_dir_list) {
+  	      unsigned idif_id = extractIntegerFromString(GetName(idif_directory));
+					unsigned idif = idif - 1;
+  	      // chip
+  	      vector<string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
+  	      for (auto const & ichip_xml : chip_xml_list) {
+  	        unsigned ichip_id = extractIntegerFromString(GetName(ichip_xml));
+						unsigned ichip = ichip_id -1;
   	    	  
   	    	  // ************* Open XML file ************* //
-  	    	  string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip_id) + ".xml");
-  	    	  try { Edit.Open(xmlfile); }
+  	    	  try { Edit.Open(ichip_xml); }
   	    	  catch (const exception& e) {
   	    	    Log.eWrite("[wgScurve] " + string(e.what()));
   	    	    return ERR_FAILED_OPEN_XML_FILE;
   	    	  }
-
   	    	  // ************* Read XML file ************* //
+						threshold[i_iDAC][i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
+						inputDAC[i_iDAC] = Edit.SUMMARY_GetGlobalConfigValue("inputDAC");
   	    	  for(unsigned ichan = 0; ichan < nchans[idif][ichip]; ichan++) {
   	    	    unsigned ichan_id = ichan + 1;
   	    	   	// get noise rate for each channel 
-							noise[i_iDAC][i_threshold][idif][ichip][ichan] = Edit.SUMMARY_GetChFitValue("noise",ichan_id);
-							noise_sigma[i_iDAC][i_threshold][idif][ichip][ichan] = Edit.SUMMARY_GetChFitValue("sigma_noise",ichan_id);
-							threshold[i_iDAC][i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
-							inputDAC[i_iDAC] = Edit.SUMMARY_GetGlobalConfigValue("inputDAC");
+							noise[idif][ichip][ichan][i_iDAC][i_threshold]  = Edit.SUMMARY_GetChFitValue("noise",ichan_id);
+							noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_noise",ichan_id);
   	    	  }
   	    	  Edit.Close();
   	    	}  	// chip
@@ -181,38 +212,28 @@ int wgScurve(const char* x_inputDir,
 		
 		for(unsigned idif = 0; idif < n_difs; idif++){
   		unsigned idif_id = idif + 1;
-			pe1[idif].reserve(nchips[idif]);
-			pe2[idif].reserve(nchips[idif]);
-			slope1[idif].reserve(nchips[idif]);
-			slope2[idif].reserve(nchips[idif]);
-			intercept1[idif].reserve(nchips[idif]);
-			intercept2[idif].reserve(nchips[idif]);
   	
   		for(unsigned ichip = 0; ichip < nchips[idif]; ichip++) {
   		  unsigned ichip_id = ichip + 1;
-  		  pe1[idif][ichip].reserve(nchans[idif][ichip]);
-  		  pe2[idif][ichip].reserve(nchans[idif][ichip]);
 
   		  for(unsigned ichan = 0; ichan < nchans[idif][ichip]; ichan++) {
   		    unsigned ichan_id = ichan + 1;
 					
-  				for (auto const & x : run_directory_tree) {
-  	  			unsigned i_iDAC = x.first;
-						std::map iDAC_map = x.second;
+					for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; i_iDAC++){
   					
 						TCanvas *c1 = new TCanvas("c1","c1");
 						c1->SetLogy();
 						
-						// tentative variables for x, y and their errors
+						// tentative variables for x, y and their errors 
+						// which are used to draw TGraphErrors
 						vector<double> gx,gy,gxe,gye;
-
-						for(auto const & y : iDAC_map) {
-							unsigned i_threshold = y.first;
+						
+						for(unsigned i_threshold=0; i_threshold < n_threshold; i_threshold++){
 
 							gx.push_back(threshold[i_iDAC][i_threshold]);
-							gy.push_back(noise[i_iDAC][i_threshold][idif][ichip][ichan]);
+							gy.push_back(noise[idif][ichip][ichan][i_iDAC][i_threshold]);
 							gxe.push_back(0);
-							gye.push_back(noise_sigma[i_iDAC][i_threshold][idif][ichip][ichan]);
+							gye.push_back(noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold]);
 						}
 						
  						// ************* Draw S-curve Graph ************* //
