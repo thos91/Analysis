@@ -1,7 +1,4 @@
 // system includes
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <vector>
 #include <string>
 
@@ -9,32 +6,19 @@
 #include <boost/filesystem.hpp>
 
 // ROOT includes
-#include <TFile.h>
-#include <TH1D.h>
-#include <TText.h>
 #include <TF1.h>
-#include <TTree.h>
-#include <TMath.h>
-#include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TCanvas.h>
-#include <stdio.h>
-#include <TROOT.h>
-#include <TStyle.h> 
-#include <TSystem.h>
-#include <TSpectrum.h>
+#include <TString.h>
 
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-
 #include "wgExceptions.hpp"
 #include "wgGetHist.hpp"
-#include "wgFit.hpp"
 #include "wgFitConst.hpp"
 #include "wgLogger.hpp"
-
-//#define DEBUG_WGFIT
+#include "wgFit.hpp"
 
 using namespace std;
 using namespace wagasci_tools;
@@ -84,9 +68,6 @@ wgFit::wgFit(const string& x_inputfile) {
 }
 
 //**********************************************************************
-wgFit::wgFit(TGraphErrors* Scurve){};
-
-//**********************************************************************
 wgFit::~wgFit(){
   delete wgFit::GetHist;
 }
@@ -94,23 +75,6 @@ wgFit::~wgFit(){
 //**********************************************************************
 void wgFit::SetoutputIMGDir(const string& str){
   wgFit::outputIMGDir = str;
-}
-
-//**********************************************************************
-void wgFit::swap(int Npeaks, double* px, double* py){
-  double px_temp,py_temp;
-  for(int i=0;i<Npeaks;i++){
-    for(int j=i+1;j<Npeaks;j++){
-      if(px[i] > px[j]){
-        px_temp=px[i];
-        px[i]=px[j];
-        px[j]=px_temp;
-        py_temp=py[i];
-        py[i]=py[j];
-        py[j]=py_temp;
-      }
-    }
-  }
 }
 
 //**********************************************************************
@@ -182,13 +146,13 @@ void wgFit::charge_hit(unsigned ichip, unsigned ichan, unsigned icol, double (&x
   }
 
   if(wgFit::GetHist->h_charge_hit->Integral(begin_pe, end_pe) < 1 )
-    {
+  {
 #ifdef DEBUG_WGFIT
-      Log.eWrite("[wgFit::charge_hit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ")");
+    Log.eWrite("[wgFit::charge_hit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ")");
 #endif
-      x[0] = x[1] = x[2] = 0;
-      return;
-    } 
+    x[0] = x[1] = x[2] = 0;
+    return;
+  } 
   // begin_pe and end_pe are defined in wgFitConst.cpp
   wgFit::GetHist->h_charge_hit->GetXaxis()->SetRange(begin_pe,end_pe);
 
@@ -234,13 +198,13 @@ void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol, double 
   }
   
   if(wgFit::GetHist->h_charge_hit_HG->Integral(begin_pe_HG,end_pe_HG) < 1 )
-    {
+  {
 #ifdef DEBUG_WGFIT
-      Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
+    Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
 #endif
-      x[0]=x[1]=x[2]=0.;
-      return;
-    } 
+    x[0]=x[1]=x[2]=0.;
+    return;
+  } 
   // begin_pe_HG and end_pe_HG are defined in wgFitConst.cpp
   wgFit::GetHist->h_charge_hit_HG->GetXaxis()->SetRange(begin_pe_HG,end_pe_HG);
   double mean=(double)GetHist->h_charge_hit_HG->GetMaximumBin();
@@ -286,13 +250,13 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
 
   // If the histogram is empty return a 0 vector
   if(GetHist->h_charge_nohit->Integral(begin_ped, end_ped) < 1 )
-    {
+  {
 #ifdef DEBUG_WGFIT 
-      Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
+    Log.eWrite("[wgFit::charge_nohit] no entry (chip:" + to_string(ichip) + ", ch:" + to_string(ichan) + ", col:" + to_string(icol) + ")");
 #endif
-      x[0]=x[1]=x[2]=0.;
-      return;
-    }
+    x[0]=x[1]=x[2]=0.;
+    return;
+  }
   
   // Set the histogram x axis range to 350 --- 700 (the pedestal lies usually in
   // that range)
@@ -332,58 +296,3 @@ void wgFit::charge_nohit(const unsigned ichip, const unsigned ichan, const unsig
   delete gaussian;
   return;  
 }
-
-
-//**********************************************************************
-void wgFit::scurve(TGraphErrors* Scurve, 
-										double& pe1_t, 
-										double& pe2_t, 
-										unsigned idif_id, 
-										unsigned ichip_id, 
-										unsigned ichan_id, 
-										unsigned inputDAC,
-										string outputIMGDir, 
-										bool print_flag) {
-
-	// Fitting function for Scurve is summation of two sigmoid functions (and a constant).
-	const char* fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
-	double c0=50000, c1=1, c2=155, c3=5000, c4=1, c5=135, c6=300;
-
-	TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
-	fit_scurve->SetParameters(c0,c1,c2,c3,c4,c5,c6);
-	fit_scurve->SetParLimits(0,30000,70000);
-	fit_scurve->SetParLimits(2,145,160);
-	fit_scurve->SetParLimits(3,2000,7000);
-	fit_scurve->SetParLimits(5,130,145);
-	fit_scurve->SetParLimits(6,100,500);
-	
-	Scurve->Fit(fit_scurve,"");
-	
-	// From the fitting parameters, calcurate each p.e. level.
-	// Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
-	// variables a and b indicates the center point of each sigmoid function.
-	// Set 1.5 pe as the middle point between two sigmoid functions' center.
-	double a = fit_scurve->GetParameter(5);
-	double b = fit_scurve->GetParameter(2);
-	pe1_t =  (  a + b) / 2;
-	pe2_t =  (3*a + b) / 2;
-
-  if( print_flag && (!outputIMGDir.empty()) ) {
-    TString image;
-		image = outputIMGDir + "/Dif"+to_string(idif_id)
-						+"/Chip"+to_string(ichip_id)+"/Channel"+to_string(ichan_id)
-						+"/InputDAC"+to_string(inputDAC)+"_fit.png";
-  	TCanvas * canvas = new TCanvas("canvas", "canvas");
-  	canvas->SetCanvasSize(1024,768);
-  	canvas->SetLogy();
-  	Scurve->Draw("ap*");
-  	fit_scurve->Draw("same");
-  	canvas->Print(image);
-  	delete canvas; 
-	}
-
-	delete fit_scurve;
-
-
-}
-

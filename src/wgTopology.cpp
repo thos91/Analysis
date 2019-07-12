@@ -122,7 +122,6 @@ void Topology::GetTopologyFromFile(const string& configxml) {
   unsigned igdcc = 1, idif = 1, iasu = 1;
   bool found = false;
   
-  
   if(!check_exist::XmlFile(configxml))
     throw wgInvalidFile(configxml + " wasn't found or is not valid");
 

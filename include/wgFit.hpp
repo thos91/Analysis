@@ -30,11 +30,11 @@ public:
   // Just call the GetHist constructor. Exceptions may be thrown.
   wgFit(const string& inputfile);
   wgFit(const string& inputfile, const string& outputIMGDir);
-	wgFit(TGraphErrors* Scurve);
-  // delete wgFit::GetHist;
+
+  // wgFit::~wgFit
+  // delete the wgFit::GetHist object
   ~wgFit();
   
-  void swap(int,double*,double*);
   // wgFit::NoiseRate
   // Calculate the dark noise rate for the chip "ichip" and channel "ichan". The
   // dark noise rate mean value is saved in x[0] and its variance in x[1].  If
@@ -79,17 +79,5 @@ public:
 
   // Copy the passed string into the outputIMGDir private member 
   void SetoutputIMGDir(const string&);
-
-  // wgFit::scurve
-  // Fit the noise rate s-curve for each inputDAC, chip "ichip" and channel "ichan".
-	void scurve(TGraphErrors* Scurve, 
-							double& pe1_t, 
-							double& pe2_t, 
-							unsigned idif_id, 
-							unsigned ichip_id, 
-							unsigned ichan_id, 
-							unsigned inputDAC,
-							string outputIMGDir, 
-							bool print_flag = false);
 };
 #endif

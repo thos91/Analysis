@@ -7,6 +7,9 @@
 // system C includes
 #include <cstdbool>
 
+// ROOT includes
+#include <TGraphErrors.h>
+
 // user includes
 #include "wgConst.hpp"
 #include "wgTopology.hpp"
@@ -45,9 +48,15 @@ extern "C" {
 }
 #endif
 
-// void MakeScurveXML(string& outputXMLDir, Topology& topol);
-// vector<string> GetIncludeFileName(const string& inputDirName);
-// double Calcurate_Mean(vector<double>);
-// double Calcurate_Sigma(vector<double>);
+// Fit the noise rate s-curve for each inputDAC, chip "ichip" and channel "ichan".
+void fit_scurve(TGraphErrors* Scurve, 
+                double& pe1_t, 
+                double& pe2_t, 
+                unsigned idif_id, 
+                unsigned ichip_id, 
+                unsigned ichan_id, 
+                unsigned inputDAC,
+                string outputIMGDir, 
+                bool print_flag = false);
 
 #endif // WG_SCURVE_HPP_

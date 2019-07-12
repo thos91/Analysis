@@ -21,9 +21,9 @@
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
 #include "wgEditXML.hpp"
-#include "wgAnaHist.hpp"
 #include "wgLogger.hpp"
 #include "wgTopology.hpp"
+#include "wgAnaHist.hpp"
 
 using namespace wagasci_tools;
 

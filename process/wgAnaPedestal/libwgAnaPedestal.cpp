@@ -1,10 +1,6 @@
 // system includes
 #include <string>
-#include <fstream>
-#include <sstream>
 #include <vector>
-#include <algorithm>
-#include <dirent.h>
 
 // system C includes
 #include <cstdlib>
@@ -13,30 +9,19 @@
 #include <boost/filesystem.hpp>
 
 // ROOT includes
-#include <TROOT.h>
-#include <THStack.h>
-#include <TMultiGraph.h>
 #include <TCanvas.h>
-#include <TLegend.h>
 #include <TH1D.h>
 #include <TH2D.h>
-#include <TGraph.h>
-#include <TGraphErrors.h>
-#include <TF1.h>
-#include <TSpectrum.h>
+#include <TString.h>
 
 // user includes
 #include "wgFileSystemTools.hpp"
-
 #include "wgExceptions.hpp"
 #include "wgEditXML.hpp"
-#include "wgColor.hpp"
-#include "wgFit.hpp"
 #include "wgFitConst.hpp"
-#include "wgGetHist.hpp"
 #include "wgConst.hpp"
-#include "wgAnaPedestal.hpp"
 #include "wgLogger.hpp"
+#include "wgAnaPedestal.hpp"
 
 using namespace wagasci_tools;
 
@@ -45,9 +30,9 @@ int wgAnaPedestal(const char * x_input_run_dir,
                   const char * x_output_xml_dir,
                   const char * x_output_img_dir)
 {
-  string input_run_dir (x_input_run_dir);
-  string output_xml_dir(x_output_xml_dir);
-  string output_img_dir(x_output_img_dir);
+  std::string input_run_dir (x_input_run_dir);
+  std::string output_xml_dir(x_output_xml_dir);
+  std::string output_img_dir(x_output_img_dir);
   
   wgConst con;
   
@@ -151,7 +136,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
         
         // ************* Open XML file ************* //
 	  
-        string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip_id) + ".xml");
+        std::string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip_id) + ".xml");
         try { Edit.Open(xmlfile); }
         catch (const exception& e) {
           Log.eWrite("[wgAnaPedestal] " + string(e.what()));
