@@ -13,24 +13,28 @@
 namespace wg_utils = wagasci_decoder_utils;
 
 ///////////////////////////////////////////////////////////////////////////////
-//                             EventReader class                             //
+//                             SectionReader class                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-EventReader::EventReader(const RawDataConfig& config, TTree* tree, Raw_t& rd) :
+SectionReader::SectionReader(const RawDataConfig& config, TTree* tree, Raw_t& rd) :
     m_config(config), m_tree(tree), m_rd(rd) {
     if (m_config.has_spill_number) {
-    m_num_marker_types = NUM_MARKER_TYPES;
+    m_num_marker_types = NUM_SECTION_TYPES - 1;
   } else {
-    m_num_marker_types = NUM_MARKER_TYPES - 1;
+    m_num_marker_types = NUM_SECTION_TYPES - 2;
   }
     if (m_tree == NULL)
       throw std::runtime_error("pointer to TTree is NULL");
     InitializeRing();
 }
 
-void EventReader::ReadSpillNumber(std::istream& is, const MarkerSeeker::Section& section) {
+///////////////////////////////////////////////////////////////////////////////
+//                              ReadSpillNumber                              //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::ReadSpillNumber(std::istream& is, const SectionSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
   
   // raw_data[0] is the SPILL_NUMBER_MARKER
@@ -55,9 +59,9 @@ void EventReader::ReadSpillNumber(std::istream& is, const MarkerSeeker::Section&
   }
 }
 
-void EventReader::ReadSpillHeader(std::istream& is, const MarkerSeeker::Section& section) {
+void SectionReader::ReadSpillHeader(std::istream& is, const SectionSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
   // raw_data[0] is the SPILL_HEADER_MARKER
   // Spill count most significant byte
@@ -81,9 +85,13 @@ void EventReader::ReadSpillHeader(std::istream& is, const MarkerSeeker::Section&
   }
 }
 
-void EventReader::ReadChipHeader(std::istream& is, const MarkerSeeker::Section& section) {
+///////////////////////////////////////////////////////////////////////////////
+//                               ReadChipHeader                              //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::ReadChipHeader(std::istream& is, const SectionSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
   m_rd.get().chipid[section.ichip] = (raw_data[1] & x00FF).to_ulong();
@@ -93,9 +101,13 @@ void EventReader::ReadChipHeader(std::istream& is, const MarkerSeeker::Section& 
   }
 }
 
-void EventReader::ReadChipTrailer(std::istream& is, const MarkerSeeker::Section& section) {
+///////////////////////////////////////////////////////////////////////////////
+//                              ReadChipTrailer                              //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::ReadChipTrailer(std::istream& is, const SectionSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
   unsigned chipid = (raw_data[1] & x00FF).to_ulong();
@@ -105,40 +117,48 @@ void EventReader::ReadChipTrailer(std::istream& is, const MarkerSeeker::Section&
   }
 }
 
-void EventReader::ReadSpillTrailer(std::istream& is, const MarkerSeeker::Section& section) {
+///////////////////////////////////////////////////////////////////////////////
+//                              ReadSpillTrailer                             //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::ReadSpillTrailer(std::istream& is, const SectionSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
   // raw_data[0] is the SPILL_TRAILER_MARKER
   // Spill count most significant byte
-  bitset<2*BITS_PER_LINE> spill_count_msb1 = raw_data[1].to_ulong();
-  spill_count_msb1 <<= BITS_PER_LINE;
+  bitset<2*BITS_PER_LINE> spill_count_msb = raw_data[1].to_ulong();
+  spill_count_msb <<= BITS_PER_LINE;
   // Spill count least significant byte
-  bitset<2*BITS_PER_LINE> spill_count_lsb1 = raw_data[2].to_ulong();
-  m_rd.get().spill_count = (spill_count_msb1 | spill_count_lsb1).to_ullong();
+  bitset<2*BITS_PER_LINE> spill_count_lsb = raw_data[2].to_ulong();
+  m_rd.get().spill_count = (spill_count_msb | spill_count_lsb).to_ullong();
   
   unsigned n_found_chips = ( raw_data[3] & x00FF ).to_ulong(); 
   if (n_found_chips != m_config.n_chips) {
     m_rd.get().debug_spill[DEBUG_WRONG_NCHIPS]++;
   }
-  
-  if (raw_data.size() == SPILL_TRAILER_LENGTH) {
-    bitset<2*BITS_PER_LINE> spill_count_msb2 = raw_data[4].to_ulong();
-    spill_count_msb2 <<= BITS_PER_LINE;
-    // Spill count least significant byte
-    bitset<2*BITS_PER_LINE> spill_count_lsb2 = raw_data[5].to_ulong();
-    unsigned spill_count2 = (spill_count_msb2 | spill_count_lsb2).to_ullong();
-    
-    if ((unsigned) m_rd.get().spill_count != spill_count2) {
-      m_rd.get().debug_spill[DEBUG_SPILL_TRAILER]++;
-    }
-  }
+
+  // It is not clear what this field is for. Even the SPIROC2D and
+  // Pyrame developers (Stephan Callier and Frederic Magniette) do not
+  // know the raison d'etre of this field, we are just ignoring this
+  // for the time being
+  // if (raw_data.size() == SPILL_TRAILER_LENGTH) {
+  //   bitset<2*BITS_PER_LINE> unknown_field_msb = raw_data[4].to_ulong();
+  //   unknown_field_msb <<= BITS_PER_LINE;
+  //   // Spill count least significant byte
+  //   bitset<2*BITS_PER_LINE> unknown_field_lsb = raw_data[5].to_ulong();
+  //   unsigned unknown_field = (unknown_field_msb | unknown_field_lsb).to_ullong(); 
+  // }
 }
 
-void EventReader::ReadRawData(std::istream& is, const MarkerSeeker::Section& section) {
+///////////////////////////////////////////////////////////////////////////////
+//                                ReadRawData                                //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& section) {
   is.seekg(section.start);
-  std::vector<std::bitset<BITS_PER_LINE>> raw_data(GetNumberOfLinesToRead(section));
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
   if ((raw_data.size() - m_config.n_chip_id) % ONE_COLUMN_LENGTH != 0)
@@ -212,21 +232,33 @@ void EventReader::ReadRawData(std::istream& is, const MarkerSeeker::Section& sec
   FillTree();
 }
 
-void EventReader::ReadNextSection(std::istream& is, const MarkerSeeker::Section section) {
+///////////////////////////////////////////////////////////////////////////////
+//                              ReadNextSection                              //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Section section) {
   m_readers_ring[section.type](is, section);
 }
 
-void EventReader::FillTree() {
+///////////////////////////////////////////////////////////////////////////////
+//                                  FillTree                                 //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::FillTree() {
   if (m_tree->Fill() < 0)
     throw std::runtime_error("Failed to fill the TTree");
 }
 
-void EventReader::InitializeRing() {
-  m_readers_ring[MarkerSeeker::MarkerType::SpillHeader]  = [this](std::istream& is, const MarkerSeeker::Section section) { return this->ReadSpillHeader(is, section); };
-  m_readers_ring[MarkerSeeker::MarkerType::ChipHeader]   = [this](std::istream& is, const MarkerSeeker::Section section) { return this->ReadChipHeader(is, section); };
-  m_readers_ring[MarkerSeeker::MarkerType::RawData]      = [this](std::istream& is, const MarkerSeeker::Section section) { return this->ReadRawData(is, section); };
-  m_readers_ring[MarkerSeeker::MarkerType::ChipTrailer]  = [this](std::istream& is, const MarkerSeeker::Section section) { return this->ReadChipTrailer(is, section); };
-  m_readers_ring[MarkerSeeker::MarkerType::SpillTrailer] = [this](std::istream& is, const MarkerSeeker::Section section) { return this->ReadSpillTrailer(is, section); };
+///////////////////////////////////////////////////////////////////////////////
+//                              InitializedRing                              //
+///////////////////////////////////////////////////////////////////////////////
+
+void SectionReader::InitializeRing() {
+  m_readers_ring[SectionSeeker::SectionType::SpillHeader]  = [this](std::istream& is, const SectionSeeker::Section section) { return this->ReadSpillHeader(is, section); };
+  m_readers_ring[SectionSeeker::SectionType::ChipHeader]   = [this](std::istream& is, const SectionSeeker::Section section) { return this->ReadChipHeader(is, section); };
+  m_readers_ring[SectionSeeker::SectionType::RawData]      = [this](std::istream& is, const SectionSeeker::Section section) { return this->ReadRawData(is, section); };
+  m_readers_ring[SectionSeeker::SectionType::ChipTrailer]  = [this](std::istream& is, const SectionSeeker::Section section) { return this->ReadChipTrailer(is, section); };
+  m_readers_ring[SectionSeeker::SectionType::SpillTrailer] = [this](std::istream& is, const SectionSeeker::Section section) { return this->ReadSpillTrailer(is, section); };
   if (m_config.has_spill_number)
-    m_readers_ring[MarkerSeeker::MarkerType::SpillNumber]  = [this](std::istream& is, const MarkerSeeker::Section section) { return this->ReadSpillNumber(is, section); };
+    m_readers_ring[SectionSeeker::SectionType::SpillNumber]  = [this](std::istream& is, const SectionSeeker::Section section) { return this->ReadSpillNumber(is, section); };
 }

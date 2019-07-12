@@ -16,16 +16,18 @@
 namespace wg_utils = wagasci_decoder_utils;
 
 ///////////////////////////////////////////////////////////////////////////////
-//                                 MarkerSeeker                              //
+//                                 SectionSeeker                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-MarkerSeeker::MarkerSeeker(const RawDataConfig &config) : m_config(config) {
-  if (m_config.has_spill_number) {
-    m_num_marker_types = NUM_MARKER_TYPES;
+SectionSeeker::SectionSeeker(const RawDataConfig &config) : m_config(config) {
+  if (m_config.has_spill_number && m_config.has_phantom_menace) {
+    m_num_section_types = NUM_SECTION_TYPES;
+  } else if (m_config.has_spill_number ^ m_config.has_phantom_menace) {
+    m_num_section_types = NUM_SECTION_TYPES - 1;
   } else {
-    m_num_marker_types = NUM_MARKER_TYPES - 1;
+    m_num_section_types = NUM_SECTION_TYPES - 2;
   }
-  m_current_section.type = MarkerType::SpillTrailer;
+  m_current_section.type = SectionType::SpillTrailer;
   InitializeRing();
 }
 
@@ -33,7 +35,7 @@ MarkerSeeker::MarkerSeeker(const RawDataConfig &config) : m_config(config) {
 //                               GetNextSection                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-MarkerSeeker::Section MarkerSeeker::SeekNextSection(std::istream& is) {
+SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
   bool found = true;
   unsigned last_section_type = m_current_section.type;
   m_current_section.ichip = m_last_ichip;
@@ -52,7 +54,8 @@ MarkerSeeker::Section MarkerSeeker::SeekNextSection(std::istream& is) {
     Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
     return this->SeekNextSection(is);
   }
-  
+
+  m_current_section.lines = GetNumberOfLines(m_current_section);
   return m_current_section;
 }
 
@@ -60,7 +63,7 @@ MarkerSeeker::Section MarkerSeeker::SeekNextSection(std::istream& is) {
 //                              NextSectionType                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-unsigned MarkerSeeker::NextSectionType(const unsigned last_section_type, const bool last_section_was_found) {
+unsigned SectionSeeker::NextSectionType(const unsigned last_section_type, const bool last_section_was_found) {
   // Select what is the next section to look for. Only if the last
   // section whas a chip trailer we need to be cautious because we may
   // need to go back to the ChipHeader and increment the current_chip
@@ -70,7 +73,7 @@ unsigned MarkerSeeker::NextSectionType(const unsigned last_section_type, const b
     return ChipHeader;
   } else {
     m_last_ichip %= m_config.n_chips;
-    return (m_current_section.type + 1) % m_num_marker_types;
+    return (m_current_section.type + 1) % m_num_section_types;
   }
 }
 
@@ -78,18 +81,18 @@ unsigned MarkerSeeker::NextSectionType(const unsigned last_section_type, const b
 //                              SeekSpillNumber                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool MarkerSeeker::SeekSpillNumber(std::istream& is) {
+bool SectionSeeker::SeekSpillNumber(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(SPILL_NUMBER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
   // Everything should be fine
-  if ((raw_data[0] == SPILL_NUMBER_MARKER || raw_data[0] == FIRST_SPILL_MARKER) &&
+  if ((raw_data[0] == SPILL_NUMBER_MARKER || raw_data[0] == FIRST_MARKER) &&
       raw_data[2] != SPILL_HEADER_MARKER) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = SpillNumber;
     return true;
-  } else if (raw_data[0] == SPILL_NUMBER_MARKER || raw_data[0] == FIRST_SPILL_MARKER) {
+  } else if (raw_data[0] == SPILL_NUMBER_MARKER) {
     // Else the spill number section is corrupted or missing. In that
     // case we just ignore it and go on with reading the spill header
     // section if we find it
@@ -116,13 +119,13 @@ bool MarkerSeeker::SeekSpillNumber(std::istream& is) {
 //                              SeekSpillHeader                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
+bool SectionSeeker::SeekSpillHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(SPILL_HEADER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
 
   // If everything is in place just return and call it a day
-  if (raw_data[0] == SPILL_HEADER_MARKER &&
+  if ((raw_data[0] == SPILL_HEADER_MARKER  || raw_data[0] == FIRST_MARKER) &&
       raw_data[3] == SP_MARKER &&
       raw_data[4] == IL_MARKER &&
       raw_data[5] == SPACE_MARKER) {
@@ -174,7 +177,7 @@ bool MarkerSeeker::SeekSpillHeader(std::istream& is) {
 //                               SeekChipHeader                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool MarkerSeeker::SeekChipHeader(std::istream& is) {
+bool SectionSeeker::SeekChipHeader(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(CHIP_HEADER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
@@ -236,7 +239,7 @@ bool MarkerSeeker::SeekChipHeader(std::istream& is) {
 //                              SeekChipTrailer                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
+bool SectionSeeker::SeekChipTrailer(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(CHIP_TRAILER_LENGTH);
   std::streampos stop_read = wg_utils::ReadChunk(is, raw_data);
@@ -284,7 +287,7 @@ bool MarkerSeeker::SeekChipTrailer(std::istream& is) {
 //                              SeekSpillTrailer                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
+bool SectionSeeker::SeekSpillTrailer(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(SPILL_TRAILER_LENGTH);
   std::streampos stop_read;
@@ -355,10 +358,29 @@ bool MarkerSeeker::SeekSpillTrailer(std::istream& is) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//                             SeekPhantomMenace                             //
+///////////////////////////////////////////////////////////////////////////////
+
+bool SectionSeeker::SeekPhantomMenace(std::istream& is) {
+  std::streampos start_read = is.tellg();
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(PHANTOM_MENACE_LENGTH);
+  wg_utils::ReadChunk(is, raw_data);
+
+  if (raw_data[1] == x0000 &&
+      raw_data[2] == x0000) {
+    return false;    
+  }
+
+  // In all other cases just rewind and try with another seeker  
+  is.seekg(start_read);
+  return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 //                                SeekRawData                                //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool MarkerSeeker::SeekRawData(std::istream& is) {
+bool SectionSeeker::SeekRawData(std::istream& is) {
   std::streampos start_read = is.tellg();
   std::bitset<BITS_PER_LINE> raw_data_line;
 
@@ -395,20 +417,22 @@ bool MarkerSeeker::SeekRawData(std::istream& is) {
 //                               InitializeRing                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-void MarkerSeeker::InitializeRing() {
-  m_seekers_ring[MarkerType::SpillHeader]  = [this](std::istream& is) { return this->SeekSpillHeader(is); };  
-  m_seekers_ring[MarkerType::ChipHeader]   = [this](std::istream& is) { return this->SeekChipHeader(is); };  
-  m_seekers_ring[MarkerType::RawData]      = [this](std::istream& is) { return this->SeekRawData(is); };  
-  m_seekers_ring[MarkerType::ChipTrailer]  = [this](std::istream& is) { return this->SeekChipTrailer(is); };  
-  m_seekers_ring[MarkerType::SpillTrailer] = [this](std::istream& is) { return this->SeekSpillTrailer(is); };  
+void SectionSeeker::InitializeRing() {
+  m_seekers_ring[SectionType::SpillHeader]  = [this](std::istream& is) { return this->SeekSpillHeader(is); };  
+  m_seekers_ring[SectionType::ChipHeader]   = [this](std::istream& is) { return this->SeekChipHeader(is); };  
+  m_seekers_ring[SectionType::RawData]      = [this](std::istream& is) { return this->SeekRawData(is); };  
+  m_seekers_ring[SectionType::ChipTrailer]  = [this](std::istream& is) { return this->SeekChipTrailer(is); };  
+  m_seekers_ring[SectionType::SpillTrailer] = [this](std::istream& is) { return this->SeekSpillTrailer(is); };
+  if (m_config.has_phantom_menace)
+    m_seekers_ring[SectionType::PhantomMenace] = [this](std::istream& is) { return this->SeekPhantomMenace(is); };
   if (m_config.has_spill_number)
-    m_seekers_ring[MarkerType::SpillNumber]  = [this](std::istream& is) { return this->SeekSpillNumber(is); };  
+    m_seekers_ring[SectionType::SpillNumber]   = [this](std::istream& is) { return this->SeekSpillNumber(is); };  
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //                          GetNumberOfLinesToRead                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-unsigned GetNumberOfLinesToRead(const MarkerSeeker::Section & section) {
+unsigned GetNumberOfLines(const SectionSeeker::Section & section) {
   return (section.stop - section.start) / BYTES_PER_LINE;
 }

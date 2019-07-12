@@ -309,6 +309,7 @@ int wgDecoder(const char * x_input_raw_file,
                        NCHANNELS,
                        n_chip_id,
                        wagasci_decoder_utils::HasSpillNumber(input_raw_file),
+                       wagasci_decoder_utils::HasPhantomMenace(input_raw_file),
                        adc_is_calibrated,
                        tdc_is_calibrated);
 
@@ -328,37 +329,37 @@ int wgDecoder(const char * x_input_raw_file,
   unsigned n_good_spills = 0, n_bad_spills = 0;
   int result;
   try {
-    MarkerSeeker seeker(config);
-    EventReader reader(config, tree, rd);
+    SectionSeeker seeker(config);
+    SectionReader reader(config, tree, rd);
     int last_spill_count = -1;
     unsigned last_section_type = 0;
     while (true) {
 
       // ============ Seek and read next section ============ //
       
-      MarkerSeeker::Section current_section = seeker.SeekNextSection(ifs);
+      SectionSeeker::Section current_section = seeker.SeekNextSection(ifs);
       reader.ReadNextSection(ifs, current_section);
 
       // ============ If the raw data was correctly read  ============ //
       // ============ this is a good spill otherwise this ============ //
       // ============ is a bad spill.                     ============ //
       
-      if (current_section.type == MarkerSeeker::MarkerType::RawData) {
+      if (current_section.type == SectionSeeker::SectionType::RawData) {
         if (current_section.ispill == (unsigned) last_spill_count + 1) {
           ++n_good_spills;
         } else {
           n_bad_spills += current_section.ispill - last_spill_count;
         }
         last_spill_count = current_section.ispill;
-      } else if (current_section.type == MarkerSeeker::MarkerType::ChipTrailer &&
-                 last_section_type != MarkerSeeker::MarkerType::RawData) {
+      } else if (current_section.type == SectionSeeker::SectionType::ChipTrailer &&
+                 last_section_type != SectionSeeker::SectionType::RawData) {
         n_bad_spills += current_section.ispill - last_spill_count;
         last_spill_count = current_section.ispill;
       }
 
       // ============ Print the progress every 1000 spills ============ //
       
-      if (current_section.type == MarkerSeeker::MarkerType::SpillTrailer) {
+      if (current_section.type == SectionSeeker::SectionType::SpillTrailer) {
         rd.clear();
         if ((n_good_spills + n_bad_spills) % 1000 == 0) {
           Log.Write("[wgDecoder] Decoded " + to_string(n_good_spills + n_bad_spills) + " spills");

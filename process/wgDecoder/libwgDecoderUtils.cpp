@@ -94,7 +94,7 @@ unsigned GetNumChipID(string & input_raw_file) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//                               GetInsertFlag                               //
+//                              HasSpillNumber                               //
 ///////////////////////////////////////////////////////////////////////////////
 
 bool HasSpillNumber(string & input_raw_file) {
@@ -107,15 +107,56 @@ bool HasSpillNumber(string & input_raw_file) {
   }
   
   bitset<BITS_PER_LINE> raw_data;
-  bool found = false;
-  unsigned iline = 0, max_lines = 10 * (16 * (1 + 2 * NCHANNELS) + 2) ;
+  unsigned iline = 0;
+  unsigned max_lines = 20 * NCHIPS * (16 * (1 + 2 * NCHANNELS) + 2);
+  unsigned found_counter = 0;
   
-  while ( ifs.read((char * ) &raw_data, BYTES_PER_LINE) && !found && ++iline < max_lines ) {
+  while (ifs.read((char * ) &raw_data, BYTES_PER_LINE) &&
+         ++iline < max_lines &&
+         found_counter < 3) {
 
     if (raw_data == SPILL_NUMBER_MARKER)
-      found = true;
+      found_counter++;
   }
 
+  bool found = found_counter >= 3;
+
+  ifs.close();
+  return found;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                              HasPhantomMenace                             //
+///////////////////////////////////////////////////////////////////////////////
+
+bool HasPhantomMenace(string & input_raw_file) {
+  
+  ifstream ifs;
+  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  if (!ifs.is_open()) {
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    return false;
+  }
+  
+  std::vector<bitset<BITS_PER_LINE>> raw_data(PHANTOM_MENACE_LENGTH + 2);
+  unsigned iline = 0;
+  unsigned max_lines = 20 * NCHIPS * (16 * (1 + 2 * NCHANNELS) + 2);
+  unsigned found_counter = 0;
+
+  try {
+    while (++iline < max_lines && found_counter < 3) {
+      ReadChunk(ifs, raw_data);
+      if (raw_data[0] == SPACE_MARKER &&
+          raw_data[2] == x0000 &&
+          raw_data[3] == x0000 &&
+          raw_data[4] == SPILL_HEADER_MARKER)
+        ++found_counter;
+      ifs.seekg(iline * BYTES_PER_LINE);
+    }
+  } catch (const wgEOF& e) {;}
+
+  bool found = found_counter >= 3;
+    
   ifs.close();
   return found;
 }
@@ -171,6 +212,6 @@ unsigned GetNumChips(string & input_raw_file) {
 
 RawDataConfig::RawDataConfig() {}
 RawDataConfig::RawDataConfig(unsigned n_chips, unsigned n_channels, unsigned n_chip_id, bool has_spill_number,
-                             bool adc_is_calibrated, bool tdc_is_calibrated)
+                             bool has_phantom_menace, bool adc_is_calibrated, bool tdc_is_calibrated)
     : n_chips(n_chips), n_channels(n_channels), n_chip_id(n_chip_id), has_spill_number(has_spill_number),
-      adc_is_calibrated(adc_is_calibrated), tdc_is_calibrated(tdc_is_calibrated) {}
+      has_phantom_menace(has_phantom_menace), adc_is_calibrated(adc_is_calibrated), tdc_is_calibrated(tdc_is_calibrated) {}

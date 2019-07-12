@@ -29,11 +29,12 @@ const unsigned NCHIPS     = 20;
 const unsigned NCHANNELS  = 36;
 const unsigned MEMDEPTH   = 16;
 
-const unsigned CHIP_HEADER_LENGTH   = 5;
-const unsigned CHIP_TRAILER_LENGTH  = 4;
-const unsigned SPILL_HEADER_LENGTH  = 6;
-const unsigned SPILL_TRAILER_LENGTH = 7;
-const unsigned SPILL_NUMBER_LENGTH  = 3;
+const unsigned CHIP_HEADER_LENGTH    = 5;
+const unsigned CHIP_TRAILER_LENGTH   = 4;
+const unsigned SPILL_HEADER_LENGTH   = 6;
+const unsigned SPILL_TRAILER_LENGTH  = 7;
+const unsigned PHANTOM_MENACE_LENGTH = 3;
+const unsigned SPILL_NUMBER_LENGTH   = 3;
 
 // One column length in 16 bits lines (but the BCID)
 // 1 BCID              +
