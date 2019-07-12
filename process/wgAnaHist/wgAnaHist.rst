@@ -1,6 +1,6 @@
-=================
-wgAnaHist program
-=================
+=========
+wgAnaHist
+=========
 
 The wgAnaHist program is used to analyze the histograms created by the
 wgMakeHist program. The result of the analysis is stored in the outputdir as

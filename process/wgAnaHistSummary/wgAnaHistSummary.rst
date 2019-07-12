@@ -1,6 +1,6 @@
-========================
-wgAnaHistSummary program
-========================
+================
+wgAnaHistSummary
+================
 
 The wgAnaHistSummay program is used to summarize the information contained in the xml
 files created by the wgAnaHist program.
