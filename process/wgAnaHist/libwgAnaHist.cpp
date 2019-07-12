@@ -18,7 +18,6 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
 #include "wgEditXML.hpp"
@@ -52,7 +51,7 @@ int wgAnaHist(const char * x_inputFile,
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
   wgEditXML Edit;
-  CheckExist Check;
+  
 
   // =========== FLAGS decoding =========== //
 
@@ -67,11 +66,11 @@ int wgAnaHist(const char * x_inputFile,
 
   // =========== Arguments sanity check =========== //
 
-  if(inputFile.empty() || !Check.RootFile(inputFile)) {
+  if(inputFile.empty() || !check_exist::RootFile(inputFile)) {
     Log.eWrite("[wgAnaHist] Input file not found : " + inputFile);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if ( flags[SELECT_CONFIG] && ( configFile.empty() || !Check.XmlFile(configFile)) ) {
+  if ( flags[SELECT_CONFIG] && ( configFile.empty() || !check_exist::XmlFile(configFile)) ) {
     Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + configFile);
     exit(1);
   }
@@ -176,7 +175,7 @@ int wgAnaHist(const char * x_inputFile,
         // Open the outputxmlfile as an XML file
         string outputxmlfile(outputXMLChipDir + "/chan" + to_string(ichan_id) + ".xml");
         try {
-          if( !Check.XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
+          if( !check_exist::XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
             Edit.Make(outputxmlfile, idif_id, ichip_id, ichan_id);
           Edit.Open(outputxmlfile);
         }

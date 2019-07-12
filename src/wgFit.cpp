@@ -27,7 +27,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgGetHist.hpp"
 #include "wgFit.hpp"
@@ -37,6 +37,7 @@
 //#define DEBUG_WGFIT
 
 using namespace std;
+using namespace wagasci_tools;
 
 Double_t gauss(Double_t *x, Double_t *p){
   return p[0]*exp(-(((x[0]-p[1])/p[2]))*((x[0]-p[1])/p[2])*0.50);
@@ -58,8 +59,8 @@ Double_t double_gauss_2(Double_t *x, Double_t *p){
 //**********************************************************************
 wgFit::wgFit(const string& x_inputfile, const string& x_outputIMGDir) {
   wgFit::GetHist = new wgGetHist(x_inputfile);
-  CheckExist Check;
-  if( !Check.Dir(x_outputIMGDir) ) {
+  
+  if( !check_exist::Dir(x_outputIMGDir) ) {
     boost::filesystem::path dir(x_outputIMGDir);
     if( !boost::filesystem::create_directories(dir) ) {
       throw wgInvalidFile("[wgFit][" + x_outputIMGDir + "] failed to create directory");
@@ -72,8 +73,8 @@ wgFit::wgFit(const string& x_inputfile, const string& x_outputIMGDir) {
 wgFit::wgFit(const string& x_inputfile) {
   wgFit::GetHist = new wgGetHist(x_inputfile);
   wgConst con;
-  CheckExist Check;
-  if( !Check.Dir(con.IMGDATA_DIRECTORY) ) {
+  
+  if( !check_exist::Dir(con.IMGDATA_DIRECTORY) ) {
     boost::filesystem::path dir(con.IMGDATA_DIRECTORY);
     if( !boost::filesystem::create_directories(dir) ) {
       throw wgInvalidFile("[wgFit][" + con.IMGDATA_DIRECTORY + "] failed to create directory");

@@ -11,7 +11,6 @@
 #include "TFile.h"
 
 // user includes
-#include "wgErrorCode.hpp"
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
 

@@ -15,7 +15,7 @@
 //user includes
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgLogger.hpp"
 #include "wgEditXML.hpp"
 #include "wgTopology.hpp"
@@ -122,8 +122,8 @@ void Topology::GetTopologyFromFile(const string& configxml) {
   unsigned igdcc = 1, idif = 1, iasu = 1;
   bool found = false;
   
-  CheckExist Check;
-  if(!Check.XmlFile(configxml))
+  
+  if(!check_exist::XmlFile(configxml))
     throw wgInvalidFile(configxml + " wasn't found or is not valid");
 
   XMLDocument configfile;
@@ -227,8 +227,8 @@ pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
 
 //**********************************************************************
 void Topology::GetGdccDifMapping() {
-  CheckExist check;
-  if (!check.TxtFile(m_mapping_file_path))
+  
+  if (!check_exist::TxtFile(m_mapping_file_path))
     throw wgInvalidFile(m_mapping_file_path + " file not found");
   ifstream mapping_file(m_mapping_file_path);
   nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
@@ -295,8 +295,8 @@ void Topology::GetTopologyFromPedestalTree(string input_run_dir) {
   // common mistake is to pass an empty or non existant directory.
   
   // Check the arguments
-  CheckExist check;
-  if (!check.Dir(input_run_dir))
+  
+  if (!check_exist::Dir(input_run_dir))
     throw wgInvalidFile("[wgTopology] Input directory doesn't exist : " + input_run_dir);
 
   // Number of acquisitions for the pe
@@ -392,8 +392,8 @@ void Topology::GetTopologyFromScurveTree(string input_run_dir) {
   // common mistake is to pass an empty or non existant directory.
   
   // Check the arguments
-  CheckExist check;
-  if (!check.Dir(input_run_dir))
+  
+  if (!check_exist::Dir(input_run_dir))
     throw wgInvalidFile("[wgTopology] Input directory doesn't exist : " + input_run_dir);
 
   // Number of acquisitions for the iDAC

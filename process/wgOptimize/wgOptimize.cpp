@@ -6,7 +6,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgConst.hpp"
 #include "wgOptimize.hpp"
 #include "wgLogger.hpp"
@@ -48,7 +48,7 @@ int main(int argc, char** argv){
   int mode       = 0;
   int inputDAC   = 0;
   int pe         = 0;
-  CheckExist check;
+  
 
   while((opt = getopt(argc, argv, "hm:t:f:u:s:p:i:")) != -1 ){
     switch(opt){

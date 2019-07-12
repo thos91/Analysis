@@ -17,7 +17,7 @@
 #include "wgFileSystemTools.hpp"
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgMakeHist.hpp"
 #include "wgLogger.hpp"
 
@@ -42,8 +42,8 @@ int wgMakeHist(const char * x_inputFileName,
   Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + GetName(outputDir)          + "  *****");
   Log.Write("[wgMakeHist] *****  LOG FILE         : " + GetName(logfilename)        + "  *****");
   
-  CheckExist check;
-  if(!check.RootFile(inputFileName)) {
+  
+  if(!check_exist::RootFile(inputFileName)) {
     Log.eWrite("[wgMakeHist] Input file " + inputFileName + " not found");
     return ERR_EMPTY_INPUT_FILE;
   }
@@ -140,15 +140,15 @@ int wgMakeHist(const char * x_inputFileName,
   nb_lost_pkts = GetTree->GetHist_LostPacket();
 
   TTree * tree = GetTree->tree_in;
-  int max_spill = tree->GetMaximum("spill");
-  int min_spill = tree->GetMinimum("spill");
+  int max_spill = tree->GetMaximum("spill_number");
+  int min_spill = tree->GetMinimum("spill_number");
   if(min_spill < 0) {
     Log.eWrite("[wgMakeHist] some spill value is missed : min_spill = " + to_string(min_spill));
   }
 
   outputHistFile->cd();
   // Pad the histogram with 100 empty bins on the left and on the right
-  h_spill = new TH1D("spill", "Spill number weighted by the number of chips read", (int) max_spill - min_spill + 200, (int) min_spill - 100, (int) max_spill + 100);
+  h_spill = new TH1D("spill_number", "Spill number weighted by the number of chips read", (int) max_spill - min_spill + 200, (int) min_spill - 100, (int) max_spill + 100);
 
   GetTree->finput->cd();
   int n_events = tree->GetEntries();
@@ -163,12 +163,8 @@ int wgMakeHist(const char * x_inputFileName,
       Log.Write("[wgMakeHist] Event number = " + to_string(ievent) + " / " + to_string(n_events));
     // Read one event
     tree->GetEntry(ievent);
-    // Fill the spill histogram with using the spill_flag as a weight.
-    // This means that the more chips are missing in a spill, the more that
-    // spill number will be suppressed.
-    // spill_flag: for each event counts the number of chips that were correctly
-    // read
-    h_spill->Fill(rd.spill, rd.spill_flag);
+
+    h_spill->Fill(rd.spill_number);
 
     // CHIPS loop
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {

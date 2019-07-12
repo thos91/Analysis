@@ -19,7 +19,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgEditConfig.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgLogger.hpp"
@@ -27,6 +27,7 @@
 //#define DEBUG_WG_EDIT_CONFIG
 
 using namespace std;
+using namespace wagasci_tools;
 
 //*********************************************************************************
 wgEditConfig::wgEditConfig(const string& input, bool bitstream_string){
@@ -37,12 +38,12 @@ wgEditConfig::wgEditConfig(const string& input, bool bitstream_string){
   
 //*********************************************************************************
 vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
-  CheckExist check;
+  
   if (spiroc2d_csv.empty()) {
 	wgConst con;
 	spiroc2d_csv = string(con.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
-  if (!check.CsvFile(spiroc2d_csv))
+  if (!check_exist::CsvFile(spiroc2d_csv))
 	throw wgInvalidFile("[wgEditConfig::GetCSV][" + spiroc2d_csv + "] file not found");
   ifstream ifs(spiroc2d_csv.c_str());
 	  
@@ -76,7 +77,7 @@ vector<vector<string>> wgEditConfig::GetCSV(string spiroc2d_csv) {
 void wgEditConfig::Get_MPPCinfo(int ichip){ 
   wgConst con;
   
-  CheckExist check;
+  
   string mppc_csv(con.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
   string line;
   vector<string> tmp_mppc_map;
@@ -84,7 +85,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
   int tmp_serial,tmp_ch;
   int mppc_map[NCHIPS];
 
-  if ( !check.CsvFile(mppc_csv) )
+  if ( !check_exist::CsvFile(mppc_csv) )
 	throw wgInvalidFile("[Get_MPPCinfo][" + mppc_csv + "] mppc_csv file not found");
   ifstream ifs(mppc_csv);
   
@@ -95,7 +96,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
   }
 
   string mppc_root(con.CALICOES_DIRECTORY + "/config/spiroc2d/arraymppc_data.root");
-  if ( !check.RootFile(mppc_root) )
+  if ( !check_exist::RootFile(mppc_root) )
 	throw wgInvalidFile("[Get_MPPCinfo][" + mppc_root + "] arraymppc_data.root file not found");
   TFile *fmppc = new TFile(mppc_root.c_str(), "read");
   TTree *mppc = (TTree*)fmppc->Get("mppc");
@@ -295,7 +296,7 @@ string wgEditConfig::DeToBi(const string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_inputDAC(const int chan, int value) {
+void wgEditConfig::Change_inputDAC(const unsigned chan, int value) {
   if(chan < 0 || chan > NCHANNELS) {
 	throw invalid_argument("channel is out of range : " + to_string(chan));
   }
@@ -321,7 +322,7 @@ void wgEditConfig::Change_inputDAC(const int chan, int value) {
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_ampDAC(const int chan, const int value) {
+void wgEditConfig::Change_ampDAC(const unsigned chan, const int value) {
   if(value < 0 || value > MAX_VALUE_6BITS) {
 	throw invalid_argument("value is out of range : " + to_string(value));
   }
@@ -342,7 +343,7 @@ void wgEditConfig::Change_ampDAC(const int chan, const int value) {
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_trigadj(const int chan, const int value) {
+void wgEditConfig::Change_trigadj(const unsigned chan, const int value) {
   if(value < 0 || value > MAX_VALUE_4BITS) {
 	throw invalid_argument("value is out of range : " + to_string(value));
   }
@@ -383,21 +384,21 @@ void wgEditConfig::Change_gainth(const int value){
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_inputDAC(const int chan){
+int wgEditConfig::Get_inputDAC(const unsigned chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET, ADJ_INPUTDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_ampDAC(const int chan){
+int wgEditConfig::Get_ampDAC(const unsigned chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_AMPDAC_START + chan * ADJ_AMPDAC_OFFSET, ADJ_AMPDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
-int wgEditConfig::Get_trigadj(const int chan){
+int wgEditConfig::Get_trigadj(const unsigned chan){
   if( chan < 0 || chan >= NCHANNELS)
 	throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_THRESHOLD_START + chan * ADJ_THRESHOLD_OFFSET, ADJ_THRESHOLD_LENGTH ) ) );

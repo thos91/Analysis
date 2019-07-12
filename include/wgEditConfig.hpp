@@ -88,16 +88,16 @@ public:
   // wgEditConfig::Change_inputDAC
   // Change the channel by channel adjustable 8-bit inputDAC.
   // The inputDAC is the channel by channel high voltage correction.
-  void Change_inputDAC(int chan, int value);
+  void Change_inputDAC(unsigned chan, int value);
 
   // wgEditConfig::Change_ampDAC
   // Change the channel by channel adjustable 6-bit high gain (HG) preamp.
   // It corresponds to the value of the preamp feedback capacitor 
-  void Change_ampDAC(int chan, int value);
+  void Change_ampDAC(unsigned chan, int value);
 
   // wgEditConfig::Change_trigadj
   // Change the channel by channel adjustable 4-bit discriminator threshold
-  void Change_trigadj(int chan, int value);
+  void Change_trigadj(unsigned chan, int value);
 
   // wgEditConfig::Change_trigth
   void Change_trigth(int value);
@@ -125,14 +125,14 @@ public:
 
   // wgEditConfig::Get_inputDAC
   // Get the channel by channel adjustable input 8-bit DAC
-  int Get_inputDAC(int chan);
+  int Get_inputDAC(unsigned chan);
 
   // Get the channel by channel adjustable 6-bit high gain (HG) preamp.
   // It corresponds to the value of the preamp feedback capacitor 
-  int Get_ampDAC(int chan);
+  int Get_ampDAC(unsigned chan);
 
   // Get the channel by channel adjustable 4-bit discriminator threshold
-  int Get_trigadj(int chan);
+  int Get_trigadj(unsigned chan);
 
   // Get the global 10-bit threshold
   int Get_trigth();

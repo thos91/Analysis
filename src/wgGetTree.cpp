@@ -7,11 +7,12 @@
 // user includes
 #include "wgGetTree.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 //************************************************************************
 
@@ -41,9 +42,9 @@ wgGetTree::wgGetTree(const string& root_file_name, IngRecon_t& ingrecon) {
 //************************************************************************
 void wgGetTree::Open(const string& root_file_name) {
   // Check if the ROOT file exists
-  CheckExist Check;
+  
   wgGetTree::finputname = root_file_name;
-  if(!Check.RootFile(root_file_name))
+  if(!check_exist::RootFile(root_file_name))
     throw wgInvalidFile( "[wgGetTree::Open] failed to open " + root_file_name );
   // Check if the ROOT file is already opened
   try {
@@ -95,10 +96,8 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
   if(finput == NULL || finput->IsOpen() == kFALSE)
     throw wgInvalidFile("TFile " + finputname + " is not open!");
   try {
-	if (BranchExists("spill"))
-	  tree_in->SetBranchAddress("spill",       &rdin.spill);
-	if (BranchExists("spill_flag"))
-	  tree_in->SetBranchAddress("spill_flag",  &rdin.spill_flag);
+	if (BranchExists("spill_number"))
+	  tree_in->SetBranchAddress("spill_number",&rdin.spill_number);
 	if (BranchExists("spill_mode"))
 	  tree_in->SetBranchAddress("spill_mode",  &rdin.spill_mode);
 	if (BranchExists("spill_count"))
@@ -117,12 +116,14 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
 	  tree_in->SetBranchAddress("chipid",       rdin.chipid.data());
 	if (BranchExists("col"))
 	  tree_in->SetBranchAddress("col",          rdin.col.data());
-	if (BranchExists("chipch"))
-	  tree_in->SetBranchAddress("chipch",       rdin.chipch.data());
+	if (BranchExists("chan"))
+	  tree_in->SetBranchAddress("chan",         rdin.chan.data());
 	if (BranchExists("chip"))
 	  tree_in->SetBranchAddress("chip",         rdin.chip.data());
-	if (BranchExists("debug"))
-	  tree_in->SetBranchAddress("debug",        rdin.debug.data());
+	if (BranchExists("debug_chip"))
+	  tree_in->SetBranchAddress("debug_chip",   rdin.debug_chip.data());
+        if (BranchExists("debug_spill"))
+	  tree_in->SetBranchAddress("debug_spill",  rdin.debug_spill.data());
 	if (BranchExists("view"))
 	  tree_in->SetBranchAddress("view",        &rdin.view);
 	if (BranchExists("pln"))
@@ -145,8 +146,6 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
 	  tree_in->SetBranchAddress("gain",         rdin.gain.data());
 	if (BranchExists("pedestal"))
 	  tree_in->SetBranchAddress("pedestal",     rdin.pedestal.data());
-	if (BranchExists("ped_nohit"))
-	  tree_in->SetBranchAddress("ped_nohit",    rdin.ped_nohit.data());
 	if (BranchExists("tdc_slope"))
 	  tree_in->SetBranchAddress("tdc_slope",    rdin.tdc_slope.data());
 	if (BranchExists("tdc_intcpt"))
@@ -194,13 +193,11 @@ void wgGetTree::SetTreeFile(Hit_t& hit){
 //************************************************************************
 bool wgGetTree::MakeTreeFile(const string& str, Hit_t& hit){
   if(!wgGetTree::foutput){
-    CheckExist *Check = new CheckExist;
     wgGetTree::foutputname = str;
-    if(!Check->RootFile(str)){
+    if(!check_exist::RootFile(str)){
       Log.eWrite( "ERROR!! FAIL TO SET TREEFILE" );
       return false;
     }
-    delete Check;
     wgGetTree::foutput  = new TFile(str.c_str(),"recreate");
     wgGetTree::tree_out = new TTree("tree","tree");
   }
@@ -262,13 +259,11 @@ void wgGetTree::SetTreeFile(Recon_t& recon){
 //************************************************************************
 bool wgGetTree::MakeTreeFile(const string& str, Recon_t& recon){
   if(!wgGetTree::foutput){
-    CheckExist *Check = new CheckExist;
     wgGetTree::foutputname = str;
-    if(!Check->RootFile(str)){
+    if(!check_exist::RootFile(str)){
       Log.eWrite( "ERROR!! FAIL TO SET TREEFILE" );
       return false;
     }
-    delete Check;
     wgGetTree::foutput  = new TFile(str.c_str(),"recreate");
     wgGetTree::tree_out = new TTree("tree","tree");
   }
@@ -339,13 +334,11 @@ void wgGetTree::SetTreeFile(Track_t& track){
 //************************************************************************
 bool wgGetTree::MakeTreeFile(const string& str, Track_t& track){
   if(!wgGetTree::foutput){
-    CheckExist *Check = new CheckExist;
     wgGetTree::foutputname = str;
-    if(!Check->RootFile(str)){
+    if(!check_exist::RootFile(str)){
       Log.eWrite( "ERROR!! FAIL TO SET TREEFILE" );
       return false;
     }
-    delete Check;
     wgGetTree::foutput  = new TFile(str.c_str(),"recreate");
     wgGetTree::tree_out = new TTree("tree","tree");
   }

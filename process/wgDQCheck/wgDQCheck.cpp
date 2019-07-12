@@ -98,7 +98,7 @@ int main(int argc, char** argv){
         break;
       
       case 'h':
-        cout <<"This program is for data quality check. "<<endl;
+        cout <<"This program is for data quality check_exist:: "<<endl;
         cout <<"You can take several option..."<<endl;
         cout <<"  -h         : help"<<endl;
         cout <<"  -f (char*) : choose run name you wanna read(must)"<<endl;
@@ -108,7 +108,7 @@ int main(int argc, char** argv){
         cout <<"  -x (char*) : choose XML directory  (default: xml directory)" <<endl;
         exit(0);
       default:
-        cout <<"This program is for data quality check. "<<endl;
+        cout <<"This program is for data quality check_exist:: "<<endl;
         cout <<"You can take several option..."<<endl;
         cout <<"  -h         : help"<<endl;
         cout <<"  -f (char*) : choose run name you wanna read(must)"<<endl;

@@ -8,7 +8,6 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
 #include "wgAnaHist.hpp"
 #include "wgLogger.hpp"
 
@@ -55,9 +54,7 @@ int main(int argc, char** argv){
   string outputXMLDir = con.XMLDATA_DIRECTORY;
   string outputIMGDir = con.IMGDATA_DIRECTORY;
 
-  CheckExist Check;
-
-  while((opt = getopt(argc,argv, "f:d:m:i:o:q:prh")) !=-1 ) {
+    while((opt = getopt(argc,argv, "f:d:m:i:o:q:prh")) !=-1 ) {
     switch(opt) {
 	case 'f':
 	  inputFileName = optarg;

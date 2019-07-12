@@ -1,6 +1,6 @@
-======================
-wgChangeConfig program
-======================
+==============
+wgChangeConfig
+==============
 
 This program is used to to check or modify the bitstream txt files for the
 SPIROC2D chip. A bitstream file (ideally one for each chip) contains a single

@@ -265,21 +265,27 @@ public:
   int PreCalib_GetValue(const string&,int,int,int);
 
   //=======================================================================//
-  //               Gain and pedestal calibration XML files                 //
+  //                   Pedestal calibration XML files                      //
   //=======================================================================//
 
-  // wgEditXML::Calib_Make
+  // wgEditXML::Pedestal_Make
   // Create a template pedestal_card.xml file with the following structure:
   // pe1 is the position of the 1 p.e. peak with respect to the pedestal
   // pe2 is the position of the 2 p.e. peak with respect to the pedestal
   // Gain is the gain in ADC counts
   /* ----------------------------------------------------------------------------
 <data>
-    <n_difs> n_difs </n_difs>
-    <n_chips>n_chips</n_chips>
-    <n_chans>n_chans</n_chans>
+    <config>
+        <n_difs> n_difs </n_difs>
+    </config>
     <dif_1>
+        <config>
+             <n_chips> n_chips </n_chips>
+        </config>
         <chip_1>
+             <config>
+                  <n_chans> n_chans </n_chans>
+             </config>
              <chan_1>
                   <!-- for each column -->
                   <pe1></pe1>
@@ -298,15 +304,34 @@ public:
     ...
 </data>
 -------------------------------------------------------------------------------- */
-  void Calib_Make(const string& filename, Topology& topol);
+  void Pedestal_Make(const string& filename, Topology& topol);
 
-  // wgEditXML::Calib_SetValue
-  // data -> dif_%d -> chip_%d -> ch_%d -> name
-  void Calib_SetValue(const string& name, int idif, int ichip, int ich, int value, bool create_new = false);
+  // wgEditXML::Pedestal_GetDifConfigValue
+  // data -> dif_%d -> config -> name
+  int Pedestal_GetDifConfigValue(const string& name, int idif);
 
-  // wgEditXML::Calib_GetValue
+  // wgEditXML::Pedestal_SetDifConfigValue
+  // data -> dif_%d -> config -> name
+  void Pedestal_SetDifConfigValue(const string& name, int idif,
+                                  int value, bool create_new);
+  
+  // wgEditXML::Pedestal_GetChipConfigValue
+  // data -> dif_%d -> chip_%d -> config -> name
+  int Pedestal_GetChipConfigValue(const string& name, int idif, int ichip);
+
+  // wgEditXML::Pedestal_SetChipConfigValue
+  // data -> dif_%d -> chip_%d -> config -> name
+  void Pedestal_SetChipConfigValue(const string& name, int idif,
+                                   int ichip, int value, bool create_new);
+  
+  // wgEditXML::Pedestal_SetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
-  int Calib_GetValue(const string& name,int idif, int ichip, int ich);
+  void Pedestal_SetChanValue(const string& name, int idif, int ichip, int ich,
+                             int value, bool create_new = false);
+
+  // wgEditXML::Pedestal_GetValue
+  // data -> dif_%d -> chip_%d -> ch_%d -> name
+  int Pedestal_GetChanValue(const string& name, int idif, int ichip, int ich);
 };
 
 #endif

@@ -27,7 +27,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgExceptions.hpp"
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
@@ -50,9 +50,9 @@ int wgAnaPedestal(const char * x_input_run_dir,
   string output_img_dir(x_output_img_dir);
   
   wgConst con;
-  CheckExist Check;
+  
 
-  if (input_run_dir.empty() || !Check.Dir(input_run_dir)) {
+  if (input_run_dir.empty() || !check_exist::Dir(input_run_dir)) {
     Log.eWrite("[wgAnaPedestal] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
@@ -277,7 +277,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
   /********************** PEDESTAL_CARD.XML ************************/
   
   string xmlfile = output_xml_dir + "/pedestal_card.xml";
-  Edit.Calib_Make(xmlfile, topol);
+  Edit.Pedestal_Make(xmlfile, topol);
   try { Edit.Open(xmlfile); }
   catch (const exception& e) {
     Log.eWrite("[wgAnaPedestal] " + string(e.what()));
@@ -292,10 +292,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
         unsigned ichan_id = ichan + 1;
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           unsigned icol_id = icol + 1;
-          Edit.Calib_SetValue("pe1_"        + to_string(icol_id), idif_id, ichip_id, ichan_id, charge_hit[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
-          Edit.Calib_SetValue("pe2_"        + to_string(icol_id), idif_id, ichip_id, ichan_id, charge_hit[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
-          Edit.Calib_SetValue("gain_"       + to_string(icol_id), idif_id, ichip_id, ichan_id, gain      [idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
-          Edit.Calib_SetValue("sigma_gain_" + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_gain[idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("pe1_"        + to_string(icol_id), idif_id, ichip_id, ichan_id, charge_hit[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("pe2_"        + to_string(icol_id), idif_id, ichip_id, ichan_id, charge_hit[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("gain_"       + to_string(icol_id), idif_id, ichip_id, ichan_id, gain      [idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_gain_" + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_gain[idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
 
           // corrected_pedestal = 1 p.e. peak - gain
           // measured_pedestal = raw pedestal when there is no hit
@@ -303,10 +303,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
           int measured_pedestal        = charge_nohit[idif][ichip][ichan][icol][ONE_PE];
           int sigma_corrected_pedestal = sqrt(pow(sigma_hit[idif][ichip][ichan][icol][ONE_PE], 2) - pow(gain[idif][ichip][ichan][icol], 2));
           int sigma_measured_pedestal  = sigma_nohit[idif][ichip][ichan][icol][ONE_PE];
-          Edit.Calib_SetValue("ped_"            + to_string(icol_id), idif_id, ichip_id, ichan_id, corrected_pedestal,       NO_CREATE_NEW_MODE);
-          Edit.Calib_SetValue("sigma_ped_"      + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_corrected_pedestal, NO_CREATE_NEW_MODE);
-          Edit.Calib_SetValue("meas_ped_"       + to_string(icol_id), idif_id, ichip_id, ichan_id, measured_pedestal,        CREATE_NEW_MODE);
-          Edit.Calib_SetValue("sigma_meas_ped_" + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_measured_pedestal,  CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("ped_"            + to_string(icol_id), idif_id, ichip_id, ichan_id, corrected_pedestal,       NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_ped_"      + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_corrected_pedestal, NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("meas_ped_"       + to_string(icol_id), idif_id, ichip_id, ichan_id, measured_pedestal,        CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_meas_ped_" + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_measured_pedestal,  CREATE_NEW_MODE);
 
           h_corrected_ped[icol]->Fill(corrected_pedestal);
           h_ped_shift[icol]->Fill(corrected_pedestal - measured_pedestal);

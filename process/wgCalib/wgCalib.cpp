@@ -70,7 +70,7 @@ int main(int argc, char** argv){
   string logoutputDir=con.LOG_DIRECTORY;
 
   OperateString OpStr;
-  CheckExist check;
+  
 
   Log.Write("Start calibration...");
 
@@ -78,7 +78,7 @@ int main(int argc, char** argv){
     switch(opt){
 	case 'f':
 	  inputDirName=optarg;
-	  if(!check.Dir(inputDirName)){ 
+	  if(!check_exist::Dir(inputDirName)){ 
 		Log.eWrite("[" + OpStr.GetName(inputDirName) + "][wgPreCalib] target doesn't exist");
 		return 1;
 	  }   

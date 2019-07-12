@@ -8,18 +8,19 @@
 #include "TFile.h"
 
 // user includes
-#include "wgErrorCode.hpp"
+
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgGetHist.hpp"
 #include "wgLogger.hpp"
 
 using namespace std;
+using namespace wagasci_tools;
 
 //************************************************************************
 wgGetHist::wgGetHist(const string& str) {
-  CheckExist Check;
-  if ( !Check.RootFile(str) ) throw wgInvalidFile("[" + str + "][SetHistFile] failed to set histogram file");
+  
+  if ( !check_exist::RootFile(str) ) throw wgInvalidFile("[" + str + "][SetHistFile] failed to set histogram file");
   try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
   catch (const exception& e) {
     Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + string(e.what()));

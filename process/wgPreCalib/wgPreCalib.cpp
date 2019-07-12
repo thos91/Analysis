@@ -7,7 +7,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
-#include "wgErrorCode.hpp"
+
 #include "wgPreCalib.hpp"
 
 void print_help(const char * program_name) {
@@ -35,13 +35,13 @@ int main(int argc, char** argv){
   string logoutputDir = con.LOG_DIRECTORY;
 
   OperateString OpStr;
-  CheckExist check;
+  
 
   while((opt = getopt(argc,argv, "f:o:i:n:x:y:m:h")) !=-1 ){
     switch(opt){
 	case 'f':
 	  inputDirName=optarg;
-	  if(!check.Dir(inputDirName)){
+	  if(!check_exist::Dir(inputDirName)){
 		Log.eWrite("[" + OpStr.GetName(inputDirName) + "][wgPreCalib] target doesn't exist");
 		return 1;
 	  }   
