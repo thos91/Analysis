@@ -74,19 +74,23 @@ unsigned GetNumChipID(string & input_raw_file) {
   
   bitset<BITS_PER_LINE> raw_data;
   bitset<BITS_PER_LINE> last_two_raw_data[2];
-  bool found = false;
-  unsigned iline = 0, max_lines = 10 * (16 * (1 + 2 * NCHANNELS) + 2) ;
+  unsigned iline = 0;
+  unsigned max_lines = 20 * NCHIPS * (16 * (1 + 2 * NCHANNELS) + 2) ;
+  unsigned found_counter = 0;
   
-  while ( ifs.read((char * ) &raw_data, BYTES_PER_LINE) && !found && ++iline < max_lines ) {
+  while ( ifs.read((char * ) &raw_data, BYTES_PER_LINE) &&
+          ++iline < max_lines &&
+          found_counter < 3) {
 
     if (raw_data == CHIP_TRAILER_MARKER &&
-        last_two_raw_data[0] == last_two_raw_data[1]) {
-      found = true;
-    }
+        last_two_raw_data[0] == last_two_raw_data[1])
+      ++found_counter;
 
     last_two_raw_data[1] = last_two_raw_data[0];
     last_two_raw_data[0] = raw_data;
   }
+
+  bool found = found_counter >= 3;
 
   ifs.close();
   if (found) return 2;
