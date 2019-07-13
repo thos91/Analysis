@@ -8,6 +8,7 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgRawData.hpp"
 #include "wgDecoder.hpp"
 #include "wgDecoderSeeker.hpp"
 
