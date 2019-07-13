@@ -20,7 +20,7 @@
 #include "wgTools.h"
 #include "wgErrorCode.h"
 #include "wgChannelMap.h"
-#include "DetectorwgConst.hpppp"
+#include "DetectorwgConst.hpp"
 #include "wgGetTree.h"
 #include "wgConst.hpp"
 #include "wgReconClass.h"
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   int opt;
   int mode=0;
   int start_evt=0;
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   string inputFileName("");
   string logoutputDir=con->LOG_DIRECTORY;

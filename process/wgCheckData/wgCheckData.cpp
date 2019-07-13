@@ -25,7 +25,7 @@ int main(int argc, char** argv){
   bool data_quality=true;
   int chip_num=1;
 
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   
   string inputDirName("");

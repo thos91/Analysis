@@ -33,8 +33,8 @@ wgLogger::wgLogger(const string& log_dir)
 	string dir;
 	// If log_dir is empty try to infer it from the environment
 	if ( log_dir.empty() ) {
-	  wgConst con;
-	  dir = con.LOG_DIRECTORY;
+	  wgEnvironment env;
+	  dir = env.LOG_DIRECTORY;
 	} else dir = log_dir;
   
 	// If the log directory is not found, create it

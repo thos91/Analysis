@@ -19,7 +19,7 @@ int main(int argc, char* argv[]){
   int opt;
   string inputFileName("");
   string outputFile("");
-  wgConst *con = new wgConst();
+  wgEnvironment env();
   con->GetENV();
   string outputDir    = con->RECON_DIRECTORY;
   string logoutputDir = con->LOG_DIRECTORY;

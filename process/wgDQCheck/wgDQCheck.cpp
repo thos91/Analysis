@@ -55,7 +55,7 @@ const double time_offbeam_bin    =time_offbeam_end-time_offbeam_start;
 
 int main(int argc, char** argv){
   int opt;
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   string inputName("");
   string xmldir = con->XMLDATA_DIRECTORY;

@@ -38,7 +38,7 @@ int main(int argc, char** argv){
   int opt;
   int runid = -1;
   int acqid = -1;
-  wgConst *con = new wgConst;
+  wgEnvironment *con = new wgEnvironment;
   con->GetENV();
   string inputDirName  = con->RECON_DIRECTORY;
   string outputDirName = con->SPILL_DIRECTORY;

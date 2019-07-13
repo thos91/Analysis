@@ -27,11 +27,11 @@ void print_help(const char * program_name) {
 
 int main(int argc, char** argv) {
   // Get environment variables
-  wgConst con;
+  wgEnvironment env;
   
   int opt;
   string inputFileName("");
-  string outputDir = con.HIST_DIRECTORY;
+  string outputDir = env.HIST_DIRECTORY;
   string outputFile("");
   bool overwrite = false;
   unsigned n_chips = NCHIPS;

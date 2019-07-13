@@ -62,12 +62,12 @@ int main(int argc, char** argv){
   int mode=0;
   int pe=2;
   unsigned n_difs = NDIFS, n_chips = NCHIPS, n_chans = NCHANNELS;
-  wgConst con;
-  con.GetENV();
+  wgEnvironment env;
+  env.GetENV();
   string inputDirName("");
   string outputXMLDirName("");
-  string outputIMGDirName=con.IMGDATA_DIRECTORY;
-  string logoutputDir=con.LOG_DIRECTORY;
+  string outputIMGDirName=env.IMGDATA_DIRECTORY;
+  string logoutputDir=env.LOG_DIRECTORY;
 
   OperateString OpStr;
   
@@ -121,13 +121,13 @@ int main(int argc, char** argv){
   if(outputXMLDirName==""){
     outputXMLDirName = OpStr.GetPath(inputDirName);
     outputXMLDirName = OpStr.GetName(outputXMLDirName);
-    outputXMLDirName = con.CALIBDATA_DIRECTORY + "/" + outputXMLDirName;
+    outputXMLDirName = env.CALIBDATA_DIRECTORY + "/" + outputXMLDirName;
     MakeDir(outputXMLDirName);
   } 
 
   outputIMGDirName = OpStr.GetPath(inputDirName);
   outputIMGDirName = OpStr.GetName(outputIMGDirName);
-  outputIMGDirName = con.CALIBDATA_DIRECTORY + "/" + outputIMGDirName + "/image";
+  outputIMGDirName = env.CALIBDATA_DIRECTORY + "/" + outputIMGDirName + "/image";
     
   MakeDir(outputIMGDirName);
   for(unsigned idif = 0; idif < n_difs; idif++)

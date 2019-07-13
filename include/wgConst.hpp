@@ -447,28 +447,4 @@ public:
   void    Clear();
 };
 
-class wgConst{
-public:
-  wgConst();
-  ~wgConst();
-  string RAWDATA_DIRECTORY;
-  string DECODE_DIRECTORY;
-  string HIST_DIRECTORY;
-  string RECON_DIRECTORY;
-  string XMLDATA_DIRECTORY;
-  string IMGDATA_DIRECTORY;
-  string LOG_DIRECTORY;
-  string MAIN_DIRECTORY;
-  string CALICOES_DIRECTORY;
-  string CALIBDATA_DIRECTORY;
-  string BSD_DIRECTORY;
-  string DQ_DIRECTORY;
-  string DQHISTORY_DIRECTORY;
-  string CONF_DIRECTORY;
-private:
-  const std::string script_path;
-  void GetENV();
-  std::string ReadENVFile(const std::string &env_var_name);
-};
-
 #endif

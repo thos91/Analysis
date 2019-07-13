@@ -40,7 +40,7 @@ int wgScurve(const char* x_inputDir,
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
 
-  wgConst con;
+  wgEnvironment env;
   wgEditXML Edit;
 
   // ============ Check directories ============ //
@@ -49,10 +49,10 @@ int wgScurve(const char* x_inputDir,
     exit(1);
   }
   if (outputXMLDir.empty()) {
-    outputXMLDir = con.CALIBDATA_DIRECTORY;
+    outputXMLDir = env.CALIBDATA_DIRECTORY;
   }
   if (outputIMGDir.empty()) {
-    outputIMGDir = con.IMGDATA_DIRECTORY;
+    outputIMGDir = env.IMGDATA_DIRECTORY;
   }
   outputIMGDir = outputIMGDir + "/" + GetName(inputDir);
 

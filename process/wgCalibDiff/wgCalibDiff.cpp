@@ -36,7 +36,7 @@ void AnaXML(string& inputFileName1,string& inputFileName2,string& outputXMLDirNa
 
 int main(int argc, char** argv){
   int opt;
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   string inputFileName1("");
   string inputFileName2("");

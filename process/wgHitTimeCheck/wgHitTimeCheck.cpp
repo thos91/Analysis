@@ -39,7 +39,7 @@ void AnaRecon(string &filename,string &outfilename);
 
 int main(int argc, char** argv){
   int opt;
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   string inputName("");
   string recondir = con->RECON_DIRECTORY;

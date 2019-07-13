@@ -24,10 +24,10 @@ void print_help(const char * program_name) {
 
 int main(int argc, char** argv){
   int opt;
-  wgConst con;
+  wgEnvironment env;
   string inputDir("");
-  string outputXMLDir = con.XMLDATA_DIRECTORY;
-  string outputIMGDir = con.IMGDATA_DIRECTORY;
+  string outputXMLDir = env.XMLDATA_DIRECTORY;
+  string outputIMGDir = env.IMGDATA_DIRECTORY;
 
 
   while((opt = getopt(argc,argv, "f:o:i:n:x:y:h")) !=-1 ) {

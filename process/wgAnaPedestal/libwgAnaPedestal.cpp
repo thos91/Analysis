@@ -34,7 +34,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   
-  wgConst con;
+  wgEnvironment env;
   
 
   if (input_run_dir.empty() || !check_exist::Dir(input_run_dir)) {
@@ -43,7 +43,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
   }
   
   if (output_xml_dir.empty()) {
-    output_xml_dir = con.CALIBDATA_DIRECTORY;
+    output_xml_dir = env.CALIBDATA_DIRECTORY;
   }
 
   // ============ Create output_xml_dir ============ //

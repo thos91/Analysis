@@ -44,7 +44,7 @@ int main(int argc, char** argv){
   int smrrun = -1;
   int ssmrrun = -1;
   string bsd_version = "";
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   string inputDirName  = con->BSD_DIRECTORY;
   string outputDirName = con->SPILL_DIRECTORY;

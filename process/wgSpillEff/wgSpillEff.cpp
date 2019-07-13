@@ -76,7 +76,7 @@ int main(int argc, char** argv){
   int t2krun = -1;
   int mrrun = -1;
   string version = "";
-  wgConst *con = new wgConst;
+  wgEnvironment env;
   con->GetENV();
   string inputDirName  = con->SPILL_DIRECTORY;
   string outputDirName = con->SPILL_DIRECTORY;

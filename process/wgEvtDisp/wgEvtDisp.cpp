@@ -24,7 +24,7 @@
 #include <complex>
 
 #include "wgConst.hpp"
-#include "DetectorwgConst.hpppp"
+#include "DetectorwgConst.hpp"
 #include "wgReconClass.h"
 #include "wgDetectorDimension.h"
 #include "wgChannelMap.h"

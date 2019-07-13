@@ -36,8 +36,8 @@ wgEditConfig::wgEditConfig(const std::string& input, bool bitstream_string){
 std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_csv) {
   
   if (spiroc2d_csv.empty()) {
-    wgConst con;
-    spiroc2d_csv = string(con.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
+    wgEnvironment env;
+    spiroc2d_csv = string(env.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
   if (!check_exist::CsvFile(spiroc2d_csv))
     throw wgInvalidFile("[wgEditConfig::GetCSV][" + spiroc2d_csv + "] file not found");
@@ -71,10 +71,10 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
 
 //*********************************************************************************
 void wgEditConfig::Get_MPPCinfo(int ichip){ 
-  wgConst con;
+  wgEnvironment env;
   
   
-  std::string mppc_csv(con.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
+  std::string mppc_csv(env.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
   std::string line;
   std::vector<std::string> tmp_mppc_map;
   double tmp_bdv;
@@ -91,7 +91,7 @@ void wgEditConfig::Get_MPPCinfo(int ichip){
     mppc_map[stoi(tmp_mppc_map[0])] = stoi(tmp_mppc_map[1]);
   }
 
-  std::string mppc_root(con.CALICOES_DIRECTORY + "/config/spiroc2d/arraymppc_data.root");
+  std::string mppc_root(env.CALICOES_DIRECTORY + "/config/spiroc2d/arraymppc_data.root");
   if ( !check_exist::RootFile(mppc_root) )
     throw wgInvalidFile("[Get_MPPCinfo][" + mppc_root + "] arraymppc_data.root file not found");
   TFile *fmppc = new TFile(mppc_root.c_str(), "read");

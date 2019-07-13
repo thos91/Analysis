@@ -76,7 +76,7 @@ int main(int argc, char **argv)
   int start_ingevt=0;
   int thres_numwgrecon = -1;
   int thres_numingrecon = -1;
-  wgConst *con = new wgConst;
+  wgEnvironment *con = new wgEnvironment;
   string wgFileName("");
   string ingFileName("");
   string logoutputDir=con->LOG_DIRECTORY;

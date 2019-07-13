@@ -63,8 +63,8 @@ int wgDecoder(const char * x_input_raw_file,
   // ======== calibration_dir ========= //
 
   if (calibration_dir.empty()) {
-    wgConst con;
-    calibration_dir = con.CONF_DIRECTORY;
+    wgEnvironment env;
+    calibration_dir = env.CONF_DIRECTORY;
   }
 
   // ======== dif ========= //

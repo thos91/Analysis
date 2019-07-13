@@ -15,8 +15,8 @@ using namespace wagasci_tools;
 
 //******************************************************************************
 wgGetCalibData::wgGetCalibData(unsigned dif) : m_dif(dif) {
-  wgConst con;
-  wgGetCalibData(con.CONF_DIRECTORY, m_dif);
+  wgEnvironment env;
+  wgGetCalibData(env.CONF_DIRECTORY, m_dif);
 }
 
 //******************************************************************************

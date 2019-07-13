@@ -56,7 +56,7 @@ int main(int argc, char** argv){
   int opt;
   time_t current_time=0;
   string inputtime("");
-  wgConst *con = new wgConst;
+  wgEnvironment *con = new wgEnvironment;
   con->GetENV();
   string inputDirName  =  con->DQ_DIRECTORY;
   string outputDir     =  con->DQHISTORY_DIRECTORY;

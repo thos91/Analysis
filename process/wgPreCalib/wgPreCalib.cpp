@@ -27,12 +27,12 @@ int main(int argc, char** argv){
   int opt;
   int mode = 0;
   int n_difs = NDIFS, n_chips = NCHIPS, n_chans = NCHANNELS;
-  wgConst con;
-  con.GetENV();
+  wgEnvironment env;
+  env.GetENV();
   string inputDirName("");
   string outputXMLDirName("");
-  string outputIMGDirName = con.IMGDATA_DIRECTORY;
-  string logoutputDir = con.LOG_DIRECTORY;
+  string outputIMGDirName = env.IMGDATA_DIRECTORY;
+  string logoutputDir = env.LOG_DIRECTORY;
 
   OperateString OpStr;
   

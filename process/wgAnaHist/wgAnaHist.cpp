@@ -50,9 +50,9 @@ int main(int argc, char** argv){
   bitset<M> flags;
 
   // Get the output directories from
-  wgConst con;
-  string outputXMLDir = con.XMLDATA_DIRECTORY;
-  string outputIMGDir = con.IMGDATA_DIRECTORY;
+  wgEnvironment env;
+  string outputXMLDir = env.XMLDATA_DIRECTORY;
+  string outputIMGDir = env.IMGDATA_DIRECTORY;
 
     while((opt = getopt(argc,argv, "f:d:m:i:o:q:prh")) !=-1 ) {
     switch(opt) {

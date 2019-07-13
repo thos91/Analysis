@@ -36,13 +36,13 @@ int main(int argc, char** argv){
   int opt;
   int mode = 10;
   bool overwrite = false, print = false;
-  wgConst con;
+  wgEnvironment env;
   string inputDirName("");
   string configFileName("");
   string outputXMLDirName("");
   string outputDirName("");
-  string logoutputDir(con.LOG_DIRECTORY);
-  string outputIMGDirName(con.IMGDATA_DIRECTORY);
+  string logoutputDir(env.LOG_DIRECTORY);
+  string outputIMGDirName(env.IMGDATA_DIRECTORY);
   
   while((opt = getopt(argc, argv, "f:o:i:m:rph")) !=-1 ){
     switch(opt){

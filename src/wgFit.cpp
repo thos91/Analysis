@@ -56,15 +56,15 @@ wgFit::wgFit(const string& x_inputfile, const string& x_outputIMGDir) {
 //**********************************************************************
 wgFit::wgFit(const string& x_inputfile) {
   wgFit::GetHist = new wgGetHist(x_inputfile);
-  wgConst con;
+  wgEnvironment env;
   
-  if( !check_exist::Dir(con.IMGDATA_DIRECTORY) ) {
-    boost::filesystem::path dir(con.IMGDATA_DIRECTORY);
+  if( !check_exist::Dir(env.IMGDATA_DIRECTORY) ) {
+    boost::filesystem::path dir(env.IMGDATA_DIRECTORY);
     if( !boost::filesystem::create_directories(dir) ) {
-      throw wgInvalidFile("[wgFit][" + con.IMGDATA_DIRECTORY + "] failed to create directory");
+      throw wgInvalidFile("[wgFit][" + env.IMGDATA_DIRECTORY + "] failed to create directory");
     }
   }
-  wgFit::outputIMGDir = con.IMGDATA_DIRECTORY;
+  wgFit::outputIMGDir = env.IMGDATA_DIRECTORY;
 }
 
 //**********************************************************************

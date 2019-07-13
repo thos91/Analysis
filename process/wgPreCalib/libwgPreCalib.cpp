@@ -48,13 +48,13 @@ int wgPreCalib(const char * x_inputDir,
 			   const unsigned n_chans) {
   
   
-  wgConst con;
+  wgEnvironment env;
   string inputDir(x_inputDir);
   string outputXMLDir(x_outputXMLDir);
   string outputIMGDir(x_outputIMGDir);
 
   if(outputXMLDir == "") {
-    outputXMLDir = con.CALIBDATA_DIRECTORY + GetName(inputDir);
+    outputXMLDir = env.CALIBDATA_DIRECTORY + GetName(inputDir);
 	if(outputXMLDir == "") {
 	  return ERR_CANNOT_CREATE_DIRECTORY;
 	}

@@ -2,7 +2,7 @@
 #include <iostream>
 
 int main() {
-  wgConst env; 
+  wgEnvironment env; 
   std::cout << "RAWDATA_DIRECTORY\t = " << env.RAWDATA_DIRECTORY << std::endl;
   std::cout << "DECODE_DIRECTORY\t = " << env.DECODE_DIRECTORY << std::endl;
   std::cout << "HIST_DIRECTORY\t\t = " << env.HIST_DIRECTORY << std::endl;
