@@ -20,8 +20,6 @@
                               std::cerr respectively
 */
 
-using namespace std;
-
 typedef enum {
    LOGFILE  = 0,
    COUT     = 1,
@@ -33,16 +31,16 @@ class wgLogger
 public:
   TriState WhereToLog = BOTH;
   wgLogger();
-  wgLogger(const string & log_dir);
-  void Write(const string & log);
-  void eWrite(const string & log);
+  wgLogger(const std::string & log_dir);
+  void Write(const std::string & log);
+  void eWrite(const std::string & log);
   ~wgLogger();
 protected:
-  string m_printTime();
-  string m_fileName;
-  string m_efileName;
-  ofstream m_file;
-  ofstream m_efile;
+  std::string m_printTime();
+  std::string m_fileName;
+  std::string m_efileName;
+  std::ofstream m_file;
+  std::ofstream m_efile;
 };
 
 extern wgLogger Log;

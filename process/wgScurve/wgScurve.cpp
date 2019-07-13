@@ -7,17 +7,14 @@
 
 // user includes
 #include "wgConst.hpp"
-#include "wgFileSystemTools.hpp"
 #include "wgLogger.hpp"
 #include "wgScurve.hpp"
 
-using namespace wagasci_tools;
-
 void print_help(const char * program_name) {
-  cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
-  "  -h         : help\n"
-  "  -f (char*) : input directory (mandatory)\n"
-  "  -o (char*) : output directory (default: same as input directory)\n";
+  std::cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
+      "  -h         : help\n"
+      "  -f (char*) : input directory (mandatory)\n"
+      "  -o (char*) : output directory (default: same as input directory)\n";
   exit(0);
 }
 
@@ -50,10 +47,10 @@ int main(int argc, char** argv){
   }
 
   int result;
-  if ( (result =  wgScurve(inputDir.c_str(), 
-                  outputXMLDir.c_str(), 
-                  outputIMGDir.c_str())) != WG_SUCCESS){
-    Log.eWrite("[" + GetName(inputDir) + "][wgScurve] wgScurve returned error " + to_string(result));
+  if ( (result = wgScurve(inputDir.c_str(), 
+                          outputXMLDir.c_str(), 
+                          outputIMGDir.c_str())) != WG_SUCCESS){
+    Log.eWrite("[wgScurve] wgScurve returned error " + to_string(result));
     exit(1);
   }
 

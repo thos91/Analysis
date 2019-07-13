@@ -13,7 +13,6 @@
 #define XML_ELEMENT_STRING_LENGTH 32
 
 using namespace tinyxml2;
-using namespace std;
 
 //=======================================================================//
 //                                                                       //
@@ -46,7 +45,7 @@ using namespace std;
 class wgEditXML
 {
 private:
-  string filename;
+  std::string filename;
 public:
   XMLDocument *xml;
 
@@ -56,7 +55,7 @@ public:
 
   // Opens and loads a XML file into the member "XMLDocument * xml". If an error
   // is encountered the wgInvalidFile exception is thrown.
-  void Open(const string&);
+  void Open(const std::string&);
 
   // Closes a file precedently opened by the Open method 
   void Close();
@@ -73,19 +72,19 @@ public:
   // v[channel][2] = adjustable input 8-bit DAC
   // v[channel][3] = adjustable 6-bit high gain (HG) preamp feedback capacitance
   // v[channel][4] = adjustable 4-bit discriminator threshold
-  bool GetConfig(const string& configxml,
+  bool GetConfig(const std::string& configxml,
                  unsigned igdcc,
                  unsigned idif,
                  unsigned n_chips,
                  unsigned n_chans,
-                 vector<vector<int>>& v);
+                 i2vector& v);
 
   // GetLog: Parse a .log file and fill a vector with:
   //    - v[0]: start_time
   //    - v[1]: stop_time
   //    - v[2]: nb_data_pkts
   //    - v[3]: nb_lost_pkts
-  void GetLog(const string&, vector<int>&);
+  void GetLog(const std::string&, i1vector&);
 
   //=======================================================================//
   //                         standard XML files                            //
@@ -121,39 +120,39 @@ public:
     </chan 1>
 </data>
 -------------------------------------------------------------------------------- */
-  void Make(const string& filename, unsigned idif, unsigned ichip, unsigned ichan);
+  void Make(const std::string& filename, unsigned idif, unsigned ichip, unsigned ichan);
 
   // wgEditXML::SetConfigValue
   // data -> config -> name
-  void SetConfigValue(const string& name, int value, bool create_new = false);
+  void SetConfigValue(const std::string& name, int value, bool create_new = false);
 
   // wgEditXML::SetColValue
   // data -> chan -> col_%d -> name
-  void SetColValue(const string& name, int icol, int value, bool create_new = false);
+  void SetColValue(const std::string& name, int icol, int value, bool create_new = false);
 
   // wgEditXML::SetChValue
   // data -> chan -> name
-  void SetChValue(const string& name, int value, bool create_new = false);
+  void SetChValue(const std::string& name, int value, bool create_new = false);
 
   // wgEditXML::AddColElement
   // data -> chan -> col_%d -> name
-  void AddColElement(const string& name, int icol);
+  void AddColElement(const std::string& name, int icol);
 
   // wgEditXML::AddChElement
   // data -> chan -> name
-  void AddChElement(const string& name);
+  void AddChElement(const std::string& name);
 
   // wgEditXML::GetColValue
   // data -> chan -> col_%d -> name
-  int GetColValue(const string& name, int icol);
+  int GetColValue(const std::string& name, int icol);
 
   // wgEditXML::GetChValue
   // data -> chan -> name
-  int GetChValue(const string& name);
+  int GetChValue(const std::string& name);
 
   // wgEditXML::GetConfigValue
   // data -> config -> name
-  int GetConfigValue(const string& name);
+  int GetConfigValue(const std::string& name);
 
   //=======================================================================//
   //                         SUMMARY XML files                             //
@@ -196,19 +195,19 @@ public:
 ...
 </data>
 ----------------------------------------------------------------------------- */
-  void SUMMARY_Make(const string& filename, unsigned n_chans);
+  void SUMMARY_Make(const std::string& filename, unsigned n_chans);
 
   // wgEditXML::SUMMARY_SetGlobalConfigValue
   // data -> config -> name
-  void SUMMARY_SetGlobalConfigValue(const string& name, int value, bool create_new = false);
+  void SUMMARY_SetGlobalConfigValue(const std::string& name, int value, bool create_new = false);
 
   // wgEditXML::SUMMARY_SetChConfigValue
   // data -> ch_%d -> config -> name
-  void SUMMARY_SetChConfigValue(const string& name, int value, int ichan, bool create_new = false);
+  void SUMMARY_SetChConfigValue(const std::string& name, int value, int ichan, bool create_new = false);
 
   // wgEditXML::SUMMARY_SetChFitValue
   // data -> ch_%d -> fit -> name
-  void SUMMARY_SetChFitValue(const string& name, int value, int ichan, bool create_new = false);
+  void SUMMARY_SetChFitValue(const std::string& name, int value, int ichan, bool create_new = false);
 
   // wgEditXML::SUMMARY_SetPedFitValue
   // data -> ch_%d -> fit -> ped_%d
@@ -216,23 +215,23 @@ public:
 
   // wgEditXML::SUMMARY_AddGlobalElement
   // data -> name
-  void SUMMARY_AddGlobalElement(const string& name);
+  void SUMMARY_AddGlobalElement(const std::string& name);
 
   // wgEditXML::SUMMARY_AddChElement
   // data -> ch_%d -> name
-  void SUMMARY_AddChElement(const string& name, int ich);
+  void SUMMARY_AddChElement(const std::string& name, int ich);
 
   // wgEditXML::SUMMARY_GetChConfigValue
   // data -> config -> name
-  int SUMMARY_GetGlobalConfigValue(const string& name);
+  int SUMMARY_GetGlobalConfigValue(const std::string& name);
 
   // wgEditXML::SUMMARY_GetChConfigValue
   // data -> ch_%d -> config -> name
-  int SUMMARY_GetChConfigValue(const string& name, int ich);
+  int SUMMARY_GetChConfigValue(const std::string& name, int ich);
 
   // wgEditXML::SUMMARY_GetChFitValue
   // data -> ch_%d -> fit -> name
-  int SUMMARY_GetChFitValue(const string& name, int ich);
+  int SUMMARY_GetChFitValue(const std::string& name, int ich);
 
   // wgEditXML::SUMMARY_GetPedFitValue
   // data -> ch_%d -> fit -> -> ped_%d
@@ -242,15 +241,15 @@ public:
   //                   Optimized Threshold XML files                       //
   //=======================================================================//
   
-  void OPT_Make(const string& filename, 
-                vector<unsigned> inputDACs,
+  void OPT_Make(const std::string& filename, 
+                u1vector inputDACs,
                 unsigned n_difs,
-                vector<unsigned> n_chips,
-                vector<vector<unsigned>> n_chans);
+                u1vector n_chips,
+                u2vector n_chans);
 
   // wgEditXML::OPT_SetValue
   // data -> dif_%d -> chip_%d -> chan_%d -> inputDAC_%d
-  void OPT_SetValue(const string& name,
+  void OPT_SetValue(const std::string& name,
                     unsigned idif, 
                     unsigned ichip, 
                     unsigned ichan, 
@@ -260,7 +259,7 @@ public:
   
   // wgEditXML::OPT_GetValue
   // data -> dif_%d -> chip_%d -> chan_%d -> inputDAC_%d
-  double OPT_GetValue(const string& name,
+  double OPT_GetValue(const std::string& name,
                       unsigned idif,
                       unsigned ichip,
                       unsigned ichan,
@@ -268,7 +267,7 @@ public:
 
   // wgEditXML::OPT_SetChanValue
   // data -> dif_%d -> chip_%d -> chan_%d 
-  void OPT_SetChanValue(const string& name,
+  void OPT_SetChanValue(const std::string& name,
                         unsigned idif,
                         unsigned ichip,
                         unsigned ichan,
@@ -277,7 +276,7 @@ public:
 
   // wgEditXML::OPT_GetChanValue
   // data -> dif_%d -> chip_%d -> chan_%d 
-  double OPT_GetChanValue(const string& name,
+  double OPT_GetChanValue(const std::string& name,
                           unsigned idif,
                           unsigned ichip,
                           unsigned ichan);
@@ -286,9 +285,9 @@ public:
   //                           ??? XML files                               //
   //=======================================================================//
   
-  void PreCalib_Make(const string&);
-  void PreCalib_SetValue(const string&,int,int,int,int,bool);
-  int PreCalib_GetValue(const string&,int,int,int);
+  void PreCalib_Make(const std::string&);
+  void PreCalib_SetValue(const std::string&,int,int,int,int,bool);
+  int PreCalib_GetValue(const std::string&,int,int,int);
 
   //=======================================================================//
   //                   Pedestal calibration XML files                      //
@@ -330,34 +329,34 @@ public:
     ...
 </data>
 -------------------------------------------------------------------------------- */
-  void Pedestal_Make(const string& filename, Topology& topol);
+  void Pedestal_Make(const std::string& filename, Topology& topol);
 
   // wgEditXML::Pedestal_GetDifConfigValue
   // data -> dif_%d -> config -> name
-  int Pedestal_GetDifConfigValue(const string& name, int idif);
+  int Pedestal_GetDifConfigValue(const std::string& name, int idif);
 
   // wgEditXML::Pedestal_SetDifConfigValue
   // data -> dif_%d -> config -> name
-  void Pedestal_SetDifConfigValue(const string& name, int idif,
+  void Pedestal_SetDifConfigValue(const std::string& name, int idif,
                                   int value, bool create_new);
   
   // wgEditXML::Pedestal_GetChipConfigValue
   // data -> dif_%d -> chip_%d -> config -> name
-  int Pedestal_GetChipConfigValue(const string& name, int idif, int ichip);
+  int Pedestal_GetChipConfigValue(const std::string& name, int idif, int ichip);
 
   // wgEditXML::Pedestal_SetChipConfigValue
   // data -> dif_%d -> chip_%d -> config -> name
-  void Pedestal_SetChipConfigValue(const string& name, int idif,
+  void Pedestal_SetChipConfigValue(const std::string& name, int idif,
                                    int ichip, int value, bool create_new);
   
   // wgEditXML::Pedestal_SetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
-  void Pedestal_SetChanValue(const string& name, int idif, int ichip, int ich,
+  void Pedestal_SetChanValue(const std::string& name, int idif, int ichip, int ich,
                              int value, bool create_new = false);
 
   // wgEditXML::Pedestal_GetValue
   // data -> dif_%d -> chip_%d -> ch_%d -> name
-  int Pedestal_GetChanValue(const string& name, int idif, int ichip, int ich);
+  int Pedestal_GetChanValue(const std::string& name, int idif, int ichip, int ich);
 };
 
 #endif
