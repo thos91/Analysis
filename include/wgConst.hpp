@@ -16,6 +16,7 @@
 // user includes
 #include "wgContiguousVectors.hpp"
 #include "wgErrorCodes.hpp"
+#include "wgEnvironment.hpp"
 
 using namespace std;
 

@@ -12,6 +12,7 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgRawData.hpp"
 
 using namespace std;
 
