@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
                             overwrite,
                             compatibility_mode,
                             dif,
-                            n_chips)) != DE_SUCCESS ) {
+                            n_chips)) != WG_SUCCESS ) {
     Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
     exit(1);
   }

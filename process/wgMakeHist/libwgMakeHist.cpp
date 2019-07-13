@@ -78,8 +78,8 @@ int wgMakeHist(const char * x_inputFileName,
   vector<vector<TH1D*>> h_bcid_hit(n_chips, vector<TH1D*>(n_channels));
 
   int min_bin = 0;
-  int max_bin = MAX_12BIT_BIN;
-  int bin     = MAX_12BIT_BIN;
+  int max_bin = MAX_VALUE_12BITS;
+  int bin     = MAX_VALUE_12BITS;
 
   TString h_name;
   for (unsigned i = 0; i < n_chips; i++) {
@@ -116,7 +116,7 @@ int wgMakeHist(const char * x_inputFileName,
       } //end col
       // BCID
       h_name.Form("bcid_hit_chip%u_ch%u",i+1,j+1);
-      h_bcid_hit[i][j] = new TH1D(h_name, h_name, MAX_BCID_BIN, 0, MAX_BCID_BIN);
+      h_bcid_hit[i][j] = new TH1D(h_name, h_name, MAX_VALUE_16BITS, 0, MAX_VALUE_16BITS);
       h_bcid_hit[i][j]->SetLineColor(kBlack);
     } //end ch
   }   //end chip

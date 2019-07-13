@@ -50,14 +50,14 @@ int wgAnaPedestal(const char * x_input_run_dir,
   try { MakeDir(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaPedestal] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   // ============ Create output_img_dir ============ //
   try { MakeDir(output_img_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaPedestal] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   Log.Write(" *****  READING DIRECTORY      :" + GetName(input_run_dir)  + "  *****");
@@ -330,5 +330,5 @@ int wgAnaPedestal(const char * x_input_run_dir,
   image = output_img_dir + "/pedestal_shift_all.png";
   c1->Print(image);
 
-  return APS_SUCCESS;
+  return WG_SUCCESS;
 }

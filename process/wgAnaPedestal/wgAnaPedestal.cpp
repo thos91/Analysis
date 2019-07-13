@@ -52,7 +52,7 @@ int main(int argc, char** argv){
   int result;
   if ( (result = wgAnaPedestal(inputDir.c_str(),
                                outputXMLDir.c_str(),
-                               outputIMGDir.c_str())) != APS_SUCCESS ) {
+                               outputIMGDir.c_str())) != WG_SUCCESS ) {
     Log.Write("[wgAnaPedestal] Returned error code " + to_string(result));
   }
 

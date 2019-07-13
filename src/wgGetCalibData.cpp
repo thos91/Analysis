@@ -63,7 +63,7 @@ bool wgGetCalibData::FindTDCCalibrationCard() {
 }
 
 //******************************************************************************
-int wgGetCalibData::GetPedestal(unsigned dif_id, d3vector& pedestal) {
+int wgGetCalibData::GetPedestal(unsigned dif_id, d3CCvector& pedestal) {
 
   int count = 0;
   // Pedestal when there is no hit
@@ -111,12 +111,12 @@ int wgGetCalibData::GetPedestal(unsigned dif_id, d3vector& pedestal) {
 }
 
 //******************************************************************************
-int wgGetCalibData::GetTDC(const unsigned dif, d3vector& slope, d3vector& intcpt) {
+int wgGetCalibData::GetTDC(const unsigned dif, d3CCvector& slope, d3CCvector& intcpt) {
   return 0;
 }
 
 //******************************************************************************
-int wgGetCalibData::GetGain(const unsigned dif, d3vector& gain) {
+int wgGetCalibData::GetGain(const unsigned dif, d3CCvector& gain) {
   return 0;
 }
 

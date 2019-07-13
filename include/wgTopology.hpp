@@ -10,15 +10,14 @@
 
 #define TOPOLOGY_STRING_LENGTH 4096
 
-using namespace std;
 using namespace tinyxml2;
 
-typedef std::map<string, std::map<string, std::map< string, string>>> StringTopologyMapGdcc;
-typedef std::map<string, std::map< string, string>> StringTopologyMapDif;
+typedef std::map<std::string, std::map<std::string, std::map< std::string, std::string>>> StringTopologyMapGdcc;
+typedef std::map<std::string, std::map< std::string, std::string>> StringTopologyMapDif;
 typedef std::map<unsigned, std::map<unsigned, std::map< unsigned, unsigned>>> TopologyMapGdcc;
 typedef std::map<unsigned, std::map< unsigned, unsigned>> TopologyMapDif;
-typedef std::map<std::pair<string, string>, string> GdccToDifMap;
-typedef std::map<string, std::pair< string, string>> DifToGdccMap;
+typedef std::map<std::pair<std::string, std::string>, std::string> GdccToDifMap;
+typedef std::map<std::string, std::pair< std::string, std::string>> DifToGdccMap;
 
 enum class TopologySourceType {
   xml_file,
@@ -74,7 +73,7 @@ private:
   // position relative to the GDCC. So for example, instead of saying "second
   // DIF connected to the third GDCC" we want to just call it "eigth DIF" and so
   // on so forth.
-  const string m_mapping_file_path;
+  const std::string m_mapping_file_path;
   /* Example of dif_mapping.txt file:
      {
        "1": {
@@ -107,12 +106,12 @@ private:
   // "TopologyMapGdcc" is then populated.
   //
   // {"gdcc", {"dif", {"asu", "n_channels"}}} ...
-  void GetTopologyFromFile(const string& configxml);
+  void GetTopologyFromFile(const std::string& configxml);
 
   // Parse a JSON string containing a representation of the
   // TopologyMapDif The "this->dif_map" of type "TopologyMapDif" is
   // then populated.
-  void  GetTopologyFromString(const string& json_string);
+  void GetTopologyFromString(const std::string& json_string);
 
   // Get the topology from a directory tree and the xml files
   // contained therein. It is useful only when reading the output of
@@ -124,7 +123,7 @@ private:
   // associates to each integer starting from zero a path (relative to
   // the input_run_dir) corresponding to the location of the Xml
   // directory for each acquisition.
-  void GetTopologyFromPedestalTree(string input_run_dir);
+  void GetTopologyFromPedestalTree(std::string input_run_dir);
 
   // Get the topology from a directory tree and the xml files
   // contained therein. It is useful only when reading the output of
@@ -136,7 +135,7 @@ private:
   // associates to each integer starting from zero a path (relative to
   // the input_run_dir) corresponding to the location of the Xml
   // directory for each acquisition.
-  void GetTopologyFromScurveTree(string input_run_dir);
+  void GetTopologyFromScurveTree(std::string input_run_dir);
 
   // This function reads the JSON file
   // "/opt/calicoes/config/dif_mapping.txt" containing the mapping of
@@ -199,16 +198,16 @@ public:
   //     called. Then the TopologyMapDif is converted to
   //     TopologyMapGdcc using the DifMapToGdccMap method.
   
-  Topology(string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
+  Topology(std::string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
   
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
-  string GetAbsDif(const string& gdcc, const string& dif);
+  std::string GetAbsDif(const std::string& gdcc, const std::string& dif);
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>] after converting the arguments into strings
   unsigned GetAbsDif(unsigned gdcc, unsigned dif);
 
   // Returns m_dif_to_gdcc_map[dif]
-  std::pair<string, string> GetGdccDifPair(const string& dif);
+  std::pair<std::string, std::string> GetGdccDifPair(const std::string& dif);
   // Returns m_dif_to_gdcc_map[dif] after converting the argument into string
   std::pair<unsigned, unsigned> GetGdccDifPair(unsigned dif);
   

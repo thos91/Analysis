@@ -89,7 +89,7 @@ int main(int argc, char** argv){
                             wagasci_config_dif_dir.c_str(),
                             mode,
                             inputDAC,
-                            pe)) != OP_SUCCESS ) {
+                            pe)) != WG_SUCCESS ) {
     Log.eWrite("[wgOptimize] wgOptimize returned error " + to_string(result));
     exit(1);
   }

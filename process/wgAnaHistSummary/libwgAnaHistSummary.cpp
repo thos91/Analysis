@@ -96,7 +96,7 @@ int wgAnaHistSummary(const char * x_inputDir,
   try { MakeDir(outputXMLDir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   // ============ Create outputIMGDir ============ //
@@ -104,7 +104,7 @@ int wgAnaHistSummary(const char * x_inputDir,
     try { MakeDir(outputIMGDir); }
     catch (const wgInvalidFile& e) {
       Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
-      return ERR_CANNOT_CREATE_DIRECTORY;
+      return ERR_FAILED_CREATE_DIRECTORY;
     }
   }
 
@@ -444,5 +444,5 @@ int wgAnaHistSummary(const char * x_inputDir,
     Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
     return ERR_WG_ANA_HIST_SUMMARY;
   } 
-  return AHS_SUCCESS;
+  return WG_SUCCESS;
 }

@@ -98,7 +98,7 @@ int wgDecoder(const char * x_input_raw_file,
   try { MakeDir(output_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgDecoder] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   Log.Write("[wgDecoder] READING FILE     : " + input_raw_file      );
@@ -138,7 +138,7 @@ int wgDecoder(const char * x_input_raw_file,
     if (check_exist::RootFile(output_file_path)) {
       Log.eWrite("[wgDecoder] Error:" + string(output_file_path.Data()) +
                  " already exists!");
-      return ERR_CANNOT_OVERWRITE_OUTPUT_FILE;
+      return ERR_OVERWRITE_FLAG_NOT_SET;
     }
     outputTFile = new TFile(output_file_path, "create");
   } else {
@@ -369,10 +369,10 @@ int wgDecoder(const char * x_input_raw_file,
       last_section_type = current_section.type;
     }
   } catch (const wgEOF& e) {
-    result = DE_SUCCESS;
+    result = WG_SUCCESS;
   } catch (const exception& e) {
     Log.eWrite("[wgDecoder] Error while reading raw data : " + string(e.what()));
-    result = ERR_READING_RAW_FILE;
+    result = ERR_WG_DECODER;
   }
 
   // ===================================================================== //

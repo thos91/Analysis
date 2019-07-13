@@ -184,7 +184,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
   // BCID
   for (unsigned icol = 0; icol < n_columns; ++icol) {
     m_rd.get().bcid[section.ichip][icol] = (*(iraw_data++)).to_ulong();
-    if (m_rd.get().bcid[section.ichip][icol] > MAX_VALUE_16BITS)
+    if ((unsigned) m_rd.get().bcid[section.ichip][icol] > MAX_VALUE_16BITS)
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_BCID]++;
   }
 
@@ -193,7 +193,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
       // CHARGE
       m_rd.get().charge [section.ichip][ichan][icol] = (*iraw_data & x0FFF).to_ulong();
-      if (m_rd.get().charge[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
+      if ((unsigned) m_rd.get().charge[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_ADC]++;
       // HIT (0: no hit, 1: hit)
       m_rd.get().hit    [section.ichip][ichan][icol] = (*iraw_data)[12];
@@ -216,7 +216,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
       // TIME
       m_rd.get().time[section.ichip][ichan][icol] = (*iraw_data & x0FFF).to_ulong();
-      if (m_rd.get().time[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
+      if ((unsigned) m_rd.get().time[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_TDC]++;
       if (m_config.tdc_is_calibrated) {
         ;// TODO: TDC calibration

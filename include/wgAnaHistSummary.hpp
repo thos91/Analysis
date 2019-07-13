@@ -18,16 +18,6 @@
 #define SELECT_CHARGE_HIT   3
 #define SELECT_PRINT        4
 
-#define AHS_SUCCESS                 0
-#define ERR_CANNOT_CREATE_DIRECTORY 1
-#define ERR_WRONG_MODE              2
-#define ERR_FAILED_CREATE_XML_FILE  3
-#define ERR_WG_ANA_HIST_SUMMARY     4
-#define ERR_EMPTY_INPUT_FILE        5
-#define ERR_FAILED_OPEN_XML_FILE    6
-
-using namespace std;
-
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +36,7 @@ extern "C" {
 
 void ModeSelect(int mode);
 
-void MakeSummaryXmlFile(const string& str,
+void MakeSummaryXmlFile(const std::string& str,
                         bool overwrite,
                         unsigned n_chips = NCHIPS,
                         unsigned n_chans = NCHANNELS);

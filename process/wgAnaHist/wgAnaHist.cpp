@@ -97,7 +97,7 @@ int main(int argc, char** argv){
                            outputIMGDir.c_str(),
                            mode,
                            flags.to_ulong(),
-                           idif)) != AH_SUCCESS ) {
+                           idif)) != WG_SUCCESS ) {
 	Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
 	exit(1);
   }

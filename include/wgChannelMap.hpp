@@ -19,25 +19,25 @@ typedef struct Map
 {
   Map();
   Map(size_t n_difs, size_t n_chips, size_t n_chans);
-  i3vector view; // [NDIFS][NCHIPS][NCHANNELS];
-  i3vector pln;  // [NDIFS][NCHIPS][NCHANNELS];
-  i3vector ch;   // [NDIFS][NCHIPS][NCHANNELS];
-  i3vector grid; // [NDIFS][NCHIPS][NCHANNELS];
-  d3vector x;    // [NDIFS][NCHIPS][NCHANNELS];
-  d3vector y;    // [NDIFS][NCHIPS][NCHANNELS];
-  d3vector z;    // [NDIFS][NCHIPS][NCHANNELS];
+  i3CCvector view; // [NDIFS][NCHIPS][NCHANNELS];
+  i3CCvector pln;  // [NDIFS][NCHIPS][NCHANNELS];
+  i3CCvector ch;   // [NDIFS][NCHIPS][NCHANNELS];
+  i3CCvector grid; // [NDIFS][NCHIPS][NCHANNELS];
+  d3CCvector x;    // [NDIFS][NCHIPS][NCHANNELS];
+  d3CCvector y;    // [NDIFS][NCHIPS][NCHANNELS];
+  d3CCvector z;    // [NDIFS][NCHIPS][NCHANNELS];
 } Map_t;
 
 typedef struct MapInv
 {
   MapInv();
   MapInv(size_t n_views, size_t n_plns, size_t n_chans);
-  i3vector dif;    // [NumView][NumPln][NumCh];
-  i3vector chip;   // [NumView][NumPln][NumCh];
-  i3vector chipch; // [NumView][NumPln][NumCh];
-  d3vector x;      // [NumView][NumPln][NumCh];
-  d3vector y;      // [NumView][NumPln][NumCh];
-  d3vector z;      // [NumView][NumPln][NumCh];
+  i3CCvector dif;    // [NumView][NumPln][NumCh];
+  i3CCvector chip;   // [NumView][NumPln][NumCh];
+  i3CCvector chipch; // [NumView][NumPln][NumCh];
+  d3CCvector x;      // [NumView][NumPln][NumCh];
+  d3CCvector y;      // [NumView][NumPln][NumCh];
+  d3CCvector z;      // [NumView][NumPln][NumCh];
 } MapInv_t;
 
 typedef struct ReconMap

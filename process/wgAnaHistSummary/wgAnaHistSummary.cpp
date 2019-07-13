@@ -79,7 +79,7 @@ int main(int argc, char** argv){
                                   outputIMGDirName.c_str(),
                                   mode,
                                   overwrite,
-                                  print)) != AHS_SUCCESS ) {
+                                  print)) != WG_SUCCESS ) {
     Log.eWrite("[wgAnaHistSummary] wgAnaHistSummary returned error " + to_string(result));
     exit(1);
   }

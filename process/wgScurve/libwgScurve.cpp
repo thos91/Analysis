@@ -1,46 +1,26 @@
 // system includes
 #include <string>
-#include <fstream>
-#include <sstream>
 #include <vector>
-#include <algorithm>
-#include <stdlib.h>
-#include <stdio.h>
-#include <dirent.h>
 
 // boost includes
 #include <boost/filesystem.hpp>
 
-// system C includes
-#include <cstdbool>
-#include <bits/stdc++.h>
-
 // ROOT includes
-#include <TSystem.h>
-#include <THStack.h>
 #include <TCanvas.h>
-#include <TLegend.h>
 #include <TImage.h>
 #include <TH1D.h>
 #include <TH2D.h>
-#include <TMultiGraph.h>
 #include <TGraph.h>
 #include <TGraphErrors.h>
 #include <TF1.h>
-#include <TSpectrum.h>
-#include <TVectorD.h>
 #include <TString.h>
 
 // user includes
 #include "wgFileSystemTools.hpp"
 #include "wgEditXML.hpp"
-#include "wgColor.hpp"
-#include "wgFit.hpp"
-#include "wgFitConst.hpp"
-#include "wgScurve.hpp"
-#include "wgGetHist.hpp"
 #include "wgLogger.hpp"
 #include "wgTopology.hpp"
+#include "wgScurve.hpp"
 
 using namespace std;
 using namespace wagasci_tools;
@@ -80,14 +60,14 @@ int wgScurve(const char* x_inputDir,
   try { MakeDir(outputXMLDir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgScurve] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   // ============ Create outputIMGDir ============ //
   try { MakeDir(outputIMGDir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgScurve] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   Log.Write(" *****  READING DIRECTORY      : " + inputDir + "  *****");
@@ -127,14 +107,14 @@ int wgScurve(const char* x_inputDir,
     vector<unsigned> threshold(n_threshold);
 
     // Define variables for storing values
-    vector<vector<vector<double>>>                 slope1     (n_difs);
-    vector<vector<vector<double>>>                 slope2     (n_difs);
-    vector<vector<vector<double>>>                 intercept1 (n_difs);
-    vector<vector<vector<double>>>                 intercept2 (n_difs);
-    vector<vector<vector<vector<double>>>>         pe1        (n_difs);
-    vector<vector<vector<vector<double>>>>         pe2        (n_difs);
-    vector<vector<vector<vector<vector<double>>>>> noise      (n_difs);
-    vector<vector<vector<vector<vector<double>>>>> noise_sigma(n_difs);
+    vector<vector<vector<double>>>                 slope1     (n_difs); // [dif][chip][chan] optimized threshold at 1.5 pe vs input DAC fit : slope
+    vector<vector<vector<double>>>                 slope2     (n_difs); // [dif][chip][chan] optimized threshold at 2.5 pe vs input DAC fit : slope
+    vector<vector<vector<double>>>                 intercept1 (n_difs); // [dif][chip][chan] optimized threshold at 1.5 pe vs input DAC fit : intercept
+    vector<vector<vector<double>>>                 intercept2 (n_difs); // [dif][chip][chan] optimized threshold at 2.5 pe vs input DAC fit : intercept
+    vector<vector<vector<vector<double>>>>         pe1        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 1.5 p.e.
+    vector<vector<vector<vector<double>>>>         pe2        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
+    vector<vector<vector<vector<vector<double>>>>> noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
+    vector<vector<vector<vector<vector<double>>>>> noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
     //  and resize them.
     for (unsigned idif = 0; idif < n_difs; ++idif) {
       slope1     [idif].resize(n_chips[idif]);
@@ -219,25 +199,24 @@ int wgScurve(const char* x_inputDir,
      ********************************************************************************/
         
     // DIF
-    for(unsigned idif = 0; idif < n_difs; ++idif){
+    for (unsigned idif = 0; idif < n_difs; ++idif){
       unsigned idif_id = idif + 1;
       // chip
-      for(unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
+      for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
         unsigned ichip_id = ichip + 1;
         // channel
-        for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+        for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
           unsigned ichan_id = ichan + 1;
           // input DAC
-          for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
+          for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
                                         
             TCanvas *c1 = new TCanvas("c1", "c1");
             c1->SetLogy();
-            // These are tentative variables for x, y and their errors used to draw the graph.
+            // These are temporary variables for x, y and their errors used to draw the graph.
             std::vector<double> gx, gy, gxe, gye;
 
             // threshold
-            for(unsigned i_threshold = 0; i_threshold < n_threshold; ++i_threshold){
-
+            for (unsigned i_threshold = 0; i_threshold < n_threshold; ++i_threshold) {
               gx.push_back(threshold[i_threshold]);
               gy.push_back(noise[idif][ichip][ichan][i_iDAC][i_threshold]);
               gxe.push_back(0);
@@ -270,72 +249,68 @@ int wgScurve(const char* x_inputDir,
             delete c1;
           } // inputDAC
 
-          // ************ Linear fit of 1.5pe threshold vs inputDAC plot ************ //
+          // ************ Linear fit of 1.5pe optimized threshold vs inputDAC plot ************ //
           TCanvas *c2 = new TCanvas("c2","c2");
                                         
-          // These are tentative variables for x, y used to draw the graph.
-          vector<double> gx,gy1,gy2;
-          for(unsigned i_iDAC=0; i_iDAC < n_inputDAC; ++i_iDAC){
+          // These are temporary variables for x, y used to draw the graph.
+          vector<double> gx, gy1, gy2;
+          for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
             gx.push_back(inputDAC[i_iDAC]);
             gy1.push_back(pe1[idif][ichip][ichan][i_iDAC]);
             gy2.push_back(pe2[idif][ichip][ichan][i_iDAC]);
           }
-          TGraph* PELinear1 = new TGraph(gx.size(), &gx[0], &gy1[0]);
-          string title;
-          title = "Dif" + to_string(idif_id)
-                  + "_Chip" + to_string(ichip_id)
-                  + "_Channel" + to_string(ichan_id)
-                  + ";InputDAC;1.5 pe threshold";
-          PELinear1->SetTitle(title.c_str());
+          TGraph* PELinear1 = new TGraph(gx.size(), gx.data(), gy1.data());
+          TString title1("Dif" + to_string(idif_id)
+                        + "_Chip" + to_string(ichip_id)
+                        + "_Channel" + to_string(ichan_id)
+                        + ";InputDAC;1.5 pe threshold");
+          PELinear1->SetTitle(title1);
           PELinear1->Draw("ap*");
 
           TF1* fit1 = new TF1("fit1", "[0]*x + [1]", 1, 241);
           fit1->SetParameters(-0.01, 170);
-          PELinear1->Fit(fit1,"rl");
+          PELinear1->Fit(fit1, "rl");
           fit1->Draw("same");
-          slope1   [idif][ichip].push_back(fit1->GetParameter(0));
+          slope1    [idif][ichip].push_back(fit1->GetParameter(0));
           intercept1[idif][ichip].push_back(fit1->GetParameter(1));
         
           // ************* Save plot as png ************* //
-          string image;
-          image = outputIMGDir + "/Dif" + to_string(idif_id)
-                  + "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
-                  + "/PE1vsInputDAC.png";
-          c2->Print(image.c_str());
+          TString image1(outputIMGDir + "/Dif" + to_string(idif_id)
+                        + "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
+                        + "/PE1vsInputDAC.png");
+          c2->Print(image1);
           c2->Clear();
 
-          // ************ Linear fit of 2.5pe threshold vs inputDAC plot ************ //
-          TGraph* PELinear2 = new TGraph(gx.size(), &gx[0], &gy2[0]);
-          title = "Dif" + to_string(idif_id)
-                  + "_Chip" + to_string(ichip_id)
-                  + "_Channel" + to_string(ichan_id)
-                  + ";InputDAC;2.5 pe threshold";
-          PELinear2->SetTitle(title.c_str());
+          // ************ Linear fit of 2.5pe optimized threhold vs inputDAC plot ************ //
+          TGraph* PELinear2 = new TGraph(gx.size(), gx.data(), gy2.data());
+          TString title2("Dif" + to_string(idif_id)
+                         + "_Chip" + to_string(ichip_id)
+                         + "_Channel" + to_string(ichan_id)
+                         + ";InputDAC;2.5 pe threshold");
+          PELinear2->SetTitle(title2);
           PELinear2->Draw("ap*");
 
           TF1* fit2 = new TF1("fit2", "[0]*x + [1]", 1, 241);
           fit2->SetParameters(-0.01, 170);
           PELinear2->Fit(fit2,"rl");
           fit2->Draw("same");
-          slope2   [idif][ichip].push_back(fit2->GetParameter(0));
+          slope2    [idif][ichip].push_back(fit2->GetParameter(0));
           intercept2[idif][ichip].push_back(fit2->GetParameter(1));
 
           // ************* Save plot as png ************* //
-          image = outputIMGDir + "/Dif" + to_string(idif_id)
-                  + "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
-                  + "/PE2vsInputDAC.png";
-          c2->Print(image.c_str());
+          TString image2(outputIMGDir + "/Dif" + to_string(idif_id)
+                         + "/Chip" + to_string(ichip_id) + "/Channel" + to_string(ichan_id)
+                         + "/PE2vsInputDAC.png");
+          c2->Print(image2);
                                         
           delete PELinear1;
           delete PELinear2;
           delete fit1;
           delete fit2;
           delete c2;
-
-        }       // channel
-      }         // chip
-    }   // dif
-
+        } // channel
+      } // chip
+    } // dif
 
     /********************************************************************************
      *                           threshold_card.xml                                 *
@@ -344,24 +319,24 @@ int wgScurve(const char* x_inputDir,
     string xmlfile(outputXMLDir + "/threshold_card.xml");
     try { Edit.Open(xmlfile); }
     catch (const wgInvalidFile & e) {
-      Log.eWrite("[wgScurve] " + xmlfile + " : " + string(e.what()));
+      Log.eWrite("[wgScurve] " + xmlfile + " : " + e.what());
       return ERR_FAILED_OPEN_XML_FILE;
     }
 
-    Edit.OPT_Make(xmlfile,inputDAC,n_difs,n_chips,n_chans);
+    Edit.OPT_Make(xmlfile, inputDAC, n_difs, n_chips, n_chans);
 
-    for(unsigned idif = 0; idif < n_difs; ++idif){
+    for (unsigned idif = 0; idif < n_difs; ++idif) {
       unsigned idif_id = idif + 1;
         
-      for(unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
+      for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
         unsigned ichip_id = ichip + 1;
 
-        for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+        for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
           unsigned ichan_id = ichan + 1;
           // Set the slope and intercept values for the result of fitting threshold-inputDAC plot.
-          Edit.OPT_SetChanValue(string("s_th1"), idif_id, ichip_id, ichan_id, slope1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(string("s_th1"), idif_id, ichip_id, ichan_id, slope1[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
           Edit.OPT_SetChanValue(string("i_th1"), idif_id, ichip_id, ichan_id, intercept1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(string("s_th2"), idif_id, ichip_id, ichan_id, slope2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(string("s_th2"), idif_id, ichip_id, ichan_id, slope2[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
           Edit.OPT_SetChanValue(string("i_th2"), idif_id, ichip_id, ichan_id, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
           for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
@@ -374,16 +349,12 @@ int wgScurve(const char* x_inputDir,
     }
     Edit.Write();
     Edit.Close();
-        
-    cout << "[wgScurve] Finish!" << endl;
-    Log.Write("end wgScurve ... " );
   }  // end try
-
   catch (const exception& e){
     Log.eWrite("[wgScurve][" + inputDir + "] " + string(e.what()));
     return ERR_WG_SCURVE;
   }
-  return SCURVE_SUCCESS;
+  return WG_SUCCESS;
 }
 
 //**********************************************************************
@@ -432,6 +403,5 @@ void fit_scurve(TGraphErrors* Scurve,
     canvas->Print(image);
     delete canvas; 
   }
-
   delete fit_scurve;
 }

@@ -8,50 +8,48 @@
 // user includes
 #include "wgConst.hpp"
 
-using namespace std;
-
 class wgEditConfig
 {
 private:
-  string hex_config;
-  string bi_config;
+  std::string hex_config;
+  std::string bi_config;
   // wgEditConfig::DeToBi convert a decimal number (in the form a string) to its
   // binary representation (always in the form of a string)
-  string DeToBi(const string&);
+  std::string DeToBi(const std::string&);
   // binary to decimal
-  string BiToDe(const string&);
+  std::string BiToDe(const std::string&);
   // hexadecimal to binary
-  string HexToBi(const string&);
+  std::string HexToBi(const std::string&);
   // binary to hexadecimal
-  string BiToHex(const string&);
+  std::string BiToHex(const std::string&);
   //int fine_inputDAC[32];
 
   // wgEditConfig::Open
   // Open a file using the passed path and read the first line (that is assumed
-  // to contain a bitstream string). Then it is the same as the SetBitstream
+  // to contain a bitstream std::string). Then it is the same as the SetBitstream
   // method.
-  void Open(const string&);
+  void Open(const std::string&);
 
   // wgEditConfig::SetBitstream
   // copy the input bitstream into the hex_config member and into the bi_config
   // member after converting it into binary representation
-  void SetBitstream(const string&);
+  void SetBitstream(const std::string&);
 
-public:
-  int fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
-  double BDV[NCHANNELS] = {};         // breakdown voltage
+  unsigned fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
+  double BDV[NCHANNELS] = {};             // breakdown voltage
   bool Read_MPPCData;
-
+  
+public:
   // constructor
   // Open a bitstream file and initialized the members to zero
-  wgEditConfig(const string&, bool bitstream_string);
+  wgEditConfig(const std::string&, bool bitstream_string);
   
   // wgEditConfig::GetCSV
   // read the content of the spiroc2d.csv file into a vector of vectors strings
   // Each line is decomposed using the ',' delimeter and each field is saved as
   // a string (so each line is stored as a vector of strings and the whole file
   // is stored as a vector of vector of strings)
-  vector<vector<string>> GetCSV(string spiroc2d_csv = "");
+  std::vector<std::vector<std::string>> GetCSV(std::string spiroc2d_csv = "");
 
   // wgEditConfig::Get_MPPCinfo
   // Use the mppc_map.csv file to get a map of an arrayed MPPC.  Then read the
@@ -63,12 +61,12 @@ public:
 
   // wgEditConfig::Write
   // Write the bi_config string member to the output file
-  void Write(const string& output);
+  void Write(const std::string& output);
 
   // wgEditConfig::Modify
   // Modify the value "input" (it is a string with the binary representation of
   // value) starting from position "start"
-  void Modify(const string& input, int start);
+  void Modify(const std::string& input, int start);
 
   // wgEditConfig::Clear
   // set the hex_config and bi_config strings to empty
@@ -88,25 +86,29 @@ public:
   // wgEditConfig::Change_inputDAC
   // Change the channel by channel adjustable 8-bit inputDAC.
   // The inputDAC is the channel by channel high voltage correction.
-  void Change_inputDAC(unsigned chan, int value);
+  void Change_inputDAC(unsigned chan, unsigned value);
 
   // wgEditConfig::Change_ampDAC
   // Change the channel by channel adjustable 6-bit high gain (HG) preamp.
   // It corresponds to the value of the preamp feedback capacitor 
-  void Change_ampDAC(unsigned chan, int value);
+  void Change_ampDAC(unsigned chan, unsigned value);
 
   // wgEditConfig::Change_trigadj
   // Change the channel by channel adjustable 4-bit discriminator threshold
-  void Change_trigadj(unsigned chan, int value);
+  void Change_trigadj(unsigned chan, unsigned value);
 
   // wgEditConfig::Change_trigth
-  void Change_trigth(int value);
+  void Change_trigth(unsigned value);
+
+  // wgEditConfig::Change_trigth_and_adj
+  // Change both the global and adjustable threshold for all the channels
+  void Change_trigth_and_adj(std::vector<unsigned> threshold);
 
   // wgEditConfig::Change_gainth
-  void Change_gainth(int value);
+  void Change_gainth(unsigned value);
 
   // wgEditConfig::Change_1bitparam
-  void Change_1bitparam(int value, int subadd);
+  void Change_1bitparam(unsigned value, int subadd);
 
   // ==================================================================== //
   //                           Get* methods                               //
@@ -121,7 +123,7 @@ public:
   // parameter value starts on the "start+VALUE_OFFSET_IN_BITS" and spans for
   // "length" bits. If a value lying over the edge of the string is requested a
   // invalid_argument exception is thrown.
-  string GetValue(int start, int length);
+  std::string GetValue(unsigned start, unsigned length);
 
   // wgEditConfig::Get_inputDAC
   // Get the channel by channel adjustable input 8-bit DAC

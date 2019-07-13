@@ -8,16 +8,9 @@
 #include "wgConst.hpp"
 #include "wgTopology.hpp"
 
-// errors
-#define APS_SUCCESS                 0
-#define ERR_CANNOT_CREATE_DIRECTORY 1
-#define ERR_GET_FILE_LIST           2
-#define ERR_FAILED_OPEN_XML_FILE    3
-#define ERR_WRONG_DIF_VALUE         4
-#define ERR_WRONG_CHIP_VALUE        5
-#define ERR_WRONG_CHAN_VALUE        6
-#define ERR_WRONG_PE_VALUE          7
-#define ERR_EMPTY_INPUT_FILE        8
+#define N_PE            2  // number of photo electron macros
+const unsigned ONE_PE = 0; // threshold at 0.5 p.e.
+const unsigned TWO_PE = 1; // threshold at 1.5 p.e.
 
 #define PEDESTAL_DIFFERENCE_WARNING_THRESHOLD 0.1
 

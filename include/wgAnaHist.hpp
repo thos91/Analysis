@@ -23,19 +23,6 @@ using namespace std;
 #define SELECT_PEDESTAL    5
 #define SELECT_CHARGE_HG   6
 
-// Errors
-#define AH_SUCCESS                  0
-#define ERR_CANNOT_CREATE_DIRECTORY 1
-#define ERR_FAILED_OPEN_XML_FILE    2
-#define ERR_FAILED_WRITE            3
-#define ERR_FAILED_OPEN_HIST_FILE   4
-#define ERR_FAILED_GET_BISTREAM     5
-#define ERR_WRONG_DIF_VALUE         6
-#define ERR_WRONG_CHIP_VALUE        7
-#define ERR_WRONG_CHANNEL_VALUE     8
-#define ERR_EMPTY_INPUT_FILE        9
-#define ERR_TOPOLOGY                10
-
 // Set the flags according to the mode
 void ModeSelect(int mode, bitset<M>& flag);
 

@@ -15,12 +15,13 @@
 
 // user includes
 #include "wgContiguousVectors.hpp"
+#include "wgErrorCodes.hpp"
 
 using namespace std;
 
 // ================================================================ //
 //                                                                  //
-//            ============ SPIROC2D MACROS ==============           //
+//                         SPIROC2D MACROS                          //
 //                                                                  //
 // ================================================================ //
 
@@ -51,22 +52,22 @@ enum SPILL_TYPE {
   BEAM_SPILL     = 1   // beam spill bit (spill_flag)
 };
 
-#define BCIDwidth     580 //ns
-#define NumReconAxis 2
+const unsigned BCIDwidth    = 580; //ns
+const unsigned NumReconAxis = 2;
 
-#define HIT_BIT        1    // there was a hit (over threshold)
-#define NO_HIT_BIT     0    // there was no hit (under threshold)
-#define HIGH_GAIN_BIT  1    // high gain bit (gs)
-#define LOW_GAIN_BIT   0    // low gain bit (gs)
-#define HIGH_GAIN_NORM 1.08 // Normalization for the high gain
-#define LOW_GAIN_NORM  10.8 // Normalization for the low gain
+const unsigned HIT_BIT        = 1;    // there was a hit (over threshold)
+const unsigned NO_HIT_BIT     = 0;    // there was no hit (under threshold)
+const unsigned HIGH_GAIN_BIT  = 1;    // high gain bit (gs)
+const unsigned LOW_GAIN_BIT   = 0;    // low gain bit (gs)
+const double HIGH_GAIN_NORM   = 1.08; // Normalization for the high gain
+const double LOW_GAIN_NORM    = 10.8; // Normalization for the low gain
 
-#define MAX_VALUE_16BITS 65535
-#define MAX_VALUE_12BITS 4095
-#define MAX_VALUE_10BITS 1023
-#define MAX_VALUE_8BITS  255
-#define MAX_VALUE_6BITS  63
-#define MAX_VALUE_4BITS  15
+const unsigned MAX_VALUE_16BITS = 65535;
+const unsigned MAX_VALUE_12BITS = 4095;
+const unsigned MAX_VALUE_10BITS = 1023;
+const unsigned MAX_VALUE_8BITS  = 255;
+const unsigned MAX_VALUE_6BITS  = 63;
+const unsigned MAX_VALUE_4BITS  = 15;
 
 // The SPIROC2D bitstream is 1192 bits long. It contains all the parameters that
 // can be set on the SPIROC2D chip. These parameters are listed in the
@@ -77,62 +78,82 @@ enum SPILL_TYPE {
 //  - the _OFFSET macros are the length in bits of a single channel parameter
 //    (when the parameter can be set for each channel individually)
 
-#define BITSTREAM_HEX_STRING_LENGTH 300  // length of the bitstream hex string
-#define BITSTREAM_BIN_STRING_LENGTH 1192 // length of the bitstream bin string
-#define VALUE_OFFSET_IN_BITS 6           // offset in bits before a parameter start
+const unsigned BITSTREAM_HEX_STRING_LENGTH = 300;  // length of the bitstream hex string
+const unsigned BITSTREAM_BIN_STRING_LENGTH = 1192; // length of the bitstream bin string
+const unsigned VALUE_OFFSET_IN_BITS = 6;           // offset in bits before a parameter start
 
 // global 10-bit threshold
-#define GLOBAL_THRESHOLD_INDEX      0
-#define GLOBAL_THRESHOLD_START      931
-#define GLOBAL_THRESHOLD_LENGTH     10 // 4 bits (most significant bits) +
-                                       // 4 bits (least significant bits) +
-                                       // 2 bits (??)
+const unsigned GLOBAL_THRESHOLD_INDEX      = 0;
+const unsigned GLOBAL_THRESHOLD_START      = 931;
+const unsigned GLOBAL_THRESHOLD_LENGTH     = 10; // 4 bits (most significant bits) +
+                                                 // 4 bits (least significant bits) +
+                                                 // 2 bits (??)
 
 // global 10-bit gain selection threshold
-#define GLOBAL_GS_INDEX             1
-#define GLOBAL_GS_THRESHOLD_START   941
-#define GLOBAL_GS_THRESHOLD_LENGTH  10 // 4 bits (most significant bits) +
-                                       // 4 bits (least significant bits) +
-                                       // 2 bits (??)
+const unsigned GLOBAL_GS_INDEX             = 1;
+const unsigned GLOBAL_GS_THRESHOLD_START   = 941;
+const unsigned GLOBAL_GS_THRESHOLD_LENGTH  = 10; // 4 bits (most significant bits) +
+                                                 // 4 bits (least significant bits) +
+                                                 // 2 bits (??)
 
 // Input 8-bit DAC Data from channel 0 to 35 
-#define ADJ_INPUTDAC_INDEX          2
-#define ADJ_INPUTDAC_START          37
-#define ADJ_INPUTDAC_LENGTH         8
-#define ADJ_INPUTDAC_OFFSET         9 // 8 bits (DAC7...DAC0) + 1 bit (DAC ON)
+const unsigned ADJ_INPUTDAC_INDEX          = 2;
+const unsigned ADJ_INPUTDAC_START          = 37;
+const unsigned ADJ_INPUTDAC_LENGTH         = 8;
+const unsigned ADJ_INPUTDAC_OFFSET         = 9; // 8 bits (DAC7...DAC0) + 1 bit (DAC ON)
 
 // adjustable 6-bit high gain (HG) preamp
-#define ADJ_AMPDAC_INDEX            3
-#define ADJ_AMPDAC_START            367  
-#define ADJ_AMPDAC_LENGTH           6
-#define ADJ_AMPDAC_OFFSET           15 // 6 bits (HG) + 6 bits (LG) + 3 bits '000'
+const unsigned ADJ_AMPDAC_INDEX            = 3;
+const unsigned ADJ_AMPDAC_START            = 367;  
+const unsigned ADJ_AMPDAC_LENGTH           = 6;
+const unsigned ADJ_AMPDAC_OFFSET           = 15; // 6 bits (HG) + 6 bits (LG) + 3 bits '000'
 
 // adjustable 4-bit threshold
-#define ADJ_THRESHOLD_INDEX         4
-#define ADJ_THRESHOLD_START         1006
-#define ADJ_THRESHOLD_LENGTH        4
-#define ADJ_THRESHOLD_OFFSET        4 // 4 bits
+const unsigned ADJ_THRESHOLD_INDEX         = 4;
+const unsigned ADJ_THRESHOLD_START         = 1006;
+const unsigned ADJ_THRESHOLD_LENGTH        = 4;
+const unsigned ADJ_THRESHOLD_OFFSET        = 4; // 4 bits
 
 // 1-bit input DAC Voltage Reference (1 = internal 4.5V   0 = internal 2.5V)
-#define GLOBAL_INPUT_DAC_REF_INDEX  5
-#define GLOBAL_INPUT_DAC_REF_START  36
+const unsigned GLOBAL_INPUT_DAC_REF_INDEX  = 5;
+const unsigned GLOBAL_INPUT_DAC_REF_START  = 36;
 
-// ============ Number of photo-electrons MACROS ============== //
 
-#define ONE_PE 0
-#define TWO_PE 1
-#define N_PE   2
-
-// ============ wgMakeHist MACROS ============== //
-
-#define MAX_BCID_BIN  12288
-#define MAX_12BIT_BIN 4096
 
 // ============ wgEditXML MACROS ============== //
 
-#define NO_CREATE_NEW_MODE false
-#define CREATE_NEW_MODE    true
+const bool NO_CREATE_NEW_MODE = false;
+const bool CREATE_NEW_MODE    = true;
 
+// ===================================================================== //
+//                                                                       //
+//                                Typedef                                //
+//                                                                       //
+// ===================================================================== //
+
+typedef std::vector<std::vector<std::vector<std::vector<double>>>> d4vector;
+typedef std::vector<std::vector<std::vector<double>>> d3vector;
+typedef std::vector<std::vector<double>> d2vector;
+typedef std::vector<double> d1vector;
+
+typedef Contiguous3Vector<double> d3CCvector;
+typedef Contiguous2Vector<double> d2CCvector;
+
+typedef std::vector<std::vector<std::vector<std::vector<int>>>> i4vector;
+typedef std::vector<std::vector<std::vector<int>>> i3vector;
+typedef std::vector<std::vector<int>> i2vector;
+typedef std::vector<int> i1vector;
+
+typedef Contiguous3Vector<int> i3CCvector;
+typedef Contiguous2Vector<int> i2CCvector;
+
+typedef std::vector<std::vector<std::vector<std::vector<unsigned>>>>u4vector;
+typedef std::vector<std::vector<std::vector<unsigned>>> u3vector;
+typedef std::vector<std::vector<unsigned>> u2vector;
+typedef std::vector<unsigned> u1vector;
+
+typedef Contiguous3Vector<unsigned> u3CCvector;
+typedef Contiguous2Vector<unsigned> u2CCvector;
 
 // ===================================================================== //
 //                                                                       //
@@ -140,47 +161,37 @@ enum SPILL_TYPE {
 //                                                                       //
 // ===================================================================== //
 
-//define data fomat
-typedef vector<vector<vector<vector<double>>>> d4vector;
-typedef Contiguous3Vector<double> d3vector;
-typedef Contiguous2Vector<double> d2vector;
-typedef vector<double> fvector;
-typedef vector<vector<vector<vector<int>>>> i4vector;
-typedef Contiguous3Vector<int> i3vector;
-typedef Contiguous2Vector<int> i2vector;
-typedef vector<int> ivector;
-
 class Raw_t
 {
 public:
   int spill_number;
   int spill_mode;
   int spill_count;
-  ivector chipid;            // [NCHIPS];    //ASU 
-  ivector difid;             // [NCHIPS];    //DIF
-  ivector chip;              // [NCHIPS];
-  ivector chan;              //          [NCHANNELS];
-  ivector col;               //                    [MEMDEPTH];
-  i3vector charge;           // [NCHIPS][NCHANNELS][MEMDEPTH];
-  i3vector time;             // [NCHIPS][NCHANNELS][MEMDEPTH];
-  i2vector bcid;             // [NCHIPS]           [MEMDEPTH];
-  i3vector hit;              // [NCHIPS][NCHANNELS][MEMDEPTH];
-  i3vector gs;               // [NCHIPS][NCHANNELS][MEMDEPTH];
-  ivector  debug_spill;      //                              [N_DEBUG_SPILL]   
-  i2vector debug_chip;       // [NCHIPS];                    [N_DEBUG_CHIP];
+  i1vector chipid;            // [NCHIPS];    //ASU 
+  i1vector difid;             // [NCHIPS];    //DIF
+  i1vector chip;              // [NCHIPS];
+  i1vector chan;              //          [NCHANNELS];
+  i1vector col;               //                    [MEMDEPTH];
+  i3CCvector charge;          // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i3CCvector time;            // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i2CCvector bcid;            // [NCHIPS]           [MEMDEPTH];
+  i3CCvector hit;             // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i3CCvector gs;              // [NCHIPS][NCHANNELS][MEMDEPTH];
+  i1vector  debug_spill;      //                              [N_DEBUG_SPILL]   
+  i2CCvector debug_chip;      // [NCHIPS];                    [N_DEBUG_CHIP];
   int view;
-  i2vector pln;              // [NCHIPS][NCHANNELS];
-  i2vector ch;               // [NCHIPS][NCHANNELS];
-  i2vector grid;             // [NCHIPS][NCHANNELS];
-  d2vector x;                // [NCHIPS][NCHANNELS];
-  d2vector y;                // [NCHIPS][NCHANNELS];
-  d2vector z;                // [NCHIPS][NCHANNELS];
-  d3vector pedestal;         // [NCHIPS][NCHANNELS][MEMDEPTH];
-  d3vector pe;               // [NCHIPS][NCHANNELS][MEMDEPTH];
-  d3vector time_ns;          // [NCHIPS][NCHANNELS][MEMDEPTH];
-  d3vector gain;             // [NCHIPS][NCHANNELS][MEMDEPTH];
-  d3vector tdc_slope;        // [NCHIPS][NCHANNELS][2];
-  d3vector tdc_intcpt;       // [NCHIPS][NCHANNELS][2];
+  i2CCvector pln;             // [NCHIPS][NCHANNELS];
+  i2CCvector ch;              // [NCHIPS][NCHANNELS];
+  i2CCvector grid;            // [NCHIPS][NCHANNELS];
+  d2CCvector x;               // [NCHIPS][NCHANNELS];
+  d2CCvector y;               // [NCHIPS][NCHANNELS];
+  d2CCvector z;               // [NCHIPS][NCHANNELS];
+  d3CCvector pedestal;        // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3CCvector pe;              // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3CCvector time_ns;         // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3CCvector gain;            // [NCHIPS][NCHANNELS][MEMDEPTH];
+  d3CCvector tdc_slope;       // [NCHIPS][NCHANNELS][2];
+  d3CCvector tdc_intcpt;      // [NCHIPS][NCHANNELS][2];
 
   int n_chips;
   int n_chans;
@@ -251,8 +262,8 @@ public:
   void Clear();
   void Clear_ReconVector();
 
-  vector<vector<uint16_t> > bcid_cluster_hitid;
-  vector<vector<uint16_t> > time_cluster_hitid;
+  std::vector<std::vector<uint16_t> > bcid_cluster_hitid;
+  std::vector<std::vector<uint16_t> > time_cluster_hitid;
 
   // ==== Filled data for tree ==== //
   int    num_recon;
@@ -282,11 +293,11 @@ public:
   double recon_chi2      [MAX_NUM_TRACK];
     
   // ==== Vectors for reconstruction ==== ///
-  vector<vector<vector<uint16_t> > > neighborhits_hitid;
-  vector<vector<vector<uint16_t> > > cell_clusterid;
-  vector<vector<vector<uint16_t> > > neighborcell_down_cellid;
-  vector<vector<vector<uint16_t> > > neighborcell_up_cellid;
-  vector<vector<uint16_t> > cell_state;
+  std::vector<std::vector<std::vector<uint16_t> > > neighborhits_hitid;
+  std::vector<std::vector<std::vector<uint16_t> > > cell_clusterid;
+  std::vector<std::vector<std::vector<uint16_t> > > neighborcell_down_cellid;
+  std::vector<std::vector<std::vector<uint16_t> > > neighborcell_up_cellid;
+  std::vector<std::vector<uint16_t> > cell_state;
 };
 
 class Track_t

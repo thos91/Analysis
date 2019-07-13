@@ -46,18 +46,18 @@ public:
   // The pedestal array contains the pedestal when the hit bit is one,
   // while the ped_nohit array contains the pedestal when the hit bit is zero.
   // The hit bit is set to one when the ADC value is above the threshold
-  int GetPedestal(unsigned dif_id, d3vector& pedestal);
+  int GetPedestal(unsigned dif_id, d3CCvector& pedestal);
   
   // Get the TDC ramp slope and intercept the TDC calibration card file tdcFileName
   // Two arrays are filled (for the DIF "dif"):
   //                         slope[n_chips][n_chans][2]
   //                         intcpt[n_chips][n_chans][2]
-  int GetTDC(unsigned dif, d3vector& slope, d3vector& intcpt);
+  int GetTDC(unsigned dif, d3CCvector& slope, d3CCvector& intcpt);
 
   // Get the gain from the gain calibration card file calibFileName
   // One arrays is filled (for the DIF "dif"):
   //                         gain[n_chips][n_chans][n_cols]
-  int GetGain(const unsigned dif, d3vector& gain);
+  int GetGain(const unsigned dif, d3CCvector& gain);
 
   bool isPedestalCalibrated();
   bool isGainCalibrated();

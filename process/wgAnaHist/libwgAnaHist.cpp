@@ -102,7 +102,7 @@ int wgAnaHist(const char * x_inputFile,
   try { MakeDir(outputXMLDir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaPedestal] " + string(e.what()));
-    return ERR_CANNOT_CREATE_DIRECTORY;
+    return ERR_FAILED_CREATE_DIRECTORY;
   }
   // ======= Create outputIMGDir ======= //
   if( flags[SELECT_PRINT] ) {
@@ -113,7 +113,7 @@ int wgAnaHist(const char * x_inputFile,
         try { MakeDir(outputIMGChipChanDir); }
         catch (const wgInvalidFile& e) {
           Log.eWrite("[wgAnaPedestal] " + string(e.what()));
-          return ERR_CANNOT_CREATE_DIRECTORY;
+          return ERR_FAILED_CREATE_DIRECTORY;
         }
       }
     }
@@ -144,7 +144,7 @@ int wgAnaHist(const char * x_inputFile,
       try { MakeDir(outputXMLChipDir); }
       catch (const wgInvalidFile& e) {
         Log.eWrite("[wgAnaHist] " + string(e.what()));
-        return ERR_CANNOT_CREATE_DIRECTORY;
+        return ERR_FAILED_CREATE_DIRECTORY;
       }
 	
       // v[channel][0] = global 10-bit discriminator threshold
@@ -273,5 +273,5 @@ int wgAnaHist(const char * x_inputFile,
     Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_FAILED_OPEN_HIST_FILE;
   }
-  return AH_SUCCESS;
+  return WG_SUCCESS;
 }

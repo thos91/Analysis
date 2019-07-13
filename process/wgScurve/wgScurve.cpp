@@ -52,7 +52,7 @@ int main(int argc, char** argv){
   int result;
   if ( (result =  wgScurve(inputDir.c_str(), 
                   outputXMLDir.c_str(), 
-                  outputIMGDir.c_str())) != SCURVE_SUCCESS){
+                  outputIMGDir.c_str())) != WG_SUCCESS){
     Log.eWrite("[" + GetName(inputDir) + "][wgScurve] wgScurve returned error " + to_string(result));
     exit(1);
   }

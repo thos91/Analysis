@@ -12,15 +12,6 @@
 #define BITS_PER_LINE  16
 #define BYTES_PER_LINE 2
 
-// Error codes
-const unsigned DE_SUCCESS                       = 0;
-const unsigned ERR_CANNOT_CREATE_DIRECTORY      = 1;
-const unsigned ERR_CANNOT_OVERWRITE_OUTPUT_FILE = 2;
-const unsigned ERR_WRONG_DIF_VALUE              = 3;
-const unsigned ERR_FAILED_OPEN_RAW_FILE         = 4;
-const unsigned ERR_INPUT_FILE_NOT_FOUND         = 5;
-const unsigned ERR_READING_RAW_FILE             = 6;
-
 // Headers and trailers markers
 const std::bitset<BITS_PER_LINE> FIRST_MARKER         (0xFFFA);
 const std::bitset<BITS_PER_LINE> SPILL_NUMBER_MARKER  (0xFFFB);

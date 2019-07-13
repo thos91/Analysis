@@ -45,6 +45,8 @@ const int ped_diff_max = 10;  // maximum (most right) value of the difference
 							  // pedestal
 const int ped_diff_min = -50; // minimum (most left) value
 
+const unsigned MAX_BCID_BIN  = 12288;
+
 double NoiseToPe(const double noise) {
   if      (noise >  u_limit_1pe)                        return 0.5;
   else if (noise >= l_limit_1pe && noise < u_limit_1pe) return 1.0;

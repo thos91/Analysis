@@ -239,22 +239,48 @@ public:
   void SUMMARY_GetPedFitValue(int value[MEMDEPTH], int ich);
 
   //=======================================================================//
-  //                         S-curve XML files                             //
+  //                   Optimized Threshold XML files                       //
   //=======================================================================//
   
-  //void SCURVE_Make(const string&);
-  //void SCURVE_SetValue(const string&,int,int,bool);
-  //int SCURVE_GetValue(const string&,int);
+  void OPT_Make(const string& filename, 
+                vector<unsigned> inputDACs,
+                unsigned n_difs,
+                vector<unsigned> n_chips,
+                vector<vector<unsigned>> n_chans);
 
-  //=======================================================================//
-  //                        Threshold XML files                            //
-  //=======================================================================//
+  // wgEditXML::OPT_SetValue
+  // data -> dif_%d -> chip_%d -> chan_%d -> inputDAC_%d
+  void OPT_SetValue(const string& name,
+                    unsigned idif, 
+                    unsigned ichip, 
+                    unsigned ichan, 
+                    unsigned iDAC, 
+                    double value, 
+                    bool create_new);
   
-  void OPT_Make(const string&,vector<unsigned>,unsigned,vector<unsigned>,vector<vector<unsigned>>);
-  void OPT_SetValue(const string&,int,int,int,int,double,bool);
-  double OPT_GetValue(const string&,int,int,int,int);
-  void OPT_SetChanValue(const string&,int,int,int,double,bool);
-  double OPT_GetChanValue(const string&,int,int,int);
+  // wgEditXML::OPT_GetValue
+  // data -> dif_%d -> chip_%d -> chan_%d -> inputDAC_%d
+  double OPT_GetValue(const string& name,
+                      unsigned idif,
+                      unsigned ichip,
+                      unsigned ichan,
+                      unsigned iDAC);
+
+  // wgEditXML::OPT_SetChanValue
+  // data -> dif_%d -> chip_%d -> chan_%d 
+  void OPT_SetChanValue(const string& name,
+                        unsigned idif,
+                        unsigned ichip,
+                        unsigned ichan,
+                        double value,
+                        bool create_new);
+
+  // wgEditXML::OPT_GetChanValue
+  // data -> dif_%d -> chip_%d -> chan_%d 
+  double OPT_GetChanValue(const string& name,
+                          unsigned idif,
+                          unsigned ichip,
+                          unsigned ichan);
 
   //=======================================================================//
   //                           ??? XML files                               //
