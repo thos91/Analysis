@@ -31,19 +31,19 @@ std::pair<bool, std::size_t> FindInVector(const std::vector<std::bitset<BITS_PER
 
 // Parse the input_raw_file file and guess how many CHIP ID fields are
 // present at the end of the SPIROC2D raw data format.
-unsigned GetNumChipID(string & input_raw_file);
+unsigned GetNumChipID(std::string & input_raw_file);
 
 // Parse the input_raw_file file and return true if the PhantoMenace
 // section is present
-bool HasPhantomMenace(string & input_raw_file);
+bool HasPhantomMenace(std::string & input_raw_file);
 
 // Parse the input_raw_file file and return true if the SpillNumber
 // section is present
-bool HasSpillNumber  (string & input_raw_file);
+bool HasSpillNumber  (std::string & input_raw_file);
 
 // Parse the input_raw_file file and guess how many chips are present
 // in each spill
-unsigned GetNumChips (string & input_raw_file);
+unsigned GetNumChips (std::string & input_raw_file);
 
 }
 

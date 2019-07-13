@@ -66,10 +66,10 @@ void SectionReader::ReadSpillHeader(std::istream& is, const SectionSeeker::Secti
   wg_utils::ReadChunk(is, raw_data);
   // raw_data[0] is the SPILL_HEADER_MARKER
   // Spill count most significant byte
-  bitset<2*BITS_PER_LINE> spill_count_msb = raw_data[1].to_ulong();
+  std::bitset<2*BITS_PER_LINE> spill_count_msb = raw_data[1].to_ulong();
   spill_count_msb <<= BITS_PER_LINE;
   // Spill count least significant byte
-  bitset<2*BITS_PER_LINE> spill_count_lsb = raw_data[2].to_ulong();
+  std::bitset<2*BITS_PER_LINE> spill_count_lsb = raw_data[2].to_ulong();
   m_rd.get().spill_count = (spill_count_msb | spill_count_lsb).to_ullong();
 
   if (!m_config.has_spill_number) {
@@ -129,10 +129,10 @@ void SectionReader::ReadSpillTrailer(std::istream& is, const SectionSeeker::Sect
 
   // raw_data[0] is the SPILL_TRAILER_MARKER
   // Spill count most significant byte
-  bitset<2*BITS_PER_LINE> spill_count_msb = raw_data[1].to_ulong();
+  std::bitset<2*BITS_PER_LINE> spill_count_msb = raw_data[1].to_ulong();
   spill_count_msb <<= BITS_PER_LINE;
   // Spill count least significant byte
-  bitset<2*BITS_PER_LINE> spill_count_lsb = raw_data[2].to_ulong();
+  std::bitset<2*BITS_PER_LINE> spill_count_lsb = raw_data[2].to_ulong();
   m_rd.get().spill_count = (spill_count_msb | spill_count_lsb).to_ullong();
   
   unsigned n_found_chips = ( raw_data[3] & x00FF ).to_ulong(); 
@@ -163,7 +163,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
   wg_utils::ReadChunk(is, raw_data);
 
   if ((raw_data.size() - m_config.n_chip_id) % ONE_COLUMN_LENGTH != 0)
-    throw std::out_of_range("SPIROC2D raw data is off range : " + to_string(raw_data.size()));
+    throw std::out_of_range("SPIROC2D raw data is off range : " + std::to_string(raw_data.size()));
   unsigned n_columns = (raw_data.size() - m_config.n_chip_id) / ONE_COLUMN_LENGTH;
 
   std::vector<std::bitset<BITS_PER_LINE>>::reverse_iterator iraw_data = raw_data.rbegin(); 

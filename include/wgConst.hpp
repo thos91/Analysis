@@ -18,8 +18,6 @@
 #include "wgErrorCodes.hpp"
 #include "wgEnvironment.hpp"
 
-using namespace std;
-
 // ================================================================ //
 //                                                                  //
 //                         SPIROC2D MACROS                          //
@@ -132,6 +130,7 @@ const bool CREATE_NEW_MODE    = true;
 //                                                                       //
 // ===================================================================== //
 
+typedef std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>> d5vector;
 typedef std::vector<std::vector<std::vector<std::vector<double>>>> d4vector;
 typedef std::vector<std::vector<std::vector<double>>> d3vector;
 typedef std::vector<std::vector<double>> d2vector;
@@ -294,12 +293,12 @@ public:
   int    track_id        [MAX_NUM_TRACK];
     
   // ==== Vectors for reconstruction ==== ///
-  vector<short int> num_pass_reconpln;
-  vector<short int> num_pass_pair_reconpln;
-  vector<vector<short int>> pair_track;
-  vector<vector<vector<short int>>> connected_track;
-  vector<vector<int>> recon_pair_start_reconpln;
-  vector<vector<int>> recon_pair_stop_reconpln;
+  std::vector<short int> num_pass_reconpln;
+  std::vector<short int> num_pass_pair_reconpln;
+  std::vector<std::vector<short int>> pair_track;
+  std::vector<std::vector<std::vector<short int>>> connected_track;
+  std::vector<std::vector<int>> recon_pair_start_reconpln;
+  std::vector<std::vector<int>> recon_pair_stop_reconpln;
 };
 
 
@@ -315,11 +314,11 @@ public:
   TTree  *bsd_out;
 
   void Clear();
-  bool OpenBsdFile(string);
+  bool OpenBsdFile(std::string);
   void GetEntry(int);
-  void MakeTree(string);
+  void MakeTree(std::string);
 
-  string version;
+  std::string version;
   int    is_bsd;
 
   int    nurun          ;

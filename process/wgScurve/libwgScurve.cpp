@@ -22,7 +22,6 @@
 #include "wgTopology.hpp"
 #include "wgScurve.hpp"
 
-using namespace std;
 using namespace wagasci_tools;
 
 //******************************************************************
@@ -36,9 +35,9 @@ int wgScurve(const char* x_inputDir,
   //                                                               //
   // ============================================================= //
   
-  string inputDir    (x_inputDir);
-  string outputXMLDir(x_outputXMLDir);
-  string outputIMGDir(x_outputIMGDir);
+  std::string inputDir    (x_inputDir);
+  std::string outputXMLDir(x_outputXMLDir);
+  std::string outputIMGDir(x_outputIMGDir);
 
   wgEnvironment env;
   wgEditXML Edit;
@@ -86,8 +85,8 @@ int wgScurve(const char* x_inputDir,
     const unsigned n_inputDAC  = ListDirectories(inputDir).size();
     const unsigned n_threshold = ListDirectories(inputDir).at(0).size(); // FIXME: maybe wrong
     unsigned n_difs = topol.n_difs;
-    vector<unsigned> n_chips;
-    vector<vector<unsigned>> n_chans;
+    u1vector n_chips;
+    u2vector n_chans;
     for(unsigned idif = 0; idif < n_difs; ++idif) {
       unsigned idif_id = idif + 1;
       n_chips[idif] = topol.dif_map[idif_id].size();
@@ -103,18 +102,18 @@ int wgScurve(const char* x_inputDir,
     // inputDAC and threshold values from the filename, but we will
     // obtain them by reading the xml file. It is better not to depend
     // on system environment as far as possible.
-    vector<unsigned> inputDAC(n_inputDAC);
-    vector<unsigned> threshold(n_threshold);
+    u1vector inputDAC(n_inputDAC);
+    u1vector threshold(n_threshold);
 
     // Define variables for storing values
-    vector<vector<vector<double>>>                 slope1     (n_difs); // [dif][chip][chan] optimized threshold at 1.5 pe vs input DAC fit : slope
-    vector<vector<vector<double>>>                 slope2     (n_difs); // [dif][chip][chan] optimized threshold at 2.5 pe vs input DAC fit : slope
-    vector<vector<vector<double>>>                 intercept1 (n_difs); // [dif][chip][chan] optimized threshold at 1.5 pe vs input DAC fit : intercept
-    vector<vector<vector<double>>>                 intercept2 (n_difs); // [dif][chip][chan] optimized threshold at 2.5 pe vs input DAC fit : intercept
-    vector<vector<vector<vector<double>>>>         pe1        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 1.5 p.e.
-    vector<vector<vector<vector<double>>>>         pe2        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
-    vector<vector<vector<vector<vector<double>>>>> noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
-    vector<vector<vector<vector<vector<double>>>>> noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
+    d3vector slope1     (n_difs); // [dif][chip][chan] optimized threshold at 1.5 pe vs input DAC fit : slope
+    d3vector slope2     (n_difs); // [dif][chip][chan] optimized threshold at 2.5 pe vs input DAC fit : slope
+    d3vector intercept1 (n_difs); // [dif][chip][chan] optimized threshold at 1.5 pe vs input DAC fit : intercept
+    d3vector intercept2 (n_difs); // [dif][chip][chan] optimized threshold at 2.5 pe vs input DAC fit : intercept
+    d4vector pe1        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 1.5 p.e.
+    d4vector pe2        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
+    d5vector noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
+    d5vector noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
     //  and resize them.
     for (unsigned idif = 0; idif < n_difs; ++idif) {
       slope1     [idif].resize(n_chips[idif]);
@@ -153,19 +152,19 @@ int wgScurve(const char* x_inputDir,
         
     unsigned i_iDAC = 0;  // index for inputDAC
     // input DAC
-    vector<string> iDAC_dir_list = ListDirectories(inputDir);
+    std::vector<std::string> iDAC_dir_list = ListDirectories(inputDir);
     for (auto const & iDAC_directory : iDAC_dir_list) {
-      vector<string> th_dir_list = ListDirectories(iDAC_directory);
+      std::vector<std::string> th_dir_list = ListDirectories(iDAC_directory);
       unsigned i_threshold = 0;  // index for threshold
       // threshold
       for (auto & th_directory : th_dir_list) {
         // DIF
         th_directory += "/wgAnaHistSummary/Xml";
-        vector<string> dif_dir_list = ListDirectories(th_directory);
+        std::vector<std::string> dif_dir_list = ListDirectories(th_directory);
         for (auto const & idif_directory : dif_dir_list) {
           unsigned idif = extractIntegerFromString(GetName(idif_directory)) - 1;
           // chip
-          vector<string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
+          std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
           for (auto const & ichip_xml : chip_xml_list) {
             unsigned ichip_id = extractIntegerFromString(GetName(ichip_xml));
             unsigned ichip = ichip_id - 1;
@@ -213,7 +212,7 @@ int wgScurve(const char* x_inputDir,
             TCanvas *c1 = new TCanvas("c1", "c1");
             c1->SetLogy();
             // These are temporary variables for x, y and their errors used to draw the graph.
-            std::vector<double> gx, gy, gxe, gye;
+            d1vector gx, gy, gxe, gye;
 
             // threshold
             for (unsigned i_threshold = 0; i_threshold < n_threshold; ++i_threshold) {
@@ -253,7 +252,7 @@ int wgScurve(const char* x_inputDir,
           TCanvas *c2 = new TCanvas("c2","c2");
                                         
           // These are temporary variables for x, y used to draw the graph.
-          vector<double> gx, gy1, gy2;
+          d1vector gx, gy1, gy2;
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
             gx.push_back(inputDAC[i_iDAC]);
             gy1.push_back(pe1[idif][ichip][ichan][i_iDAC]);
@@ -316,7 +315,7 @@ int wgScurve(const char* x_inputDir,
      *                           threshold_card.xml                                 *
      ********************************************************************************/
 
-    string xmlfile(outputXMLDir + "/threshold_card.xml");
+    std::string xmlfile(outputXMLDir + "/threshold_card.xml");
     try { Edit.Open(xmlfile); }
     catch (const wgInvalidFile & e) {
       Log.eWrite("[wgScurve] " + xmlfile + " : " + e.what());
@@ -365,11 +364,11 @@ void fit_scurve(TGraphErrors* Scurve,
                 unsigned ichip_id, 
                 unsigned ichan_id, 
                 unsigned inputDAC,
-                string outputIMGDir, 
+                std::string outputIMGDir, 
                 bool print_flag) {
 
   // Fitting function for Scurve is summation of two sigmoid functions (and a constant).
-  const char* fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
+  const char * fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
   double c0=50000, c1=1, c2=155, c3=5000, c4=1, c5=135, c6=300;
 
   TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);

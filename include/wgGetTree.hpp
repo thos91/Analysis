@@ -14,8 +14,6 @@
 #include "wgConst.hpp"
 #include "wgRawData.hpp"
 
-using namespace std;
-
 class wgGetTree
 {
 public:
@@ -26,18 +24,14 @@ public:
   // The constructors just call wgGetTree::Open followed by
   // wgGetTree::SetTreeFile. The exception thrown are just those thrown by those
   // two functions (there is no exception handling in the constructors)
-  wgGetTree(const string&, Raw_t&);
-  wgGetTree(const string&, Hit_t&);
-  wgGetTree(const string&, Recon_t&);
-  wgGetTree(const string&, Track_t&);
-  wgGetTree(const string&, IngRecon_t&);
+  wgGetTree(const std::string&, Raw_t&);
 
   // The destructor just calls the wgGetTree::Close function
   ~wgGetTree();
   
-  bool MakeTreeFile(const string&, Hit_t&);
-  bool MakeTreeFile(const string&, Recon_t&);
-  bool MakeTreeFile(const string&, Track_t&);
+  bool MakeTreeFile(const std::string&, Hit_t&);
+  bool MakeTreeFile(const std::string&, Recon_t&);
+  bool MakeTreeFile(const std::string&, Track_t&);
   void GetEntry(int);
 
   // The difference between Get...(something) and GetHist...(something) is that
@@ -54,9 +48,9 @@ public:
 
 protected:
 
-  string finputname;
+  std::string finputname;
 
-  string foutputname;
+  std::string foutputname;
 
   // Open a ROOT file:
   // The string argument is a path to a valid ROOT file.
@@ -64,7 +58,7 @@ protected:
   // throw wgInvalidFile if the file is not found or it is not valid (if the
   // CheckExist::RootFile call has failed).
   // throw ROOT exceptions if the TFile or the TTree cannot be read.
-  void Open(const string&);
+  void Open(const std::string&);
 
   // Close a ROOT file. No exception is thrown.
   void Close();
@@ -76,14 +70,10 @@ protected:
   //If there was an error in the reading of the TTree a wgElementNotFound
   //exception is thrown
   void SetTreeFile(Raw_t&);
-  void SetTreeFile(Hit_t&);
-  void SetTreeFile(Recon_t&);
-  void SetTreeFile(Track_t&);
-  void SetTreeFile(IngRecon_t&);
-
+  
   // Check if a branch exists in the tree_in TTree. Return true if it exists and
   // false otherwise.
-  bool BranchExists(const string&);
+  bool BranchExists(const std::string&);
 };
 
 #endif // WAGASCI_GET_TREE_HPP_ 

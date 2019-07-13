@@ -37,7 +37,7 @@ std::vector<std::bitset<BITS_PER_LINE>> ChipHeader(unsigned chip_id) {
   std::vector<std::bitset<BITS_PER_LINE>> chip_header;
 
   if (chip_id > 255)
-    throw std::invalid_argument("chip ID is greater than 255 : " + to_string(chip_id));
+    throw std::invalid_argument("chip ID is greater than 255 : " + std::to_string(chip_id));
   
   chip_header.push_back(CHIP_HEADER_MARKER);
   chip_header.push_back(std::bitset<BITS_PER_LINE>(chip_id) | xFF00); // chip ID
@@ -51,7 +51,7 @@ std::vector<std::bitset<BITS_PER_LINE>> ChipHeader(unsigned chip_id) {
 std::vector<std::bitset<BITS_PER_LINE>> RawTDC(unsigned time, bool hit, bool gain) {
 
   if (time > 4095)
-    throw std::invalid_argument("time is greater than 4095 : " + to_string(time));
+    throw std::invalid_argument("time is greater than 4095 : " + std::to_string(time));
 
   std::bitset<BITS_PER_LINE> bitset(time);
   bitset[BITS_PER_LINE-3] = gain;
@@ -64,7 +64,7 @@ std::vector<std::bitset<BITS_PER_LINE>> RawTDC(unsigned time, bool hit, bool gai
 std::vector<std::bitset<BITS_PER_LINE>> RawADC(unsigned charge, bool hit, bool gain) {
 
   if (charge > 4095)
-    throw std::invalid_argument("charge is greater than 4095 : " + to_string(charge));
+    throw std::invalid_argument("charge is greater than 4095 : " + std::to_string(charge));
 
   std::bitset<BITS_PER_LINE> bitset(charge);
   bitset[BITS_PER_LINE-3] = gain;
@@ -88,7 +88,7 @@ std::vector<std::bitset<BITS_PER_LINE>> ChipTrailer(unsigned chip_id) {
   std::vector<std::bitset<BITS_PER_LINE>> chip_trailer;
 
   if (chip_id > 255)
-    throw std::invalid_argument("chip ID is greater than 255 : " + to_string(chip_id));
+    throw std::invalid_argument("chip ID is greater than 255 : " + std::to_string(chip_id));
   
   chip_trailer.push_back(CHIP_TRAILER_MARKER);
   chip_trailer.push_back(std::bitset<BITS_PER_LINE>(chip_id) | xFF00 ); // chip ID
@@ -102,7 +102,7 @@ std::vector<std::bitset<BITS_PER_LINE>> SpillTrailer(unsigned spill_id, unsigned
   std::vector<std::bitset<BITS_PER_LINE>> spill_trailer;
 
   if (n_chips > 255)
-    throw std::invalid_argument("chip ID is greater than 255 : " + to_string(n_chips));
+    throw std::invalid_argument("chip ID is greater than 255 : " + std::to_string(n_chips));
 
   spill_trailer.push_back(SPILL_TRAILER_MARKER);
   spill_trailer.push_back(std::bitset<BITS_PER_LINE>(0)); // spill ID
@@ -151,7 +151,7 @@ class RawEmulatorConfig {
         spill_mode(spill_mode), has_spill_number(has_spill_number), time(time), charge(charge), bcid(bcid) {}
 };
 
-int wgRawEmulator(const string & output_file, RawEmulatorConfig & raw) {
+int wgRawEmulator(const std::string & output_file, RawEmulatorConfig & raw) {
 
   std::ofstream os;
   
@@ -180,7 +180,7 @@ int wgRawEmulator(const string & output_file, RawEmulatorConfig & raw) {
     }
     os.close();
   }
-  catch (const exception & e) {
+  catch (const std::exception & e) {
     std::cout << e.what() << "\n";
     if (os.is_open()) os.close();
     return 1;
@@ -189,7 +189,7 @@ int wgRawEmulator(const string & output_file, RawEmulatorConfig & raw) {
 }
 
 void print_help(const char * program_name) {
-  cout << program_name << " : emulates the SPIROC2D raw data\n"
+  std::cout << program_name << " : emulates the SPIROC2D raw data\n"
       "  -o (char*) : output file path\n"
       "  -x         : print this help\n";
   exit(0);
@@ -197,7 +197,7 @@ void print_help(const char * program_name) {
 
 int main(int argc, char** argv) {
   int opt;
-  string output_file("");
+  std::string output_file("");
   while ((opt = getopt(argc, argv, "o:h")) != -1) {
     switch(opt) {
       case 'o':

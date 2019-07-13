@@ -26,9 +26,9 @@ int main(int argc, char** argv){
 
   int opt;
   wgEnvironment env;
-  string inputDir("");
-  string outputXMLDir = env.CALIBDATA_DIRECTORY ;
-  string outputIMGDir = env.IMGDATA_DIRECTORY;
+  std::string inputDir("");
+  std::string outputXMLDir = env.CALIBDATA_DIRECTORY ;
+  std::string outputIMGDir = env.IMGDATA_DIRECTORY;
 
   while((opt = getopt(argc,argv, "f:o:h")) != -1 ){
     switch(opt){
