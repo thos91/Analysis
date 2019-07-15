@@ -11,7 +11,7 @@
 #include "wgLogger.hpp"
 
 void print_help(const char * program_name) {
-  cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
+  std::cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
     "  -h         : help\n"
     "  -f (char*) : input directory (mandatory)\n"
     "  -o (char*) : output directory (default: same as input directory)\n"
@@ -37,12 +37,12 @@ int main(int argc, char** argv){
   int mode = 10;
   bool overwrite = false, print = false;
   wgEnvironment env;
-  string inputDirName("");
-  string configFileName("");
-  string outputXMLDirName("");
-  string outputDirName("");
-  string logoutputDir(env.LOG_DIRECTORY);
-  string outputIMGDirName(env.IMGDATA_DIRECTORY);
+  std::string inputDirName("");
+  std::string configFileName("");
+  std::string outputXMLDirName("");
+  std::string outputDirName("");
+  std::string logoutputDir(env.LOG_DIRECTORY);
+  std::string outputIMGDirName(env.IMGDATA_DIRECTORY);
   
   while((opt = getopt(argc, argv, "f:o:i:m:rph")) !=-1 ){
     switch(opt){
@@ -80,7 +80,7 @@ int main(int argc, char** argv){
                                   mode,
                                   overwrite,
                                   print)) != WG_SUCCESS ) {
-    Log.eWrite("[wgAnaHistSummary] wgAnaHistSummary returned error " + to_string(result));
+    Log.eWrite("[wgAnaHistSummary] wgAnaHistSummary returned error " + std::to_string(result));
     exit(1);
   }
 

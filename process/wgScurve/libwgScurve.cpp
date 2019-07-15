@@ -58,14 +58,14 @@ int wgScurve(const char* x_inputDir,
   // ============ Create outputXMLDir ============ //
   try { MakeDir(outputXMLDir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgScurve] " + string(e.what()));
+    Log.eWrite("[wgScurve] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   // ============ Create outputIMGDir ============ //
   try { MakeDir(outputIMGDir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgScurve] " + string(e.what()));
+    Log.eWrite("[wgScurve] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
@@ -171,8 +171,8 @@ int wgScurve(const char* x_inputDir,
                   
             // ************* Open XML file ************* //
             try { Edit.Open(ichip_xml); }
-            catch (const exception& e) {
-              Log.eWrite("[wgScurve] " + string(e.what()));
+            catch (const std::exception& e) {
+              Log.eWrite("[wgScurve] " + std::string(e.what()));
               return ERR_FAILED_OPEN_XML_FILE;
             }
             // ************* Read XML file ************* //
@@ -333,15 +333,15 @@ int wgScurve(const char* x_inputDir,
         for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
           unsigned ichan_id = ichan + 1;
           // Set the slope and intercept values for the result of fitting threshold-inputDAC plot.
-          Edit.OPT_SetChanValue(string("s_th1"), idif_id, ichip_id, ichan_id, slope1[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(string("i_th1"), idif_id, ichip_id, ichan_id, intercept1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(string("s_th2"), idif_id, ichip_id, ichan_id, slope2[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(string("i_th2"), idif_id, ichip_id, ichan_id, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("s_th1"), idif_id, ichip_id, ichan_id, slope1[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("i_th1"), idif_id, ichip_id, ichan_id, intercept1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("s_th2"), idif_id, ichip_id, ichan_id, slope2[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("i_th2"), idif_id, ichip_id, ichan_id, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
             // Set the 2.5 pe and 1.5 pe level of ftting the scurve.
-            Edit.OPT_SetValue(string("threshold_1"), idif_id, ichip_id, ichan_id, i_iDAC, pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
-            Edit.OPT_SetValue(string("threshold_2"), idif_id, ichip_id, ichan_id, i_iDAC, pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+            Edit.OPT_SetValue(std::string("threshold_1"), idif_id, ichip_id, ichan_id, i_iDAC, pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+            Edit.OPT_SetValue(std::string("threshold_2"), idif_id, ichip_id, ichan_id, i_iDAC, pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
           }
         }
       }
@@ -349,8 +349,8 @@ int wgScurve(const char* x_inputDir,
     Edit.Write();
     Edit.Close();
   }  // end try
-  catch (const exception& e){
-    Log.eWrite("[wgScurve][" + inputDir + "] " + string(e.what()));
+  catch (const std::exception& e){
+    Log.eWrite("[wgScurve][" + inputDir + "] " + std::string(e.what()));
     return ERR_WG_SCURVE;
   }
   return WG_SUCCESS;

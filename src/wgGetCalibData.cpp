@@ -20,7 +20,7 @@ wgGetCalibData::wgGetCalibData(unsigned dif) : m_dif(dif) {
 }
 
 //******************************************************************************
-wgGetCalibData::wgGetCalibData(const string& calibration_dir, unsigned dif) :
+wgGetCalibData::wgGetCalibData(const std::string& calibration_dir, unsigned dif) :
     m_dif(dif), m_calibration_dir(calibration_dir) {
   if (!check_exist::Dir(m_calibration_dir))
     throw wgInvalidFile("[wgGetCalibData] calibration directory not found : " + m_calibration_dir);
@@ -72,33 +72,33 @@ int wgGetCalibData::GetPedestal(unsigned dif_id, d3CCvector& pedestal) {
   unsigned n_chips = Edit.Pedestal_GetDifConfigValue("n_chips", dif_id);
   if (n_chips != pedestal.size())
     throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
-                                + to_string(pedestal.size())
+                                + std::to_string(pedestal.size())
                                 + ") and number of chips in pedestal card ("
-                                + to_string(n_chips) + ") mismatch for DIF "
-                                + to_string(dif_id));
+                                + std::to_string(n_chips) + ") mismatch for DIF "
+                                + std::to_string(dif_id));
   
   for(unsigned int ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
     unsigned n_chans = Edit.Pedestal_GetChipConfigValue("n_chans", dif_id, ichip_id);
     if (n_chans != pedestal[ichip_id].size())
       throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
-                                  + to_string(pedestal[ichip_id].size())
+                                  + std::to_string(pedestal[ichip_id].size())
                                   + ") and number of channels in pedestal card ("
-                                  + to_string(n_chans) + ") mismatch for DIF "
-                                  + to_string(dif_id) + " and chip " + to_string(ichip_id));
+                                  + std::to_string(n_chans) + ") mismatch for DIF "
+                                  + std::to_string(dif_id) + " and chip " + std::to_string(ichip_id));
 
     for(unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++) {
       if (pedestal[ichip_id][ichan_id].size() != MEMDEPTH)
         throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
-                                    + to_string(pedestal.size())
+                                    + std::to_string(pedestal.size())
                                     + ") and number of columns ("
-                                    + to_string(MEMDEPTH) + ") mismatch for DIF "
-                                    + to_string(dif_id) + ", chip " + to_string(ichip_id)
-                                    + " and channel"  + to_string(ichan_id));
+                                    + std::to_string(MEMDEPTH) + ") mismatch for DIF "
+                                    + std::to_string(dif_id) + ", chip " + std::to_string(ichip_id)
+                                    + " and channel"  + std::to_string(ichan_id));
       
       for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
         try {
           pedestal[ichip_id][ichip_id][icol_id] = Edit.Pedestal_GetChanValue(
-              "pedestal_%d" + to_string(icol_id), dif_id, ichip_id, ichan_id);
+              "pedestal_%d" + std::to_string(icol_id), dif_id, ichip_id, ichan_id);
           count++;
         } catch (const wgElementNotFound& e) {
           pedestal[ichip_id][ichan_id][icol_id] = -1;

@@ -63,17 +63,17 @@ std::pair<bool, std::size_t> FindInVector(const std::vector<std::bitset<BITS_PER
 //                                GetNumChipID                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-unsigned GetNumChipID(string & input_raw_file) {
+unsigned GetNumChipID(std::string & input_raw_file) {
   
-  ifstream ifs;
-  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  std::ifstream ifs;
+  ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
     return ERR_FAILED_OPEN_RAW_FILE;
   }
   
-  bitset<BITS_PER_LINE> raw_data;
-  bitset<BITS_PER_LINE> last_two_raw_data[2];
+  std::bitset<BITS_PER_LINE> raw_data;
+  std::bitset<BITS_PER_LINE> last_two_raw_data[2];
   unsigned iline = 0;
   unsigned max_lines = 20 * NCHIPS * (16 * (1 + 2 * NCHANNELS) + 2) ;
   unsigned found_counter = 0;
@@ -101,16 +101,16 @@ unsigned GetNumChipID(string & input_raw_file) {
 //                              HasSpillNumber                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool HasSpillNumber(string & input_raw_file) {
+bool HasSpillNumber(std::string & input_raw_file) {
   
-  ifstream ifs;
-  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  std::ifstream ifs;
+  ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
     return false;
   }
   
-  bitset<BITS_PER_LINE> raw_data;
+  std::bitset<BITS_PER_LINE> raw_data;
   unsigned iline = 0;
   unsigned max_lines = 20 * NCHIPS * (16 * (1 + 2 * NCHANNELS) + 2);
   unsigned found_counter = 0;
@@ -133,16 +133,16 @@ bool HasSpillNumber(string & input_raw_file) {
 //                              HasPhantomMenace                             //
 ///////////////////////////////////////////////////////////////////////////////
 
-bool HasPhantomMenace(string & input_raw_file) {
+bool HasPhantomMenace(std::string & input_raw_file) {
   
-  ifstream ifs;
-  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  std::ifstream ifs;
+  ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
     return false;
   }
   
-  std::vector<bitset<BITS_PER_LINE>> raw_data(PHANTOM_MENACE_LENGTH + 2);
+  std::vector<std::bitset<BITS_PER_LINE>> raw_data(PHANTOM_MENACE_LENGTH + 2);
   unsigned iline = 0;
   unsigned max_lines = 20 * NCHIPS * (16 * (1 + 2 * NCHANNELS) + 2);
   unsigned found_counter = 0;
@@ -169,12 +169,12 @@ bool HasPhantomMenace(string & input_raw_file) {
 //                                 GetNumChips                               //
 ///////////////////////////////////////////////////////////////////////////////
 
-unsigned GetNumChips(string & input_raw_file) {
+unsigned GetNumChips(std::string & input_raw_file) {
   
-  ifstream ifs;
-  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  std::ifstream ifs;
+  ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + string(strerror(errno)));
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
     return ERR_FAILED_OPEN_RAW_FILE;
   }
   
@@ -186,7 +186,7 @@ unsigned GetNumChips(string & input_raw_file) {
   while ( ifs.read((char * ) &raw_data, BYTES_PER_LINE) && counter < 10 ) {
     if (raw_data == SPILL_TRAILER_MARKER) {
       ++counter;
-      ifs.seekg(2 * BYTES_PER_LINE, ios::cur);
+      ifs.seekg(2 * BYTES_PER_LINE, std::ios::cur);
       ifs.read((char * ) &raw_data, BYTES_PER_LINE);
       n_chips_vec.push_back(raw_data.to_ulong());
       }
@@ -197,7 +197,7 @@ unsigned GetNumChips(string & input_raw_file) {
 
   unsigned max = 0;
   unsigned most_common_n_chips = -1;
-  map<unsigned, unsigned> m;
+  std::map<unsigned, unsigned> m;
   for (auto vi = n_chips_vec.begin(); vi != n_chips_vec.end(); vi++) {
     m[*vi]++;
     if (m[*vi] > max) {

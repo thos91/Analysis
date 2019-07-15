@@ -137,17 +137,17 @@ bool wgEditXML::GetConfig(const std::string& configxml,
     XMLElement* acqpc = domain->FirstChildElement("acqpc");
     // GDCCs loop
     for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-      if( string(gdcc->Attribute("name")) == "gdcc_1_" + std::to_string(igdcc) ) {
+      if( std::string(gdcc->Attribute("name")) == "gdcc_1_" + std::to_string(igdcc) ) {
         // DIFs loop
         for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-          if( string(dif->Attribute("name")) == "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+          if( std::string(dif->Attribute("name")) == "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
             // ASUs loop
             for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-              if( string(asu->Attribute("name")) == "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
+              if( std::string(asu->Attribute("name")) == "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
                 XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
                 // loop to find the spiroc2d_bitstream parameter
                 for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-                  if( string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
+                  if( std::string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
                     bitstream = param->GetText();
                     found=true;
                     break;
@@ -174,8 +174,8 @@ bool wgEditXML::GetConfig(const std::string& configxml,
       v[i].push_back(EditCon.Get_trigadj(i));
     }
   }
-  catch (const exception& e) {
-    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + std::to_string(idif) + ", chip = " + std::to_string(ichip) + " : " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + std::to_string(idif) + ", chip = " + std::to_string(ichip) + " : " + std::string(e.what()));
     return false;
   }
   return true;
@@ -316,7 +316,7 @@ int wgEditXML::GetColValue(const std::string& name, const int icol){
 }
 
 //**********************************************************************
-int wgEditXML::GetChValue(const string& name){
+int wgEditXML::GetChValue(const std::string& name){
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* chan = data->FirstChildElement("chan");
   XMLElement* target = chan->FirstChildElement(name.c_str());

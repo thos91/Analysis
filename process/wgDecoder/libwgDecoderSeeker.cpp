@@ -50,7 +50,7 @@ SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
     std::bitset<BITS_PER_LINE> raw_data_line;
     wg_utils::ReadLine(is, raw_data_line);
     std::stringstream res;
-    res << setfill('0') << setw(4) << hex << uppercase << raw_data_line.to_ulong();
+    res << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << raw_data_line.to_ulong();
     Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
     return this->SeekNextSection(is);
   }
@@ -385,7 +385,7 @@ bool SectionSeeker::SeekRawData(std::istream& is) {
   std::bitset<BITS_PER_LINE> raw_data_line;
 
   if (start_read > BYTES_PER_LINE) {
-    is.seekg(- BYTES_PER_LINE, ios::cur);
+    is.seekg(- BYTES_PER_LINE, std::ios::cur);
     wg_utils::ReadLine(is, raw_data_line);
     if (raw_data_line != SPACE_MARKER && raw_data_line != IP_MARKER) {
       return false;
@@ -399,7 +399,7 @@ bool SectionSeeker::SeekRawData(std::istream& is) {
   }
   while (raw_data_line != CHIP_TRAILER_MARKER);
   // rewind only the last line
-  is.seekg(- BYTES_PER_LINE, ios::cur);
+  is.seekg(- BYTES_PER_LINE, std::ios::cur);
   --n_raw_data;
 
   if ((n_raw_data - m_config.n_chip_id) % ONE_COLUMN_LENGTH == 0) {

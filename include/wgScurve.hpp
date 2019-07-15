@@ -33,7 +33,7 @@ void fit_scurve(TGraphErrors* Scurve,
                 unsigned ichip_id, 
                 unsigned ichan_id, 
                 unsigned inputDAC,
-                string outputIMGDir, 
+                std::string outputIMGDir, 
                 bool print_flag = false);
 
 #endif // WG_SCURVE_HPP_

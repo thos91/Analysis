@@ -12,7 +12,7 @@
 #include "wgLogger.hpp"
 
 void print_help(const char * program_name) {
-  cout << "this program decodes a .raw file into a .root file\n"
+  std::cout << "this program decodes a .raw file into a .root file\n"
       "usage example: " << program_name << " -f inputfile.raw -r\n"
       "  -h         : help\n"
       "  -f (char*) : input .raw file to read (mandatory)\n"
@@ -27,9 +27,9 @@ void print_help(const char * program_name) {
 }
 
 int main(int argc, char** argv) {
-  string inputFile("");
-  string calibDir("");
-  string outputDir("");
+  std::string inputFile("");
+  std::string calibDir("");
+  std::string outputDir("");
 
   int opt;
   bool overwrite = false;
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
                             compatibility_mode,
                             dif,
                             n_chips)) != WG_SUCCESS ) {
-    Log.eWrite("[wgDecoder] Decoder failed with code " + to_string(retcode));
+    Log.eWrite("[wgDecoder] Decoder failed with code " + std::to_string(retcode));
     exit(1);
   }
     

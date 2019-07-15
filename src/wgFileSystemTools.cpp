@@ -25,13 +25,13 @@ namespace filesys = boost::filesystem;
 
 namespace wagasci_tools {
 
-string GetExtension(const string& str)
+std::string GetExtension(const std::string& str)
 {
-  string ext;
+  std::string ext;
   size_t pos1 = str.rfind('.');
-  if(pos1 !=string::npos){
+  if(pos1 !=std::string::npos){
     ext = str.substr(pos1+1, str.size()-pos1);
-    string::iterator itr = ext.begin();
+    std::string::iterator itr = ext.begin();
     while(itr != ext.end()){
       *itr=tolower(*itr);
       itr++;  
@@ -48,21 +48,21 @@ string GetExtension(const string& str)
   return ext;
 }
 
-string GetName(const string& str)
+std::string GetName(const std::string& str)
 {
-  string fn;
-  string tmp = str;
-  string::size_type fpos;
+  std::string fn;
+  std::string tmp = str;
+  std::string::size_type fpos;
   if( (fpos = tmp.find_last_of("/")) == tmp.size()-1){
     tmp = tmp.substr(0,tmp.size()-1);
   }
 
-  if((fpos = tmp.find_last_of("/")) != string::npos){
+  if((fpos = tmp.find_last_of("/")) != std::string::npos){
     fn = tmp.substr(fpos+1);
   }else{
     fn = tmp;
   }
-  if((fpos = fn.find_last_of(".")) != string::npos){
+  if((fpos = fn.find_last_of(".")) != std::string::npos){
     if(fpos>1){
       fn = fn.substr(0,fpos);
     }
@@ -70,37 +70,37 @@ string GetName(const string& str)
   return fn;
 }
 
-string GetPath(const string& str)
+std::string GetPath(const std::string& str)
 {
   size_t pos1;
   pos1 = str.rfind("/");
-  if(pos1 != string::npos){
+  if(pos1 != std::string::npos){
     return str.substr(0,pos1+1);
   }
   return "";
 }
 
-string GetNameBeforeLastUnderBar(const string& str)
+std::string GetNameBeforeLastUnderBar(const std::string& str)
 {
-  string fn;
-  string::size_type fpos;
-  if((fpos = str.find_last_of("/")) != string::npos){
+  std::string fn;
+  std::string::size_type fpos;
+  if((fpos = str.find_last_of("/")) != std::string::npos){
     fn = str.substr(fpos+1);
   }else{
     fn = str;
   }
-  if((fpos = fn.find_last_of(".")) != string::npos){
+  if((fpos = fn.find_last_of(".")) != std::string::npos){
     fn = fn.substr(0,fpos);
   }
-  if((fpos = fn.find_last_of("_")) != string::npos){
+  if((fpos = fn.find_last_of("_")) != std::string::npos){
     fn = fn.substr(0,fpos);
   }
   return fn;
 }
 
 //******************************************************************
-vector<string> ListFilesWithExtension(const string& inputDir, const string& extension) {
-  vector<string> file_list;
+std::vector<std::string> ListFilesWithExtension(const std::string& inputDir, const std::string& extension) {
+  std::vector<std::string> file_list;
 
   if (boost::filesystem::exists(inputDir)) {
     if (boost::filesystem::is_directory(inputDir)) {
@@ -118,8 +118,8 @@ vector<string> ListFilesWithExtension(const string& inputDir, const string& exte
 }
   
 //******************************************************************
-vector<string> ListDirectories(const string& inputDir) {
-  vector<string> directory_list;
+std::vector<std::string> ListDirectories(const std::string& inputDir) {
+  std::vector<std::string> directory_list;
 
   if (boost::filesystem::exists(inputDir)) {
     if (boost::filesystem::is_directory(inputDir)) {
@@ -136,7 +136,7 @@ vector<string> ListDirectories(const string& inputDir) {
 }
   
 //******************************************************************
-unsigned HowManyFilesWithExtension(const string& inputDir, const string& extension) {
+unsigned HowManyFilesWithExtension(const std::string& inputDir, const std::string& extension) {
   unsigned counter = 0;
 
   if (boost::filesystem::exists(inputDir)) {
@@ -153,7 +153,7 @@ unsigned HowManyFilesWithExtension(const string& inputDir, const string& extensi
 }
 
 //******************************************************************
-unsigned HowManyDirectories(const string& inputDir) {
+unsigned HowManyDirectories(const std::string& inputDir) {
   boost::filesystem::path the_path(inputDir);
   unsigned counter = std::count_if( boost::filesystem::directory_iterator(the_path),
                                     boost::filesystem::directory_iterator(),
@@ -162,7 +162,7 @@ unsigned HowManyDirectories(const string& inputDir) {
 } 
   
 //******************************************************************
-void MakeDir(const string& str) {
+void MakeDir(const std::string& str) {
   if( !check_exist::Dir(str) ) {
     boost::filesystem::path dir(str);
     if( !boost::filesystem::create_directories(dir) ) {
@@ -172,7 +172,7 @@ void MakeDir(const string& str) {
 }
 
 //**********************************************************************
-unsigned extractIntegerFromString(const string& str) { 
+unsigned extractIntegerFromString(const std::string& str) { 
   std::size_t const n = str.find_first_of("0123456789");
   if (n != std::string::npos)
   {
@@ -196,7 +196,7 @@ bool findStringIC(const std::string & strHaystack, const std::string & strNeedle
 namespace check_exist {
 
 //**********************************************************************
-bool GenericFile(const string& filename, const string & ext)
+bool GenericFile(const std::string& filename, const std::string & ext)
 {
   try {
     // Check for correct extension
@@ -208,21 +208,21 @@ bool GenericFile(const string& filename, const string & ext)
     if (filesys::exists(pathObj) && filesys::is_regular_file(pathObj))
       return true;
   }
-  catch(const exception& e) {
-    Log.Write("[wgErrorCode][" + ext +"File] " + string(e.what()));
+  catch(const std::exception& e) {
+    Log.Write("[wgErrorCode][" + ext +"File] " + std::string(e.what()));
     return false;
   }
   return false;
 }
 
 bool RootFile(const TString& filename) {
-  return RootFile(string(filename.Data()));
+  return RootFile(std::string(filename.Data()));
 }
 
-bool RootFile(const string& filename)
+bool RootFile(const std::string& filename)
 {
   try {
-    if (GenericFile(filename, string("root")) == false)
+    if (GenericFile(filename, std::string("root")) == false)
       return false;
     // Check if the ROOT file is zombie
     TFile file(filename.c_str());
@@ -234,38 +234,38 @@ bool RootFile(const string& filename)
     // If everything is fine return true
     return true;
   }
-  catch(const exception& e) {
-    Log.Write("[wgErrorCode][RootFile] " + string(e.what()));
+  catch(const std::exception& e) {
+    Log.Write("[wgErrorCode][RootFile] " + std::string(e.what()));
     return false;
   }
 }
 
-bool RawFile(const string& filename)
+bool RawFile(const std::string& filename)
 {
-  return GenericFile(filename, string("raw"));
+  return GenericFile(filename, std::string("raw"));
 }
 
-bool TxtFile(const string& filename)
+bool TxtFile(const std::string& filename)
 {
-  return GenericFile(filename, string("txt"));
+  return GenericFile(filename, std::string("txt"));
 }
 
-bool CsvFile(const string& filename)
+bool CsvFile(const std::string& filename)
 {
-  return GenericFile(filename, string("csv"));
+  return GenericFile(filename, std::string("csv"));
 }
 
-bool XmlFile(const string& filename)
+bool XmlFile(const std::string& filename)
 {
-  return GenericFile(filename, string("xml"));
+  return GenericFile(filename, std::string("xml"));
 }
 
-bool LogFile(const string& filename)
+bool LogFile(const std::string& filename)
 {
-  return GenericFile(filename, string("log"));
+  return GenericFile(filename, std::string("log"));
 }
 
-bool Dir(const string& filePath)
+bool Dir(const std::string& filePath)
 {
   try {
     // Create a Path object from given path string

@@ -50,7 +50,7 @@ int main(int argc, char** argv){
   if ( (result = wgScurve(inputDir.c_str(), 
                           outputXMLDir.c_str(), 
                           outputIMGDir.c_str())) != WG_SUCCESS){
-    Log.eWrite("[wgScurve] wgScurve returned error " + to_string(result));
+    Log.eWrite("[wgScurve] wgScurve returned error " + std::to_string(result));
     exit(1);
   }
 

@@ -37,11 +37,11 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
   
   if (spiroc2d_csv.empty()) {
     wgEnvironment env;
-    spiroc2d_csv = string(env.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
+    spiroc2d_csv = std::string(env.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
   if (!check_exist::CsvFile(spiroc2d_csv))
     throw wgInvalidFile("[wgEditConfig::GetCSV][" + spiroc2d_csv + "] file not found");
-  ifstream ifs(spiroc2d_csv.c_str());
+  std::ifstream ifs(spiroc2d_csv.c_str());
 	  
   std::string line;
   std::vector<std::vector<std::string>> output;
@@ -62,7 +62,7 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
       cout << field ;
       cout << ",\t";
     }
-    cout << endl;
+    cout << "\n";
   }
 #endif
   
@@ -129,7 +129,7 @@ void wgEditConfig::Open(const std::string& input){
   getline(ifs, str);
   if( str.size() != BITSTREAM_HEX_STRING_LENGTH) {
     ifs.close();
-    throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + to_string(input.size()));
+    throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + std::to_string(input.size()));
   }
   ifs.close();
   wgEditConfig::hex_config = str.substr(2, BITSTREAM_HEX_STRING_LENGTH - 2);
@@ -139,7 +139,7 @@ void wgEditConfig::Open(const std::string& input){
 //*********************************************************************************
 void wgEditConfig::SetBitstream(const std::string& input){
   if( input.size() != BITSTREAM_HEX_STRING_LENGTH - 1)
-    throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + to_string(input.size()));
+    throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + std::to_string(input.size()));
   wgEditConfig::hex_config = input.substr(2, BITSTREAM_HEX_STRING_LENGTH - 3) + "0";
   wgEditConfig::bi_config = this->HexToBi(wgEditConfig::hex_config);
 }
@@ -148,7 +148,7 @@ void wgEditConfig::SetBitstream(const std::string& input){
 void wgEditConfig::Modify(const std::string& input, const int start) {
   unsigned int length = input.size();
   if(length + start > BITSTREAM_BIN_STRING_LENGTH) {
-    throw std::invalid_argument("[wgEditConfig::Modify] bad data size : length = " + to_string(length) + ", start = " + to_string(start));
+    throw std::invalid_argument("[wgEditConfig::Modify] bad data size : length = " + std::to_string(length) + ", start = " + std::to_string(start));
   } 
   wgEditConfig::bi_config.replace(start + VALUE_OFFSET_IN_BITS, length, input.c_str());
 }
@@ -156,7 +156,7 @@ void wgEditConfig::Modify(const std::string& input, const int start) {
 //*********************************************************************************
 void wgEditConfig::Write(const std::string& output){
   if(wgEditConfig::bi_config.size() != BITSTREAM_BIN_STRING_LENGTH) {
-    throw runtime_error("[wgEditConfig::Write] wrong length for binary configuration string (bi_config) : " + to_string(bi_config.size()) + " != " + to_string(BITSTREAM_BIN_STRING_LENGTH));
+    throw std::runtime_error("[wgEditConfig::Write] wrong length for binary configuration string (bi_config) : " + std::to_string(bi_config.size()) + " != " + std::to_string(BITSTREAM_BIN_STRING_LENGTH));
   }
   std::string str("0x");
   str += this->BiToHex(wgEditConfig::bi_config);
@@ -176,7 +176,7 @@ void wgEditConfig::Clear(){
 //*********************************************************************************
 std::string wgEditConfig::GetValue(const unsigned start, const unsigned length) {
   if(start + length > BITSTREAM_BIN_STRING_LENGTH)
-    throw std::invalid_argument("[wgEditConfig::GetValue] reached the edge of the bitstring string (start = " + to_string(start) + ", length = " + to_string(length));
+    throw std::invalid_argument("[wgEditConfig::GetValue] reached the edge of the bitstring string (start = " + std::to_string(start) + ", length = " + std::to_string(length));
   return wgEditConfig::bi_config.substr(start + VALUE_OFFSET_IN_BITS, length);
 }
 
@@ -202,11 +202,11 @@ void wgEditConfig::CheckAll() {
         value = this->GetValue(start + ichan * chanbit, chanbit);
         ss << "[" << value << "],";
       }
-      ss << endl;
+      ss << "\n";
     }
     else {
       value = this->GetValue(start, length);
-      ss << "name = " << name << " | value = [" << value << "]" << endl;
+      ss << "name = " << name << " | value = [" << value << "]" << "\n";
     }
   }
   Log.Write("[wgEditConfig::CheckAll] " + ss.str());
@@ -269,9 +269,9 @@ std::string wgEditConfig::BiToDe(const std::string& input){
   
   for(unsigned int i=0; i<input.size(); i++){
     word = input.substr(input.size()-1-i,1);
-    decimal += stoi(word.c_str()) * pow(2,i);
+    decimal += std::stoi(word.c_str()) * pow(2,i);
   } 
-  return to_string(decimal);
+  return std::to_string(decimal);
 }
 
 //*********************************************************************************
@@ -287,17 +287,17 @@ std::string wgEditConfig::DeToBi(const std::string& input){
     ss << binary[i];
   }
   std::string output(ss.str());
-  output.erase(0, min(output.find_first_not_of('0'), output.size() - 1));
+  output.erase(0, std::min(output.find_first_not_of('0'), output.size() - 1));
   return output;
 }
 
 //*********************************************************************************
 void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
   if(chan < 0 || chan > NCHANNELS) {
-    throw invalid_argument("channel is out of range : " + to_string(chan));
+    throw std::invalid_argument("channel is out of range : " + std::to_string(chan));
   }
   if(value + fine_inputDAC[chan] > MAX_VALUE_8BITS) {
-    throw invalid_argument("value is out of range : " + to_string(value + fine_inputDAC[chan]));
+    throw std::invalid_argument("value is out of range : " + std::to_string(value + fine_inputDAC[chan]));
   }
 
   if(this->Read_MPPCData) {
@@ -305,7 +305,7 @@ void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
   }
 
   std::stringstream num;
-  num << setfill('0') << setw(ADJ_INPUTDAC_LENGTH) << DeToBi(to_string(value)) << '1';
+  num << std::setfill('0') << std::setw(ADJ_INPUTDAC_LENGTH) << DeToBi(std::to_string(value)) << '1';
 
   if(chan == NCHANNELS) {
     for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
@@ -320,13 +320,13 @@ void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
 //*********************************************************************************
 void wgEditConfig::Change_ampDAC(const unsigned chan, const unsigned value) {
   if (value > MAX_VALUE_6BITS) {
-    throw std::invalid_argument("value is out of range : " + to_string(value));
+    throw std::invalid_argument("value is out of range : " + std::to_string(value));
   }
   if (chan > NCHANNELS) {
-    throw std::invalid_argument("channel is out of range : " + to_string(chan));
+    throw std::invalid_argument("channel is out of range : " + std::to_string(chan));
   }
   std::stringstream num;
-  num << setfill('0') << setw(ADJ_AMPDAC_LENGTH) << DeToBi(to_string(value)) << setfill('0') << setw(ADJ_AMPDAC_LENGTH) << DeToBi(to_string(value)) << "000";
+  num << std::setfill('0') << std::setw(ADJ_AMPDAC_LENGTH) << DeToBi(std::to_string(value)) << std::setfill('0') << std::setw(ADJ_AMPDAC_LENGTH) << DeToBi(std::to_string(value)) << "000";
 
   if (chan == NCHANNELS) {
     for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
@@ -341,13 +341,13 @@ void wgEditConfig::Change_ampDAC(const unsigned chan, const unsigned value) {
 //*********************************************************************************
 void wgEditConfig::Change_trigadj(const unsigned chan, const unsigned value) {
   if(value > MAX_VALUE_4BITS) {
-    throw std::invalid_argument("value is out of range : " + to_string(value));
+    throw std::invalid_argument("value is out of range : " + std::to_string(value));
   }
   if (chan > NCHANNELS) {
-    throw std::invalid_argument("channel is out of range : " + to_string(chan));
+    throw std::invalid_argument("channel is out of range : " + std::to_string(chan));
   }
   std::stringstream num;
-  num << setfill('0') << setw(ADJ_THRESHOLD_LENGTH) << DeToBi(to_string(value));
+  num << std::setfill('0') << std::setw(ADJ_THRESHOLD_LENGTH) << DeToBi(std::to_string(value));
 
   if (chan == NCHANNELS) {
     for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
@@ -362,41 +362,41 @@ void wgEditConfig::Change_trigadj(const unsigned chan, const unsigned value) {
 //*********************************************************************************
 void wgEditConfig::Change_trigth(const unsigned value) {
   if(value > MAX_VALUE_10BITS) {
-    throw invalid_argument("value is out of range : " + to_string(value));
+    throw std::invalid_argument("value is out of range : " + std::to_string(value));
   }
   std::stringstream num;
-  num << setfill('0') << setw(GLOBAL_THRESHOLD_LENGTH) << DeToBi(to_string(value));
+  num << std::setfill('0') << std::setw(GLOBAL_THRESHOLD_LENGTH) << DeToBi(std::to_string(value));
   this->Modify(num.str(), GLOBAL_THRESHOLD_START);
 }
 
 //*********************************************************************************
 void wgEditConfig::Change_gainth(const unsigned value) {
   if (value > MAX_VALUE_10BITS) {
-    throw invalid_argument("value is out of range : " + to_string(value));
+    throw std::invalid_argument("value is out of range : " + std::to_string(value));
   }
   std::stringstream num;
-  num << setfill('0') << setw(GLOBAL_GS_THRESHOLD_LENGTH) << DeToBi(to_string(value));
+  num << std::setfill('0') << std::setw(GLOBAL_GS_THRESHOLD_LENGTH) << DeToBi(std::to_string(value));
   this->Modify(num.str(), GLOBAL_GS_THRESHOLD_START);
 }
 
 //*********************************************************************************
 int wgEditConfig::Get_inputDAC(const unsigned chan) {
   if (chan >= NCHANNELS)
-    throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
+    throw std::invalid_argument("channel " + std::to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET, ADJ_INPUTDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
 int wgEditConfig::Get_ampDAC(const unsigned chan) {
   if (chan >= NCHANNELS)
-    throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
+    throw std::invalid_argument("channel " + std::to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_AMPDAC_START + chan * ADJ_AMPDAC_OFFSET, ADJ_AMPDAC_LENGTH) ) );
 }
 
 //*********************************************************************************
 int wgEditConfig::Get_trigadj(const unsigned chan) {
   if (chan >= NCHANNELS)
-    throw std::invalid_argument("channel " + to_string(chan) + " is out of range");
+    throw std::invalid_argument("channel " + std::to_string(chan) + " is out of range");
   return stoi( BiToDe( GetValue(ADJ_THRESHOLD_START + chan * ADJ_THRESHOLD_OFFSET, ADJ_THRESHOLD_LENGTH ) ) );
 }
 
@@ -413,9 +413,9 @@ int wgEditConfig::Get_gainth() {
 //*********************************************************************************
 void wgEditConfig::Change_1bitparam(const unsigned value, int subadd) {
   if (value != 0 && value != 1) {
-    throw invalid_argument("value is out of range : " + to_string(value));
+    throw std::invalid_argument("value is out of range : " + std::to_string(value));
   }
-  this->Modify(to_string(value), subadd);
+  this->Modify(std::to_string(value), subadd);
 }
 
 //*********************************************************************************

@@ -48,8 +48,8 @@ int wgOptimize(const char * x_threshold_card,
   try {
     topol = new Topology(config_xml_file);
   }
-  catch (const exception& e) {
-    Log.eWrite("[wgOptimize] " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgOptimize] " + std::string(e.what()));
     return ERR_TOPOLOGY;
   }
   
@@ -72,11 +72,11 @@ int wgOptimize(const char * x_threshold_card,
     return ERR_CONFIG_XML_FILE_NOT_FOUND;
   }
   if ( pe < 1 && pe > 3 ) {
-    Log.eWrite("Photo-electrons (" + to_string(pe) + ") must be in {1,2,3}");
+    Log.eWrite("Photo-electrons (" + std::to_string(pe) + ") must be in {1,2,3}");
     return ERR_WRONG_PE_VALUE;
   }
   if ( mode != OP_THRESHOLD_MODE && mode != OP_INPUTDAC_MODE ) {
-    Log.eWrite("Mode not recognized : " + to_string(mode));
+    Log.eWrite("Mode not recognized : " + std::to_string(mode));
     return ERR_WRONG_MODE;
   }
 
@@ -100,7 +100,7 @@ int wgOptimize(const char * x_threshold_card,
           // pre-calibration mode
           if (mode == OP_THRESHOLD_MODE) {
             // Get the optimal threshold for pe photo-electron equivalent
-            optimized_threshold[idif][ichip][ichan] = Edit.OPT_GetValue("threshold_" + to_string(pe), idif, ichip, ichan, inputDAC);
+            optimized_threshold[idif][ichip][ichan] = Edit.OPT_GetValue("threshold_" + std::to_string(pe), idif, ichip, ichan, inputDAC);
           }
           // post-calibration mode
           else if (mode == OP_INPUTDAC_MODE) {
@@ -108,16 +108,16 @@ int wgOptimize(const char * x_threshold_card,
             // threshold for the given p.e. equivalend (y)
             // i_th is the intercept of the linear fit of the inputDAC (x) vs
             // optimal threshold for the given p.e. equivalend (y)
-            slope_th_iDAC    [idif][ichip].push_back(Edit.OPT_GetChanValue("s_th" + to_string(pe), idif, ichip, ichan));
-            intercept_th_iDAC[idif][ichip].push_back(Edit.OPT_GetChanValue("i_th" + to_string(pe), idif, ichip, ichan));
+            slope_th_iDAC    [idif][ichip].push_back(Edit.OPT_GetChanValue("s_th" + std::to_string(pe), idif, ichip, ichan));
+            intercept_th_iDAC[idif][ichip].push_back(Edit.OPT_GetChanValue("i_th" + std::to_string(pe), idif, ichip, ichan));
           }
         }
       }
     }
     Edit.Close();
   }
-  catch (const exception& e) {
-    Log.eWrite("[wgOptimize] Error when reading the threshold card file : " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgOptimize] Error when reading the threshold card file : " + std::string(e.what()));
     return ERR_THRESHOLD_CARD_READ;
   }
 
@@ -139,16 +139,16 @@ int wgOptimize(const char * x_threshold_card,
         for (unsigned ichip = 0; ichip < topol->dif_map[idif_id].size(); ++ichip) {
           unsigned ichip_id = ichip + 1;
           for (unsigned ichan = 0; ichan < topol->dif_map[idif_id][ichip_id]; ++ichan) {
-            slope_iDAC_gain    [idif][ichip][ichan] = Edit.PreCalib_GetValue(string("s_Gain"), idif, ichip, ichan);
-            intercept_iDAC_gain[idif][ichip][ichan] = Edit.PreCalib_GetValue(string("i_Gain"), idif, ichip, ichan);
+            slope_iDAC_gain    [idif][ichip][ichan] = Edit.PreCalib_GetValue(std::string("s_Gain"), idif, ichip, ichan);
+            intercept_iDAC_gain[idif][ichip][ichan] = Edit.PreCalib_GetValue(std::string("i_Gain"), idif, ichip, ichan);
           }
         }
       }
       Edit.Close();
     }
   }
-  catch (const exception& e) {
-    Log.eWrite("[wgOptimize] Error when reading the calibration card file : " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgOptimize] Error when reading the calibration card file : " + std::string(e.what()));
     return ERR_CALIBRATION_CARD_READ;
   }
 
@@ -166,8 +166,8 @@ int wgOptimize(const char * x_threshold_card,
           unsigned ichip = ichip_id - 1;
           // unsigned n_channels = chip.second;
           
-          string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + to_string(igdcc_id) +
-                            "_dif" + to_string(rel_idif_id) + "_chip" + to_string(ichip_id) + ".txt");
+          std::string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + std::to_string(igdcc_id) +
+                            "_dif" + std::to_string(rel_idif_id) + "_chip" + std::to_string(ichip_id) + ".txt");
 
           if( !check_exist::TxtFile(configName) ) {
             Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);
@@ -185,8 +185,8 @@ int wgOptimize(const char * x_threshold_card,
       } // dif
     } // gdcc
   }
-  catch (const exception& e) {
-    Log.eWrite("[wgOptimize] " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgOptimize] " + std::string(e.what()));
     return ERR_WG_OPTIMIZE;
   }
   return WG_SUCCESS;
