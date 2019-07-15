@@ -49,7 +49,8 @@ enum class TopologySourceType {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  const char * GetTopologyCtypes(const char * configxml);
+  const char * GetDifTopologyCtypes(const char * configxml);
+  const char * GetGdccTopologyCtypes(const char * configxml);
   void FreeTopologyCtypes(char * topology_string);
 #ifdef __cplusplus
 }
@@ -64,7 +65,8 @@ extern "C" {
 
 class Topology {
 
-  friend const char * GetTopologyCtypes(const char * configxml);
+  friend const char * GetDifTopologyCtypes(const char * configxml);
+  friend const char * GetGdccTopologyCtypes(const char * configxml);
   friend const char * FreeTopologyCtypes(const char * configxml);
   
 private:

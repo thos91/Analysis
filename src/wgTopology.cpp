@@ -23,12 +23,12 @@
 using namespace wagasci_tools;
 
 //**********************************************************************
-const char * GetTopologyCtypes(const char * x_configxml) {
+const char * GetDifTopologyCtypes(const char * x_configxml) {
   std::string configxml(x_configxml);
   std::string json("");
 
   char * topology_string = (char *) malloc(TOPOLOGY_STRING_LENGTH * sizeof(char));
-  if (topology_string == NULL){
+  if (topology_string == NULL) {
     Log.eWrite("[GetTopologyCtypes] failed to allocate topology string");
     return "";
   }
@@ -39,8 +39,41 @@ const char * GetTopologyCtypes(const char * x_configxml) {
     Topology topology(configxml, TopologySourceType::xml_file);
     topology_map = topology.m_string_dif_map;
   } // try/catch
-  catch (const exception& e) {
-    Log.eWrite("[GetTopologyCtypes] " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[GetTopologyCtypes] " + std::string(e.what()));
+    topology_string[0] = '\0';
+    return topology_string;
+  }
+
+  nlohmann::json topology_json = topology_map;
+  int result = snprintf(topology_string, TOPOLOGY_STRING_LENGTH, "%s",
+                        topology_json.dump().c_str());
+  if (!(result > -1 && result < TOPOLOGY_STRING_LENGTH)) {
+    Log.eWrite("[GetTopologyCtypes] failed to copy topology string");
+    topology_string[0] = '\0';
+  }
+  return topology_string;
+}
+
+//**********************************************************************
+const char * GetGdccTopologyCtypes(const char * x_configxml) {
+  std::string configxml(x_configxml);
+  std::string json("");
+
+  char * topology_string = (char *) malloc(TOPOLOGY_STRING_LENGTH * sizeof(char));
+  if (topology_string == NULL) {
+    Log.eWrite("[GetTopologyCtypes] failed to allocate topology string");
+    return "";
+  }
+  
+  StringTopologyMapGdcc topology_map;
+  
+  try {
+    Topology topology(configxml, TopologySourceType::xml_file);
+    topology_map = topology.m_string_gdcc_map;
+  } // try/catch
+  catch (const std::exception& e) {
+    Log.eWrite("[GetTopologyCtypes] " + std::string(e.what()));
     topology_string[0] = '\0';
     return topology_string;
   }
@@ -61,7 +94,7 @@ void FreeTopologyCtypes(char * topology_string) {
 }
 
 Topology::Topology(const char * configxml, TopologySourceType source_type) :
-    Topology(string(configxml), source_type) {}
+    Topology(std::string(configxml), source_type) {}
 
 Topology::Topology(std::string source, TopologySourceType source_type) :
     m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
@@ -91,7 +124,7 @@ Topology::Topology(std::string source, TopologySourceType source_type) :
     this->StringToUnsigned();
   }
   else
-    throw invalid_argument("[wgTopology] TopologySourceType not recognized");
+    throw std::invalid_argument("[wgTopology] TopologySourceType not recognized");
       
   this->n_difs = this->dif_map.size();
   for ( auto const & dif : this->dif_map) {
@@ -107,17 +140,17 @@ Topology::Topology(std::string source, TopologySourceType source_type) :
 //**********************************************************************
 void Topology::GetTopologyFromString(const std::string& json_string) {
   nlohmann::json json = nlohmann::json::parse(json_string);
-  map<std::string, nlohmann::json> dif_map = json;
+  std::map<std::string, nlohmann::json> dif_map = json;
   for ( const auto& dif : dif_map ) {
-    map<std::string, unsigned> asu_map = dif.second;
+    std::map<std::string, unsigned> asu_map = dif.second;
     for ( const auto& asu : asu_map ) {
-      this->m_string_dif_map[dif.first][asu.first] = to_string(asu.second);
+      this->m_string_dif_map[dif.first][asu.first] = std::to_string(asu.second);
     }
   }
 }
 
 //**********************************************************************
-void Topology::GetTopologyFromFile(const string& configxml) {
+void Topology::GetTopologyFromFile(const std::string& configxml) {
   std::string json("");
   unsigned igdcc = 1, idif = 1, iasu = 1;
   bool found = false;
@@ -132,25 +165,25 @@ void Topology::GetTopologyFromFile(const string& configxml) {
   XMLElement* acqpc = domain->FirstChildElement("acqpc");
   // GDCCs loop
   for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-    if( string(gdcc->Attribute("name")) != "gdcc_1_" + to_string(igdcc) ) {
-      Log.eWrite("[GetTopology] inconsistency found when counting (GDCC = " + to_string(igdcc) + ")");
+    if( std::string(gdcc->Attribute("name")) != "gdcc_1_" + std::to_string(igdcc) ) {
+      Log.eWrite("[GetTopology] inconsistency found when counting (GDCC = " + std::to_string(igdcc) + ")");
     }
     // DIFs loop
     for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-      if( string(dif->Attribute("name")) != "dif_1_" + to_string(igdcc) + "_" + to_string(idif) ) {
-        Log.eWrite("[GetTopology] inconsistency found when counting (DIF = " + to_string(idif) + ")");
+      if( std::string(dif->Attribute("name")) != "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+        Log.eWrite("[GetTopology] inconsistency found when counting (DIF = " + std::to_string(idif) + ")");
       }
       // ASUs loop
       for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-        if( string(asu->Attribute("name")) != "asu_1_" + to_string(igdcc) + "_" + to_string(idif) + "_" + to_string(iasu) ) {
-          Log.eWrite("[GetTopology] inconsistency found when counting (ASU = " + to_string(iasu) + ")");
+        if( std::string(asu->Attribute("name")) != "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(iasu) ) {
+          Log.eWrite("[GetTopology] inconsistency found when counting (ASU = " + std::to_string(iasu) + ")");
         }
         XMLElement* spiroc2d = asu;
         if ( asu->FirstChildElement("spiroc2d") != NULL) spiroc2d = asu->FirstChildElement("spiroc2d");
         // param loop
         XMLElement* param;
         for(param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-          if( string(param->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
+          if( std::string(param->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
             std::string enabled_channels(param->GetText());
             boost::char_separator<char> * sep;
             if (enabled_channels.find('-') != std::string::npos)
@@ -158,7 +191,7 @@ void Topology::GetTopologyFromFile(const string& configxml) {
             else if (enabled_channels.find(',') != std::string::npos)
               sep = new boost::char_separator<char>(",");
             else {
-              this->m_string_gdcc_map[to_string(igdcc)][to_string(idif)][to_string(iasu)] = enabled_channels;
+              this->m_string_gdcc_map[std::to_string(igdcc)][std::to_string(idif)][std::to_string(iasu)] = enabled_channels;
               found = true;
               break;
             }
@@ -168,14 +201,14 @@ void Topology::GetTopologyFromFile(const string& configxml) {
             boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
             advance(first, distance(first, last) - 1);
             // Number of enabled channels
-            this->m_string_gdcc_map[to_string(igdcc)][to_string(idif)][to_string(iasu)] = to_string(stoi(*first) + 1);
+            this->m_string_gdcc_map[std::to_string(igdcc)][std::to_string(idif)][std::to_string(iasu)] = std::to_string(stoi(*first) + 1);
             found = true;
             break;
           }
 
         } // params loop
         if (!found)
-          throw wgElementNotFound("Number of channels not found : GDCC " + to_string(igdcc) + ", DIF " + to_string(idif) + ", ASU " + to_string(iasu));
+          throw wgElementNotFound("Number of channels not found : GDCC " + std::to_string(igdcc) + ", DIF " + std::to_string(idif) + ", ASU " + std::to_string(iasu));
         found = false;
         iasu++;
       } // ASUs loop
@@ -205,23 +238,23 @@ void Topology::StringToUnsigned(void) {
 
 //**********************************************************************
 std::string Topology::GetAbsDif(const std::string& gdcc, const std::string& dif) {
-  return this->m_gdcc_to_dif_map[pair<std::string, std::string>(gdcc, dif)];
+  return this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(gdcc, dif)];
 }
 
 //**********************************************************************
 unsigned Topology::GetAbsDif(unsigned gdcc, unsigned dif) {
-  return stoi(GetAbsDif(to_string(gdcc), to_string(dif)));
+  return stoi(GetAbsDif(std::to_string(gdcc), std::to_string(dif)));
 }
 
 //**********************************************************************
-pair<std::string, std::string> Topology::GetGdccDifPair(const std::string& dif) {
+std::pair<std::string, std::string> Topology::GetGdccDifPair(const std::string& dif) {
   return this->m_dif_to_gdcc_map[dif];
 }
 
 //**********************************************************************
-pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
-  pair<std::string, std::string> gdcc_dir_pair(GetGdccDifPair(to_string(dif)));
-  return pair<unsigned, unsigned>(stoi(gdcc_dir_pair.first), stoi(gdcc_dir_pair.first));
+std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
+  std::pair<std::string, std::string> gdcc_dir_pair(GetGdccDifPair(std::to_string(dif)));
+  return std::pair<unsigned, unsigned>(stoi(gdcc_dir_pair.first), stoi(gdcc_dir_pair.first));
 }
 
 //**********************************************************************
@@ -229,14 +262,14 @@ void Topology::GetGdccDifMapping() {
   
   if (!check_exist::TxtFile(m_mapping_file_path))
     throw wgInvalidFile(m_mapping_file_path + " file not found");
-  ifstream mapping_file(m_mapping_file_path);
+  std::ifstream mapping_file(m_mapping_file_path);
   nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
   mapping_file.close();
 
-  for (auto const &i : mapping_json.get<map<std::string, nlohmann::json>>() ) {
-    for (auto const &j : i.second.get<map<std::string, unsigned>>()) {
-      this->m_dif_to_gdcc_map[to_string(j.second)] = pair<std::string, std::string>(i.first, j.first);
-      this->m_gdcc_to_dif_map[pair<std::string, std::string>(i.first, j.first)] = to_string(j.second);
+  for (auto const &i : mapping_json.get<std::map<std::string, nlohmann::json>>() ) {
+    for (auto const &j : i.second.get<std::map<std::string, unsigned>>()) {
+      this->m_dif_to_gdcc_map[std::to_string(j.second)] = std::pair<std::string, std::string>(i.first, j.first);
+      this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(i.first, j.first)] = std::to_string(j.second);
     }
   }
 }
@@ -265,26 +298,26 @@ void Topology::DifMapToGdccMap() {
 //**********************************************************************
 void Topology::PrintMapDif() {
   for (auto const& dif: this->dif_map) {
-    cout << "DIF[" << dif.first << "] ";
+    std::cout << "DIF[" << dif.first << "] ";
     for (auto const& asu: dif.second) {
-      cout << "ASU["<< asu.first << "] = " << asu.second << " ";
+      std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
     }
   }
-  cout << endl;
+  std::cout << "\n";
 }
 
 //**********************************************************************
 void Topology::PrintMapGdcc() {
   for (auto const& gdcc: this->gdcc_map) {
-    cout << "GDCC[" << gdcc.first << "] ";
+    std::cout << "GDCC[" << gdcc.first << "] ";
     for (auto const& dif: gdcc.second) {
-      cout << "DIF[" << dif.first << "] ";
+      std::cout << "DIF[" << dif.first << "] ";
       for (auto const& asu: dif.second) {
-        cout << "ASU["<< asu.first << "] = " << asu.second << " ";
+        std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
       }
     }
   }
-  cout << endl;
+  std::cout << "\n";
 }
 
 //**********************************************************************
@@ -301,15 +334,15 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
   // Number of acquisitions for the pe
   std::vector<std::string> pe_dir_list = ListDirectories(input_run_dir);
   if ( pe_dir_list.size() == 0 )
-    throw invalid_argument("[wgTopology] Empty pe directory tree");
+    throw std::invalid_argument("[wgTopology] Empty pe directory tree");
 
   // tentative variables
   //
   // basically we count the number of DIFs, chips and channels for
   // each acquisition and compare them.
   //
-  //  pe            n_difs        n_chips   n_chans
-  map<unsigned, map<unsigned, map<unsigned, unsigned>>> n_chans_t;
+  //   pe                 n_difs             n_chips   n_chans
+  std::map<unsigned, std::map<unsigned, std::map<unsigned, unsigned>>> n_chans_t;
   
   wgEditXML Edit;
 
@@ -329,7 +362,7 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
     pe_directory += "/wgAnaHistSummary/Xml";
     std::vector<std::string> dif_dir_list = ListDirectories(pe_directory);
     if ( dif_dir_list.size() == 0 )
-      throw invalid_argument("[wgTopology] empty p.e. directory : " + pe_directory);
+      throw std::invalid_argument("[wgTopology] empty p.e. directory : " + pe_directory);
     for (auto const & idif_directory : dif_dir_list) {
       unsigned idif_id;
       if ( (idif_id = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX ) {
@@ -339,7 +372,7 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
       // chip
       std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
       if ( chip_xml_list.size() == 0 )
-        throw invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
+        throw std::invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
       for (auto const & ichip_xml : chip_xml_list) {
         unsigned ichip_id;
         if ( (ichip_id = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
@@ -347,11 +380,11 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
         
         // chan
         try { Edit.Open(ichip_xml); }
-        catch (const exception& e) {
-          throw wgInvalidFile("[wgTopology] : " + string(e.what()));
+        catch (const std::exception& e) {
+          throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
         }
         this->dif_map[idif_id][ichip_id] = n_chans_t[ipe][idif_id][ichip_id] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
-        this->m_string_dif_map[to_string(idif_id)][to_string(ichip_id)] = to_string(this->dif_map[idif_id][ichip_id]);
+        this->m_string_dif_map[std::to_string(idif_id)][std::to_string(ichip_id)] = std::to_string(this->dif_map[idif_id][ichip_id]);
         Edit.Close();
       }
     }  // end loop for dif
@@ -362,15 +395,15 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
     for (auto const& dif : pe.second) {
       unsigned idif_id = dif.first;
       if (n_chans_t[ipe].size() != this->dif_map.size()) {
-        throw runtime_error("There is something wrong with the number of DIFs detection : pe = " + to_string(ipe) + ", idif_id = " + idif_id);
+        throw std::runtime_error("There is something wrong with the number of DIFs detection : pe = " + std::to_string(ipe) + ", idif_id = " + idif_id);
       }
       for (auto const& chip : dif.second) {
         unsigned ichip_id = chip.first;
         if (n_chans_t[ipe][idif_id].size() != this->dif_map[idif_id].size() ) {
-          throw runtime_error("There is something wrong with the number of chips detection : pe = " + to_string(ipe) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+          throw std::runtime_error("There is something wrong with the number of chips detection : pe = " + std::to_string(ipe) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
         }
         if (n_chans_t[ipe][idif_id][ichip_id] != this->dif_map[idif_id][ichip_id]) {
-          throw runtime_error("[wgTopology] There is something wrong with the number of channels detection : pe = " + to_string(ipe) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+          throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : pe = " + std::to_string(ipe) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
         }
       }
     }
@@ -379,7 +412,7 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
   // Check that the dif numbers are contiguous
   for (unsigned idif_id = 1; idif_id <= n_difs; idif_id++) {
     if ( this->dif_map.count(idif_id) != 1 ) {
-      throw runtime_error("[wgTopology] DIF number is not contiguous");
+      throw std::runtime_error("[wgTopology] DIF number is not contiguous");
     }
   }
 }
@@ -398,15 +431,15 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
   // Number of acquisitions for the iDAC
   std::vector<std::string> iDAC_dir_list = ListDirectories(input_run_dir);
   if ( iDAC_dir_list.size() == 0 )
-    throw invalid_argument("[wgTopology] Empty iDAC directory tree");
+    throw std::invalid_argument("[wgTopology] Empty iDAC directory tree");
 
   // tentative variables
   //
   // basically we count the number of DIFs, chips and channels for
   // each acquisition and compare them.
   //
-  //  iDAC          thr           n_difs        n_chips   n_chans
-  map<unsigned, map<unsigned, map<unsigned, map<unsigned, unsigned>>>> n_chans_t;
+  //   iDAC               thr                n_difs             n_chips   n_chans
+  std::map<unsigned, std::map<unsigned, std::map<unsigned, std::map<unsigned, unsigned>>>> n_chans_t;
   
   wgEditXML Edit;
 
@@ -423,7 +456,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
       throw wgInvalidFile("[wgTopology] failed to read input DAC value from directory name : " + iDAC_directory);
     std::vector<std::string> th_dir_list = ListDirectories(iDAC_directory);
     if ( th_dir_list.size() == 0 )
-      throw invalid_argument("[wgTopology] empty iDAC directory : " + iDAC_directory);
+      throw std::invalid_argument("[wgTopology] empty iDAC directory : " + iDAC_directory);
 
     // threshold
     for (auto & th_directory : th_dir_list) {
@@ -435,7 +468,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
       th_directory += "/wgAnaHistSummary/Xml";
       std::vector<std::string> dif_dir_list = ListDirectories(th_directory);
       if ( dif_dir_list.size() == 0 )
-        throw invalid_argument("[wgTopology] empty threshold directory : " + th_directory);
+        throw std::invalid_argument("[wgTopology] empty threshold directory : " + th_directory);
       for (auto const & idif_directory : dif_dir_list) {
         unsigned idif_id;
         if ( (idif_id = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX )
@@ -444,7 +477,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
         // chip
         std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
         if ( chip_xml_list.size() == 0 )
-          throw invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
+          throw std::invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
         for (auto const & ichip_xml : chip_xml_list) {
           unsigned ichip_id;
           if ( (ichip_id = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
@@ -452,11 +485,11 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
         
           // chan
           try { Edit.Open(ichip_xml); }
-          catch (const exception& e) {
-            throw wgInvalidFile("[wgTopology] : " + string(e.what()));
+          catch (const std::exception& e) {
+            throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
           }
           this->dif_map[idif_id][ichip_id] = n_chans_t[iDAC][threshold][idif_id][ichip_id] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
-          this->m_string_dif_map[to_string(idif_id)][to_string(ichip_id)] = to_string(this->dif_map[idif_id][ichip_id]);
+          this->m_string_dif_map[std::to_string(idif_id)][std::to_string(ichip_id)] = std::to_string(this->dif_map[idif_id][ichip_id]);
           Edit.Close();
         }
       }  // end loop for dif
@@ -471,15 +504,15 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
       for (auto const& dif : th.second) {
         unsigned idif_id = dif.first;
         if (n_chans_t[iiDAC][ith].size() != this->dif_map.size()) {
-          throw runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + to_string(iiDAC) + ", threshold = " + to_string(ith) + ", idif_id = " + idif_id);
+          throw std::runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif_id = " + idif_id);
         }
         for (auto const& chip : dif.second) {
           unsigned ichip_id = chip.first;
           if (n_chans_t[iiDAC][ith][idif_id].size() != this->dif_map[idif_id].size() ) {
-            throw runtime_error("There is something wrong with the number of chips detection : iDAC = " + to_string(iiDAC) + ", threshold = " + to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+            throw std::runtime_error("There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
           }
           if (n_chans_t[iiDAC][ith][idif_id][ichip_id] != this->dif_map[idif_id][ichip_id]) {
-            throw runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + to_string(iiDAC) + ", threshold = " + to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+            throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
           }
         }
       }
@@ -489,7 +522,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
   // Check that the dif numbers are contiguous
   for (unsigned idif_id = 1; idif_id <= n_difs; idif_id++) {
     if ( this->dif_map.count(idif_id) != 1 ) {
-      throw runtime_error("[wgTopology] DIF number is not contiguous");
+      throw std::runtime_error("[wgTopology] DIF number is not contiguous");
     }
   }
 }
