@@ -6,10 +6,7 @@ Raw_t::Raw_t() : Raw_t(NCHIPS, NCHANNELS) {}
 
 Raw_t::Raw_t(std::size_t n_chips) : Raw_t(n_chips, NCHANNELS) {}
 
-Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans) {
-  Raw_t::n_chips = n_chips;
-  Raw_t::n_chans = n_chans;
-  Raw_t::n_cols = MEMDEPTH;
+Raw_t::Raw_t(std::size_t n_chips, std::size_t n_chans) : n_chips(n_chips), n_chans(n_chans), n_cols(MEMDEPTH) {
   chipid.resize(n_chips);
   difid.resize(n_chips);
   chip.resize(n_chips);
