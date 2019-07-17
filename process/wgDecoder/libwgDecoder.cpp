@@ -279,7 +279,7 @@ int wgDecoder(const char * x_input_raw_file,
   tree->Branch("hit"         ,rd.hit.data()        ,Form("hit[%d][%d][%d]/I"        ,n_chips, NCHANNELS, MEMDEPTH ));
   tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                      ));
   tree->Branch("col"         ,rd.col.data()        ,Form("col[%d]/I"                ,                    MEMDEPTH ));
-  tree->Branch("chipch"      ,rd.chan.data()       ,Form("chan[%d]/I"               ,         NCHANNELS           ));
+  tree->Branch("chan"        ,rd.chan.data()       ,Form("chan[%d]/I"               ,         NCHANNELS           ));
   tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                      ));
   tree->Branch("debug_chip"  ,rd.debug_chip.data() ,Form("debug_chip[%d][%d]/I"     ,n_chips, N_DEBUG_CHIP        ));
   tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        ,N_DEBUG_SPILL                ));
