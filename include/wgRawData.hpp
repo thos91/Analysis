@@ -25,9 +25,9 @@ public:
   i2CCvector bcid;            // [NCHIPS]           [MEMDEPTH];
   i3CCvector hit;             // [NCHIPS][NCHANNELS][MEMDEPTH];
   i3CCvector gs;              // [NCHIPS][NCHANNELS][MEMDEPTH];
-  i1vector  debug_spill;      //                              [N_DEBUG_SPILL]   
-  i2CCvector debug_chip;      // [NCHIPS];                    [N_DEBUG_CHIP];
-  int view;
+  i1vector   debug_spill;     //         [N_DEBUG_SPILL];
+  i2CCvector debug_chip;      // [NCHIPS][N_DEBUG_CHIP];
+  int        view;
   i2CCvector pln;             // [NCHIPS][NCHANNELS];
   i2CCvector ch;              // [NCHIPS][NCHANNELS];
   i2CCvector grid;            // [NCHIPS][NCHANNELS];
