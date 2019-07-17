@@ -1,4 +1,4 @@
-#include "wgConst.hpp"
+#include "wgEnvironment.hpp"
 #include <iostream>
 
 int main() {

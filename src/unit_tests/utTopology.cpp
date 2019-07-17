@@ -13,7 +13,7 @@ int main () {
   std::cout << " ### C API test ###\n\n";
   
   // GetTopology : C API : First time
-  char * topology_string = const_cast <char *>(GetTopologyCtypes(xml_config_file.c_str()));
+  char * topology_string = const_cast <char *>(GetDifTopologyCtypes(xml_config_file.c_str()));
 
   if ( topology_string[0] == '\0' )
     std::cout << "First time : Topology string is empty" << std::endl;
@@ -22,7 +22,7 @@ int main () {
   FreeTopologyCtypes(topology_string);
   
   // GetTopology : C API : Second time
-  topology_string = const_cast <char *>(GetTopologyCtypes(xml_config_file.c_str()));
+  topology_string = const_cast <char *>(GetDifTopologyCtypes(xml_config_file.c_str()));
 
   if ( topology_string[0] == '\0' )
     std::cout << "Second time : Topology string is empty" << std::endl;
