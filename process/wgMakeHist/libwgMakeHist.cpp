@@ -5,10 +5,8 @@
 #include <string>
 
 // ROOT includes
-#include "TDirectory.h"
 #include "TFile.h"
-#include "TH1.h"
-#include "TH2D.h"
+#include "TH1I.h"
 #include "TTree.h"
 
 // user includes
@@ -17,7 +15,6 @@
 #include "wgFileSystemTools.hpp"
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
-
 #include "wgMakeHist.hpp"
 #include "wgLogger.hpp"
 
@@ -40,46 +37,49 @@ int wgMakeHist(const char * x_inputFileName,
     Log.eWrite("[wgMakeHist] The number of chips per DIF must be {1-" + std::to_string(NCHIPS) + "}");
     return ERR_WRONG_CHIP_VALUE;
   }
+  if(!check_exist::RootFile(inputFileName)) {
+    Log.eWrite("[wgMakeHist] Input file " + inputFileName + " not found");
+    return ERR_EMPTY_INPUT_FILE;
+  }
+  if (!wagasci_tools::check_exist::Dir(outputDir)) {
+    wagasci_tools::MakeDir(outputDir);
+  }
 
   Log.Write("[wgMakeHist] *****  READING FILE     : " + GetName(inputFileName)      + "  *****");
   Log.Write("[wgMakeHist] *****  OUTPUT HIST FILE : " + GetName(outputHistFileName) + "  *****");
   Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + GetName(outputDir)          + "  *****");
   Log.Write("[wgMakeHist] *****  LOG FILE         : " + GetName(logfilename)        + "  *****");
   
-  
-  if(!check_exist::RootFile(inputFileName)) {
-    Log.eWrite("[wgMakeHist] Input file " + inputFileName + " not found");
-    return ERR_EMPTY_INPUT_FILE;
-  }
-
+  // Open output ROOT file
   TFile * outputHistFile;
-  if (!overwrite){
+  if (!overwrite)
     outputHistFile = new TFile((outputDir + "/" + outputHistFileName).c_str(), "create");
-    if ( !outputHistFile->IsOpen() ) {
-      Log.eWrite("[wgMakeHist] Error:" + outputDir + "/" + outputHistFileName + " already exists!");
-      return ERR_OVERWRITE_FLAG_NOT_SET;
+  else
+    outputHistFile = new TFile((outputDir + "/" + outputHistFileName).c_str(), "recreate");
+  if (!outputHistFile->IsOpen()) {
+      Log.eWrite("[wgMakeHist] Failed to create output hist file : " +
+                 outputDir + "/" + outputHistFileName);
+      return ERR_FAILED_OPEN_HIST_FILE;
     }
-  }
-  else outputHistFile = new TFile((outputDir + "/" + outputHistFileName).c_str(), "recreate");
-
+  
   // === start make histgram ===
 
   Raw_t rd(n_chips);
   wgColor wgColor;
 
-  TH1D* h_spill;
+  TH1I* h_spill_count;
 
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_hit   (n_chips);
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_hit_HG(n_chips);
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_hit_LG(n_chips);
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_pe_hit       (n_chips);
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_nohit (n_chips);
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_time_hit     (n_chips);
-  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_time_nohit   (n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_hit   (n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_hit_HG(n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_hit_LG(n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_pe_hit       (n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_nohit (n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_time_hit     (n_chips);
+  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_time_nohit   (n_chips);
   
   // h_bcid_hit: For every channel fill it with the BCID of all the columns with
   // a hit.
-  std::vector<std::array<TH1D*, NCHANNELS>> h_bcid_hit(n_chips);
+  std::vector<std::array<TH1I*, NCHANNELS>> h_bcid_hit(n_chips);
 
   int min_bin = 0;
   int max_bin = MAX_VALUE_12BITS;
@@ -91,36 +91,36 @@ int wgMakeHist(const char * x_inputFileName,
       for (unsigned k = 0; k < MEMDEPTH; ++k) {
         // ADC count when there is a hit (hit bit is one)
         h_name.Form("charge_hit_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_charge_hit[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);
+        h_charge_hit[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_hit[i][j][k]->SetLineColor(wgColor::wgcolors[k]);
         // ADC count when there is a hit (hit bit is one) and the high gain preamp is selected
         h_name.Form("charge_hit_HG_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_charge_hit_HG[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);
+        h_charge_hit_HG[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_hit_HG[i][j][k]->SetLineColor(wgColor::wgcolors[k]);
         // ADC count when there is a hit (hit bit is one) and the low gain preamp is selected
         h_name.Form("charge_hit_LG_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_charge_hit_LG[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);
+        h_charge_hit_LG[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_hit_LG[i][j][k]->SetLineColor(wgColor::wgcolors[k]);
         // ADC count when there is not hit (hit bit is zero)
         h_name.Form("charge_nohit_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_charge_nohit[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);
+        h_charge_nohit[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_nohit[i][j][k]->SetLineColor(wgColor::wgcolors[k+MEMDEPTH*2+2]);
         // Photo-electrons
         h_name.Form("pe_hit_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_pe_hit[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);
+        h_pe_hit[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_pe_hit[i][j][k]->SetLineColor(wgColor::wgcolors[k]);
         // TDC count when there is a hit (hit bit is one)
         h_name.Form("time_hit_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_time_hit[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);
+        h_time_hit[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_time_hit[i][j][k]->SetLineColor(wgColor::wgcolors[k]);
         // TDC count when there is not hit (hit bit is zero)
         h_name.Form("time_nohit_chip%u_ch%u_col%u",i+1,j+1,k+1);
-        h_time_nohit[i][j][k] = new TH1D(h_name, h_name, bin, min_bin, max_bin);   
+        h_time_nohit[i][j][k] = new TH1I(h_name, h_name, bin, min_bin, max_bin);   
         h_time_nohit[i][j][k]->SetLineColor(wgColor::wgcolors[k + MEMDEPTH * 2 + 2]);
       } //end col
       // BCID
       h_name.Form("bcid_hit_chip%u_ch%u",i+1,j+1);
-      h_bcid_hit[i][j] = new TH1D(h_name, h_name, MAX_VALUE_16BITS, 0, MAX_VALUE_16BITS);
+      h_bcid_hit[i][j] = new TH1I(h_name, h_name, MAX_VALUE_16BITS, 0, MAX_VALUE_16BITS);
       h_bcid_hit[i][j]->SetLineColor(kBlack);
     } //end ch
   }   //end chip
@@ -128,31 +128,34 @@ int wgMakeHist(const char * x_inputFileName,
 
   wgGetTree * GetTree;
   try {
-    GetTree = new wgGetTree( inputFileName, rd ); 
+    GetTree = new wgGetTree(inputFileName, rd); 
   }
   catch (const std::exception& e) {
     Log.eWrite("[wgMakeHist] failed to get the TTree : " + std::string(e.what()));
     exit(1);
   }
-  TH1D * start_time;
-  TH1D * stop_time;
-  TH1D * nb_data_pkts;
-  TH1D * nb_lost_pkts;
+  TH1I * start_time;
+  TH1I * stop_time;
+  TH1I * nb_data_pkts;
+  TH1I * nb_lost_pkts;
   start_time   = GetTree->GetHist_StartTime();
   stop_time    = GetTree->GetHist_StopTime();
   nb_data_pkts = GetTree->GetHist_DataPacket();
   nb_lost_pkts = GetTree->GetHist_LostPacket();
 
   TTree * tree = GetTree->tree;
-  int max_spill = tree->GetMaximum("spill_number");
-  int min_spill = tree->GetMinimum("spill_number");
+  int max_spill = tree->GetMaximum("spill_count");
+  int min_spill = tree->GetMinimum("spill_count");
   if (min_spill < 0) {
-    Log.eWrite("[wgMakeHist] some spill value is missed : min_spill = " + std::to_string(min_spill));
+    Log.eWrite("[wgMakeHist] some spill value is missed : min_spill = " +
+               std::to_string(min_spill));
   }
 
   outputHistFile->cd();
   // Pad the histogram with 100 empty bins on the left and on the right
-  h_spill = new TH1D("spill_number", "Spill number weighted by the number of chips read", (int) max_spill - min_spill + 200, (int) min_spill - 100, (int) max_spill + 100);
+  h_spill_count = new TH1I("spill_count", "Spill count",
+                     (unsigned) std::abs(max_spill - min_spill) + 200,
+                     (int) min_spill - 100, (int) max_spill + 100);
 
   GetTree->finput->cd();
   int n_events = tree->GetEntries();
@@ -164,17 +167,19 @@ int wgMakeHist(const char * x_inputFileName,
   for (int ievent = 0; ievent < n_events; ievent++) {
 
     if ( ievent % 1000 == 0 )
-      Log.Write("[wgMakeHist] Event number = " + std::to_string(ievent) + " / " + std::to_string(n_events));
+      Log.Write("[wgMakeHist] Event number = " + std::to_string(ievent) +
+                " / " + std::to_string(n_events));
     // Read one event
     tree->GetEntry(ievent);
 
-    h_spill->Fill(rd.spill_number);
+    h_spill_count->Fill(rd.spill_count);
 
     // CHIPS loop
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       if( rd.chipid[ichip] < 0 || rd.chipid[ichip] >= (int) n_chips ) {
 #ifdef DEBUG_MAKEHIST
-        Log.Write("[wgMakeHist] event " + std::to_string(ievent) + " : chipid[" + std::to_string(i) + "] = " + std::to_string(rd.chipid[i])); 
+        Log.Write("[wgMakeHist] event " + std::to_string(ievent) + " : chipid[" +
+                  std::to_string(i) + "] = " + std::to_string(rd.chipid[i])); 
 #endif
         continue;
       }
@@ -199,7 +204,8 @@ int wgMakeHist(const char * x_inputFileName,
               h_charge_hit_LG[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
             }
 #ifdef DEBUG_MAKEHIST	
-            else Log.Write("[wgMakeHist] event " + std::to_string(ievent) + " : bad gain bit = " + std::to_string(rd.gs[ichip][ichan][icol] ));
+            else Log.Write("[wgMakeHist] event " + std::to_string(ievent) +
+                           " : bad gain bit = " + std::to_string(rd.gs[ichip][ichan][icol] ));
 #endif	  
           }
           // NO HIT
@@ -221,7 +227,7 @@ int wgMakeHist(const char * x_inputFileName,
   if (stop_time != NULL) stop_time-> Write();
   if (nb_data_pkts != NULL) nb_data_pkts-> Write();
   if (nb_lost_pkts != NULL) nb_lost_pkts-> Write();
-  if (h_spill != NULL) h_spill->Write();
+  if (h_spill_count != NULL) h_spill_count->Write();
   for (unsigned ichipid = 0; ichipid < n_chips; ichipid++) {
     for (unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
       if (h_bcid_hit[ichipid][ichan] != NULL) h_bcid_hit[ichipid][ichan]->Write();

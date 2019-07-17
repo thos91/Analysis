@@ -4,9 +4,6 @@
 // system C++ includes
 #include <string>
 
-// system C includes
-#include <cstdbool>
-
 // user includes
 #include "wgConst.hpp"
 

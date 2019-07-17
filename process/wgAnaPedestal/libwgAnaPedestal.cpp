@@ -60,9 +60,9 @@ int wgAnaPedestal(const char * x_input_run_dir,
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
-  Log.Write(" *****  READING DIRECTORY      :" + GetName(input_run_dir)  + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + GetName(output_xml_dir) + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + GetName(output_img_dir) + "  *****");
+  Log.Write(" *****  READING DIRECTORY      : " + input_run_dir);
+  Log.Write(" *****  OUTPUT XML DIRECTORY   : " + output_xml_dir);
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + output_img_dir);
   
   wgEditXML Edit;
 
@@ -131,7 +131,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
     }
     
     // DIF
-    pe_directory += "wgAnaHistSummary/Xml";
+    pe_directory += "/wgAnaHistSummary/Xml";
     for (auto const & idif_directory : ListDirectories(pe_directory)) {
       unsigned idif_id = extractIntegerFromString(GetName(idif_directory));
       unsigned idif = idif_id - 1;

@@ -8,7 +8,7 @@
 #include "TROOT.h"
 #include "TFile.h"
 #include "TTree.h"
-#include "TH1D.h"
+#include "TH1I.h"
 
 // user includes
 #include "wgConst.hpp"
@@ -35,15 +35,15 @@ public:
   // The difference between Get...(something) and
   // GetHist...(something) is that in the former the center of the
   // maximum bin is returned as a double while in the latter the
-  // entire TH1D is returned.
+  // entire TH1I is returned.
   double GetStartTime();      // "start_time"
   double GetStopTime();       // "stop_time"
   double GetDataPacket();     // "nb_data_pkts"
   double GetLostPacket();     // "nb_lost_pkts"
-  TH1D* GetHist_StartTime();
-  TH1D* GetHist_StopTime();
-  TH1D* GetHist_DataPacket();
-  TH1D* GetHist_LostPacket();
+  TH1I* GetHist_StartTime();
+  TH1I* GetHist_StopTime();
+  TH1I* GetHist_DataPacket();
+  TH1I* GetHist_LostPacket();
 
 protected:
   std::string m_finputname;

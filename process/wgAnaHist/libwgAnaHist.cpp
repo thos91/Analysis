@@ -193,21 +193,21 @@ int wgAnaHist(const char * x_inputFile,
             first_time = false;
           }
           Edit.SetConfigValue(string("start_time"), start_time);
-          Edit.SetConfigValue(string("stop_time"), stop_time);
-          Edit.SetConfigValue(string("difid"), idif_id);
-          Edit.SetConfigValue(string("chipid"), ichip_id);
-          Edit.SetConfigValue(string("chanid"), ichan_id);
+          Edit.SetConfigValue(string("stop_time"),  stop_time);
+          Edit.SetConfigValue(string("difid"),      idif_id);
+          Edit.SetConfigValue(string("chipid"),     ichip_id);
+          Edit.SetConfigValue(string("chanid"),     ichan_id);
 
           //************ SELECT_CONFIG ************//
 
           if ( flags[SELECT_CONFIG] ) {
             // Write the parameters values contained in the config vector into the
             // outputxmlfile
-            Edit.SetConfigValue(string("trigth"),   config[ichan_id-1][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("gainth"),   config[ichan_id-1][GLOBAL_GS_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("inputDAC"), config[ichan_id-1][ADJ_INPUTDAC_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("HG"),       config[ichan_id-1][ADJ_AMPDAC_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("trig_adj"), config[ichan_id-1][ADJ_THRESHOLD_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("trigth"),   config[ichan_id - 1][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("gainth"),   config[ichan_id - 1][GLOBAL_GS_INDEX],        CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("inputDAC"), config[ichan_id - 1][ADJ_INPUTDAC_INDEX],     CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("HG"),       config[ichan_id - 1][ADJ_AMPDAC_INDEX],       CREATE_NEW_MODE);
+            Edit.SetConfigValue(string("trig_adj"), config[ichan_id - 1][ADJ_THRESHOLD_INDEX],    CREATE_NEW_MODE);
           }
 
           //************* SELECT_DARK_NOISE *************//

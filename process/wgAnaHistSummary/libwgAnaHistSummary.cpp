@@ -33,21 +33,21 @@
 using namespace wagasci_tools;
 
 //******************************************************************
-void ModeSelect(int mode, bitset<M>& flags) {
+void ModeSelect(int mode, std::bitset<M>& flags) {
   if(mode == 1 || mode >= 10) flags[SELECT_NOISE]        = true;
   if(mode == 2 || mode >= 10) flags[SELECT_DIFF]         = true;
   if(mode == 3 || mode >= 11) flags[SELECT_CHARGE_NOHIT] = true;
   if(mode == 4 || mode == 12) flags[SELECT_CHARGE_HIT]   = true;
   if ( mode < 0  || mode > 12 )
-    throw invalid_argument("Mode " + to_string(mode) + " not recognized"); 
+    throw std::invalid_argument("Mode " + std::to_string(mode) + " not recognized"); 
 }
 
 //******************************************************************
-void MakeSummaryXmlFile(const string& dir, const bool overwrite, const unsigned ichip, const unsigned n_chans) {
+void MakeSummaryXmlFile(const std::string& dir, const bool overwrite, const unsigned ichip, const unsigned n_chans) {
   wgEditXML Edit;
   
-  string outputxmlfile("");
-  outputxmlfile = dir + "/Summary_chip" + to_string(ichip) + ".xml";
+  std::string outputxmlfile("");
+  outputxmlfile = dir + "/Summary_chip" + std::to_string(ichip) + ".xml";
   if( (check_exist::XmlFile(outputxmlfile) && overwrite) || !check_exist::XmlFile(outputxmlfile) )
     Edit.SUMMARY_Make(outputxmlfile, n_chans);
   else
@@ -62,11 +62,10 @@ int wgAnaHistSummary(const char * x_inputDir,
                      const bool overwrite,
                      const bool print) {
 
-  string inputDir(x_inputDir);
-  string outputXMLDir(x_outputXMLDir);
-  string outputIMGDir(x_outputIMGDir);
+  std::string inputDir(x_inputDir);
+  std::string outputXMLDir(x_outputXMLDir);
+  std::string outputIMGDir(x_outputIMGDir);
 
-  
   wgColor wgColor;
 
   if(inputDir.empty() || !check_exist::Dir(inputDir)) {
@@ -75,27 +74,27 @@ int wgAnaHistSummary(const char * x_inputDir,
   }
   if(outputXMLDir.empty()) outputXMLDir = inputDir;
     
-  bitset<M> flags;
+  std::bitset<M> flags;
   flags[SELECT_PRINT] = print;
   // Set the correct flags according to the mode
   try { ModeSelect(mode, flags); }
-  catch (const exception& e) {
-    Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
     return ERR_WRONG_MODE;
   }
 
   // ============ Count number of chips and channels ============ //
   unsigned n_chips = HowManyDirectories(inputDir);
-  vector<unsigned> n_chans;
+  std::vector<unsigned> n_chans;
   for (unsigned ichip = 1; ichip <= n_chips; ichip++) {
-    n_chans.push_back(HowManyFilesWithExtension(inputDir + "/chip" + to_string(ichip), "xml"));
+    n_chans.push_back(HowManyFilesWithExtension(inputDir + "/chip" + std::to_string(ichip), "xml"));
     // std::cout << "chip = " << ichip << " : channels = " << n_chans[ichip]  << "\n";
   }
   
   // ============ Create outputXMLDir ============ //
   try { MakeDir(outputXMLDir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
+    Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
@@ -103,47 +102,46 @@ int wgAnaHistSummary(const char * x_inputDir,
   if( flags[SELECT_PRINT] ) {
     try { MakeDir(outputIMGDir); }
     catch (const wgInvalidFile& e) {
-      Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
+      Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
       return ERR_FAILED_CREATE_DIRECTORY;
     }
   }
 
-  Log.Write(" *****  READING DIRECTORY      :" + GetName(inputDir)     + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + GetName(outputXMLDir) + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + GetName(outputIMGDir) + "  *****");
+  Log.Write(" *****  READING DIRECTORY      :" + inputDir     + "  *****");
+  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + outputXMLDir + "  *****");
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + outputIMGDir + "  *****");
 
 
 
   try {
-    string xmlfile("");
+    std::string xmlfile("");
     int start_time, stop_time, difid;
 
     ///////////////////////////////////////////////////////////////////////////
     //                          Variables declaration                        //
     ///////////////////////////////////////////////////////////////////////////
     
-    vector<int>            trig_th  (n_chips);
-    vector<int>            gain_th  (n_chips);
-    vector<int>            chipid   (n_chips);
-    vector<vector<int>>    inputDAC (n_chips);
-    vector<vector<int>>    ampDAC   (n_chips);
-    vector<vector<int>>    adjDAC   (n_chips);
-    vector<vector<int>>    chanid   (n_chips);  
-
-    vector<vector<int>>                  noise             (n_chips);
-    vector<vector<int>>                  noise_error       (n_chips);
-    vector<vector<int>>                  pe_level          (n_chips);
-    vector<vector<array<int, MEMDEPTH>>> charge_nohit      (n_chips);
-    vector<vector<array<int, MEMDEPTH>>> charge_nohit_error(n_chips);
-    vector<vector<array<int, MEMDEPTH>>> charge_hit        (n_chips);
-    vector<vector<array<int, MEMDEPTH>>> charge_hit_error  (n_chips);
+    std::vector<int>                                    trig_th           (n_chips);
+    std::vector<int>                                    gain_th           (n_chips);
+    std::vector<int>                                    chipid            (n_chips);
+    std::vector<std::vector<int>>                       inputDAC          (n_chips);
+    std::vector<std::vector<int>>                       ampDAC            (n_chips);
+    std::vector<std::vector<int>>                       adjDAC            (n_chips);
+    std::vector<std::vector<int>>                       chanid            (n_chips);  
+    std::vector<std::vector<int>>                       noise             (n_chips);
+    std::vector<std::vector<int>>                       noise_error       (n_chips);
+    std::vector<std::vector<int>>                       pe_level          (n_chips);
+    std::vector<std::vector<std::array<int, MEMDEPTH>>> charge_nohit      (n_chips);
+    std::vector<std::vector<std::array<int, MEMDEPTH>>> charge_nohit_error(n_chips);
+    std::vector<std::vector<std::array<int, MEMDEPTH>>> charge_hit        (n_chips);
+    std::vector<std::vector<std::array<int, MEMDEPTH>>> charge_hit_error  (n_chips);
     
-    vector<TH1D *> h_Charge_Nohit(n_chips);
-    vector<TH1D *> h_Diff        (n_chips);
-    vector<TH1D *> h_Charge_Hit  (n_chips);
-    vector<TH1D *> h_Noise       (n_chips);
+    std::vector<TH1D *> h_Charge_Nohit(n_chips);
+    std::vector<TH1D *> h_Diff        (n_chips);
+    std::vector<TH1D *> h_Charge_Hit  (n_chips);
+    std::vector<TH1D *> h_Noise       (n_chips);
 
-    //*** Define histgram ***//
+    //*** Define histograms ***//
     if(flags[SELECT_PRINT]) {
       for(unsigned ichip = 0; ichip < n_chips; ichip++) {
         unsigned ichip_id = ichip + 1;
@@ -201,12 +199,12 @@ int wgAnaHistSummary(const char * x_inputDir,
     wgEditXML Edit;
     try { Edit.Open(inputDir + "/chip1/chan1.xml"); }
     catch (const wgInvalidFile & e) {
-      Log.eWrite("[wgAnaHist] " + string(e.what()));
+      Log.eWrite("[wgAnaHist] " + std::string(e.what()));
       return ERR_FAILED_OPEN_XML_FILE;
     }
-    start_time   = Edit.GetConfigValue(string("start_time"));
-    stop_time    = Edit.GetConfigValue(string("stop_time"));
-    difid        = Edit.GetConfigValue(string("difid"));
+    start_time   = Edit.GetConfigValue(std::string("start_time"));
+    stop_time    = Edit.GetConfigValue(std::string("stop_time"));
+    difid        = Edit.GetConfigValue(std::string("difid"));
     Edit.Close();
      
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
@@ -218,34 +216,34 @@ int wgAnaHistSummary(const char * x_inputDir,
       
       for(unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
         unsigned ichan_id = ichan + 1;
-        xmlfile = inputDir + "/chip" + to_string(ichip_id) + "/chan" + to_string(ichan_id) + ".xml";
+        xmlfile = inputDir + "/chip" + std::to_string(ichip_id) + "/chan" + std::to_string(ichan_id) + ".xml";
         try { Edit.Open(xmlfile); }
         catch (const wgInvalidFile & e) {
-          Log.eWrite("[wgAnaHist]" + string(e.what()));
+          Log.eWrite("[wgAnaHist]" + std::string(e.what()));
           return ERR_FAILED_OPEN_XML_FILE;
         }
         if(ichan == 0 ) {
-          trig_th[ichip] = Edit.GetConfigValue(string("trigth"));
-          gain_th[ichip] = Edit.GetConfigValue(string("gainth"));
-          chipid[ichip]  = Edit.GetConfigValue(string("chipid"));
+          trig_th[ichip] = Edit.GetConfigValue(std::string("trigth"));
+          gain_th[ichip] = Edit.GetConfigValue(std::string("gainth"));
+          chipid[ichip]  = Edit.GetConfigValue(std::string("chipid"));
         }
-        inputDAC[ichip].push_back(Edit.GetConfigValue(string("inputDAC")));
-        ampDAC[ichip].push_back(Edit.GetConfigValue(string("HG")));
-        adjDAC[ichip].push_back(Edit.GetConfigValue(string("trig_adj")));
-        chanid[ichip].push_back(Edit.GetConfigValue(string("chanid")));
-        noise[ichip].push_back(Edit.GetChValue(string("noise_rate")));
-        noise_error[ichip].push_back(Edit.GetChValue(string("sigma_rate")));
+        inputDAC[ichip].push_back(Edit.GetConfigValue(std::string("inputDAC")));
+        ampDAC[ichip].push_back(Edit.GetConfigValue(std::string("HG")));
+        adjDAC[ichip].push_back(Edit.GetConfigValue(std::string("trig_adj")));
+        chanid[ichip].push_back(Edit.GetConfigValue(std::string("chanid")));
+        noise[ichip].push_back(Edit.GetChValue(std::string("noise_rate")));
+        noise_error[ichip].push_back(Edit.GetChValue(std::string("sigma_rate")));
         pe_level[ichip].push_back(NoiseToPe(noise[ichip][ichan]));
 
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           unsigned icol_id = icol + 1;
           if( flags[SELECT_CHARGE_NOHIT] || flags[SELECT_DIFF] ) {
-            charge_nohit      [ichip][ichan][icol] = Edit.GetColValue(string("charge_nohit"), icol_id);
-            charge_nohit_error[ichip][ichan][icol] = Edit.GetColValue(string("sigma_nohit"),  icol_id);
+            charge_nohit      [ichip][ichan][icol] = Edit.GetColValue(std::string("charge_nohit"), icol_id);
+            charge_nohit_error[ichip][ichan][icol] = Edit.GetColValue(std::string("sigma_nohit"),  icol_id);
           }
           if( flags[SELECT_CHARGE_HIT] || flags[SELECT_DIFF] ) { 
-            charge_hit      [ichip][ichan][icol] = Edit.GetColValue(string("charge_hit_HG"), icol_id);
-            charge_hit_error[ichip][ichan][icol] = Edit.GetColValue(string("sigma_hit_HG"),  icol_id);
+            charge_hit      [ichip][ichan][icol] = Edit.GetColValue(std::string("charge_hit_HG"), icol_id);
+            charge_hit_error[ichip][ichan][icol] = Edit.GetColValue(std::string("sigma_hit_HG"),  icol_id);
           }
         }
         Edit.Close();
@@ -257,38 +255,38 @@ int wgAnaHistSummary(const char * x_inputDir,
       unsigned ichip_id = ichip + 1;
 
       try { MakeSummaryXmlFile(outputXMLDir, overwrite, ichip_id, n_chans[ichip]); }
-      catch (const exception& e) {
-        Log.eWrite("[wgAnaHist][" + outputXMLDir + "] " + string(e.what()));
+      catch (const std::exception& e) {
+        Log.eWrite("[wgAnaHist][" + outputXMLDir + "] " + std::string(e.what()));
         return ERR_FAILED_CREATE_XML_FILE;
       }
       
       wgEditXML Edit;
 
-      string xmlfile(outputXMLDir + "/Summary_chip" + to_string(ichip_id) + ".xml");
+      std::string xmlfile(outputXMLDir + "/Summary_chip" + std::to_string(ichip_id) + ".xml");
       try { Edit.Open(xmlfile); }
       catch (const wgInvalidFile & e) {
-        Log.eWrite("[wgAnaHist] " + xmlfile + " : " + string(e.what()));
+        Log.eWrite("[wgAnaHist] " + xmlfile + " : " + std::string(e.what()));
         return ERR_FAILED_OPEN_XML_FILE;
       }
-      Edit.SUMMARY_SetGlobalConfigValue(string("start_time"), start_time,     NO_CREATE_NEW_MODE);
-      Edit.SUMMARY_SetGlobalConfigValue(string("stop_time"),  stop_time,      NO_CREATE_NEW_MODE);
-      Edit.SUMMARY_SetGlobalConfigValue(string("difid"),      difid,          NO_CREATE_NEW_MODE);
-      Edit.SUMMARY_SetGlobalConfigValue(string("trigth"),     trig_th[ichip], NO_CREATE_NEW_MODE);
-      Edit.SUMMARY_SetGlobalConfigValue(string("gainth"),     gain_th[ichip], NO_CREATE_NEW_MODE);
-      Edit.SUMMARY_SetGlobalConfigValue(string("chipid"),     chipid [ichip], NO_CREATE_NEW_MODE);
-      Edit.SUMMARY_SetGlobalConfigValue(string("n_chans"),    n_chans[ichip], NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("start_time"), start_time,     NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("stop_time"),  stop_time,      NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("difid"),      difid,          NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("trigth"),     trig_th[ichip], NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("gainth"),     gain_th[ichip], NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("chipid"),     chipid [ichip], NO_CREATE_NEW_MODE);
+      Edit.SUMMARY_SetGlobalConfigValue(std::string("n_chans"),    n_chans[ichip], NO_CREATE_NEW_MODE);
 
       for(unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
         unsigned ichan_id = ichan + 1;
         
-        Edit.SUMMARY_SetChConfigValue(string("chanid"),   chanid  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChConfigValue(string("inputDAC"), inputDAC[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChConfigValue(string("ampDAC"),   ampDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChConfigValue(string("adjDAC"),   adjDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChFitValue(string("pe_level"),    pe_level[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("chanid"),   chanid  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("inputDAC"), inputDAC[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("ampDAC"),   ampDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("adjDAC"),   adjDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChFitValue(std::string("pe_level"),    pe_level[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
         if(flags[SELECT_NOISE]) {
-          Edit.SUMMARY_SetChFitValue(string("noise_rate"),    noise      [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-          Edit.SUMMARY_SetChFitValue(string("sigma_noise"),   noise_error[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+          Edit.SUMMARY_SetChFitValue(std::string("noise_rate"),    noise      [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+          Edit.SUMMARY_SetChFitValue(std::string("sigma_rate"),   noise_error[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
           if(flags[SELECT_PRINT]) h_Noise[ichip]->Fill(ichan, noise[ichip][ichan]);
         }
 
@@ -296,20 +294,20 @@ int wgAnaHistSummary(const char * x_inputDir,
         unsigned icol_id = icol + 1;
           
           if(flags[SELECT_CHARGE_NOHIT]) {
-            Edit.SUMMARY_SetChFitValue("charge_nohit_" + to_string(icol_id), charge_nohit      [ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
-            Edit.SUMMARY_SetChFitValue("sigma_nohit_" + to_string(icol_id),  charge_nohit_error[ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("charge_nohit_" + std::to_string(icol_id), charge_nohit      [ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("sigma_nohit_" + std::to_string(icol_id),  charge_nohit_error[ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
             if(flags[SELECT_PRINT]) h_Charge_Nohit[ichip]->Fill(ichan * 26 + icol, charge_hit[ichip][ichan][icol]);
           }
           if(flags[SELECT_CHARGE_HIT]) {
-            Edit.SUMMARY_SetChFitValue("charge_hit_" + to_string(icol_id), charge_hit      [ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
-            Edit.SUMMARY_SetChFitValue("sigma_hit_" + to_string(icol_id),  charge_hit_error[ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("charge_hit_" + std::to_string(icol_id), charge_hit      [ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("sigma_hit_" + std::to_string(icol_id),  charge_hit_error[ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
             if(flags[SELECT_PRINT]) h_Charge_Hit[ichip]->Fill(ichan * 26 + icol, charge_hit[ichip][ichan][icol]);
           }
           if(flags[SELECT_DIFF]) {
             int diff = charge_hit[ichip][ichan][icol] - charge_nohit[ichip][ichan][icol];
             int diff_error = std::sqrt(std::pow(charge_hit_error[ichip][ichan][icol], 2) - std::pow(charge_nohit_error[ichip][ichan][icol], 2));
-            Edit.SUMMARY_SetChFitValue("diff_" + to_string(icol_id),       diff,       ichan_id, NO_CREATE_NEW_MODE);
-            Edit.SUMMARY_SetChFitValue("sigma_diff_" + to_string(icol_id), diff_error, ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("diff_" + std::to_string(icol_id),       diff,       ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("sigma_diff_" + std::to_string(icol_id), diff_error, ichan_id, NO_CREATE_NEW_MODE);
             if(flags[SELECT_PRINT]) h_Diff[ichip]->Fill(ichan * 26 + icol, diff);
           }
         }
@@ -351,7 +349,7 @@ int wgAnaHistSummary(const char * x_inputDir,
           TCanvas * canvas = new TCanvas("c1", "c1", width, heigth);
           TString name;
           TLegend * l_Diff;
-          vector<TLine*> line_Diff(n_chans[ichip]);
+          std::vector<TLine*> line_Diff(n_chans[ichip]);
 
           name.Form("chip:%d", ichip_id);
           l_Diff = new TLegend(0.75, 0.75, 0.90, 0.90, name);
@@ -381,7 +379,7 @@ int wgAnaHistSummary(const char * x_inputDir,
           TCanvas * canvas = new TCanvas("c1", "c1", width, heigth);
           TString name;
           TLegend * l_Charge_Hit;
-          vector<TLine*> line_Charge_Hit(n_chans[ichip]);
+          std::vector<TLine*> line_Charge_Hit(n_chans[ichip]);
 
           name.Form("chip:%d", ichip_id);
           l_Charge_Hit = new TLegend(0.75, 0.75, 0.90, 0.90, name);
@@ -405,14 +403,13 @@ int wgAnaHistSummary(const char * x_inputDir,
           delete l_Charge_Hit;
           delete h_Charge_Hit[ichip];
           delete canvas;
-          
         }
 
         if(flags[SELECT_CHARGE_NOHIT]) {
           TCanvas * canvas = new TCanvas("c1", "c1", width, heigth);
           TString name;
           TLegend * l_Charge_Nohit;
-          vector<TLine*> line_Charge_Nohit(n_chans[ichip]);
+          std::vector<TLine*> line_Charge_Nohit(n_chans[ichip]);
 
           name.Form("chip:%d", ichip_id);
           l_Charge_Nohit = new TLegend(0.75, 0.75, 0.90, 0.90, name);
@@ -440,8 +437,8 @@ int wgAnaHistSummary(const char * x_inputDir,
       } // chips
     } // SELECT_PRINT
   } // try
-  catch (const exception& e) {
-    Log.eWrite("[wgAnaHistSummary] " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
     return ERR_WG_ANA_HIST_SUMMARY;
   } 
   return WG_SUCCESS;

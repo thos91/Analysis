@@ -4,8 +4,8 @@ set -e
 
 if [ -z "$WAGASCI_MAINDIR" ]
 then
-	echo "WAGASCI environment not set"
-	exit 1
+    echo "WAGASCI environment not set"
+    exit 1
 fi
 
 BIN_DIR="${WAGASCI_MAINDIR}/bin"
@@ -30,19 +30,18 @@ ANA_SUMMARY_MODE=12
 
 DIF=1
 NCHIPS=20
-NCHANNELS=32
 
 echo " wgAnaHistSummary unit test: input DAC 121 - 2 p.e."
 
 if [ ! -f "${TREE_FILE}" ]; then
     echo ""
-    echo " Decode   :  ${DECODER}  -f  ${RAW_FILE}  -o  ${CURRENT_DIR}  -x  ${NCHIPS}  -y  ${NCHANNELS}  -r"
-                      "${DECODER}" -f "${RAW_FILE}" -o "${CURRENT_DIR}" -x "${NCHIPS}" -y "${NCHANNELS}" -r
+    echo " Decode   :  ${DECODER}  -f  ${RAW_FILE}  -o  ${CURRENT_DIR}  -x  ${NCHIPS}  -r -q"
+                      "${DECODER}" -f "${RAW_FILE}" -o "${CURRENT_DIR}" -x "${NCHIPS}" -r -q
 fi
 if [ ! -f "${HIST_FILE}" ]; then
     echo ""
-    echo " MakeHist :  ${MAKEHIST}  -f  ${TREE_FILE}  -o  ${CURRENT_DIR}  -x  ${NCHIPS}  -y  ${NCHANNELS}  -r"
-                      "${MAKEHIST}" -f "${TREE_FILE}" -o "${CURRENT_DIR}" -x "${NCHIPS}" -y "${NCHANNELS}" -r
+    echo " MakeHist :  ${MAKEHIST}  -f  ${TREE_FILE}  -o  ${CURRENT_DIR}  -x  ${NCHIPS}  -r"
+                      "${MAKEHIST}" -f "${TREE_FILE}" -o "${CURRENT_DIR}" -x "${NCHIPS}" -r
 fi
 if [ ! -d "${ANA_DIR}" ]; then
     echo""

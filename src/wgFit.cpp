@@ -79,17 +79,17 @@ void wgFit::SetoutputIMGDir(const string& str){
 
 //**********************************************************************
 void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
-  if ( (! GetHist->Get_bcid_hit(ichip, ichan)) || (! GetHist->Get_spill()) ) {
+  if ( (! GetHist->Get_bcid_hit(ichip, ichan)) || (! GetHist->Get_spill_count()) ) {
     x[0] = NAN;
     x[1] = NAN;
     return;
   }
 
   // Number of recorded spills
-  Int_t nEntries = GetHist->h_spill->GetEntries();
+  Int_t nEntries = GetHist->h_spill_count->GetEntries();
   if( nEntries == 0 ) {
-    x[0]=0.;
-    x[1]=1./sqrt(GetHist->h_spill->GetEntries());
+    x[0] = 0.;
+    x[1] = 1. / sqrt(GetHist->h_spill_count->GetEntries());
     throw wgElementNotFound("BCID histogram has no entries");
   }
 
