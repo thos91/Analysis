@@ -26,8 +26,7 @@ using namespace wagasci_tools;
 int wgMakeHist(const char * x_inputFileName,
                const char * x_outputDir,
                const bool overwrite,
-               const unsigned n_chips,
-               const unsigned n_channels) {
+               const unsigned n_chips) {
 
   std::string inputFileName(x_inputFileName);
   std::string outputDir(x_outputDir);
@@ -40,10 +39,6 @@ int wgMakeHist(const char * x_inputFileName,
   if (n_chips > NCHIPS) {
     Log.eWrite("[wgMakeHist] The number of chips per DIF must be {1-" + std::to_string(NCHIPS) + "}");
     return ERR_WRONG_CHIP_VALUE;
-  }
-  if (n_channels > NCHANNELS) {
-    Log.eWrite("[wgMakeHist] The number of channels per DIF must be {1-" + std::to_string(NCHANNELS) + "}");
-    return ERR_WRONG_CHANNEL_VALUE;
   }
 
   Log.Write("[wgMakeHist] *****  READING FILE     : " + GetName(inputFileName)      + "  *****");
@@ -69,22 +64,22 @@ int wgMakeHist(const char * x_inputFileName,
 
   // === start make histgram ===
 
-  Raw_t rd(n_chips, n_channels);
+  Raw_t rd(n_chips);
   wgColor wgColor;
 
   TH1D* h_spill;
 
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_charge_hit   (n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_charge_hit_HG(n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_charge_hit_LG(n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_pe_hit       (n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_charge_nohit (n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_time_hit     (n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
-  std::vector<std::vector<std::array<TH1D*, MEMDEPTH>>> h_time_nohit   (n_chips, std::vector<std::array<TH1D*, MEMDEPTH>>(n_channels));
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_hit   (n_chips);
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_hit_HG(n_chips);
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_hit_LG(n_chips);
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_pe_hit       (n_chips);
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_charge_nohit (n_chips);
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_time_hit     (n_chips);
+  std::vector<std::array<std::array<TH1D*, MEMDEPTH>, NCHANNELS>> h_time_nohit   (n_chips);
   
   // h_bcid_hit: For every channel fill it with the BCID of all the columns with
   // a hit.
-  std::vector<std::vector<TH1D*>> h_bcid_hit(n_chips, std::vector<TH1D*>(n_channels));
+  std::vector<std::array<TH1D*, NCHANNELS>> h_bcid_hit(n_chips);
 
   int min_bin = 0;
   int max_bin = MAX_VALUE_12BITS;
@@ -92,7 +87,7 @@ int wgMakeHist(const char * x_inputFileName,
 
   TString h_name;
   for (unsigned i = 0; i < n_chips; ++i) {
-    for (unsigned j = 0; j < n_channels; ++j) {
+    for (unsigned j = 0; j < NCHANNELS; ++j) {
       for (unsigned k = 0; k < MEMDEPTH; ++k) {
         // ADC count when there is a hit (hit bit is one)
         h_name.Form("charge_hit_chip%u_ch%u_col%u",i+1,j+1,k+1);
@@ -148,7 +143,7 @@ int wgMakeHist(const char * x_inputFileName,
   nb_data_pkts = GetTree->GetHist_DataPacket();
   nb_lost_pkts = GetTree->GetHist_LostPacket();
 
-  TTree * tree = GetTree->tree_in;
+  TTree * tree = GetTree->tree;
   int max_spill = tree->GetMaximum("spill_number");
   int min_spill = tree->GetMinimum("spill_number");
   if (min_spill < 0) {
@@ -186,14 +181,14 @@ int wgMakeHist(const char * x_inputFileName,
       // chipid: chip ID tag as it is recorded in the chip trailer
       unsigned ichipid = rd.chipid[ichip];
       // CHANNELS loop
-      for(unsigned ichan = 0; ichan < n_channels; ichan++) {
+      for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
         // COLUMNS loop
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           // HIT
           if ( rd.hit[ichip][ichan][icol] == HIT_BIT ) {
-            h_bcid_hit  [ichipid][ichan]->       Fill(rd.bcid[ichip][icol]);
-            h_pe_hit    [ichipid][ichan][icol]-> Fill(rd.pe[ichip][ichan][icol]);
-            h_time_hit  [ichipid][ichan][icol]-> Fill(rd.time[ichip][ichan][icol]);
+            h_bcid_hit  [ichipid][ichan]->       Fill(rd.bcid  [ichip]       [icol]);
+            h_pe_hit    [ichipid][ichan][icol]-> Fill(rd.pe    [ichip][ichan][icol]);
+            h_time_hit  [ichipid][ichan][icol]-> Fill(rd.time  [ichip][ichan][icol]);
             h_charge_hit[ichipid][ichan][icol]-> Fill(rd.charge[ichip][ichan][icol]);
             // HIGH GAIN
             if(rd.gs[ichip][ichan][icol] == HIGH_GAIN_BIT) { 
@@ -210,7 +205,7 @@ int wgMakeHist(const char * x_inputFileName,
           // NO HIT
           else if ( rd.hit[ichip][ichan][icol] == NO_HIT_BIT ) {
             h_charge_nohit[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
-            h_time_nohit[ichipid][ichan][icol]->Fill(rd.time[ichip][ichan][icol]);
+            h_time_nohit  [ichipid][ichan][icol]->Fill(rd.time  [ichip][ichan][icol]);
           }//end hit
         }//end icol
       }//end ich
@@ -228,16 +223,16 @@ int wgMakeHist(const char * x_inputFileName,
   if (nb_lost_pkts != NULL) nb_lost_pkts-> Write();
   if (h_spill != NULL) h_spill->Write();
   for (unsigned ichipid = 0; ichipid < n_chips; ichipid++) {
-    for (unsigned ichan = 0; ichan < n_channels; ichan++) {
+    for (unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
       if (h_bcid_hit[ichipid][ichan] != NULL) h_bcid_hit[ichipid][ichan]->Write();
       for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
-        if (h_charge_hit[ichipid][ichan][icol]    != NULL) h_charge_hit   [ichipid][ichan][icol]->Write();
+        if (h_charge_hit   [ichipid][ichan][icol] != NULL) h_charge_hit   [ichipid][ichan][icol]->Write();
         if (h_charge_hit_HG[ichipid][ichan][icol] != NULL) h_charge_hit_HG[ichipid][ichan][icol]->Write();
         if (h_charge_hit_LG[ichipid][ichan][icol] != NULL) h_charge_hit_LG[ichipid][ichan][icol]->Write();
-        if (h_pe_hit[ichipid][ichan][icol]        != NULL) h_pe_hit       [ichipid][ichan][icol]->Write();
-        if (h_charge_nohit[ichipid][ichan][icol]  != NULL) h_charge_nohit [ichipid][ichan][icol]->Write();
-        if (h_time_hit[ichipid][ichan][icol]      != NULL) h_time_hit     [ichipid][ichan][icol]->Write();
-        if (h_time_nohit[ichipid][ichan][icol]    != NULL) h_time_nohit   [ichipid][ichan][icol]->Write();
+        if (h_pe_hit       [ichipid][ichan][icol] != NULL) h_pe_hit       [ichipid][ichan][icol]->Write();
+        if (h_charge_nohit [ichipid][ichan][icol] != NULL) h_charge_nohit [ichipid][ichan][icol]->Write();
+        if (h_time_hit     [ichipid][ichan][icol] != NULL) h_time_hit     [ichipid][ichan][icol]->Write();
+        if (h_time_nohit   [ichipid][ichan][icol] != NULL) h_time_nohit   [ichipid][ichan][icol]->Write();
       }
     }
   }

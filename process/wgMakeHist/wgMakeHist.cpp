@@ -20,7 +20,6 @@ void print_help(const char * program_name) {
       "  -f (char*) : input ROOT file (mandatory)\n"
       "  -o (char*) : output directory (default = WAGASCI_HISTDIR)\n"
       "  -x (int)   : number of ASU chips per DIF (must be 1-20)\n"
-      "  -y (int)   : number of channels per chip (must be 1-36)\n"
       "  -r         : overwrite mode\n";
   exit(0);
 }
@@ -32,9 +31,8 @@ int main(int argc, char** argv) {
   std::string outputFile("");
   bool overwrite = false;
   unsigned n_chips = NCHIPS;
-  unsigned n_channels = NCHANNELS;
 
-  while((opt = getopt(argc,argv, "f:o:x:y:rh")) != -1 ){
+  while((opt = getopt(argc,argv, "f:o:x:rh")) != -1 ){
     switch(opt){
       case 'f':
         inputFileName = optarg;
@@ -44,9 +42,6 @@ int main(int argc, char** argv) {
         break;
       case 'x':
         n_chips = std::stoi(optarg);
-        break;
-      case 'y':
-        n_channels = std::stoi(optarg);
         break;
       case 'r':
         overwrite = true;
@@ -63,8 +58,7 @@ int main(int argc, char** argv) {
   if ( (result = wgMakeHist(inputFileName.c_str(),
                             outputDir.c_str(),
                             overwrite,
-                            n_chips,
-                            n_channels)) != WG_SUCCESS ) {
+                            n_chips)) != WG_SUCCESS ) {
     Log.eWrite("[wgMakeHist] wgMakeHist returned error " + std::to_string(result));
     exit(1);
   }

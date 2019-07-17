@@ -14,8 +14,7 @@ extern "C" {
   int wgMakeHist(const char * inputFileName,
                  const char * outputDir,
                  bool overwrite,
-                 unsigned n_chips = NCHIPS,
-                 unsigned n_channels = NCHANNELS);
+                 unsigned n_chips = NCHIPS);
 
 #ifdef __cplusplus
 }
