@@ -15,56 +15,54 @@ using namespace wagasci_tools;
 
 //************************************************************************
 
-wgGetTree::wgGetTree(const std::string& root_file_name, Raw_t& rd) {
-  this->Open(root_file_name);
+wgGetTree::wgGetTree(const std::string& root_file_name, Raw_t& rd) :
+    m_finputname(root_file_name) {
+  this->Open();
   this->SetTreeFile(rd);
 }
 
 //************************************************************************
-void wgGetTree::Open(const std::string& root_file_name) {
+void wgGetTree::Open() {
   // Check if the ROOT file exists
-  
-  wgGetTree::finputname = root_file_name;
-  if(!check_exist::RootFile(root_file_name))
-    throw wgInvalidFile( "[wgGetTree::Open] failed to open " + root_file_name );
+  if(!check_exist::RootFile(m_finputname))
+    throw wgInvalidFile( "[wgGetTree::Open] failed to open " + m_finputname );
   // Check if the ROOT file is already opened
   try {
     if ( wgGetTree::finput != NULL ) {
       if ( wgGetTree::finput->IsOpen() == kTRUE ) {
-        Log.Write( "[wgGetTree::Open] " + root_file_name + "is already opened" );
+        Log.Write( "[wgGetTree::Open] " + m_finputname + "is already opened" );
         this->Close();
       }
     }
   } catch (...) {}
   // Open the ROOT file and get the TTree called "tree"
   // Store the TFile in wgGetTree::finput and TTree in wgGetTree::tree
-  wgGetTree::finput = new TFile(root_file_name.c_str(), "read");
-  wgGetTree::tree_in = (TTree*) wgGetTree::finput->Get("tree");
+  wgGetTree::finput = new TFile(m_finputname.c_str(), "read");
+  wgGetTree::tree = (TTree*) wgGetTree::finput->Get("tree");
 }
 
 //************************************************************************
 void wgGetTree::Close() {
   if(wgGetTree::finput != NULL) {
-    try {
-      wgGetTree::finput->Close();
-    }
+    try { wgGetTree::finput->Close(); }
     catch (const std::exception &e) {
-      Log.eWrite( "[wgGetTree::Open] failed to close " + wgGetTree::finputname +
+      Log.eWrite( "[wgGetTree] failed to close " + wgGetTree::m_finputname +
                   " : " + std::string(e.what()));
     }
-    delete wgGetTree::finput;
   }
 }
 
 //************************************************************************
-wgGetTree::~wgGetTree(){
+wgGetTree::~wgGetTree() {
   this->Close();
+  delete finput;
 }
 
+//************************************************************************
 bool wgGetTree::BranchExists(const std::string& branch_name) {
-  size_t n = tree_in->GetListOfBranches()->GetEntries();
+  size_t n = tree->GetListOfBranches()->GetEntries();
   for (size_t i = 0; i < n; i++) {
-    TBranch *br = dynamic_cast<TBranch*>(tree_in->GetListOfBranches()->At(i));
+    TBranch *br = dynamic_cast<TBranch*>(tree->GetListOfBranches()->At(i));
     if( br && br->GetName() == branch_name ) return true;
   }
   Log.Write("[SetTreeFile] Branch " + branch_name + " not found");
@@ -72,74 +70,74 @@ bool wgGetTree::BranchExists(const std::string& branch_name) {
 }
 
 //************************************************************************
-void wgGetTree::SetTreeFile(Raw_t& rdin){
+void wgGetTree::SetTreeFile(Raw_t& rd){
 
   if(finput == NULL || finput->IsOpen() == kFALSE)
-    throw wgInvalidFile("TFile " + finputname + " is not open!");
+    throw wgInvalidFile("TFile " + m_finputname + " is not open!");
   try {
     if (BranchExists("spill_number"))
-      tree_in->SetBranchAddress("spill_number",&rdin.spill_number);
+      tree->SetBranchAddress("spill_number",&rd.spill_number);
     if (BranchExists("spill_mode"))
-      tree_in->SetBranchAddress("spill_mode",  &rdin.spill_mode);
+      tree->SetBranchAddress("spill_mode",  &rd.spill_mode);
     if (BranchExists("spill_count"))
-      tree_in->SetBranchAddress("spill_count", &rdin.spill_count);
+      tree->SetBranchAddress("spill_count", &rd.spill_count);
     if (BranchExists("bcid"))
-      tree_in->SetBranchAddress("bcid",         rdin.bcid.data());
+      tree->SetBranchAddress("bcid",         rd.bcid.data());
     if (BranchExists("charge"))
-      tree_in->SetBranchAddress("charge",       rdin.charge.data());
+      tree->SetBranchAddress("charge",       rd.charge.data());
     if (BranchExists("time"))
-      tree_in->SetBranchAddress("time",         rdin.time.data());
+      tree->SetBranchAddress("time",         rd.time.data());
     if (BranchExists("gs"))
-      tree_in->SetBranchAddress("gs",           rdin.gs.data());
+      tree->SetBranchAddress("gs",           rd.gs.data());
     if (BranchExists("hit"))
-      tree_in->SetBranchAddress("hit",          rdin.hit.data());
+      tree->SetBranchAddress("hit",          rd.hit.data());
     if (BranchExists("chipid"))
-      tree_in->SetBranchAddress("chipid",       rdin.chipid.data());
+      tree->SetBranchAddress("chipid",       rd.chipid.data());
     if (BranchExists("col"))
-      tree_in->SetBranchAddress("col",          rdin.col.data());
+      tree->SetBranchAddress("col",          rd.col.data());
     if (BranchExists("chan"))
-      tree_in->SetBranchAddress("chan",         rdin.chan.data());
+      tree->SetBranchAddress("chan",         rd.chan.data());
     if (BranchExists("chip"))
-      tree_in->SetBranchAddress("chip",         rdin.chip.data());
+      tree->SetBranchAddress("chip",         rd.chip.data());
     if (BranchExists("debug_chip"))
-      tree_in->SetBranchAddress("debug_chip",   rdin.debug_chip.data());
+      tree->SetBranchAddress("debug_chip",   rd.debug_chip.data());
     if (BranchExists("debug_spill"))
-      tree_in->SetBranchAddress("debug_spill",  rdin.debug_spill.data());
+      tree->SetBranchAddress("debug_spill",  rd.debug_spill.data());
     if (BranchExists("view"))
-      tree_in->SetBranchAddress("view",        &rdin.view);
+      tree->SetBranchAddress("view",        &rd.view);
     if (BranchExists("pln"))
-      tree_in->SetBranchAddress("pln",          rdin.pln.data());
+      tree->SetBranchAddress("pln",          rd.pln.data());
     if (BranchExists("ch"))
-      tree_in->SetBranchAddress("ch",           rdin.ch.data());
+      tree->SetBranchAddress("ch",           rd.ch.data());
     if (BranchExists("grid"))
-      tree_in->SetBranchAddress("grid",         rdin.grid.data());
+      tree->SetBranchAddress("grid",         rd.grid.data());
     if (BranchExists("x"))
-      tree_in->SetBranchAddress("x",            rdin.x.data());
+      tree->SetBranchAddress("x",            rd.x.data());
     if (BranchExists("y"))
-      tree_in->SetBranchAddress("y",            rdin.y.data());
+      tree->SetBranchAddress("y",            rd.y.data());
     if (BranchExists("z"))
-      tree_in->SetBranchAddress("z",            rdin.z.data());
+      tree->SetBranchAddress("z",            rd.z.data());
     if (BranchExists("time_ns"))
-      tree_in->SetBranchAddress("time_ns",      rdin.time_ns.data());
+      tree->SetBranchAddress("time_ns",      rd.time_ns.data());
     if (BranchExists("pe"))
-      tree_in->SetBranchAddress("pe",           rdin.pe.data());
+      tree->SetBranchAddress("pe",           rd.pe.data());
     if (BranchExists("gain"))
-      tree_in->SetBranchAddress("gain",         rdin.gain.data());
+      tree->SetBranchAddress("gain",         rd.gain.data());
     if (BranchExists("pedestal"))
-      tree_in->SetBranchAddress("pedestal",     rdin.pedestal.data());
+      tree->SetBranchAddress("pedestal",     rd.pedestal.data());
     if (BranchExists("tdc_slope"))
-      tree_in->SetBranchAddress("tdc_slope",    rdin.tdc_slope.data());
+      tree->SetBranchAddress("tdc_slope",    rd.tdc_slope.data());
     if (BranchExists("tdc_intcpt"))
-      tree_in->SetBranchAddress("tdc_intcpt",   rdin.tdc_intcpt.data());
+      tree->SetBranchAddress("tdc_intcpt",   rd.tdc_intcpt.data());
   }	catch (const std::exception &e) {
     throw wgElementNotFound( "[wgGetTree::Open] failed to get the TTree from"
-                             + wgGetTree::finputname + " : " + std::string(e.what()));
+                             + wgGetTree::m_finputname + " : " + std::string(e.what()));
   }
 }
 
 //************************************************************************
-void wgGetTree::GetEntry(int i){
-  wgGetTree::tree_in->GetEntry(i);
+void wgGetTree::GetEntry(int event) {
+  wgGetTree::tree->GetEntry(event);
 }
 
 //************************************************************************
@@ -197,7 +195,7 @@ TH1D* wgGetTree::GetHist_DataPacket(){
 
 //************************************************************************
 TH1D* wgGetTree::GetHist_LostPacket(){
-  if (BranchExists("nb__pktlosts"))
+  if (BranchExists("nb_lost_pkts"))
     return dynamic_cast<TH1D*>(wgGetTree::finput->Get("nb_lost_pkts"));
   else return NULL;
 }

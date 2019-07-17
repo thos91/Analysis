@@ -17,62 +17,58 @@
 class wgGetTree
 {
 public:
-  TTree* tree_in;
-  TTree* tree_out;
+  TTree* tree;
   TFile* finput;
-  TFile* foutput;
+
   // The constructors just call wgGetTree::Open followed by
-  // wgGetTree::SetTreeFile. The exception thrown are just those thrown by those
-  // two functions (there is no exception handling in the constructors)
+  // wgGetTree::SetTreeFile. The exception thrown are just those
+  // thrown by those two methods (there is no exception handling in
+  // the constructors)
   wgGetTree(const std::string&, Raw_t&);
 
   // The destructor just calls the wgGetTree::Close function
   ~wgGetTree();
-  
-  bool MakeTreeFile(const std::string&, Hit_t&);
-  bool MakeTreeFile(const std::string&, Recon_t&);
-  bool MakeTreeFile(const std::string&, Track_t&);
-  void GetEntry(int);
 
-  // The difference between Get...(something) and GetHist...(something) is that
-  // in the former the center of the maximum bin is returned as a double while in
-  // the latter the entire TH1D is returned.
-  double GetStartTime();
-  double GetStopTime();
-  double GetDataPacket();
-  double GetLostPacket();
+  // Get one event from the TTree and store in the Raw_t rd object
+  void GetEntry(int event);
+
+  // The difference between Get...(something) and
+  // GetHist...(something) is that in the former the center of the
+  // maximum bin is returned as a double while in the latter the
+  // entire TH1D is returned.
+  double GetStartTime();      // "start_time"
+  double GetStopTime();       // "stop_time"
+  double GetDataPacket();     // "nb_data_pkts"
+  double GetLostPacket();     // "nb_lost_pkts"
   TH1D* GetHist_StartTime();
   TH1D* GetHist_StopTime();
   TH1D* GetHist_DataPacket();
   TH1D* GetHist_LostPacket();
 
 protected:
+  std::string m_finputname;
 
-  std::string finputname;
-
-  std::string foutputname;
-
-  // Open a ROOT file:
+  // Open a ROOT file containing a TTree named "tree":
   // The string argument is a path to a valid ROOT file.
-  // It is assumed that the ROOT file contains a TTree named "tree"
-  // throw wgInvalidFile if the file is not found or it is not valid (if the
-  // CheckExist::RootFile call has failed).
-  // throw ROOT exceptions if the TFile or the TTree cannot be read.
-  void Open(const std::string&);
+  // It is assumed that the ROOT file contains a TTree named "tree".
+  // It throws wgInvalidFile if the file is not found or it is not
+  // valid (if the CheckExist::RootFile call has failed). It throws
+  // specific ROOT exceptions if the TFile or the TTree cannot be
+  // read.
+  void Open();
 
-  // Close a ROOT file. No exception is thrown.
+  // Close the ROOT file. No exception is thrown.
   void Close();
 
-  // The SetTreeFile reads a TTree into the class passed as a reference.
-  // Before calling the SetTreeFile methods always call the wgGetTree::Open
-  // method.
-  //If the ROOT file was not opened a wgInvalidFile exception is thrown.
-  //If there was an error in the reading of the TTree a wgElementNotFound
-  //exception is thrown
+  // The SetTreeFile reads a TTree into the Raw_t object passed as a
+  // reference.
+  // If the ROOT file was not opened a wgInvalidFile exception is thrown.
+  // If there was an error in the reading of the TTree a wgElementNotFound
+  // exception is thrown
   void SetTreeFile(Raw_t&);
   
-  // Check if a branch exists in the tree_in TTree. Return true if it exists and
-  // false otherwise.
+  // Check if a branch exists in the tree_in TTree. Return true if it
+  // exists and false otherwise.
   bool BranchExists(const std::string&);
 };
 
