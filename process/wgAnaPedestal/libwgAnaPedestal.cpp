@@ -120,10 +120,15 @@ int wgAnaPedestal(const char * x_input_run_dir,
   for (auto & pe_directory : ListDirectories(input_run_dir)) {
     unsigned pe_level_from_dir = extractIntegerFromString(GetName(pe_directory));
     unsigned ipe;
-    if ( pe_level_from_dir == 1 ) ipe = ONE_PE;
-    else if ( pe_level_from_dir == 2 ) ipe = TWO_PE;
-    else throw runtime_error("[wgAnaPedestal] failed to read the p.e. level "
-                             "from the forlder name : " + pe_directory);
+    if ( pe_level_from_dir == 1 ) {
+      ipe = ONE_PE;
+    } else if ( pe_level_from_dir == 2 ) {
+      ipe = TWO_PE;
+    } else {
+      Log.Write("[wgAnaPedestal] failed to read the p.e. level "
+                "from the forlder name : " + pe_directory);
+      continue;
+    }
     
     // DIF
     pe_directory += "wgAnaHistSummary/Xml";
