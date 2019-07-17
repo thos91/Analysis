@@ -77,10 +77,10 @@ int wgDecoder(const char * x_input_raw_file,
   
   // ======== n_chips ========= //
 
-  if ( n_chips == 0 ) {
+  if (n_chips == 0) {
     n_chips = wagasci_decoder_utils::GetNumChips(input_raw_file);
   }
-  if( n_chips > NCHIPS ) {
+  if (n_chips == 0 || n_chips > NCHIPS) {
     Log.eWrite("[wgDecoder] The number of chips per DIF must be {1-"
                + to_string(NCHIPS) + "}");
     exit(1);
@@ -113,17 +113,20 @@ int wgDecoder(const char * x_input_raw_file,
   // If the number of DIFs is not provided as an argument, try to infer it from
   // the file name
   if (dif == 0) {
-    if ((pos = input_raw_file.find("dif_1_1_")) != string::npos)
+    std::string input_raw_file_name = wagasci_tools::GetName(input_raw_file);
+    if ((pos = input_raw_file_name.find("dif_1_1_")) != string::npos) {
       try {
-        dif = stoi(input_raw_file.substr(pos + 8, pos + 9));
-      } catch (const invalid_argument & e) {
+        dif = stoi(input_raw_file_name.substr(pos + 8, pos + 9));
+      } catch (const std::invalid_argument& e) {
         Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + string(e.what()));
-      } else if ((pos = input_raw_file.find("dif")) != string::npos)
+      }
+    } else if ((pos = input_raw_file_name.find("dif_")) != string::npos) {
       try {
-        dif = stoi(input_raw_file.substr(pos + 3, pos + 4));
-      } catch (const invalid_argument & e) {
+        dif = stoi(input_raw_file_name.substr(pos + 4, pos + 5)) + 1;
+      } catch (const std::invalid_argument& e) {
         Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + string(e.what()));
-      } else {
+      }
+    } else {
       Log.eWrite("[wgDecoder] Error: DIF ID number not given nor found");
       return ERR_WRONG_DIF_VALUE;
     }

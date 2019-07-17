@@ -5,6 +5,7 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgLogger.hpp"
 #include "wgRawData.hpp"
 #include "wgDecoder.hpp"
 #include "wgDecoderReader.hpp"
@@ -165,6 +166,12 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
   if ((raw_data.size() - m_config.n_chip_id) % ONE_COLUMN_LENGTH != 0)
     throw std::out_of_range("SPIROC2D raw data is off range : " + std::to_string(raw_data.size()));
   unsigned n_columns = (raw_data.size() - m_config.n_chip_id) / ONE_COLUMN_LENGTH;
+  if (n_columns > MEMDEPTH) {
+    Log.eWrite("[wgDecoder] ichip = " + std::to_string(section.ichip) +
+               " : number of columns (" + std::to_string(n_columns) +
+               ") is greater than " + std::to_string(MEMDEPTH));
+    n_columns = MEMDEPTH;
+  }
 
   std::vector<std::bitset<BITS_PER_LINE>>::reverse_iterator iraw_data = raw_data.rbegin(); 
 
@@ -193,11 +200,11 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
       // CHARGE
-      m_rd.get().charge [section.ichip][ichan][icol] = (*iraw_data & x0FFF).to_ulong();
+      m_rd.get().charge[section.ichip][ichan][icol] = (*iraw_data & x0FFF).to_ulong();
       if ((unsigned) m_rd.get().charge[section.ichip][ichan][icol] > MAX_VALUE_12BITS)
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_ADC]++;
       // HIT (0: no hit, 1: hit)
-      m_rd.get().hit    [section.ichip][ichan][icol] = (*iraw_data)[12];
+      m_rd.get().hit[section.ichip][ichan][icol] = (*iraw_data)[12];
       // GAIN (0: low gain, 1: high gain)
       m_rd.get().gs     [section.ichip][ichan][icol] = (*(iraw_data++))[13];
       // Only if the detector is already calibrated fithe histograms

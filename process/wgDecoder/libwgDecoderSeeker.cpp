@@ -51,7 +51,7 @@ SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
     wg_utils::ReadLine(is, raw_data_line);
     std::stringstream res;
     res << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << raw_data_line.to_ulong();
-    Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
+    // Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
     return this->SeekNextSection(is);
   }
 
