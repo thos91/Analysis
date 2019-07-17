@@ -11,18 +11,17 @@
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
 
-using namespace std;
 using namespace wagasci_tools;
 
 //************************************************************************
 
-wgGetTree::wgGetTree(const string& root_file_name, Raw_t& rd) {
+wgGetTree::wgGetTree(const std::string& root_file_name, Raw_t& rd) {
   this->Open(root_file_name);
   this->SetTreeFile(rd);
 }
 
 //************************************************************************
-void wgGetTree::Open(const string& root_file_name) {
+void wgGetTree::Open(const std::string& root_file_name) {
   // Check if the ROOT file exists
   
   wgGetTree::finputname = root_file_name;
@@ -49,9 +48,9 @@ void wgGetTree::Close() {
     try {
       wgGetTree::finput->Close();
     }
-    catch (const exception &e) {
+    catch (const std::exception &e) {
       Log.eWrite( "[wgGetTree::Open] failed to close " + wgGetTree::finputname +
-                  " : " + string(e.what()));
+                  " : " + std::string(e.what()));
     }
     delete wgGetTree::finput;
   }
@@ -62,7 +61,7 @@ wgGetTree::~wgGetTree(){
   this->Close();
 }
 
-bool wgGetTree::BranchExists(const string& branch_name) {
+bool wgGetTree::BranchExists(const std::string& branch_name) {
   size_t n = tree_in->GetListOfBranches()->GetEntries();
   for (size_t i = 0; i < n; i++) {
     TBranch *br = dynamic_cast<TBranch*>(tree_in->GetListOfBranches()->At(i));
@@ -132,9 +131,9 @@ void wgGetTree::SetTreeFile(Raw_t& rdin){
       tree_in->SetBranchAddress("tdc_slope",    rdin.tdc_slope.data());
     if (BranchExists("tdc_intcpt"))
       tree_in->SetBranchAddress("tdc_intcpt",   rdin.tdc_intcpt.data());
-  }	catch (const exception &e) {
+  }	catch (const std::exception &e) {
     throw wgElementNotFound( "[wgGetTree::Open] failed to get the TTree from"
-                             + wgGetTree::finputname + " : " + string(e.what()));
+                             + wgGetTree::finputname + " : " + std::string(e.what()));
   }
 }
 
@@ -145,7 +144,7 @@ void wgGetTree::GetEntry(int i){
 
 //************************************************************************
 double wgGetTree::GetStartTime(){
-  TH1D* h=(TH1D*)wgGetTree::finput->Get("start_time");
+  TH1D* h = (TH1D*)wgGetTree::finput->Get("start_time");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
@@ -153,8 +152,7 @@ double wgGetTree::GetStartTime(){
 
 //************************************************************************
 double wgGetTree::GetStopTime(){
-  TH1D* h;
-  h=(TH1D*)wgGetTree::finput->Get("stop_time");
+  TH1D* h = (TH1D*) wgGetTree::finput->Get("stop_time");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
@@ -162,8 +160,7 @@ double wgGetTree::GetStopTime(){
 
 //************************************************************************
 double wgGetTree::GetDataPacket(){
-  TH1D* h;
-  h=(TH1D*)wgGetTree::finput->Get("nb_data_pkts");
+  TH1D* h = (TH1D*) wgGetTree::finput->Get("nb_data_pkts");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
@@ -171,8 +168,7 @@ double wgGetTree::GetDataPacket(){
 
 //************************************************************************
 double wgGetTree::GetLostPacket(){
-  TH1D* h;
-  h=(TH1D*)wgGetTree::finput->Get("nb_lost_pkts");
+  TH1D* h = (TH1D*) wgGetTree::finput->Get("nb_lost_pkts");
   double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
   delete h;
   return ret;
