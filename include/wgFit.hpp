@@ -16,20 +16,18 @@
 
 #define DEBUG_WGFIT
 
-using namespace std;
-
 class wgFit
 {
 private:
-  string outputIMGDir;
+  std::string m_output_img_dir;
 
 public:
   wgGetHist *GetHist;
   
   // wgFit::wgFit
   // Just call the GetHist constructor. Exceptions may be thrown.
-  wgFit(const string& inputfile);
-  wgFit(const string& inputfile, const string& outputIMGDir);
+  wgFit(const std::string& inputfile);
+  wgFit(const std::string& inputfile, const std::string& outputIMGDir);
 
   // wgFit::~wgFit
   // delete the wgFit::GetHist object
@@ -78,6 +76,6 @@ public:
   void charge_nohit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
   // Copy the passed string into the outputIMGDir private member 
-  void SetoutputIMGDir(const string&);
+  void set_output_img_dir(const std::string& output_image_dir);
 };
 #endif

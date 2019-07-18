@@ -18,13 +18,12 @@ class wgGetTree
 {
 public:
   TTree* tree;
-  TFile* finput;
 
   // The constructors just call wgGetTree::Open followed by
   // wgGetTree::SetTreeFile. The exception thrown are just those
   // thrown by those two methods (there is no exception handling in
   // the constructors)
-  wgGetTree(const std::string&, Raw_t&);
+  wgGetTree(const std::string& finputname, Raw_t& rd);
 
   // The destructor just calls the wgGetTree::Close function
   ~wgGetTree();
@@ -45,9 +44,11 @@ public:
   TH1I* GetHist_DataPacket();
   TH1I* GetHist_LostPacket();
 
-protected:
+private:
   std::string m_finputname;
-
+  TFile * m_finput;
+  std::reference_wrapper<Raw_t> m_rd;
+  
   // Open a ROOT file containing a TTree named "tree":
   // The string argument is a path to a valid ROOT file.
   // It is assumed that the ROOT file contains a TTree named "tree".
@@ -65,11 +66,11 @@ protected:
   // If the ROOT file was not opened a wgInvalidFile exception is thrown.
   // If there was an error in the reading of the TTree a wgElementNotFound
   // exception is thrown
-  void SetTreeFile(Raw_t&);
+  void SetTreeFile();
   
   // Check if a branch exists in the tree_in TTree. Return true if it
   // exists and false otherwise.
-  bool BranchExists(const std::string&);
+  bool BranchExists(const std::string& branch_name);
 };
 
 #endif // WAGASCI_GET_TREE_HPP_ 
