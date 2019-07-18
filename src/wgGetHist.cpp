@@ -1,29 +1,26 @@
 // system includes
-#include <cstdbool>
+#include <string>
 
 // ROOT includes
-#include "TH1.h"
-#include "TH2.h"
+#include "TH1I.h"
 #include "TCanvas.h"
 #include "TFile.h"
 
 // user includes
-
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgGetHist.hpp"
 #include "wgLogger.hpp"
 
-using namespace std;
 using namespace wagasci_tools;
 
 //************************************************************************
-wgGetHist::wgGetHist(const string& str) {
+wgGetHist::wgGetHist(const std::string& str) {
   
   if ( !check_exist::RootFile(str) ) throw wgInvalidFile("[" + str + "][SetHistFile] failed to set histogram file");
   try { wgGetHist::freadhist = new TFile(str.c_str(),"read"); }
-  catch (const exception& e) {
-    Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[" + str + "][SetHistFile] failed to set histogram file : " + std::string(e.what()));
     throw;
   }
 }
