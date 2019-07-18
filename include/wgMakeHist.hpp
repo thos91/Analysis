@@ -4,8 +4,6 @@
 // user includes
 #include "wgConst.hpp"
 
-// #define DEBUG_MAKEHIST
-
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
 extern "C" {

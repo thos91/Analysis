@@ -15,8 +15,8 @@
 #include "wgFileSystemTools.hpp"
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
-#include "wgMakeHist.hpp"
 #include "wgLogger.hpp"
+#include "wgMakeHist.hpp"
 
 using namespace wagasci_tools;
 
@@ -177,10 +177,6 @@ int wgMakeHist(const char * x_inputFileName,
     // CHIPS loop
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       if( rd.chipid[ichip] < 0 || rd.chipid[ichip] >= (int) n_chips ) {
-#ifdef DEBUG_MAKEHIST
-        Log.Write("[wgMakeHist] event " + std::to_string(ievent) + " : chipid[" +
-                  std::to_string(i) + "] = " + std::to_string(rd.chipid[i])); 
-#endif
         continue;
       }
       // chipid: chip ID tag as it is recorded in the chip trailer
@@ -202,11 +198,7 @@ int wgMakeHist(const char * x_inputFileName,
             // LOW GAIN
             else if(rd.gs[ichip][ichan][icol] == LOW_GAIN_BIT) {
               h_charge_hit_LG[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
-            }
-#ifdef DEBUG_MAKEHIST	
-            else Log.Write("[wgMakeHist] event " + std::to_string(ievent) +
-                           " : bad gain bit = " + std::to_string(rd.gs[ichip][ichan][icol] ));
-#endif	  
+            }	  
           }
           // NO HIT
           else if ( rd.hit[ichip][ichan][icol] == NO_HIT_BIT ) {
@@ -217,7 +209,8 @@ int wgMakeHist(const char * x_inputFileName,
       }//end ich
     }//end V_chipid
   }//end ievent
-			
+
+  delete GetTree;
   Log.Write("     *****  Finished reading file  *****     ");
 			
   outputHistFile->cd();
@@ -245,7 +238,7 @@ int wgMakeHist(const char * x_inputFileName,
 
   outputHistFile->Close();
   Log.Write("[wgMakeHist] finished");
-  delete GetTree;
+
   delete outputHistFile;
   return WG_SUCCESS;
 }
