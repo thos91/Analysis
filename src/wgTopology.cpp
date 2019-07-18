@@ -354,10 +354,9 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
   
   // p.e.
   for (auto & pe_directory : pe_dir_list) {
-    unsigned ipe;
-    if ( (ipe = extractIntegerFromString(GetName(pe_directory))) == UINT_MAX )
-      throw wgInvalidFile("[wgTopology] failed to read the p.e. value from directory name : " + pe_directory);
-
+    unsigned ipe = 0;
+    if ( (ipe = extractIntegerFromString(GetName(pe_directory))) == UINT_MAX || (ipe != 1 && ipe != 2)) continue;
+    
     // DIF
     pe_directory += "/wgAnaHistSummary/Xml";
     std::vector<std::string> dif_dir_list = ListDirectories(pe_directory);
@@ -453,7 +452,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
   for (auto const & iDAC_directory : iDAC_dir_list) {
     unsigned iDAC;
     if ( (iDAC = extractIntegerFromString(GetName(iDAC_directory))) == UINT_MAX )
-      throw wgInvalidFile("[wgTopology] failed to read input DAC value from directory name : " + iDAC_directory);
+      continue;
     std::vector<std::string> th_dir_list = ListDirectories(iDAC_directory);
     if ( th_dir_list.size() == 0 )
       throw std::invalid_argument("[wgTopology] empty iDAC directory : " + iDAC_directory);
@@ -462,7 +461,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
     for (auto & th_directory : th_dir_list) {
       unsigned threshold;
       if ( (threshold = extractIntegerFromString(GetName(th_directory))) == UINT_MAX )
-        throw wgInvalidFile("[wgTopology] failed to read threshold value from directory name : " + th_directory);
+        continue;
 
       // DIF
       th_directory += "/wgAnaHistSummary/Xml";
