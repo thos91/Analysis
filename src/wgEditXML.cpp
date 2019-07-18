@@ -919,7 +919,7 @@ void wgEditXML::Pedestal_Make(const std::string& filename, Topology& topol){
     data->InsertEndChild(dif);
     chips = xml->NewElement("n_chips");
 
-    unsigned n_chips = topol.dif_map[idif].size();
+    unsigned n_chips = topol.dif_map[idif_id].size();
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chips);
     chips->SetText(str);
     data->InsertEndChild(chips);
@@ -930,7 +930,7 @@ void wgEditXML::Pedestal_Make(const std::string& filename, Topology& topol){
       chip = xml->NewElement(str);    
       dif->InsertEndChild(chip);
 
-      unsigned n_chans = topol.dif_map[idif][ichip];
+      unsigned n_chans = topol.dif_map[idif_id][ichip_id];
       chans = xml->NewElement("n_chans");
       snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chans);
       chans->SetText(str);
