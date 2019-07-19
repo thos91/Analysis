@@ -84,7 +84,7 @@ public:
   //    - v[1]: stop_time
   //    - v[2]: nb_data_pkts
   //    - v[3]: nb_lost_pkts
-  void GetLog(const std::string&, i1vector&);
+  void GetLog(const std::string& filename, std::vector<std::string>& v);
 
   //=======================================================================//
   //                         standard XML files                            //

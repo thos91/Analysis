@@ -3,10 +3,6 @@
 #include <string>
 #include <vector>
 
-// system C includes
-#include <cstdlib>
-#include <ctime>
-
 // tinyxml2 includes
 #include "tinyxml2.hpp"
 
@@ -182,8 +178,7 @@ bool wgEditXML::GetConfig(const std::string& configxml,
 }
 
 //**********************************************************************
-void wgEditXML::GetLog(const std::string& filename, i1vector& v){
-  std::string str("");
+void wgEditXML::GetLog(const std::string& filename, std::vector<std::string>& v){
   std::string target("");
   v.clear();
   v.resize(4);
@@ -191,28 +186,20 @@ void wgEditXML::GetLog(const std::string& filename, i1vector& v){
   xml->LoadFile(filename.c_str()); 
   XMLElement* log = xml->FirstChildElement("log");
   XMLElement* acq  = log->FirstChildElement("acq");
-  for(XMLElement* param = acq->FirstChildElement("param"); param!=NULL; param= param->NextSiblingElement("param")){
+  for (XMLElement* param = acq->FirstChildElement("param");
+       param != NULL;
+       param = param->NextSiblingElement("param")) {
     target = param->Attribute("name");
-    if(target=="start_time"){
-      str = param->GetText();
-      struct tm tm;
-      strptime(str.c_str(),"%Y/%m/%d %H:%M:%S",&tm);
-      time_t time = mktime(&tm);
-      v[0] = (int)time;
-    }else if(target=="stop_time"){
-      str = param->GetText();
-      struct tm tm;
-      strptime(str.c_str(),"%Y/%m/%d %H:%M:%S",&tm);
-      time_t time = mktime(&tm);
-      v[1] = (int)time;
+    if (target == "start_time") {
+      v[0] = param->GetText();
+    } else if (target == "stop_time") {
+      v[1] = param->GetText();
     }
-    else if(target=="nb_data_pkts"){ 
-      str = param->GetText();
-      v[2]=atoi(str.c_str());
+    else if (target == "nb_data_pkts") { 
+      v[2] = param->GetText();
     }
-    else if(target=="nb_lost_pkts"){ 
-      str = param->GetText();
-      v[3]=atoi(str.c_str());
+    else if (target == "nb_lost_pkts") {
+      v[3] = param->GetText();
     }
   }
   delete xml;
