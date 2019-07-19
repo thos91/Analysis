@@ -8,7 +8,6 @@
 // ROOT includes
 #include <TF1.h>
 #include <TGraphErrors.h>
-#include <TCanvas.h>
 #include <TString.h>
 
 // user includes
@@ -113,7 +112,6 @@ void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool prin
     image.Form("%s/chip%u/chan%u/NoiseRate%u_%u.png",
                m_output_img_dir.c_str(), ichip, ichan, ichip, ichan);
     GetHist->Print_bcid(image, bcid_hit);
-    delete bcid_hit;
   }
 }
 
@@ -168,8 +166,6 @@ void wgFit::charge_hit(unsigned ichip, unsigned ichan, unsigned icol,
     GetHist->Print_charge(image, charge_hit);
   }
   delete gaussian;
-  delete charge_hit;
-  return;  
 }
 
 
@@ -223,8 +219,6 @@ void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol,
     GetHist->Print_charge_hit_HG(image, charge_hit_HG);
   }
   delete gaussian;
-  delete charge_hit_HG;
-  return;
 }
 
 //**********************************************************************
@@ -284,6 +278,4 @@ void wgFit::charge_nohit(unsigned ichip, unsigned ichan, unsigned icol,
   }
   
   delete gaussian;
-  delete charge_nohit;
-  return;  
 }

@@ -11,7 +11,6 @@
 
 // ROOT includes
 #include <THStack.h>
-#include <TCanvas.h>
 #include <TLegend.h>
 #include <TH1.h>
 
@@ -38,18 +37,18 @@ void ModeSelect(const int mode, bitset<M>& flag){
 }
 
 //******************************************************************
-int wgAnaHist(const char * x_inputFile,
-              const char * x_configFile,
-              const char * x_outputXMLDir,
-              const char * x_outputIMGDir,
+int wgAnaHist(const char * x_input_file,
+              const char * x_pyrame_config_file,
+              const char * x_output_xml_dir,
+              const char * x_output_img_dir,
               int mode,
               const unsigned long flags_ulong,
               const unsigned idif_id) {
 
-  string inputFile(x_inputFile);
-  string configFile(x_configFile);
-  string outputXMLDir(x_outputXMLDir);
-  string outputIMGDir(x_outputIMGDir);
+  string input_file(x_input_file);
+  string pyrame_config_file(x_pyrame_config_file);
+  string output_xml_dir(x_output_xml_dir);
+  string output_img_dir(x_output_img_dir);
   wgEditXML Edit;
   
 
@@ -66,12 +65,12 @@ int wgAnaHist(const char * x_inputFile,
 
   // =========== Arguments sanity check =========== //
 
-  if(inputFile.empty() || !check_exist::RootFile(inputFile)) {
-    Log.eWrite("[wgAnaHist] Input file not found : " + inputFile);
+  if(input_file.empty() || !check_exist::RootFile(input_file)) {
+    Log.eWrite("[wgAnaHist] Input file not found : " + input_file);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if ( flags[SELECT_CONFIG] && ( configFile.empty() || !check_exist::XmlFile(configFile)) ) {
-    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + configFile);
+  if ( flags[SELECT_CONFIG] && ( pyrame_config_file.empty() || !check_exist::XmlFile(pyrame_config_file)) ) {
+    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + pyrame_config_file);
     exit(1);
   }
   if ( idif_id <= 0 || idif_id > NDIFS ) {
@@ -79,11 +78,15 @@ int wgAnaHist(const char * x_inputFile,
     return ERR_WRONG_DIF_VALUE;
   }
 
+  Log.Write("[wgMakeHist] *****  READING FILE     : " + input_file         + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + output_xml_dir     + "  *****");
+  Log.Write("[wgMakeHist] *****  CONFIG FILE      : " + pyrame_config_file + "  *****");
+  
   // =========== Topology =========== //
 
   Topology * topol;
   try {
-    topol = new Topology(configFile);
+    topol = new Topology(pyrame_config_file);
   }
   catch (const exception& e) {
     Log.eWrite("[wgAnaHist] " + string(e.what()));
@@ -98,19 +101,19 @@ int wgAnaHist(const char * x_inputFile,
 
   // =========== Create output directories =========== //
 
-  // ======= Create outputXMLDir ======= //
-  try { MakeDir(outputXMLDir); }
+  // ======= Create output_xml_dir ======= //
+  try { MakeDir(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaPedestal] " + string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
-  // ======= Create outputIMGDir ======= //
-  if( flags[SELECT_PRINT] ) {
+  // ======= Create output_img_dir ======= //
+  if (flags[SELECT_PRINT]) {
     for ( unsigned ichip = 1; ichip <= n_chips; ichip++ ) {
       unsigned n_chans = topol->dif_map[idif_id][ichip];
       for ( unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++ ) {
-        string outputIMGChipChanDir(outputIMGDir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan_id));
-        try { MakeDir(outputIMGChipChanDir); }
+        string output_img_chip_chan_dir(output_img_dir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan_id));
+        try { MakeDir(output_img_chip_chan_dir); }
         catch (const wgInvalidFile& e) {
           Log.eWrite("[wgAnaPedestal] " + string(e.what()));
           return ERR_FAILED_CREATE_DIRECTORY;
@@ -124,9 +127,9 @@ int wgAnaHist(const char * x_inputFile,
   //                        MAIN LOOP                         //
   //                                                          //
   // ======================================================== //
-  
+
   try {
-    wgFit Fit(inputFile, outputIMGDir);
+    wgFit Fit(input_file, output_img_dir);
 
     bool first_time = true;
     int start_time = 0;
@@ -139,9 +142,9 @@ int wgAnaHist(const char * x_inputFile,
     for (unsigned ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
       unsigned n_chans = topol->dif_map[idif_id][ichip_id];
 
-      // ============ Create outputXMLChipDir ============ //
-      string outputXMLChipDir(outputXMLDir + "/chip" + to_string(ichip_id));
-      try { MakeDir(outputXMLChipDir); }
+      // ============ Create output_xml_chip_dir ============ //
+      string output_xml_chip_dir(output_xml_dir + "/chip" + to_string(ichip_id));
+      try { MakeDir(output_xml_chip_dir); }
       catch (const wgInvalidFile& e) {
         Log.eWrite("[wgAnaHist] " + string(e.what()));
         return ERR_FAILED_CREATE_DIRECTORY;
@@ -155,12 +158,12 @@ int wgAnaHist(const char * x_inputFile,
       vector<vector<int>> config; // n_chans * 5 parameters
 
       Log.Write("[wgAnaHist] Analyzing chip " + to_string(ichip_id));
-      // Read the SPIROC2D configuration parameters from the configFile (the xml
+      // Read the SPIROC2D configuration parameters from the pyrame_config_file (the xml
       // configuration file used during acquisition) into the "config" vector.
       if( flags[SELECT_CONFIG] ) {
         unsigned gdcc = topol->GetGdccDifPair(idif_id).first;
         unsigned dif = topol->GetGdccDifPair(idif_id).second;
-        if ( ! Edit.GetConfig(configFile, gdcc, dif, ichip_id, n_chans, config) ) {
+        if ( ! Edit.GetConfig(pyrame_config_file, gdcc, dif, ichip_id, n_chans, config) ) {
           Log.eWrite("[wgAnaHist] DIF " + to_string(idif_id) + ", chip " + to_string(ichip_id) +
                      " : failed to get bitstream parameters");
           return ERR_FAILED_GET_BISTREAM;
@@ -173,7 +176,7 @@ int wgAnaHist(const char * x_inputFile,
       
       for(unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++) {
         // Open the outputxmlfile as an XML file
-        string outputxmlfile(outputXMLChipDir + "/chan" + to_string(ichan_id) + ".xml");
+        string outputxmlfile(output_xml_chip_dir + "/chan" + to_string(ichan_id) + ".xml");
         try {
           if( !check_exist::XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
             Edit.Make(outputxmlfile, idif_id, ichip_id, ichan_id);
@@ -273,5 +276,6 @@ int wgAnaHist(const char * x_inputFile,
     Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_FAILED_OPEN_HIST_FILE;
   }
+  
   return WG_SUCCESS;
 }
