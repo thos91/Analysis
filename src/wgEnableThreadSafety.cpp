@@ -7,3 +7,10 @@
 void wgEnableThreadSafety() {
   ROOT::EnableThreadSafety();
 }
+
+RootSideEffectGuard::RootSideEffectGuard(): m_directory(gDirectory) {
+  gDirectory = 0;
+}
+RootSideEffectGuard::~RootSideEffectGuard() {
+  gDirectory = m_directory;
+}
