@@ -282,5 +282,18 @@ bool Dir(const std::string& filePath)
 
 }  // check_exist
 
+namespace datetime {
+
+int DatetimeToSeconds(const std::string & datetime) {
+  std::tm t = {};
+  std::istringstream ss(datetime);
+  if (ss >> std::get_time(&t, "%Y/%m/%d %H:%M:%S"))
+    return std::mktime(&t);
+  else
+    return -1;
+}
+
+} // datetime
+
 } // namespace wagasci_tools
 

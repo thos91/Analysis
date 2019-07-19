@@ -76,5 +76,13 @@ bool Dir        (const std::string& filename);   //check the existence of dir.
 
 }  // check_exist
 
-}
+namespace datetime {
+// convert localtime datetime string formated as "%Y/%m/%d %H:%M:%S"
+// into seconds elapsed from epoch. If the string could not be parse
+// -1 is returned.
+int DatetimeToSeconds(const std::string & datetime);
+
+} // datetime
+
+} // wagasci_tools
 #endif
