@@ -8,6 +8,7 @@
 #include "TFile.h"
 #include "TH1I.h"
 #include "TTree.h"
+#include "TParameter.h"
 
 // user includes
 #include "wgConst.hpp"
@@ -23,6 +24,7 @@ using namespace wagasci_tools;
 int wgMakeHist(const char * x_input_file_name,
                const char * x_output_dir,
                const bool overwrite,
+               const unsigned dif,
                const unsigned n_chips) {
 
   /////////////////////////////////////////////////////////////////////////////
@@ -49,10 +51,10 @@ int wgMakeHist(const char * x_input_file_name,
     wagasci_tools::MakeDir(output_dir);
   }
 
-  Log.Write("[wgMakeHist] *****  READING FILE     : " + GetName(input_file_name)      + "  *****");
-  Log.Write("[wgMakeHist] *****  OUTPUT HIST FILE : " + GetName(output_file_name) + "  *****");
-  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + GetName(output_dir)          + "  *****");
-  Log.Write("[wgMakeHist] *****  LOG FILE         : " + GetName(logfilename)        + "  *****");
+  Log.Write("[wgMakeHist] *****  READING FILE     : " + input_file_name  + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT HIST FILE : " + output_file_name + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + output_dir       + "  *****");
+  Log.Write("[wgMakeHist] *****  LOG FILE         : " + logfilename      + "  *****");
 
   /////////////////////////////////////////////////////////////////////////////
   //                            Define Histograms                            //
@@ -125,7 +127,7 @@ int wgMakeHist(const char * x_input_file_name,
   
   Raw_t rd(n_chips);
   wgGetTree * GetTree;
-  try { GetTree = new wgGetTree(input_file_name, rd); }
+  try { GetTree = new wgGetTree(input_file_name, rd, dif); }
   catch (const std::exception& e) {
     Log.eWrite("[wgMakeHist] failed to get the TTree from file : " + std::string(e.what()));
     return ERR_FAILED_OPEN_TREE_FILE;
@@ -135,27 +137,20 @@ int wgMakeHist(const char * x_input_file_name,
   //                         Get acquisition run info                        //
   /////////////////////////////////////////////////////////////////////////////
   
-  TH1I * start_time;
-  TH1I * stop_time;
-  TH1I * nb_data_pkts;
-  TH1I * nb_lost_pkts;
-  start_time   = GetTree->GetHist_StartTime();
-  stop_time    = GetTree->GetHist_StopTime();
-  nb_data_pkts = GetTree->GetHist_DataPacket();
-  nb_lost_pkts = GetTree->GetHist_LostPacket();
+  TParameter<int> * start_time   = new TParameter<int>("start_time",   GetTree->GetStartTime());
+  TParameter<int> * stop_time    = new TParameter<int>("stop_time",    GetTree->GetStartTime());
+  TParameter<int> * nb_data_pkts = new TParameter<int>("nb_data_pkts", GetTree->GetStartTime());
+  TParameter<int> * nb_lost_pkts = new TParameter<int>("nb_lost_pkts", GetTree->GetStartTime());
 
   int max_spill = GetTree->tree->GetMaximum("spill_count");
   int min_spill = GetTree->tree->GetMinimum("spill_count");
-  TArrayI spill_count(1);
-  spill_count[0] = std::abs(max_spill - min_spill);
+  TParameter<int> * spill_count = new TParameter<int>("spill_count", std::abs(max_spill - min_spill));
   Int_t n_events = GetTree->tree->GetEntries();
-  if (min_spill != 0 || max_spill < min_spill ||
-      n_events / n_chips != (unsigned) spill_count[0]) {
-    Log.eWrite("[wgMakeHist] some spills are missing : min_spill = " +
-               std::to_string(min_spill) + ", max_spill = " +
-               std::to_string(max_spill) + ", n_events = " +
-               std::to_string(n_events)
-               );
+  if (n_events / n_chips != (unsigned) spill_count->GetVal()) {
+    Log.eWrite("[wgMakeHist] some spills are missing : max_spill - min_spill = " +
+               std::to_string(max_spill) + " - " + std::to_string(min_spill) + " = " +
+               std::to_string(spill_count->GetVal()) + ", n_events/n_chips = " +
+               std::to_string(n_events / n_chips));
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -225,11 +220,11 @@ int wgMakeHist(const char * x_input_file_name,
   output_hist_file->cd();
 
   // In some old runs the time and data packets info is not recorded
-  if (start_time != NULL) start_time-> Write();
-  if (stop_time != NULL) stop_time-> Write();
-  if (nb_data_pkts != NULL) nb_data_pkts-> Write();
-  if (nb_lost_pkts != NULL) nb_lost_pkts-> Write();
-  output_hist_file->WriteObject(&spill_count, "spill_count");
+  output_hist_file->WriteObject(start_time,   "start_time");
+  output_hist_file->WriteObject(stop_time,    "stop_time");
+  output_hist_file->WriteObject(nb_data_pkts, "nb_data_pkts");
+  output_hist_file->WriteObject(nb_lost_pkts, "nb_lost_pkts");
+  output_hist_file->WriteObject(spill_count,  "spill_count");
   for (unsigned ichipid = 0; ichipid < n_chips; ichipid++) {
     for (unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
       if (h_bcid_hit[ichipid][ichan] != NULL) h_bcid_hit[ichipid][ichan]->Write();

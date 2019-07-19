@@ -3,11 +3,12 @@
 
 // ROOT includes
 #include "TH1I.h"
+#include "TString.h"
+#include "TParameter.h"
 
 // user includes
 #include "wgGetTree.hpp"
 #include "wgFileSystemTools.hpp"
-
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
 
@@ -15,10 +16,11 @@ using namespace wagasci_tools;
 
 //************************************************************************
 
-wgGetTree::wgGetTree(const std::string& root_file_name, Raw_t& rd) :
+wgGetTree::wgGetTree(const std::string& root_file_name, Raw_t& rd, unsigned dif) :
     m_finputname(root_file_name), m_rd(rd) {
   this->Open();
-  this->SetTreeFile();
+  TString tree_name("tree_dif_" + std::to_string(dif));
+  this->SetTreeFile(tree_name);
 }
 
 //************************************************************************
@@ -62,8 +64,8 @@ bool wgGetTree::BranchExists(const std::string& branch_name) {
 }
 
 //************************************************************************
-void wgGetTree::SetTreeFile() {
-  tree = (TTree*) m_finput->Get("tree");
+void wgGetTree::SetTreeFile(TString tree_name) {
+  tree = (TTree*) m_finput->Get(tree_name);
   try {
     if (BranchExists("spill_number"))
       tree->SetBranchAddress("spill_number",&m_rd.get().spill_number);
@@ -131,61 +133,33 @@ void wgGetTree::GetEntry(int event) {
 }
 
 //************************************************************************
-double wgGetTree::GetStartTime() {
-  TH1I* h = (TH1I*)m_finput->Get("start_time");
-  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
-  delete h;
-  return ret;
+int wgGetTree::GetStartTime() {
+  if (tree->GetUserInfo()->FindObject("start_time"))
+    return ((TParameter<int>*) tree->GetUserInfo()->FindObject("start_time"))->GetVal();
+  else
+    return -1;
 }
 
 //************************************************************************
-double wgGetTree::GetStopTime() {
-  TH1I* h = (TH1I*) m_finput->Get("stop_time");
-  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
-  delete h;
-  return ret;
+int wgGetTree::GetStopTime() {
+  if (tree->GetUserInfo()->FindObject("stop_time"))
+    return ((TParameter<int>*) tree->GetUserInfo()->FindObject("stop_time"))->GetVal();
+  else
+    return -1;
 }
 
 //************************************************************************
-double wgGetTree::GetDataPacket() {
-  TH1I* h = (TH1I*) m_finput->Get("nb_data_pkts");
-  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
-  delete h;
-  return ret;
+int wgGetTree::GetDataPacket() {
+  if (tree->GetUserInfo()->FindObject("nb_data_pkts"))
+    return ((TParameter<int>*) tree->GetUserInfo()->FindObject("nb_data_pkts"))->GetVal();
+  else
+    return -1;
 }
 
 //************************************************************************
-double wgGetTree::GetLostPacket() {
-  TH1I* h = (TH1I*) m_finput->Get("nb_lost_pkts");
-  double ret = h->GetXaxis()->GetBinCenter(h->GetMaximumBin());
-  delete h;
-  return ret;
-}
-
-//************************************************************************
-TH1I* wgGetTree::GetHist_StartTime() {
-  if (BranchExists("start_time"))
-    return dynamic_cast<TH1I*>(m_finput->Get("start_time"));
-  else return NULL;
-}
-
-//************************************************************************
-TH1I* wgGetTree::GetHist_StopTime() {
-  if (BranchExists("stop_time"))
-    return dynamic_cast<TH1I*>(m_finput->Get("stop_time"));
-  else return NULL;
-}
-
-//************************************************************************
-TH1I* wgGetTree::GetHist_DataPacket() {
-  if (BranchExists("nb_data_pkts"))
-    return dynamic_cast<TH1I*>(m_finput->Get("nb_data_pkts"));
-  else return NULL;
-}
-
-//************************************************************************
-TH1I* wgGetTree::GetHist_LostPacket() {
-  if (BranchExists("nb_lost_pkts"))
-    return dynamic_cast<TH1I*>(m_finput->Get("nb_lost_pkts"));
-  else return NULL;
+int wgGetTree::GetLostPacket() {
+  if (tree->GetUserInfo()->FindObject("nb_lost_pkts"))
+    return ((TParameter<int>*) tree->GetUserInfo()->FindObject("nb_lost_pkts"))->GetVal();
+  else
+    return -1; 
 }

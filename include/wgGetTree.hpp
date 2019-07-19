@@ -9,6 +9,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TH1I.h"
+#include "TString.h"
 
 // user includes
 #include "wgConst.hpp"
@@ -23,7 +24,7 @@ public:
   // wgGetTree::SetTreeFile. The exception thrown are just those
   // thrown by those two methods (there is no exception handling in
   // the constructors)
-  wgGetTree(const std::string& finputname, Raw_t& rd);
+  wgGetTree(const std::string& finputname, Raw_t& rd, unsigned dif);
 
   // The destructor just calls the wgGetTree::Close function
   ~wgGetTree();
@@ -31,18 +32,10 @@ public:
   // Get one event from the TTree and store in the Raw_t rd object
   void GetEntry(int event);
 
-  // The difference between Get...(something) and
-  // GetHist...(something) is that in the former the center of the
-  // maximum bin is returned as a double while in the latter the
-  // entire TH1I is returned.
-  double GetStartTime();      // "start_time"
-  double GetStopTime();       // "stop_time"
-  double GetDataPacket();     // "nb_data_pkts"
-  double GetLostPacket();     // "nb_lost_pkts"
-  TH1I* GetHist_StartTime();
-  TH1I* GetHist_StopTime();
-  TH1I* GetHist_DataPacket();
-  TH1I* GetHist_LostPacket();
+  int GetStartTime();      // "start_time"
+  int GetStopTime();       // "stop_time"
+  int GetDataPacket();     // "nb_data_pkts"
+  int GetLostPacket();     // "nb_lost_pkts"
 
 private:
   std::string m_finputname;
@@ -66,7 +59,7 @@ private:
   // If the ROOT file was not opened a wgInvalidFile exception is thrown.
   // If there was an error in the reading of the TTree a wgElementNotFound
   // exception is thrown
-  void SetTreeFile();
+  void SetTreeFile(TString tree_name);
   
   // Check if a branch exists in the tree_in TTree. Return true if it
   // exists and false otherwise.
