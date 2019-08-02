@@ -26,6 +26,9 @@ using namespace std;
 // Set the flags according to the mode
 void ModeSelect(int mode, bitset<M>& flag);
 
+// mutex for fit sections
+std::mutex mtx;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

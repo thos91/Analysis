@@ -9,11 +9,6 @@
 // system C includes
 #include <bits/stdc++.h>
 
-// ROOT includes
-#include <THStack.h>
-#include <TLegend.h>
-#include <TH1.h>
-
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
@@ -191,8 +186,8 @@ int wgAnaHist(const char * x_input_file,
 
         try {
           if (first_time) {
-            start_time = Fit.GetHist->Get_start_time();
-            stop_time  = Fit.GetHist->Get_stop_time();
+            start_time = Fit.histos.Get_start_time();
+            stop_time  = Fit.histos.Get_stop_time();
             first_time = false;
           }
           Edit.SetConfigValue(string("start_time"), start_time);
@@ -233,7 +228,9 @@ int wgAnaHist(const char * x_input_file,
             double fit_charge_nohit[3] = {0, 0, 0};
             for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
               // Calculate the pedestal value and its sigma
+              mtx.lock();
               Fit.charge_nohit(ichip_id, ichan_id, icol_id, fit_charge_nohit, flags[SELECT_PRINT]);
+              mtx.unlock();
               Edit.SetColValue(string("charge_nohit"), icol_id, fit_charge_nohit[0], CREATE_NEW_MODE);
               Edit.SetColValue(string("sigma_nohit"),  icol_id, fit_charge_nohit[1], CREATE_NEW_MODE);
             } 
@@ -244,7 +241,9 @@ int wgAnaHist(const char * x_input_file,
           if ( flags[SELECT_CHARGE] ) {
             double fit_charge[3] = {0, 0, 0};
             for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+              mtx.lock();
               Fit.charge_hit(ichip_id, ichan_id, icol_id, fit_charge, flags[SELECT_PRINT]);
+              mtx.unlock();
               Edit.SetColValue(string("charge_hit"), icol_id, fit_charge[0], CREATE_NEW_MODE);
               Edit.SetColValue(string("sigma_hit") , icol_id, fit_charge[1], CREATE_NEW_MODE);
             }
@@ -255,7 +254,9 @@ int wgAnaHist(const char * x_input_file,
           if ( flags[SELECT_CHARGE_HG] ) {
             double fit_charge_HG[3] = {0, 0, 0};
             for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+              mtx.lock();
               Fit.charge_hit_HG(ichip_id, ichan_id, icol_id, fit_charge_HG, flags[SELECT_PRINT]);
+              mtx.unlock();
               Edit.SetColValue(string("charge_hit_HG"), icol_id, fit_charge_HG[0], CREATE_NEW_MODE);
               Edit.SetColValue(string("sigma_hit_HG"),  icol_id, fit_charge_HG[1], CREATE_NEW_MODE);
             }
