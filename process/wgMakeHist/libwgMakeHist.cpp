@@ -75,7 +75,7 @@ int wgMakeHist(const char * x_input_file_name,
   int bin     = MAX_VALUE_12BITS;
   TString h_name;
   wgColor wgColor;
-  const bool old_directory_status = TH1::AddDirectoryStatus();
+
   TH1::AddDirectory(kFALSE);
   
   for (unsigned ichip = 0; ichip < n_chips; ++ichip) {
@@ -119,88 +119,94 @@ int wgMakeHist(const char * x_input_file_name,
       h_bcid_hit[ichip][ichan]->SetLineColor(kBlack);
     } //end ch
   } //end chip
-  TH1::AddDirectory(old_directory_status);
+  
+  TH1::AddDirectory(kTRUE);
 
   /////////////////////////////////////////////////////////////////////////////
   //                           Open tree.root file                           //
   /////////////////////////////////////////////////////////////////////////////
   
   Raw_t rd(n_chips);
-  wgGetTree * GetTree;
-  try { GetTree = new wgGetTree(input_file_name, rd, dif); }
+  
+  TParameter<int> * start_time; 
+  TParameter<int> * stop_time;  
+  TParameter<int> * nb_data_pkts;
+  TParameter<int> * nb_lost_pkts;
+  TParameter<int> * spill_count;
+  
+  try {
+    wgGetTree wg_tree(input_file_name, rd, dif); 
+
+    /////////////////////////////////////////////////////////////////////////////
+    //                         Get acquisition run info                        //
+    /////////////////////////////////////////////////////////////////////////////
+  
+    start_time   = new TParameter<int>("start_time",   wg_tree.GetStartTime());
+    stop_time    = new TParameter<int>("stop_time",    wg_tree.GetStartTime());
+    nb_data_pkts = new TParameter<int>("nb_data_pkts", wg_tree.GetStartTime());
+    nb_lost_pkts = new TParameter<int>("nb_lost_pkts", wg_tree.GetStartTime());
+
+    int max_spill = wg_tree.tree->GetMaximum("spill_count");
+    int min_spill = wg_tree.tree->GetMinimum("spill_count");
+    spill_count = new TParameter<int>("spill_count", std::abs(max_spill - min_spill));
+    Int_t n_events = wg_tree.tree->GetEntries();
+    if (n_events / n_chips != (unsigned) spill_count->GetVal()) {
+      Log.eWrite("[wgMakeHist] some spills are missing : max_spill - min_spill = " +
+                 std::to_string(max_spill) + " - " + std::to_string(min_spill) + " = " +
+                 std::to_string(spill_count->GetVal()) + ", n_events/n_chips = " +
+                 std::to_string(n_events / n_chips));
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    //                                Event loop                               //
+    /////////////////////////////////////////////////////////////////////////////
+  
+    for (Int_t ievent = 0; ievent < n_events; ++ievent) {
+
+      if ( ievent % 1000 == 0 )
+        Log.Write("[wgMakeHist] Event number = " + std::to_string(ievent) +
+                  " / " + std::to_string(n_events));
+      // Read one event
+      wg_tree.tree->GetEntry(ievent);
+
+      // CHIPS loop
+      for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+        // chipid: chip ID tag as it is recorded in the chip trailer
+        unsigned ichipid = rd.chipid[ichip];
+        if (ichipid >= n_chips) continue;
+        // CHANNELS loop
+        for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+          // COLUMNS loop
+          for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
+            // HIT
+            if ( rd.hit[ichip][ichan][icol] == HIT_BIT ) {
+              h_bcid_hit  [ichipid][ichan]->      Fill(rd.bcid  [ichip]       [icol]);
+              h_pe_hit    [ichipid][ichan][icol]->Fill(rd.pe    [ichip][ichan][icol]);
+              h_time_hit  [ichipid][ichan][icol]->Fill(rd.time  [ichip][ichan][icol]);
+              h_charge_hit[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
+              // HIGH GAIN
+              if(rd.gs[ichip][ichan][icol] == HIGH_GAIN_BIT) { 
+                h_charge_hit_HG[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
+              }
+              // LOW GAIN
+              else if(rd.gs[ichip][ichan][icol] == LOW_GAIN_BIT) {
+                h_charge_hit_LG[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
+              }	  
+            }
+            // NO HIT
+            else if ( rd.hit[ichip][ichan][icol] == NO_HIT_BIT ) {
+              h_charge_nohit[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
+              h_time_nohit  [ichipid][ichan][icol]->Fill(rd.time  [ichip][ichan][icol]);
+            } // hit
+          } // icol
+        } // ichan
+      } // ichipid
+    } // ievent
+  } // try
   catch (const std::exception& e) {
     Log.eWrite("[wgMakeHist] failed to get the TTree from file : " + std::string(e.what()));
     return ERR_FAILED_OPEN_TREE_FILE;
   }
-
-  /////////////////////////////////////////////////////////////////////////////
-  //                         Get acquisition run info                        //
-  /////////////////////////////////////////////////////////////////////////////
-  
-  TParameter<int> * start_time   = new TParameter<int>("start_time",   GetTree->GetStartTime());
-  TParameter<int> * stop_time    = new TParameter<int>("stop_time",    GetTree->GetStartTime());
-  TParameter<int> * nb_data_pkts = new TParameter<int>("nb_data_pkts", GetTree->GetStartTime());
-  TParameter<int> * nb_lost_pkts = new TParameter<int>("nb_lost_pkts", GetTree->GetStartTime());
-
-  int max_spill = GetTree->tree->GetMaximum("spill_count");
-  int min_spill = GetTree->tree->GetMinimum("spill_count");
-  TParameter<int> * spill_count = new TParameter<int>("spill_count", std::abs(max_spill - min_spill));
-  Int_t n_events = GetTree->tree->GetEntries();
-  if (n_events / n_chips != (unsigned) spill_count->GetVal()) {
-    Log.eWrite("[wgMakeHist] some spills are missing : max_spill - min_spill = " +
-               std::to_string(max_spill) + " - " + std::to_string(min_spill) + " = " +
-               std::to_string(spill_count->GetVal()) + ", n_events/n_chips = " +
-               std::to_string(n_events / n_chips));
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  //                                Event loop                               //
-  /////////////////////////////////////////////////////////////////////////////
-  
-  for (Int_t ievent = 0; ievent < n_events; ++ievent) {
-
-    if ( ievent % 1000 == 0 )
-      Log.Write("[wgMakeHist] Event number = " + std::to_string(ievent) +
-                " / " + std::to_string(n_events));
-    // Read one event
-    GetTree->tree->GetEntry(ievent);
-
-    // CHIPS loop
-    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-      // chipid: chip ID tag as it is recorded in the chip trailer
-      unsigned ichipid = rd.chipid[ichip];
-      if (ichipid >= n_chips) continue;
-
-      // CHANNELS loop
-      for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
-        // COLUMNS loop
-        for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-          // HIT
-          if ( rd.hit[ichip][ichan][icol] == HIT_BIT ) {
-            h_bcid_hit  [ichipid][ichan]->      Fill(rd.bcid  [ichip]       [icol]);
-            h_pe_hit    [ichipid][ichan][icol]->Fill(rd.pe    [ichip][ichan][icol]);
-            h_time_hit  [ichipid][ichan][icol]->Fill(rd.time  [ichip][ichan][icol]);
-            h_charge_hit[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
-            // HIGH GAIN
-            if(rd.gs[ichip][ichan][icol] == HIGH_GAIN_BIT) { 
-              h_charge_hit_HG[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
-            }
-            // LOW GAIN
-            else if(rd.gs[ichip][ichan][icol] == LOW_GAIN_BIT) {
-              h_charge_hit_LG[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
-            }	  
-          }
-          // NO HIT
-          else if ( rd.hit[ichip][ichan][icol] == NO_HIT_BIT ) {
-            h_charge_nohit[ichipid][ichan][icol]->Fill(rd.charge[ichip][ichan][icol]);
-            h_time_nohit  [ichipid][ichan][icol]->Fill(rd.time  [ichip][ichan][icol]);
-          }//end hit
-        }//end icol
-      }//end ich
-    }//end V_chipid
-  }//end ievent
-
-  delete GetTree;
   
   /////////////////////////////////////////////////////////////////////////////
   //                      Write histograms to hist.root                      //
@@ -240,6 +246,7 @@ int wgMakeHist(const char * x_input_file_name,
     }
   }
 
+  output_hist_file->Write();
   output_hist_file->Close();
   Log.Write("[wgMakeHist] finished");
   delete output_hist_file;
