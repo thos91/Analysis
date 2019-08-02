@@ -1,56 +1,39 @@
 #ifndef WGFITCONST_H_INCLUDE
 #define WGFITCONST_H_INCLUDE
 
+// fit range for the charge_hit histogram
+extern const int WG_BEGIN_CHARGE_HIT;
+extern const int WG_END_CHARGE_HIT;
 
-extern const double sigma;         //initial sigma of gaussian value
-extern const double max_sigma;     //max value
-extern const double min_sigma;     //min value
+// fit range for the charge_nohit histogram
+extern const int WG_BEGIN_CHARGE_NOHIT;
+extern const int WG_END_CHARGE_NOHIT;
 
-extern const double threshold;     //initial threshold value
-extern const double max_threshold;   
-extern const double min_threshold;    
+// fit range for the charge_hit_HG histogram
+extern const int WG_BEGIN_CHARGE_HIT_HG;
+extern const int WG_END_CHARGE_HIT_HG;
 
-extern const int begin_pe; //begining value of fitting range for low pe
-extern const int end_pe;   //ending value of fitting range for low pe
+// limits for the dark noise rate
+extern const double WG_LOWER_LIMIT_1PE;
+extern const double WG_UPPER_LIMIT_1PE;
+extern const double WG_LOWER_LIMIT_2PE;
+extern const double WG_UPPER_LIMIT_2PE;
+extern const double WG_LOWER_LIMIT_3PE;
+extern const double WG_UPPER_LIMIT_3PE;
 
-extern const int begin_pe_HG; //begining value of fitting range for low pe
-extern const int end_pe_HG;   //ending value of fitting range for low pe
+// nominal value for the MPPC gain
+extern const double WG_NOMINAL_GAIN;
 
-extern const int N_ped ;       //maximum number of peak search for pedestal
-extern const int begin_ped;    //begining value of fitting range for pedestal
-extern const int end_ped;    //ending value of fitting range for pedestal
+// time interval in seconds of 1 BCID count
+extern const double TIME_BCID;
 
-extern const int N_DarkNoise ;     //maximum number of peak search for dark noise
-extern const int N_Pedestal ;     //maximum number of peak search for pedestal
-extern const int N_LED ;     //maximum number of peak search for LED
-
-extern const double l_limit_1pe;
-extern const double u_limit_1pe;
-extern const double l_limit_2pe;
-extern const double u_limit_2pe;
-extern const double l_limit_3pe;
-extern const double u_limit_3pe;
-
-extern const int begin_LED;    //begining value of fitting range for LED
-extern const int end_LED;    //ending value of fitting range for LED
-
-extern const int begin_BCID;    //begining value of fitting range for LED
-extern const int end_BCID;    //ending value of fitting range for LED
-extern const int limit_BCID;    //ending value of fitting range for LED
-
-extern const double est_Gain ;     //estimate Gain
-
-extern const double GSthreshold ;     //estimate Gain
-extern const double GSthreshold_0 ;     //estimate Gain
-
-extern const double time_bcid_bin ;   // bcid 1bin time[s]
-
-extern const int ped_diff_max;  // maximum (most right) value of the difference
-							    // between the measured pedestal and the nominal
-							    // pedestal
-extern const int ped_diff_min;  // minimum (most left) value
-
+// Maximum value of the BCID
 extern const unsigned MAX_BCID_BIN;
+
+// maximum (most right) and minimum (most left) values of the
+// difference between the measured pedestal and the nominal pedestal
+extern const int WG_PED_DIFF_MAX;  
+extern const int WG_PED_DIFF_MIN;
 
 // Guess the threshold value (in p.e.) given the dark noise rate
 // This little function tries to guess the threshold level (0.5, 1.5 or 2.5)
