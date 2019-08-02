@@ -17,7 +17,6 @@ using namespace wagasci_tools;
 
 //************************************************************************
 wgGetHist::wgGetHist(const std::string& hist_file) {
-  
   if (!check_exist::RootFile(hist_file))
     throw wgInvalidFile("[wgGetHist] histogram file not found : " + hist_file);
   try { wgGetHist::m_hist_file = new TFile(hist_file.c_str(),"read"); }
@@ -35,79 +34,72 @@ wgGetHist::~wgGetHist(){
 
 //************************************************************************
 TH1I * wgGetHist::Get_charge_hit_HG(unsigned i, unsigned j, unsigned k){
-  TH1I * h_charge_hit_HG = NULL;
   TString charge_hit_HG;
   charge_hit_HG.Form("charge_hit_HG_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(charge_hit_HG)) {
-    h_charge_hit_HG = (TH1I*) m_hist_file->Get(charge_hit_HG);
-  }
-  return h_charge_hit_HG;
+  if (m_hist_file->GetListOfKeys()->Contains(charge_hit_HG))
+    return (TH1I*) m_hist_file->Get(charge_hit_HG);
+  else
+    return NULL;
 }
 
 //************************************************************************
 TH1I * wgGetHist::Get_charge_hit_LG(unsigned i, unsigned j, unsigned k) {
-  TH1I * h_charge_hit_LG = NULL;
   TString charge_hit_LG;
   charge_hit_LG.Form("charge_hit_LG_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(charge_hit_LG)) {
-    h_charge_hit_LG = (TH1I*) m_hist_file->Get(charge_hit_LG);
-  }
-  return h_charge_hit_LG;
+  if (m_hist_file->GetListOfKeys()->Contains(charge_hit_LG))
+    return (TH1I*) m_hist_file->Get(charge_hit_LG);
+  else
+    return NULL;
 }
 
 //************************************************************************
 TH1I * wgGetHist::Get_charge_nohit(unsigned i, unsigned j, unsigned k) {
-  TH1I * h_charge_nohit = NULL;
   TString charge_nohit;
   charge_nohit.Form("charge_nohit_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(charge_nohit)) {
-    h_charge_nohit = (TH1I*) m_hist_file->Get(charge_nohit);
-  }
-  return h_charge_nohit;
+  if (m_hist_file->GetListOfKeys()->Contains(charge_nohit))
+    return (TH1I*) m_hist_file->Get(charge_nohit);
+  else
+    return NULL;
 }
 
 //************************************************************************
 TH1I * wgGetHist::Get_time_hit(unsigned i, unsigned j, unsigned k) {
-  TH1I * h_time_hit = NULL;
   TString time_hit;
   time_hit.Form("time_hit_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(time_hit)) {
-    h_time_hit = (TH1I*) m_hist_file->Get(time_hit);
-  }
-  return h_time_hit;
+  if (m_hist_file->GetListOfKeys()->Contains(time_hit))
+    return (TH1I*) m_hist_file->Get(time_hit);
+  else
+    return NULL;
 }
 
 //************************************************************************
 TH1I * wgGetHist::Get_time_nohit(unsigned i, unsigned j, unsigned k) {
-  TH1I * h_time_nohit = NULL;
   TString time_nohit;
   time_nohit.Form("time_nohit_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(time_nohit)) {
-    h_time_nohit = (TH1I*) m_hist_file->Get(time_nohit);
-  }
-  return h_time_nohit;
+  if (m_hist_file->GetListOfKeys()->Contains(time_nohit))
+    return (TH1I*) m_hist_file->Get(time_nohit);
+  else
+    return NULL;
 }
 
 //************************************************************************
 TH1I * wgGetHist::Get_charge_hit(unsigned i, unsigned j, unsigned k) {
-  TH1I * h_charge_hit = NULL;
   TString charge_hit;
   charge_hit.Form("charge_hit_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(charge_hit)) {
-    h_charge_hit = (TH1I*) m_hist_file->Get(charge_hit);
-  }
-  return h_charge_hit;
+  if (m_hist_file->GetListOfKeys()->Contains(charge_hit))
+    return (TH1I*) m_hist_file->Get(charge_hit);
+  else
+    return NULL;
 }
 
 //************************************************************************
 TH1I * wgGetHist::Get_bcid_hit(unsigned i, unsigned j) {
-  TH1I * h_bcid_hit = NULL;
   TString bcid_hit;
   bcid_hit.Form("bcid_hit_chip%u_ch%u", i, j);
-  if (m_hist_file->GetListOfKeys()->Contains(bcid_hit)) {
-    h_bcid_hit = (TH1I*) m_hist_file->Get(bcid_hit);
-  }
-  return h_bcid_hit;
+  if (m_hist_file->GetListOfKeys()->Contains(bcid_hit))
+    return (TH1I*) m_hist_file->Get(bcid_hit);
+  else
+    return NULL;
 }
 
 //************************************************************************
