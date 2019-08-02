@@ -241,17 +241,17 @@ int wgAnaPedestal(const char * x_input_run_dir,
   TH1D *h_corrected_ped[MEMDEPTH];
   TH1D *h_ped_shift[MEMDEPTH];
   // xbins = 60, xlow = -50, xup = 10
-  TH1D *h_ped_shift_global = new TH1D("h_ped_shift_global","h_ped_shift_global", abs(ped_diff_max - ped_diff_min), ped_diff_min, ped_diff_max);
+  TH1D *h_ped_shift_global = new TH1D("h_ped_shift_global","h_ped_shift_global", std::abs(WG_PED_DIFF_MAX - WG_PED_DIFF_MIN), WG_PED_DIFF_MIN, WG_PED_DIFF_MAX);
   
   h_ped_shift_global->SetTitle("pedestal shift;adc count;nEntry");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
     unsigned icol_id = icol + 1;
     // xbins = 300, xlow = 400, xup = 700
     name.Form("h_corrected_ped_%d", icol_id);
-    h_corrected_ped[icol] = new TH1D(name, "h_corrected_ped", abs(end_ped - begin_ped), begin_ped, end_ped);
+    h_corrected_ped[icol] = new TH1D(name, "h_corrected_ped", std::abs(WG_END_CHARGE_NOHIT - WG_BEGIN_CHARGE_NOHIT), WG_BEGIN_CHARGE_NOHIT, WG_END_CHARGE_NOHIT);
     // xbins = 100, xlow = -50, xup = 50
     name.Form("h_ped_shift_%d", icol_id);
-    h_ped_shift[icol] = new TH1D(name, "h_ped_shift", abs(ped_diff_max - ped_diff_min), ped_diff_min, ped_diff_max);
+    h_ped_shift[icol] = new TH1D(name, "h_ped_shift", std::abs(WG_PED_DIFF_MAX - WG_PED_DIFF_MIN), WG_PED_DIFF_MIN, WG_PED_DIFF_MAX);
     h_corrected_ped[icol]->SetLineColor(kBlue);
     h_ped_shift[icol]->SetLineColor(kRed);
     name.Form("pedestal shift col%d;adc count;nEntry", icol_id);

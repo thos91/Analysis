@@ -357,7 +357,7 @@ int wgAnaHistSummary(const char * x_inputDir,
           l_Diff->SetFillStyle(0);
           name.Form("Diff (%d pe) \n\t chip:%d", pe_level[ichip][0], ichip_id);
           l_Diff->AddEntry(h_Diff[ichip], name, "p");
-          canvas->DrawFrame(-5, 1, 32 * 26 + 5, est_Gain * pe_level[ichip][0] * 4);
+          canvas->DrawFrame(-5, 1, 32 * 26 + 5, WG_NOMINAL_GAIN * pe_level[ichip][0] * 4);
           h_Diff[ichip]->Draw("same P HIST");
           l_Diff->Draw();
           for (unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
@@ -387,7 +387,7 @@ int wgAnaHistSummary(const char * x_inputDir,
           l_Charge_Hit->SetFillStyle(0);
           name.Form("Charge_Hit (%d pe) \n\t chip:%d", pe_level[ichip][0], ichip_id);
           l_Charge_Hit->AddEntry(h_Charge_Hit[ichip], name, "p");
-          canvas->DrawFrame(-5, begin_pe_HG, 32 * 26 + 5, end_pe_HG);
+          canvas->DrawFrame(-5, WG_BEGIN_CHARGE_HIT_HG, 32 * 26 + 5, WG_END_CHARGE_HIT_HG);
           h_Charge_Hit[ichip]->Draw("same P HIST");
           l_Charge_Hit->Draw();
           for (unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
@@ -417,7 +417,7 @@ int wgAnaHistSummary(const char * x_inputDir,
           l_Charge_Nohit->SetFillStyle(0);
           name.Form("Charge_Nohit \n\t chip:%d", ichip_id);
           l_Charge_Nohit->AddEntry(h_Charge_Nohit[ichip], name, "p");
-          canvas->DrawFrame(-5, begin_ped, 32 * 26 + 5, end_ped);
+          canvas->DrawFrame(-5, WG_BEGIN_CHARGE_NOHIT, 32 * 26 + 5, WG_END_CHARGE_NOHIT);
           h_Charge_Nohit[ichip]->Draw("same P HIST");
           l_Charge_Nohit->Draw();
           for (unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
