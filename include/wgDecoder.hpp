@@ -48,7 +48,7 @@ extern "C" {
                 const char * x_output_dir,
                 bool overwrite = false,
                 bool compatibility_mode = false,
-                unsigned dif = 1,
+                unsigned dif = 0,
                 unsigned n_chips = 0);
   
 #ifdef __cplusplus

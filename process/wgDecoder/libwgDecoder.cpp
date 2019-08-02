@@ -117,7 +117,7 @@ int wgDecoder(const char * x_input_raw_file,
       }
     } else if ((pos = input_raw_file_name.find("dif_")) != std::string::npos) {
       try {
-        dif = stoi(input_raw_file_name.substr(pos + 4, pos + 5)) + 1;
+        dif = stoi(input_raw_file_name.substr(pos + 4, pos + 5));
       } catch (const std::invalid_argument& e) {
         Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + std::string(e.what()));
       }
