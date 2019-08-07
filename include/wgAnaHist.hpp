@@ -26,8 +26,13 @@ using namespace std;
 // Set the flags according to the mode
 void ModeSelect(int mode, bitset<M>& flag);
 
-// mutex for fit sections
+// Only the ROOT Minuit2 minimizer is thread-safe. All the others are
+// not. So if ROOT has not support for the Minuit2 minimizer than we
+// have to restrict access to the fitting sections only to one thread
+// at a time
+#ifdef ROOT_HAS_NOT_MINUIT2
 std::mutex mtx;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

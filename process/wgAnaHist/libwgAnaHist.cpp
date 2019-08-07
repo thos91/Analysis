@@ -228,9 +228,13 @@ int wgAnaHist(const char * x_input_file,
             double fit_charge_nohit[3] = {0, 0, 0};
             for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
               // Calculate the pedestal value and its sigma
+#ifdef ROOT_HAS_NOT_MINUIT2
               mtx.lock();
+#endif
               Fit.charge_nohit(ichip_id, ichan_id, icol_id, fit_charge_nohit, flags[SELECT_PRINT]);
+#ifdef ROOT_HAS_NOT_MINUIT2
               mtx.unlock();
+#endif
               Edit.SetColValue(string("charge_nohit"), icol_id, fit_charge_nohit[0], CREATE_NEW_MODE);
               Edit.SetColValue(string("sigma_nohit"),  icol_id, fit_charge_nohit[1], CREATE_NEW_MODE);
             } 
@@ -241,9 +245,13 @@ int wgAnaHist(const char * x_input_file,
           if ( flags[SELECT_CHARGE] ) {
             double fit_charge[3] = {0, 0, 0};
             for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+#ifdef ROOT_HAS_NOT_MINUIT2
               mtx.lock();
+#endif
               Fit.charge_hit(ichip_id, ichan_id, icol_id, fit_charge, flags[SELECT_PRINT]);
+#ifdef ROOT_HAS_NOT_MINUIT2
               mtx.unlock();
+#endif
               Edit.SetColValue(string("charge_hit"), icol_id, fit_charge[0], CREATE_NEW_MODE);
               Edit.SetColValue(string("sigma_hit") , icol_id, fit_charge[1], CREATE_NEW_MODE);
             }
@@ -254,9 +262,13 @@ int wgAnaHist(const char * x_input_file,
           if ( flags[SELECT_CHARGE_HG] ) {
             double fit_charge_HG[3] = {0, 0, 0};
             for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+#ifdef ROOT_HAS_NOT_MINUIT2
               mtx.lock();
+#endif
               Fit.charge_hit_HG(ichip_id, ichan_id, icol_id, fit_charge_HG, flags[SELECT_PRINT]);
+#ifdef ROOT_HAS_NOT_MINUIT2
               mtx.unlock();
+#endif
               Edit.SetColValue(string("charge_hit_HG"), icol_id, fit_charge_HG[0], CREATE_NEW_MODE);
               Edit.SetColValue(string("sigma_hit_HG"),  icol_id, fit_charge_HG[1], CREATE_NEW_MODE);
             }
