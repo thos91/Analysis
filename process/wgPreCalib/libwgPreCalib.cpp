@@ -40,12 +40,12 @@ using namespace wagasci_tools;
 
 //******************************************************************
 int wgPreCalib(const char * x_inputDir,
-			   const char * x_outputXMLDir,
-			   const char * x_outputIMGDir,
-			   const int mode,
-			   const unsigned n_difs,
-			   const unsigned n_chips,
-			   const unsigned n_chans) {
+               const char * x_outputXMLDir,
+               const char * x_outputIMGDir,
+               const int mode,
+               const unsigned n_difs,
+               const unsigned n_chips,
+               const unsigned n_chans) {
   
   
   wgEnvironment env;
@@ -55,32 +55,32 @@ int wgPreCalib(const char * x_inputDir,
 
   if(outputXMLDir == "") {
     outputXMLDir = env.CALIBDATA_DIRECTORY + GetName(inputDir);
-	if(outputXMLDir == "") {
-	  return ERR_CANNOT_CREATE_DIRECTORY;
-	}
+    if(outputXMLDir == "") {
+      return ERR_CANNOT_CREATE_DIRECTORY;
+    }
   }
   
   // ============ Create outputXMLDir ============ //
   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-	string dir_name(outputXMLDir + "/chip" + to_string(ichip));
-	if( !check_exist::Dir(dir_name) ) {
-	  boost::filesystem::path dir(dir_name);
-	  if( !boost::filesystem::create_directories(dir) ) {
-		Log.eWrite("[wgPreCalib][" + dir_name + "] failed to create directory");
-		return ERR_CANNOT_CREATE_DIRECTORY;
-	  }
-	}
+    string dir_name(outputXMLDir + "/chip" + to_string(ichip));
+    if( !check_exist::Dir(dir_name) ) {
+      boost::filesystem::path dir(dir_name);
+      if( !boost::filesystem::create_directories(dir) ) {
+        Log.eWrite("[wgPreCalib][" + dir_name + "] failed to create directory");
+        return ERR_CANNOT_CREATE_DIRECTORY;
+      }
+    }
   }
   // ============ Create outputIMGDir ============ //
   for(unsigned idif = 0; idif < n_difs; idif++) {
-	string dir_name(outputIMGDir + "/dif" + to_string(idif + 1));
-	if( !check_exist::Dir(dir_name) ) {
-	  boost::filesystem::path dir(dir_name);
-	  if( !boost::filesystem::create_directories(dir) ) {
-		Log.eWrite("[wgPreCalib][" + dir_name + "] failed to create directory");
-		return ERR_CANNOT_CREATE_DIRECTORY;
-	  }
-	}
+    string dir_name(outputIMGDir + "/dif" + to_string(idif + 1));
+    if( !check_exist::Dir(dir_name) ) {
+      boost::filesystem::path dir(dir_name);
+      if( !boost::filesystem::create_directories(dir) ) {
+        Log.eWrite("[wgPreCalib][" + dir_name + "] failed to create directory");
+        return ERR_CANNOT_CREATE_DIRECTORY;
+      }
+    }
   }
 
   vector<string> inputFiles = ListFiles(inputDir);
@@ -96,7 +96,7 @@ int wgPreCalib(const char * x_inputDir,
   }
 
   if ( mode != TWIN_PEAKS && mode != LONELY_MOUNTAIN )
-	throw invalid_argument("[wgPreCalib] unknown mode : " + to_string(mode));
+    throw invalid_argument("[wgPreCalib] unknown mode : " + to_string(mode));
 
   // Remove duplicates and sort the list of inputDACs
   vector<int> list_inputDAC;
@@ -121,16 +121,16 @@ int wgPreCalib(const char * x_inputDir,
   // double Pedestal[n_difs][n_chips][n_chans][size_inputDAC][2][MEMDEPTH];
 
   vector<vector<vector<vector<array<double, 2>>>>> Gain (n_difs, vector<vector<vector<array<double, 2>>>>
-														 (n_chips, vector<vector<array<double, 2>>>
-														  (n_chans, vector<array<double, 2>>
-														   (size_inputDAC, array<double, 2>()))));
+                                                         (n_chips, vector<vector<array<double, 2>>>
+                                                          (n_chans, vector<array<double, 2>>
+                                                           (size_inputDAC, array<double, 2>()))));
 
   vector<vector<vector<vector<vector<array<double, MEMDEPTH>>>>>> Pedestal (n_difs, vector<vector<vector<vector<array<double, MEMDEPTH>>>>>
-																			(n_chips, vector<vector<vector<array<double, MEMDEPTH>>>>
-																			 (n_chans, vector<vector<array<double, MEMDEPTH>>>
-																			  (size_inputDAC, vector<array<double, MEMDEPTH>>
-																			   (2, array<double, MEMDEPTH>())))));
-																	   
+                                                                            (n_chips, vector<vector<vector<array<double, MEMDEPTH>>>>
+                                                                             (n_chans, vector<vector<array<double, MEMDEPTH>>>
+                                                                              (size_inputDAC, vector<array<double, MEMDEPTH>>
+                                                                               (2, array<double, MEMDEPTH>())))));
+                                                                                                                                           
 
 
   // ======================================================//
@@ -140,45 +140,45 @@ int wgPreCalib(const char * x_inputDir,
   for(unsigned iFN = 0; iFN < n_files; iFN++) {
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
 
-	  // ===== DIF number ===== //
-	  
+      // ===== DIF number ===== //
+          
       int pos = inputFiles[iFN].find("dif_1_1_") + 8;
-	  bool found = false;
-	  for (unsigned idif = 0; idif < n_difs; idif++) {
-		// This will not work for DIF >= 10
-		if(inputFiles[iFN][pos] == to_string(idif + 1)) {
-		  dif = idif;
-		  found = true;
-		  break;
-		}
-	  }
-	  if (found == false)
-		throw wgElementNotFound("failed to guess DIF number from file name: " + inputFiles[iFN]);
+      bool found = false;
+      for (unsigned idif = 0; idif < n_difs; idif++) {
+        // This will not work for DIF >= 10
+        if(inputFiles[iFN][pos] == to_string(idif + 1)) {
+          dif = idif;
+          found = true;
+          break;
+        }
+      }
+      if (found == false)
+        throw wgElementNotFound("failed to guess DIF number from file name: " + inputFiles[iFN]);
 
-	  // ===== P.E. number ===== //
-	  
+      // ===== P.E. number ===== //
+          
       pos = inputFiles[iFN].find("_pe") + 3;
       if(inputFiles[iFN][pos] == '1') npe = 0;
       else if(inputFiles[iFN][pos] == '2') npe = 1;
-	  else throw wgElementNotFound("failed to guess photo electrons from file name: " + inputFiles[iFN]);
+      else throw wgElementNotFound("failed to guess photo electrons from file name: " + inputFiles[iFN]);
 
       Edit.Open(inputFiles[iFN] + "/Summary_chip" + to_string(ichip) + ".xml");
-	  // Read the value of the inputDAC from the Summary_chip%d.xml file
+      // Read the value of the inputDAC from the Summary_chip%d.xml file
       inputDAC[iFN] = Edit.SUMMARY_GetChConfigValue(string("inputDAC"), NO_CREATE_NEW_MODE);
-	  
-	  pair<bool, int> iDAC = findInVector(list_inputDAC, inputDAC[iFN]);
-	  if (iDAC.first == false) {
-		Log.eWrite("[wgPreCalib] inputDAC value (" + to_string(inputDAC[iFN]) + ") not found in the list");
-		continue;
-	  }
+          
+      pair<bool, int> iDAC = findInVector(list_inputDAC, inputDAC[iFN]);
+      if (iDAC.first == false) {
+        Log.eWrite("[wgPreCalib] inputDAC value (" + to_string(inputDAC[iFN]) + ") not found in the list");
+        continue;
+      }
 
-	  // ===== read Gain and Pedestal ===== //
-	  
+      // ===== read Gain and Pedestal ===== //
+          
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
         // This gain should be twice the true gain.
         Gain[dif][ichip][ichan][iDAC.second][npe] = Edit.SUMMARY_GetChFitValue(string("Gain"), ichan);
         if(mode == TWIN_PEAKS){
-		  // If we use both 1pe and 2ped, get the pedestal position
+          // If we use both 1pe and 2ped, get the pedestal position
           Edit.SUMMARY_GetPedFitValue(Pedestal[dif][ichip][ichan][iDAC.second][npe].data(), ichan);
         }
       }
@@ -192,7 +192,7 @@ int wgPreCalib(const char * x_inputDir,
 
   vector<vector<vector<double>>> slope(n_difs, vector<vector<double>>(n_chips, vector<double>(n_chans)));
   vector<vector<vector<double>>> inter(n_difs, vector<vector<double>>(n_chips, vector<double>(n_chans)));
-	
+        
   for(unsigned idif = 0; idif < n_difs; idif++) {
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       TMultiGraph * mg = new TMultiGraph();
@@ -201,8 +201,8 @@ int wgPreCalib(const char * x_inputDir,
       vector<TGraph *> g_Gain1(n_chans);
       vector<TGraph *> g_ped(MEMDEPTH);
 
-	  // ===== plot the Pedestal ===== //
-	  
+      // ===== plot the Pedestal ===== //
+          
       TCanvas *c1 = new TCanvas("c1","c1");
       if( mode == TWIN_PEAKS ) {
         c1->Divide(4,4);
@@ -221,25 +221,25 @@ int wgPreCalib(const char * x_inputDir,
           g_ped[icol]->SetMarkerSize(0.5);
           g_ped[icol]->SetMaximum(700);
           g_ped[icol]->SetMinimum(350);
-		  TString title;
-		  title.Form("chip%d col%d;ch;ped",ichip,icol);
+          TString title;
+          title.Form("chip%d col%d;ch;ped",ichip,icol);
           g_ped[icol]->SetTitle(title);
           c1->cd(icol+1);
           c1->SetGrid();
           g_ped[icol]->Draw("ap");
         }
-		TString image;
-		image.Form("%s/dif%d/ped_chip%d.png",outputIMGDir.c_str(),idif+1,ichip);
+        TString image;
+        image.Form("%s/dif%d/ped_chip%d.png",outputIMGDir.c_str(),idif+1,ichip);
         c1->Print(image);
         delete c1;
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) delete g_ped[icol];
       }
 
-	  // ===== calculate the gain average over all the channels  ===== //
-	  
+      // ===== calculate the gain average over all the channels  ===== //
+          
       vector<double> mean_Dist(size_inputDAC);
-	  for(unsigned l = 0; l < size_inputDAC; l++) {
-		for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+      for(unsigned l = 0; l < size_inputDAC; l++) {
+        for(unsigned ichan = 0; ichan < n_chans; ichan++) {
           if(mode == LONELY_MOUNTAIN)
             mean_Dist[l] += Gain[idif][ichip][ichan][l][TWO_PE];
 		  else if(mode == TWIN_PEAKS)
@@ -260,22 +260,22 @@ int wgPreCalib(const char * x_inputDir,
           x_inputDAC[l] = list_inputDAC[l];
           ex_inputDAC[l] = 1.;
           if(mode == LONELY_MOUNTAIN) {
-			// If Gain lies too far from the mean_Dist, set ey_Dist as 0.5 
+            // If Gain lies too far from the mean_Dist, set ey_Dist as 0.5 
             if( (mean_Dist[l] + 6. > 0.5 * Gain[idif][ichip][ichan][l][TWO_PE]) && (mean_Dist[l] - 6. < 0.5 * Gain[idif][ichip][ichan][l][TWO_PE]) ) {
               y_Dist[l] = 0.5 * Gain[idif][ichip][ichan][l][TWO_PE];
               ey_Dist[l] = 0.5;
             }
-			else{
+            else{
               y_Dist[l] = 0.5* Gain[idif][ichip][ichan][l][TWO_PE];
               ey_Dist[l] = 20;
             }
           }
-		  else if(mode == TWIN_PEAKS) {
+          else if(mode == TWIN_PEAKS) {
             if( (mean_Dist[l] + 6. > Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE]) && (mean_Dist[l] - 6. < Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE]) ) {
               y_Dist[l] = Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE];
               ey_Dist[l] = 0.5;
             }
-			else{
+            else{
               y_Dist[l] = Gain[idif][ichip][ichan][l][TWO_PE] - Gain[idif][ichip][ichan][l][ONE_PE];
               ey_Dist[l] = 20.;
             }
@@ -310,12 +310,12 @@ int wgPreCalib(const char * x_inputDir,
       } // n_chans
       c1 = new TCanvas("c1","c1");
 
-	  TString title;
-	  title.Form("chip%d;inputDAC;gain",ichip);
+      TString title;
+      title.Form("chip%d;inputDAC;gain",ichip);
       mg->SetTitle(title);
       mg->Draw("ap");
-	  TString image;
-	  image.Form("%s/dif%d/chip%d.png",outputIMGDir.c_str(),idif+1,ichip);
+      TString image;
+      image.Form("%s/dif%d/chip%d.png",outputIMGDir.c_str(),idif+1,ichip);
       c1->Print(image);
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
         delete g_Dist[ichan];
@@ -343,13 +343,13 @@ int wgPreCalib(const char * x_inputDir,
         if(mode == TWIN_PEAKS) {
           for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
             vector<double> v_ped;
-			for(unsigned l = 0; l < size_inputDAC; l++) {
-			  // Ignore pedestals less than 350 and over 680
-			  if( Pedestal[idif][ichip][ichan][l][ONE_PE][icol] < 350 || Pedestal[idif][ichip][ichan][l][ONE_PE][icol] > 680)
-				continue;
-			  v_ped.push_back(Pedestal[idif][ichip][ichan][l][ONE_PE][icol]);
-			}
-			// take the average of the pedestal over the various inputDAC values
+            for(unsigned l = 0; l < size_inputDAC; l++) {
+              // Ignore pedestals less than 350 and over 680
+              if( Pedestal[idif][ichip][ichan][l][ONE_PE][icol] < 350 || Pedestal[idif][ichip][ichan][l][ONE_PE][icol] > 680)
+                continue;
+              v_ped.push_back(Pedestal[idif][ichip][ichan][l][ONE_PE][icol]);
+            }
+            // take the average of the pedestal over the various inputDAC values
             unsigned int v_ped_size = v_ped.size();
             double v_ped_sum = 0.;
             for(unsigned m = 0; m < v_ped_size; m++) {
@@ -376,14 +376,14 @@ vector<string> ListFiles(const string& inputDirName){
   // Open the input directory
   dp = opendir(inputDirName.c_str());
   if(dp == NULL)
-	throw wgInvalidFile("opendir: failed to open directory");
+    throw wgInvalidFile("opendir: failed to open directory");
 
   // Fill the openxmlfile vector of strings with the path of all the files and
   // directories contained inside the input directory
   while( (entry = readdir(dp)) != NULL ) {
-	// Ignore hidden files and directories
+    // Ignore hidden files and directories
     if( (entry->d_name[0]) != '.' )
-	  openxmlfile.push_back( inputDirName + "/" + string(entry->d_name) );
+      openxmlfile.push_back( inputDirName + "/" + string(entry->d_name) );
   }
   closedir(dp);
   return openxmlfile;
