@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'WAGASCI analysis software'
-copyright = u'2019, Pintaudi Giorgio'
+copyright = u'2019, Pintaudi Giorgio, Eguchi Aoi'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
