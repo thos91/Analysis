@@ -380,6 +380,16 @@ void wgEditConfig::Change_gainth(const unsigned value) {
 }
 
 //*********************************************************************************
+void wgEditConfig::Change_chipid(const unsigned value) {
+   if (value > MAX_VALUE_8BITS) {
+     throw std::invalid_argument("value is out of range : " + std::to_string(value));
+  }
+  std::stringstream num;
+  num << std::setfill('0') << std::setw(CHIPID_LENGTH) << DeToBi(std::to_string(value));
+  this->Modify(num.str(), CHIPID_START); 
+}
+
+//*********************************************************************************
 int wgEditConfig::Get_inputDAC(const unsigned chan) {
   if (chan >= NCHANNELS)
     throw std::invalid_argument("channel " + std::to_string(chan) + " is out of range");

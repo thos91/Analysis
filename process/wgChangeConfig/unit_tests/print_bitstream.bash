@@ -11,4 +11,5 @@ EXE="${BIN_DIR}/wgChangeConfig"
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 INPUT="${CURRENT_DIR}/test_bitstream.txt"
 
-${EXE} -f ${INPUT}
+echo "${EXE}  -f  ${INPUT}"
+     "${EXE}" -f "${INPUT}"

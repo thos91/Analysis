@@ -107,6 +107,9 @@ public:
   // wgEditConfig::Change_gainth
   void Change_gainth(unsigned value);
 
+  // wgEditConfig::Change_chipid
+  void Change_chipid(unsigned value);
+  
   // wgEditConfig::Change_1bitparam
   void Change_1bitparam(unsigned value, int subadd);
 
@@ -142,7 +145,7 @@ public:
   // Get the 10-bit dual DAC output 2 (Gain Selection Discriminator Threshold)
   int Get_gainth();
 
-  int Get_1bitparam(int); 
+  int Get_1bitparam(int);
 };
 
 #endif // WAGASCI_EDIT_CONFIG_HPP_

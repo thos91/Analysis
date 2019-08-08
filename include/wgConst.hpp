@@ -113,8 +113,13 @@ const unsigned ADJ_THRESHOLD_START         = 1006;
 const unsigned ADJ_THRESHOLD_LENGTH        = 4;
 const unsigned ADJ_THRESHOLD_OFFSET        = 4; // 4 bits
 
+// CHIP ID 8-bit
+const unsigned CHIPID_INDEX         = 5;
+const unsigned CHIPID_START         = 18;
+const unsigned CHIPID_LENGTH        = 8;
+
 // 1-bit input DAC Voltage Reference (1 = internal 4.5V   0 = internal 2.5V)
-const unsigned GLOBAL_INPUT_DAC_REF_INDEX  = 5;
+const unsigned GLOBAL_INPUT_DAC_REF_INDEX  = 6;
 const unsigned GLOBAL_INPUT_DAC_REF_START  = 36;
 
 

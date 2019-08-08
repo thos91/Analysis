@@ -16,7 +16,8 @@
 #define EC_INPUT_DAC             2
 #define EC_HG_LG_AMPLIFIER       3
 #define EC_THRESHOLD_ADJUSTMENT  4
-#define EC_INPUT_DAC_REFERENCE   5
+#define EC_CHIPID                5
+#define EC_INPUT_DAC_REFERENCE   6
 
 //#define DEBUG_CHANGECONFIG
 #define M 4
@@ -30,10 +31,10 @@ extern "C" {
   int wgChangeConfig(const char * x_inputFile,
                      const char * x_outputFile,
                      unsigned long x_flags,
-                     int value,
-                     int mode,
-                     int chip    = 0,
-                     int channel = NCHANNELS);
+                     unsigned value,
+                     unsigned mode,
+                     unsigned chip    = 0,
+                     unsigned channel = NCHANNELS);
 
 #ifdef __cplusplus
 }

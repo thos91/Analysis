@@ -2,6 +2,14 @@
 wgChangeConfig
 ==============
 
+.. warning::
+
+   The wgChangeConfig program is going to become obsolete in the
+   future. It works fine for now but it can only modify a small subset
+   of the SPIROC2D chip parameters. Moreover its internal structure is
+   not very clear and easily maintanable. It will be replaced by a
+   Pyrame Python module.
+
 This program is used to to check or modify the bitstream txt files for the
 SPIROC2D chip. A bitstream file (ideally one for each chip) contains a single
 line 1192 characters long string, made up only of '0' and '1'. Each character
@@ -50,7 +58,10 @@ Modes
 - ``4`` : threshold adjutment  (4bit)  0-15
 
   | set the channel by channel 4-bit threshold adjustment DAC
-- ``5`` : inputDAC reference   (1bit)  0-1
+- ``5`` : Chip ID   (8bit)  0-255
+
+  | Chip ID number
+- ``6`` : inputDAC reference   (1bit)  0-1
 
   | input DAC Voltage Reference (1 = internal 4.5V 0 = internal 2.5V)
 
