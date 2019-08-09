@@ -90,13 +90,11 @@ int wgOptimize(const char * x_threshold_card,
     wgEditXML Edit;
     Edit.Open(threshold_card);
     for (unsigned idif = 0; idif < topol->n_difs; ++idif) {
-      unsigned idif_id = idif + 1; 
-      for (unsigned ichip = 0; ichip < topol->dif_map[idif_id].size(); ++ichip) {
-        unsigned ichip_id = ichip + 1;
+      for (unsigned ichip = 0; ichip < topol->dif_map[idif].size(); ++ichip) {
         optimized_threshold[idif].push_back(u1vector());
         slope_th_iDAC[idif].push_back(u1vector());
         intercept_th_iDAC[idif].push_back(u1vector());  
-        for (unsigned ichan = 0; ichan < topol->dif_map[idif_id][ichip_id]; ++ichan) {
+        for (unsigned ichan = 0; ichan < topol->dif_map[idif][ichip]; ++ichan) {
           // pre-calibration mode
           if (mode == OP_THRESHOLD_MODE) {
             // Get the optimal threshold for pe photo-electron equivalent
@@ -133,12 +131,10 @@ int wgOptimize(const char * x_threshold_card,
     if(mode == OP_INPUTDAC_MODE) {
       Edit.Open(calibration_card);
       for (unsigned idif = 0; idif < topol->n_difs; ++idif) {
-        unsigned idif_id = idif + 1;
         slope_iDAC_gain.push_back(d2vector());
         intercept_iDAC_gain.push_back(d2vector());
-        for (unsigned ichip = 0; ichip < topol->dif_map[idif_id].size(); ++ichip) {
-          unsigned ichip_id = ichip + 1;
-          for (unsigned ichan = 0; ichan < topol->dif_map[idif_id][ichip_id]; ++ichan) {
+        for (unsigned ichip = 0; ichip < topol->dif_map[idif].size(); ++ichip) {
+          for (unsigned ichan = 0; ichan < topol->dif_map[idif][ichip]; ++ichan) {
             slope_iDAC_gain    [idif][ichip][ichan] = Edit.PreCalib_GetValue(std::string("s_Gain"), idif, ichip, ichan);
             intercept_iDAC_gain[idif][ichip][ichan] = Edit.PreCalib_GetValue(std::string("i_Gain"), idif, ichip, ichan);
           }
@@ -158,16 +154,15 @@ int wgOptimize(const char * x_threshold_card,
     for (auto const & gdcc : topol->gdcc_map) {
       unsigned igdcc_id = gdcc.first;
       for (auto const & dif : gdcc.second) {
-        unsigned rel_idif_id = dif.first;
-        unsigned abs_idif_id = topol->GetAbsDif(gdcc.first, dif.first);
-        unsigned idif = abs_idif_id - 1;
+        unsigned rel_idif = dif.first;
+        unsigned abs_idif = topol->GetAbsDif(gdcc.first, dif.first);
+        unsigned idif = abs_idif;
         for (auto const & chip : dif.second) {
-          unsigned ichip_id = chip.first;
-          unsigned ichip = ichip_id - 1;
+          unsigned ichip = chip.first;
           // unsigned n_channels = chip.second;
           
           std::string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + std::to_string(igdcc_id) +
-                            "_dif" + std::to_string(rel_idif_id) + "_chip" + std::to_string(ichip_id) + ".txt");
+                            "_dif" + std::to_string(rel_idif) + "_chip" + std::to_string(ichip) + ".txt");
 
           if( !check_exist::TxtFile(configName) ) {
             Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);

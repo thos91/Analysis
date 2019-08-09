@@ -44,7 +44,7 @@ void print_help(const char * program_name) {
 int main(int argc, char** argv){
   int opt;
   int mode = 0;
-  unsigned idif = 1;
+  unsigned dif = 0;
   string inputFileName("");
   string configFileName("");
   bitset<M> flags;
@@ -60,7 +60,7 @@ int main(int argc, char** argv){
 	  inputFileName = optarg;
 	  break;
 	case 'd':
-	  idif = atoi(optarg);
+	  dif = atoi(optarg);
 	  break;
 	case 'm':
 	  mode = atoi(optarg);
@@ -97,7 +97,7 @@ int main(int argc, char** argv){
                            outputIMGDir.c_str(),
                            mode,
                            flags.to_ulong(),
-                           idif)) != WG_SUCCESS ) {
+                           dif)) != WG_SUCCESS ) {
 	Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
 	exit(1);
   }

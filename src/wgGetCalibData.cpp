@@ -77,31 +77,31 @@ int wgGetCalibData::GetPedestal(unsigned dif_id, d3CCvector& pedestal) {
                                 + std::to_string(n_chips) + ") mismatch for DIF "
                                 + std::to_string(dif_id));
   
-  for(unsigned int ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
-    unsigned n_chans = Edit.Pedestal_GetChipConfigValue("n_chans", dif_id, ichip_id);
-    if (n_chans != pedestal[ichip_id].size())
+  for(unsigned int ichip = 0; ichip < n_chips; ichip++) {
+    unsigned n_chans = Edit.Pedestal_GetChipConfigValue("n_chans", dif_id, ichip);
+    if (n_chans != pedestal[ichip].size())
       throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
-                                  + std::to_string(pedestal[ichip_id].size())
+                                  + std::to_string(pedestal[ichip].size())
                                   + ") and number of channels in pedestal card ("
                                   + std::to_string(n_chans) + ") mismatch for DIF "
-                                  + std::to_string(dif_id) + " and chip " + std::to_string(ichip_id));
+                                  + std::to_string(dif_id) + " and chip " + std::to_string(ichip));
 
-    for(unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++) {
-      if (pedestal[ichip_id][ichan_id].size() != MEMDEPTH)
+    for(unsigned ichan = 0; ichan < n_chans; ichan++) {
+      if (pedestal[ichip][ichan].size() != MEMDEPTH)
         throw std::invalid_argument("[wgGetCalibData] pedestal d3vector size ("
                                     + std::to_string(pedestal.size())
                                     + ") and number of columns ("
                                     + std::to_string(MEMDEPTH) + ") mismatch for DIF "
-                                    + std::to_string(dif_id) + ", chip " + std::to_string(ichip_id)
-                                    + " and channel"  + std::to_string(ichan_id));
+                                    + std::to_string(dif_id) + ", chip " + std::to_string(ichip)
+                                    + " and channel"  + std::to_string(ichan));
       
-      for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+      for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
         try {
-          pedestal[ichip_id][ichip_id][icol_id] = Edit.Pedestal_GetChanValue(
-              "pedestal_%d" + std::to_string(icol_id), dif_id, ichip_id, ichan_id);
+          pedestal[ichip][ichip][icol] = Edit.Pedestal_GetChanValue(
+              "pedestal_%d" + std::to_string(icol), dif_id, ichip, ichan);
           count++;
         } catch (const wgElementNotFound& e) {
-          pedestal[ichip_id][ichan_id][icol_id] = -1;
+          pedestal[ichip][ichan][icol] = -1;
         }
       }
     }

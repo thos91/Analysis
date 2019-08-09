@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   std::string outputDir("");
   std::string outputFile("");
   bool overwrite = false;
-  unsigned n_chips = NCHIPS, dif = 1;
+  unsigned n_chips = NCHIPS, dif = 0;
 
   while((opt = getopt(argc,argv, "f:o:x:rh")) != -1 ){
     switch(opt){

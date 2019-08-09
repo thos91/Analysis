@@ -152,7 +152,7 @@ void Topology::GetTopologyFromString(const std::string& json_string) {
 //**********************************************************************
 void Topology::GetTopologyFromFile(const std::string& configxml) {
   std::string json("");
-  unsigned igdcc = 1, idif = 1, iasu = 1;
+  unsigned igdcc = 0, idif = 0, iasu = 0;
   bool found = false;
   
   if(!check_exist::XmlFile(configxml))
@@ -165,17 +165,17 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
   XMLElement* acqpc = domain->FirstChildElement("acqpc");
   // GDCCs loop
   for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-    if( std::string(gdcc->Attribute("name")) != "gdcc_1_" + std::to_string(igdcc) ) {
+    if( std::string(gdcc->Attribute("name")) != "gdcc_0_" + std::to_string(igdcc) ) {
       Log.eWrite("[GetTopology] inconsistency found when counting (GDCC = " + std::to_string(igdcc) + ")");
     }
     // DIFs loop
     for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-      if( std::string(dif->Attribute("name")) != "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+      if( std::string(dif->Attribute("name")) != "dif_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
         Log.eWrite("[GetTopology] inconsistency found when counting (DIF = " + std::to_string(idif) + ")");
       }
       // ASUs loop
       for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-        if( std::string(asu->Attribute("name")) != "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(iasu) ) {
+        if( std::string(asu->Attribute("name")) != "asu_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(iasu) ) {
           Log.eWrite("[GetTopology] inconsistency found when counting (ASU = " + std::to_string(iasu) + ")");
         }
         XMLElement* spiroc2d = asu;
@@ -213,10 +213,10 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
         iasu++;
       } // ASUs loop
       idif++;
-      iasu = 1;
+      iasu = 0;
     } // DIFs loop
     igdcc++;
-    idif = iasu = 1;
+    idif = iasu = 0;
   } // GDCCs loop
 }
 
@@ -363,8 +363,8 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
     if ( dif_dir_list.size() == 0 )
       throw std::invalid_argument("[wgTopology] empty p.e. directory : " + pe_directory);
     for (auto const & idif_directory : dif_dir_list) {
-      unsigned idif_id;
-      if ( (idif_id = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX ) {
+      unsigned idif;
+      if ( (idif = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX ) {
         throw wgInvalidFile("[wgTopology] failed to read DIF ID from directory name : " + idif_directory);
       }
         
@@ -373,8 +373,8 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
       if ( chip_xml_list.size() == 0 )
         throw std::invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
       for (auto const & ichip_xml : chip_xml_list) {
-        unsigned ichip_id;
-        if ( (ichip_id = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
+        unsigned ichip;
+        if ( (ichip = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
           throw wgInvalidFile("[wgTopology] failed to read chip ID from xml file name : " + ichip_xml);
         
         // chan
@@ -382,8 +382,8 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
         catch (const std::exception& e) {
           throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
         }
-        this->dif_map[idif_id][ichip_id] = n_chans_t[ipe][idif_id][ichip_id] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
-        this->m_string_dif_map[std::to_string(idif_id)][std::to_string(ichip_id)] = std::to_string(this->dif_map[idif_id][ichip_id]);
+        this->dif_map[idif][ichip] = n_chans_t[ipe][idif][ichip] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
+        this->m_string_dif_map[std::to_string(idif)][std::to_string(ichip)] = std::to_string(this->dif_map[idif][ichip]);
         Edit.Close();
       }
     }  // end loop for dif
@@ -392,25 +392,25 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
   for (auto const& pe : n_chans_t) {
     unsigned ipe = pe.first;
     for (auto const& dif : pe.second) {
-      unsigned idif_id = dif.first;
+      unsigned idif = dif.first;
       if (n_chans_t[ipe].size() != this->dif_map.size()) {
-        throw std::runtime_error("There is something wrong with the number of DIFs detection : pe = " + std::to_string(ipe) + ", idif_id = " + idif_id);
+        throw std::runtime_error("There is something wrong with the number of DIFs detection : pe = " + std::to_string(ipe) + ", idif = " + idif);
       }
       for (auto const& chip : dif.second) {
-        unsigned ichip_id = chip.first;
-        if (n_chans_t[ipe][idif_id].size() != this->dif_map[idif_id].size() ) {
-          throw std::runtime_error("There is something wrong with the number of chips detection : pe = " + std::to_string(ipe) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+        unsigned ichip = chip.first;
+        if (n_chans_t[ipe][idif].size() != this->dif_map[idif].size() ) {
+          throw std::runtime_error("There is something wrong with the number of chips detection : pe = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
         }
-        if (n_chans_t[ipe][idif_id][ichip_id] != this->dif_map[idif_id][ichip_id]) {
-          throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : pe = " + std::to_string(ipe) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+        if (n_chans_t[ipe][idif][ichip] != this->dif_map[idif][ichip]) {
+          throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : pe = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
         }
       }
     }
   }
   
   // Check that the dif numbers are contiguous
-  for (unsigned idif_id = 1; idif_id <= n_difs; idif_id++) {
-    if ( this->dif_map.count(idif_id) != 1 ) {
+  for (unsigned idif = 0; idif < n_difs; idif++) {
+    if ( this->dif_map.count(idif) != 1 ) {
       throw std::runtime_error("[wgTopology] DIF number is not contiguous");
     }
   }
@@ -469,8 +469,8 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
       if ( dif_dir_list.size() == 0 )
         throw std::invalid_argument("[wgTopology] empty threshold directory : " + th_directory);
       for (auto const & idif_directory : dif_dir_list) {
-        unsigned idif_id;
-        if ( (idif_id = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX )
+        unsigned idif;
+        if ( (idif = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX )
           throw wgInvalidFile("[wgTopology] failed to read DIF ID from directory name : " + idif_directory);
 
         // chip
@@ -478,8 +478,8 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
         if ( chip_xml_list.size() == 0 )
           throw std::invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
         for (auto const & ichip_xml : chip_xml_list) {
-          unsigned ichip_id;
-          if ( (ichip_id = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
+          unsigned ichip;
+          if ( (ichip = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
             throw wgInvalidFile("[wgTopology] failed to read chip ID from xml file name : " + ichip_xml);
         
           // chan
@@ -487,8 +487,8 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
           catch (const std::exception& e) {
             throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
           }
-          this->dif_map[idif_id][ichip_id] = n_chans_t[iDAC][threshold][idif_id][ichip_id] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
-          this->m_string_dif_map[std::to_string(idif_id)][std::to_string(ichip_id)] = std::to_string(this->dif_map[idif_id][ichip_id]);
+          this->dif_map[idif][ichip] = n_chans_t[iDAC][threshold][idif][ichip] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
+          this->m_string_dif_map[std::to_string(idif)][std::to_string(ichip)] = std::to_string(this->dif_map[idif][ichip]);
           Edit.Close();
         }
       }  // end loop for dif
@@ -501,17 +501,17 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
     for (auto const& th : iDAC.second) {
       unsigned ith = th.first;
       for (auto const& dif : th.second) {
-        unsigned idif_id = dif.first;
+        unsigned idif = dif.first;
         if (n_chans_t[iiDAC][ith].size() != this->dif_map.size()) {
-          throw std::runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif_id = " + idif_id);
+          throw std::runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif);
         }
         for (auto const& chip : dif.second) {
-          unsigned ichip_id = chip.first;
-          if (n_chans_t[iiDAC][ith][idif_id].size() != this->dif_map[idif_id].size() ) {
-            throw std::runtime_error("There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+          unsigned ichip = chip.first;
+          if (n_chans_t[iiDAC][ith][idif].size() != this->dif_map[idif].size() ) {
+            throw std::runtime_error("There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif + ", ichip = " + ichip);
           }
-          if (n_chans_t[iiDAC][ith][idif_id][ichip_id] != this->dif_map[idif_id][ichip_id]) {
-            throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif_id = " + idif_id + ", ichip_id = " + ichip_id);
+          if (n_chans_t[iiDAC][ith][idif][ichip] != this->dif_map[idif][ichip]) {
+            throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif + ", ichip = " + ichip);
           }
         }
       }
@@ -519,8 +519,8 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
   }
 
   // Check that the dif numbers are contiguous
-  for (unsigned idif_id = 1; idif_id <= n_difs; idif_id++) {
-    if ( this->dif_map.count(idif_id) != 1 ) {
+  for (unsigned idif = 0; idif < n_difs; idif++) {
+    if ( this->dif_map.count(idif) != 1 ) {
       throw std::runtime_error("[wgTopology] DIF number is not contiguous");
     }
   }

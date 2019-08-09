@@ -38,13 +38,13 @@ int wgAnaHist(const char * x_input_file,
               const char * x_output_img_dir,
               int mode,
               const unsigned long flags_ulong,
-              const unsigned idif_id) {
+              const unsigned idif) {
 
   string input_file(x_input_file);
   string pyrame_config_file(x_pyrame_config_file);
   string output_xml_dir(x_output_xml_dir);
   string output_img_dir(x_output_img_dir);
-  wgEditXML Edit;
+  wgEditXML xml;
   
 
   // =========== FLAGS decoding =========== //
@@ -68,8 +68,8 @@ int wgAnaHist(const char * x_input_file,
     Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + pyrame_config_file);
     exit(1);
   }
-  if ( idif_id <= 0 || idif_id > NDIFS ) {
-    Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif_id) );
+  if (idif > NDIFS) {
+    Log.eWrite("[wgAnaHist] wrong DIF number : " + to_string(idif) );
     return ERR_WRONG_DIF_VALUE;
   }
 
@@ -87,9 +87,9 @@ int wgAnaHist(const char * x_input_file,
     Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_TOPOLOGY;
   }
-  unsigned n_chips = topol->dif_map[idif_id].size();
+  unsigned n_chips = topol->dif_map[idif].size();
 
-  if ( n_chips <= 0 || n_chips > NCHIPS ) {
+  if ( n_chips == 0 || n_chips > NCHIPS ) {
     Log.eWrite("[wgAnaHist] wrong number of chips : " + to_string(n_chips) );
     return ERR_WRONG_CHIP_VALUE;
   }
@@ -104,10 +104,10 @@ int wgAnaHist(const char * x_input_file,
   }
   // ======= Create output_img_dir ======= //
   if (flags[SELECT_PRINT]) {
-    for ( unsigned ichip = 1; ichip <= n_chips; ichip++ ) {
-      unsigned n_chans = topol->dif_map[idif_id][ichip];
-      for ( unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++ ) {
-        string output_img_chip_chan_dir(output_img_dir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan_id));
+    for ( unsigned ichip = 0; ichip < n_chips; ichip++ ) {
+      unsigned n_chans = topol->dif_map[idif][ichip];
+      for ( unsigned ichan = 0; ichan < n_chans; ichan++ ) {
+        string output_img_chip_chan_dir(output_img_dir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan));
         try { MakeDir(output_img_chip_chan_dir); }
         catch (const wgInvalidFile& e) {
           Log.eWrite("[wgAnaPedestal] " + string(e.what()));
@@ -134,11 +134,11 @@ int wgAnaHist(const char * x_input_file,
     //                               Chip loop                               //
     ///////////////////////////////////////////////////////////////////////////
 
-    for (unsigned ichip_id = 1; ichip_id <= n_chips; ichip_id++) {
-      unsigned n_chans = topol->dif_map[idif_id][ichip_id];
+    for (unsigned ichip = 0; ichip < n_chips; ichip++) {
+      unsigned n_chans = topol->dif_map[idif][ichip];
 
       // ============ Create output_xml_chip_dir ============ //
-      string output_xml_chip_dir(output_xml_dir + "/chip" + to_string(ichip_id));
+      string output_xml_chip_dir(output_xml_dir + "/chip" + to_string(ichip));
       try { MakeDir(output_xml_chip_dir); }
       catch (const wgInvalidFile& e) {
         Log.eWrite("[wgAnaHist] " + string(e.what()));
@@ -152,15 +152,15 @@ int wgAnaHist(const char * x_input_file,
       // v[channel][4] = adjustable 4-bit discriminator threshold
       vector<vector<int>> config; // n_chans * 5 parameters
 
-      Log.Write("[wgAnaHist] Analyzing chip " + to_string(ichip_id));
+      Log.Write("[wgAnaHist] Analyzing chip " + to_string(ichip));
       // Read the SPIROC2D configuration parameters from the pyrame_config_file (the xml
       // configuration file used during acquisition) into the "config" vector.
       if( flags[SELECT_CONFIG] ) {
-        unsigned gdcc = topol->GetGdccDifPair(idif_id).first;
-        unsigned dif = topol->GetGdccDifPair(idif_id).second;
-        if ( ! Edit.GetConfig(pyrame_config_file, gdcc, dif, ichip_id, n_chans, config) ) {
-          Log.eWrite("[wgAnaHist] DIF " + to_string(idif_id) + ", chip " + to_string(ichip_id) +
-                     " : failed to get bitstream parameters");
+        unsigned gdcc = topol->GetGdccDifPair(idif).first;
+        unsigned dif = topol->GetGdccDifPair(idif).second;
+        if (!xml.GetConfig(pyrame_config_file, gdcc, dif, ichip, n_chans, config)) {
+          Log.eWrite("[wgAnaHist] DIF " + to_string(idif) + ", chip " +
+                     to_string(ichip) + " : failed to get bitstream parameters");
           return ERR_FAILED_GET_BISTREAM;
         }
       }
@@ -169,13 +169,13 @@ int wgAnaHist(const char * x_input_file,
       //                             Channel loop                            //
       /////////////////////////////////////////////////////////////////////////
       
-      for(unsigned ichan_id = 1; ichan_id <= n_chans; ichan_id++) {
+      for(unsigned ichan = 0; ichan < n_chans; ichan++) {
         // Open the outputxmlfile as an XML file
-        string outputxmlfile(output_xml_chip_dir + "/chan" + to_string(ichan_id) + ".xml");
+        string outputxmlfile(output_xml_chip_dir + "/chan" + to_string(ichan) + ".xml");
         try {
           if( !check_exist::XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
-            Edit.Make(outputxmlfile, idif_id, ichip_id, ichan_id);
-          Edit.Open(outputxmlfile);
+            xml.Make(outputxmlfile, idif, ichip, ichan);
+          xml.Open(outputxmlfile);
         }
         catch (const exception& e) {
           Log.eWrite("[wgAnaHist] Failed to open XML file : " + string(e.what()));
@@ -190,53 +190,53 @@ int wgAnaHist(const char * x_input_file,
             stop_time  = Fit.histos.Get_stop_time();
             first_time = false;
           }
-          Edit.SetConfigValue(string("start_time"), start_time);
-          Edit.SetConfigValue(string("stop_time"),  stop_time);
-          Edit.SetConfigValue(string("difid"),      idif_id);
-          Edit.SetConfigValue(string("chipid"),     ichip_id);
-          Edit.SetConfigValue(string("chanid"),     ichan_id);
+          xml.SetConfigValue(string("start_time"), start_time);
+          xml.SetConfigValue(string("stop_time"),  stop_time);
+          xml.SetConfigValue(string("difid"),      idif);
+          xml.SetConfigValue(string("chipid"),     ichip);
+          xml.SetConfigValue(string("chanid"),     ichan);
 
           //************ SELECT_CONFIG ************//
 
           if ( flags[SELECT_CONFIG] ) {
             // Write the parameters values contained in the config vector into the
             // outputxmlfile
-            Edit.SetConfigValue(string("trigth"),   config[ichan_id - 1][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("gainth"),   config[ichan_id - 1][GLOBAL_GS_INDEX],        CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("inputDAC"), config[ichan_id - 1][ADJ_INPUTDAC_INDEX],     CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("HG"),       config[ichan_id - 1][ADJ_AMPDAC_INDEX],       CREATE_NEW_MODE);
-            Edit.SetConfigValue(string("trig_adj"), config[ichan_id - 1][ADJ_THRESHOLD_INDEX],    CREATE_NEW_MODE);
+            xml.SetConfigValue(string("trigth"),   config[ichan][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
+            xml.SetConfigValue(string("gainth"),   config[ichan][GLOBAL_GS_INDEX],        CREATE_NEW_MODE);
+            xml.SetConfigValue(string("inputDAC"), config[ichan][ADJ_INPUTDAC_INDEX],     CREATE_NEW_MODE);
+            xml.SetConfigValue(string("HG"),       config[ichan][ADJ_AMPDAC_INDEX],       CREATE_NEW_MODE);
+            xml.SetConfigValue(string("trig_adj"), config[ichan][ADJ_THRESHOLD_INDEX],    CREATE_NEW_MODE);
           }
 
           //************* SELECT_DARK_NOISE *************//
 
           if ( flags[SELECT_DARK_NOISE] ) {  //for bcid
             double fit_bcid[2] = {0, 0};
-            // calculate the dark noise rate for chip "ichip_id" and channel "ichan_id" and
+            // calculate the dark noise rate for chip "ichip" and channel "ichan" and
             // save the mean and standard deviation in fit_bcid[0] and fit_bcid[1]
             // respectively.
-            Fit.noise_rate(ichip_id, ichan_id, fit_bcid, flags[SELECT_PRINT]);
+            Fit.noise_rate(ichip, ichan, fit_bcid, flags[SELECT_PRINT]);
             // Save the noise rate and its standard deviation in the outputxmlfile xml
             // file
-            Edit.SetChValue(string("noise_rate"), fit_bcid[0], CREATE_NEW_MODE); // mean
-            Edit.SetChValue(string("sigma_rate"), fit_bcid[1], CREATE_NEW_MODE); // standard deviation
+            xml.SetChValue(string("noise_rate"), fit_bcid[0], CREATE_NEW_MODE); // mean
+            xml.SetChValue(string("sigma_rate"), fit_bcid[1], CREATE_NEW_MODE); // standard deviation
           }
 
           //************* SELECT_PEDESTAL *************//
 
           if ( flags[SELECT_PEDESTAL] ) {
             double fit_charge_nohit[3] = {0, 0, 0};
-            for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+            for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
               // Calculate the pedestal value and its sigma
 #ifdef ROOT_HAS_NOT_MINUIT2
               mtx.lock();
 #endif
-              Fit.charge_nohit(ichip_id, ichan_id, icol_id, fit_charge_nohit, flags[SELECT_PRINT]);
+              Fit.charge_nohit(ichip, ichan, icol, fit_charge_nohit, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               mtx.unlock();
 #endif
-              Edit.SetColValue(string("charge_nohit"), icol_id, fit_charge_nohit[0], CREATE_NEW_MODE);
-              Edit.SetColValue(string("sigma_nohit"),  icol_id, fit_charge_nohit[1], CREATE_NEW_MODE);
+              xml.SetColValue(string("charge_nohit"), icol, fit_charge_nohit[0], CREATE_NEW_MODE);
+              xml.SetColValue(string("sigma_nohit"),  icol, fit_charge_nohit[1], CREATE_NEW_MODE);
             } 
           }
 
@@ -244,16 +244,16 @@ int wgAnaHist(const char * x_input_file,
 
           if ( flags[SELECT_CHARGE] ) {
             double fit_charge[3] = {0, 0, 0};
-            for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+            for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
               mtx.lock();
 #endif
-              Fit.charge_hit(ichip_id, ichan_id, icol_id, fit_charge, flags[SELECT_PRINT]);
+              Fit.charge_hit(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               mtx.unlock();
 #endif
-              Edit.SetColValue(string("charge_hit"), icol_id, fit_charge[0], CREATE_NEW_MODE);
-              Edit.SetColValue(string("sigma_hit") , icol_id, fit_charge[1], CREATE_NEW_MODE);
+              xml.SetColValue(string("charge_hit"), icol, fit_charge[0], CREATE_NEW_MODE);
+              xml.SetColValue(string("sigma_hit") , icol, fit_charge[1], CREATE_NEW_MODE);
             }
           }
 
@@ -261,29 +261,29 @@ int wgAnaHist(const char * x_input_file,
 
           if ( flags[SELECT_CHARGE_HG] ) {
             double fit_charge_HG[3] = {0, 0, 0};
-            for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
+            for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
               mtx.lock();
 #endif
-              Fit.charge_hit_HG(ichip_id, ichan_id, icol_id, fit_charge_HG, flags[SELECT_PRINT]);
+              Fit.charge_hit_HG(ichip, ichan, icol, fit_charge_HG, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               mtx.unlock();
 #endif
-              Edit.SetColValue(string("charge_hit_HG"), icol_id, fit_charge_HG[0], CREATE_NEW_MODE);
-              Edit.SetColValue(string("sigma_hit_HG"),  icol_id, fit_charge_HG[1], CREATE_NEW_MODE);
+              xml.SetColValue(string("charge_hit_HG"), icol, fit_charge_HG[0], CREATE_NEW_MODE);
+              xml.SetColValue(string("sigma_hit_HG"),  icol, fit_charge_HG[1], CREATE_NEW_MODE);
             }
           }
 
-          Edit.Write();
-          Edit.Close();
+          xml.Write();
+          xml.Close();
         }
         catch (const exception& e) {
-          Log.eWrite("[wgAnaHist] chip " + to_string(ichip_id) +
-                     ", chan " + to_string(ichan_id) + " : " + string(e.what()));
+          Log.eWrite("[wgAnaHist] chip " + to_string(ichip) +
+                     ", chan " + to_string(ichan) + " : " + string(e.what()));
           return ERR_FAILED_WRITE;
         } // try (write to xml files)
-      } // ichan_id
-    } //ichip_id
+      } // ichan
+    } //ichip
   } // try (wgFit)
   catch (const exception& e) {
     Log.eWrite("[wgAnaHist] " + string(e.what()));

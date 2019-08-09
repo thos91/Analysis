@@ -86,7 +86,7 @@ int wgAnaHistSummary(const char * x_inputDir,
   // ============ Count number of chips and channels ============ //
   unsigned n_chips = HowManyDirectories(inputDir);
   std::vector<unsigned> n_chans;
-  for (unsigned ichip = 1; ichip <= n_chips; ichip++) {
+  for (unsigned ichip = 0; ichip < n_chips; ichip++) {
     n_chans.push_back(HowManyFilesWithExtension(inputDir + "/chip" + std::to_string(ichip), "xml"));
     // std::cout << "chip = " << ichip << " : channels = " << n_chans[ichip]  << "\n";
   }
@@ -144,12 +144,11 @@ int wgAnaHistSummary(const char * x_inputDir,
     //*** Define histograms ***//
     if(flags[SELECT_PRINT]) {
       for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-        unsigned ichip_id = ichip + 1;
         if(flags[SELECT_CHARGE_NOHIT]) {
           TString charge_nohit;
-          charge_nohit.Form("h_charge_nohit_chip%d", ichip_id);
+          charge_nohit.Form("h_charge_nohit_chip%d", ichip);
           h_Charge_Nohit[ichip] = new TH1D(charge_nohit, charge_nohit, n_chans[ichip] * 26 + 10, -5, n_chans[ichip] * 26 + 5);
-          charge_nohit.Form("charge_nohit chip:%d;ch*26+col;ADC count", ichip_id);
+          charge_nohit.Form("charge_nohit chip:%d;ch*26+col;ADC count", ichip);
           h_Charge_Nohit[ichip]->SetTitle(charge_nohit);
           h_Charge_Nohit[ichip]->SetMarkerStyle(8);
           h_Charge_Nohit[ichip]->SetMarkerSize(0.3);
@@ -159,9 +158,9 @@ int wgAnaHistSummary(const char * x_inputDir,
 
         if(flags[SELECT_CHARGE_HIT]) {
           TString charge_hit;
-          charge_hit.Form("h_Charge_Hit_chip%d", ichip_id);
+          charge_hit.Form("h_Charge_Hit_chip%d", ichip);
           h_Charge_Hit[ichip] = new TH1D(charge_hit, charge_hit, n_chans[ichip] * 26 + 10, -5, n_chans[ichip] * 26 + 5);
-          charge_hit.Form("Diff chip:%d;ch*26+col;ADC count", ichip_id);
+          charge_hit.Form("Diff chip:%d;ch*26+col;ADC count", ichip);
           h_Charge_Hit[ichip]->SetTitle(charge_hit);
           h_Charge_Hit[ichip]->SetMarkerStyle(8);
           h_Charge_Hit[ichip]->SetMarkerSize(0.3);
@@ -171,9 +170,9 @@ int wgAnaHistSummary(const char * x_inputDir,
 
         if(flags[SELECT_DIFF]) {
           TString diff;
-          diff.Form("h_Diff_chip%d", ichip_id);
+          diff.Form("h_Diff_chip%d", ichip);
           h_Diff[ichip] = new TH1D(diff, diff, n_chans[ichip] * 26 + 10, -5, n_chans[ichip] * 26 + 5);
-          diff.Form("Diff chip:%d;ch*26+col;ADC count", ichip_id);
+          diff.Form("Diff chip:%d;ch*26+col;ADC count", ichip);
           h_Diff[ichip]->SetTitle(diff);
           h_Diff[ichip]->SetMarkerStyle(8);
           h_Diff[ichip]->SetMarkerSize(0.3);
@@ -183,9 +182,9 @@ int wgAnaHistSummary(const char * x_inputDir,
 
         if(flags[SELECT_NOISE]) {
           TString noise;
-          noise.Form("h_Noise_chip%d", ichip_id);
+          noise.Form("h_Noise_chip%d", ichip);
           h_Noise[ichip] = new TH1D(noise, noise, 34, -1, 33);
-          noise.Form("Noise chip:%d;ch;Noise Rate[Hz]", ichip_id);
+          noise.Form("Noise chip:%d;ch;Noise Rate[Hz]", ichip);
           h_Noise[ichip]->SetTitle(noise);
           h_Noise[ichip]->SetMarkerStyle(8);
           h_Noise[ichip]->SetMarkerSize(0.3);
@@ -208,15 +207,13 @@ int wgAnaHistSummary(const char * x_inputDir,
     Edit.Close();
      
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-      unsigned ichip_id = ichip + 1;
       charge_nohit      [ichip].reserve(n_chans[ichip]);
       charge_nohit_error[ichip].reserve(n_chans[ichip]);
       charge_hit        [ichip].reserve(n_chans[ichip]);
       charge_hit_error  [ichip].reserve(n_chans[ichip]);
       
       for(unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
-        unsigned ichan_id = ichan + 1;
-        xmlfile = inputDir + "/chip" + std::to_string(ichip_id) + "/chan" + std::to_string(ichan_id) + ".xml";
+        xmlfile = inputDir + "/chip" + std::to_string(ichip) + "/chan" + std::to_string(ichan) + ".xml";
         try { Edit.Open(xmlfile); }
         catch (const wgInvalidFile & e) {
           Log.eWrite("[wgAnaHist]" + std::string(e.what()));
@@ -236,14 +233,13 @@ int wgAnaHistSummary(const char * x_inputDir,
         pe_level[ichip].push_back(NoiseToPe(noise[ichip][ichan]));
 
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-          unsigned icol_id = icol + 1;
           if( flags[SELECT_CHARGE_NOHIT] || flags[SELECT_DIFF] ) {
-            charge_nohit      [ichip][ichan][icol] = Edit.GetColValue(std::string("charge_nohit"), icol_id);
-            charge_nohit_error[ichip][ichan][icol] = Edit.GetColValue(std::string("sigma_nohit"),  icol_id);
+            charge_nohit      [ichip][ichan][icol] = Edit.GetColValue(std::string("charge_nohit"), icol);
+            charge_nohit_error[ichip][ichan][icol] = Edit.GetColValue(std::string("sigma_nohit"),  icol);
           }
           if( flags[SELECT_CHARGE_HIT] || flags[SELECT_DIFF] ) { 
-            charge_hit      [ichip][ichan][icol] = Edit.GetColValue(std::string("charge_hit_HG"), icol_id);
-            charge_hit_error[ichip][ichan][icol] = Edit.GetColValue(std::string("sigma_hit_HG"),  icol_id);
+            charge_hit      [ichip][ichan][icol] = Edit.GetColValue(std::string("charge_hit_HG"), icol);
+            charge_hit_error[ichip][ichan][icol] = Edit.GetColValue(std::string("sigma_hit_HG"),  icol);
           }
         }
         Edit.Close();
@@ -252,9 +248,8 @@ int wgAnaHistSummary(const char * x_inputDir,
 
     //*** Fill data ***//
     for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-      unsigned ichip_id = ichip + 1;
 
-      try { MakeSummaryXmlFile(outputXMLDir, overwrite, ichip_id, n_chans[ichip]); }
+      try { MakeSummaryXmlFile(outputXMLDir, overwrite, ichip, n_chans[ichip]); }
       catch (const std::exception& e) {
         Log.eWrite("[wgAnaHist][" + outputXMLDir + "] " + std::string(e.what()));
         return ERR_FAILED_CREATE_XML_FILE;
@@ -262,7 +257,7 @@ int wgAnaHistSummary(const char * x_inputDir,
       
       wgEditXML Edit;
 
-      std::string xmlfile(outputXMLDir + "/Summary_chip" + std::to_string(ichip_id) + ".xml");
+      std::string xmlfile(outputXMLDir + "/Summary_chip" + std::to_string(ichip) + ".xml");
       try { Edit.Open(xmlfile); }
       catch (const wgInvalidFile & e) {
         Log.eWrite("[wgAnaHist] " + xmlfile + " : " + std::string(e.what()));
@@ -277,37 +272,35 @@ int wgAnaHistSummary(const char * x_inputDir,
       Edit.SUMMARY_SetGlobalConfigValue(std::string("n_chans"),    n_chans[ichip], NO_CREATE_NEW_MODE);
 
       for(unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
-        unsigned ichan_id = ichan + 1;
         
-        Edit.SUMMARY_SetChConfigValue(std::string("chanid"),   chanid  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChConfigValue(std::string("inputDAC"), inputDAC[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChConfigValue(std::string("ampDAC"),   ampDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChConfigValue(std::string("adjDAC"),   adjDAC  [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-        Edit.SUMMARY_SetChFitValue(std::string("pe_level"),    pe_level[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("chanid"),   chanid  [ichip][ichan], ichan, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("inputDAC"), inputDAC[ichip][ichan], ichan, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("ampDAC"),   ampDAC  [ichip][ichan], ichan, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChConfigValue(std::string("adjDAC"),   adjDAC  [ichip][ichan], ichan, NO_CREATE_NEW_MODE);
+        Edit.SUMMARY_SetChFitValue(std::string("pe_level"),    pe_level[ichip][ichan], ichan, NO_CREATE_NEW_MODE);
         if(flags[SELECT_NOISE]) {
-          Edit.SUMMARY_SetChFitValue(std::string("noise_rate"),    noise      [ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
-          Edit.SUMMARY_SetChFitValue(std::string("sigma_rate"),   noise_error[ichip][ichan], ichan_id, NO_CREATE_NEW_MODE);
+          Edit.SUMMARY_SetChFitValue(std::string("noise_rate"),    noise      [ichip][ichan], ichan, NO_CREATE_NEW_MODE);
+          Edit.SUMMARY_SetChFitValue(std::string("sigma_rate"),   noise_error[ichip][ichan], ichan, NO_CREATE_NEW_MODE);
           if(flags[SELECT_PRINT]) h_Noise[ichip]->Fill(ichan, noise[ichip][ichan]);
         }
 
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-        unsigned icol_id = icol + 1;
           
           if(flags[SELECT_CHARGE_NOHIT]) {
-            Edit.SUMMARY_SetChFitValue("charge_nohit_" + std::to_string(icol_id), charge_nohit      [ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
-            Edit.SUMMARY_SetChFitValue("sigma_nohit_" + std::to_string(icol_id),  charge_nohit_error[ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("charge_nohit_" + std::to_string(icol), charge_nohit      [ichip][ichan][icol], ichan, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("sigma_nohit_" + std::to_string(icol),  charge_nohit_error[ichip][ichan][icol], ichan, NO_CREATE_NEW_MODE);
             if(flags[SELECT_PRINT]) h_Charge_Nohit[ichip]->Fill(ichan * 26 + icol, charge_hit[ichip][ichan][icol]);
           }
           if(flags[SELECT_CHARGE_HIT]) {
-            Edit.SUMMARY_SetChFitValue("charge_hit_" + std::to_string(icol_id), charge_hit      [ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
-            Edit.SUMMARY_SetChFitValue("sigma_hit_" + std::to_string(icol_id),  charge_hit_error[ichip][ichan][icol], ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("charge_hit_" + std::to_string(icol), charge_hit      [ichip][ichan][icol], ichan, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("sigma_hit_" + std::to_string(icol),  charge_hit_error[ichip][ichan][icol], ichan, NO_CREATE_NEW_MODE);
             if(flags[SELECT_PRINT]) h_Charge_Hit[ichip]->Fill(ichan * 26 + icol, charge_hit[ichip][ichan][icol]);
           }
           if(flags[SELECT_DIFF]) {
             int diff = charge_hit[ichip][ichan][icol] - charge_nohit[ichip][ichan][icol];
             int diff_error = std::sqrt(std::pow(charge_hit_error[ichip][ichan][icol], 2) - std::pow(charge_nohit_error[ichip][ichan][icol], 2));
-            Edit.SUMMARY_SetChFitValue("diff_" + std::to_string(icol_id),       diff,       ichan_id, NO_CREATE_NEW_MODE);
-            Edit.SUMMARY_SetChFitValue("sigma_diff_" + std::to_string(icol_id), diff_error, ichan_id, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("diff_" + std::to_string(icol),       diff,       ichan, NO_CREATE_NEW_MODE);
+            Edit.SUMMARY_SetChFitValue("sigma_diff_" + std::to_string(icol), diff_error, ichan, NO_CREATE_NEW_MODE);
             if(flags[SELECT_PRINT]) h_Diff[ichip]->Fill(ichan * 26 + icol, diff);
           }
         }
@@ -321,23 +314,22 @@ int wgAnaHistSummary(const char * x_inputDir,
       Double_t heigth = 720;
 
       for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-        unsigned ichip_id = ichip + 1;
       
         if(flags[SELECT_NOISE]) {  
           TCanvas * canvas = new TCanvas("c1", "c1", width, heigth);
           TLegend * l_Noise;
           TString name;
 
-          name.Form("chip:%d", ichip_id);
+          name.Form("chip:%d", ichip);
           l_Noise=new TLegend(0.75, 0.84, 0.90, 0.90, name);
           l_Noise->SetBorderSize(1);
           l_Noise->SetFillStyle(0);
-          name.Form("Noise Rate \n\t chip:%d", ichip_id);
+          name.Form("Noise Rate \n\t chip:%d", ichip);
           l_Noise->AddEntry(h_Noise[ichip], name, "p");
           h_Noise[ichip]->SetMarkerSize(2);
           h_Noise[ichip]->Draw("P HIST");
           l_Noise->Draw();
-          name.Form("%s/Summary_Noise_chip%d.png", outputIMGDir.c_str(), ichip_id);
+          name.Form("%s/Summary_Noise_chip%d.png", outputIMGDir.c_str(), ichip);
           canvas->Print(name);
           
           delete l_Noise;
@@ -351,11 +343,11 @@ int wgAnaHistSummary(const char * x_inputDir,
           TLegend * l_Diff;
           std::vector<TLine*> line_Diff(n_chans[ichip]);
 
-          name.Form("chip:%d", ichip_id);
+          name.Form("chip:%d", ichip);
           l_Diff = new TLegend(0.75, 0.75, 0.90, 0.90, name);
           l_Diff->SetBorderSize(1);
           l_Diff->SetFillStyle(0);
-          name.Form("Diff (%d pe) \n\t chip:%d", pe_level[ichip][0], ichip_id);
+          name.Form("Diff (%d pe) \n\t chip:%d", pe_level[ichip][0], ichip);
           l_Diff->AddEntry(h_Diff[ichip], name, "p");
           canvas->DrawFrame(-5, 1, 32 * 26 + 5, WG_NOMINAL_GAIN * pe_level[ichip][0] * 4);
           h_Diff[ichip]->Draw("same P HIST");
@@ -366,7 +358,7 @@ int wgAnaHistSummary(const char * x_inputDir,
             line_Diff[ichan]->SetLineColor(17); // Grey line
             line_Diff[ichan]->Draw(); 
           }
-          name.Form("%s/Summary_Diff_chip%d.png", outputIMGDir.c_str(), ichip_id);
+          name.Form("%s/Summary_Diff_chip%d.png", outputIMGDir.c_str(), ichip);
           canvas->Print(name);
 
           for (unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) delete line_Diff[ichan];
@@ -381,11 +373,11 @@ int wgAnaHistSummary(const char * x_inputDir,
           TLegend * l_Charge_Hit;
           std::vector<TLine*> line_Charge_Hit(n_chans[ichip]);
 
-          name.Form("chip:%d", ichip_id);
+          name.Form("chip:%d", ichip);
           l_Charge_Hit = new TLegend(0.75, 0.75, 0.90, 0.90, name);
           l_Charge_Hit->SetBorderSize(1);
           l_Charge_Hit->SetFillStyle(0);
-          name.Form("Charge_Hit (%d pe) \n\t chip:%d", pe_level[ichip][0], ichip_id);
+          name.Form("Charge_Hit (%d pe) \n\t chip:%d", pe_level[ichip][0], ichip);
           l_Charge_Hit->AddEntry(h_Charge_Hit[ichip], name, "p");
           canvas->DrawFrame(-5, WG_BEGIN_CHARGE_HIT_HG, 32 * 26 + 5, WG_END_CHARGE_HIT_HG);
           h_Charge_Hit[ichip]->Draw("same P HIST");
@@ -396,7 +388,7 @@ int wgAnaHistSummary(const char * x_inputDir,
             line_Charge_Hit[ichan]->SetLineColor(17); // Grey line
             line_Charge_Hit[ichan]->Draw(); 
           }
-          name.Form("%s/Summary_Charge_Hit_chip%d.png", outputIMGDir.c_str(), ichip_id);
+          name.Form("%s/Summary_Charge_Hit_chip%d.png", outputIMGDir.c_str(), ichip);
           canvas->Print(name);
 
           for (unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) delete line_Charge_Hit[ichan];
@@ -411,11 +403,11 @@ int wgAnaHistSummary(const char * x_inputDir,
           TLegend * l_Charge_Nohit;
           std::vector<TLine*> line_Charge_Nohit(n_chans[ichip]);
 
-          name.Form("chip:%d", ichip_id);
+          name.Form("chip:%d", ichip);
           l_Charge_Nohit = new TLegend(0.75, 0.75, 0.90, 0.90, name);
           l_Charge_Nohit->SetBorderSize(1);
           l_Charge_Nohit->SetFillStyle(0);
-          name.Form("Charge_Nohit \n\t chip:%d", ichip_id);
+          name.Form("Charge_Nohit \n\t chip:%d", ichip);
           l_Charge_Nohit->AddEntry(h_Charge_Nohit[ichip], name, "p");
           canvas->DrawFrame(-5, WG_BEGIN_CHARGE_NOHIT, 32 * 26 + 5, WG_END_CHARGE_NOHIT);
           h_Charge_Nohit[ichip]->Draw("same P HIST");
@@ -426,7 +418,7 @@ int wgAnaHistSummary(const char * x_inputDir,
             line_Charge_Nohit[ichan]->SetLineColor(17); // Grey line
             line_Charge_Nohit[ichan]->Draw(); 
           }
-          name.Form("%s/Summary_Charge_Nohit_chip%d.png", outputIMGDir.c_str(), ichip_id);
+          name.Form("%s/Summary_Charge_Nohit_chip%d.png", outputIMGDir.c_str(), ichip);
           canvas->Print(name);
 
           for (unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) delete line_Charge_Nohit[ichan];

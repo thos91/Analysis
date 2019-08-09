@@ -101,7 +101,7 @@ void wgEditXML::Make(const std::string& filename, const unsigned idif, const uns
   XMLElement* chan = xml->NewElement("chan");
   data->InsertEndChild(chan);
 
-  for(unsigned k = 1; k <= MEMDEPTH; k++){
+  for(unsigned k = 0; k < MEMDEPTH; k++){
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "col_%d", k );
     XMLElement* col = xml->NewElement(str);
     chan->InsertEndChild(col);
@@ -133,13 +133,13 @@ bool wgEditXML::GetConfig(const std::string& configxml,
     XMLElement* acqpc = domain->FirstChildElement("acqpc");
     // GDCCs loop
     for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-      if( std::string(gdcc->Attribute("name")) == "gdcc_1_" + std::to_string(igdcc) ) {
+      if( std::string(gdcc->Attribute("name")) == "gdcc_0_" + std::to_string(igdcc) ) {
         // DIFs loop
         for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-          if( std::string(dif->Attribute("name")) == "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+          if( std::string(dif->Attribute("name")) == "dif_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
             // ASUs loop
             for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-              if( std::string(asu->Attribute("name")) == "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
+              if( std::string(asu->Attribute("name")) == "asu_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
                 XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
                 // loop to find the spiroc2d_bitstream parameter
                 for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
@@ -223,7 +223,7 @@ void wgEditXML::SetConfigValue(const std::string& name, const int value, const b
 
 //**********************************************************************
 void wgEditXML::SetColValue(const std::string& name, const int icol, const int value, const bool create_new) {
-  if (icol <= 0 || (unsigned) icol > MEMDEPTH) return;
+  if (icol < 0 || (unsigned) icol > MEMDEPTH) return;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* chan = data->FirstChildElement("chan");
@@ -286,7 +286,7 @@ void wgEditXML::AddChElement(const std::string& name) {
 
 //**********************************************************************
 int wgEditXML::GetColValue(const std::string& name, const int icol){
-  if(icol <= 0 || (unsigned) icol > MEMDEPTH) return 0.0;
+  if(icol < 0 || (unsigned) icol > MEMDEPTH) return 0.0;
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   XMLElement* chan = data->FirstChildElement("chan");
@@ -390,9 +390,8 @@ void wgEditXML::SUMMARY_Make(const std::string& filename, const unsigned n_chans
 
 
   for(unsigned ichan = 0; ichan < n_chans; ++ichan) {
-    unsigned ichan_id = ichan + 1;
     // ***** data > ch ***** //
-    snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan_id );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan );
     ch[ichan] = xml->NewElement(str);    
     data->InsertEndChild(ch[ichan]);
 
@@ -421,38 +420,32 @@ void wgEditXML::SUMMARY_Make(const std::string& filename, const unsigned n_chans
     fit[ichan]->InsertEndChild(pe_level[ichan]);
 
     for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      unsigned icol_id = icol + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "charge_nohit_%d", icol_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "charge_nohit_%d", icol );
       pedestal[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(pedestal[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      unsigned icol_id = icol + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_nohit_%d", icol_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_nohit_%d", icol );
       pedestal_error[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(pedestal_error[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      unsigned icol_id = icol + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "charge_hit_%d", icol_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "charge_hit_%d", icol );
       charge_hit[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(charge_hit[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      unsigned icol_id = icol + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_hit_%d", icol_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_hit_%d", icol );
       charge_hit_error[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(charge_hit_error[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      unsigned icol_id = icol + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "diff_%d", icol_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "diff_%d", icol );
       diff[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(diff[ichan][icol]);
     }
     for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      unsigned icol_id = icol + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_diff_%d", icol_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_diff_%d", icol );
       diff_error[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(diff_error[ichan][icol]);
     }
@@ -530,15 +523,14 @@ void wgEditXML::SUMMARY_SetPedFitValue(int value[MEMDEPTH], const int ichan, con
   XMLElement* chan = data->FirstChildElement(str);
   XMLElement* fit = chan->FirstChildElement("fit");
   for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-    unsigned icol_id = icol + 1;
-    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol_id );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
     XMLElement* target = fit->FirstChildElement(str);
     if ( target ) {
       snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value[icol] );
       target->SetText(str);
     }else{
       if(create_new == true){
-        snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol_id );
+        snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
         XMLElement* newElement = xml->NewElement(str);
         snprintf( str, XML_ELEMENT_STRING_LENGTH, "%d", value[icol] );
         newElement->SetText(str);
@@ -623,8 +615,7 @@ void wgEditXML::SUMMARY_GetPedFitValue(int value[MEMDEPTH], const int ich){
   XMLElement* chan = data->FirstChildElement(str);
   XMLElement* config = chan->FirstChildElement("fit");
   for(unsigned icol = 0; icol < MEMDEPTH; ++icol){
-    unsigned icol_id = icol + 1;
-    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol_id );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
     XMLElement* target = config->FirstChildElement(str);
     if ( target ) {
       std::string temp_value = target->GetText();
@@ -663,17 +654,17 @@ void wgEditXML::OPT_Make(const std::string& filename,
 
   for(unsigned idif = 0; idif < n_difs; ++idif) {
     // ***** data > dif ***** //
-    snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif + 1);
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
     dif = xml->NewElement(str);
     data->InsertEndChild(dif);
     for(unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
       // ***** data > dif > chip ***** //
-      snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip + 1);
+      snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip);
       chip = xml->NewElement(str);
       dif->InsertEndChild(chip);
       for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
         // ***** data > dif > chip > channel ***** //
-        snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan + 1);
+        snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
         chan = xml->NewElement(str);    
         dif->InsertEndChild(chan);
         s_th[0] = xml->NewElement("s_th1");
@@ -899,72 +890,69 @@ void wgEditXML::Pedestal_Make(const std::string& filename, Topology& topol){
   data->InsertEndChild(difs);
 
   for(unsigned idif = 0; idif < topol.n_difs; ++idif) {
-    unsigned idif_id = idif + 1;
     // ***** data > dif ***** //
-    snprintf( str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif_id );
+    snprintf( str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif );
     dif = xml->NewElement(str);    
     data->InsertEndChild(dif);
     chips = xml->NewElement("n_chips");
 
-    unsigned n_chips = topol.dif_map[idif_id].size();
+    unsigned n_chips = topol.dif_map[idif].size();
     snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chips);
     chips->SetText(str);
     data->InsertEndChild(chips);
     // ***** data > dif > chip ***** //
     for(unsigned ichip = 0; ichip < n_chips; ++ichip) {
-      unsigned ichip_id = ichip + 1;
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip_id );
+      snprintf( str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip );
       chip = xml->NewElement(str);    
       dif->InsertEndChild(chip);
 
-      unsigned n_chans = topol.dif_map[idif_id][ichip_id];
+      unsigned n_chans = topol.dif_map[idif][ichip];
       chans = xml->NewElement("n_chans");
       snprintf( str, XML_ELEMENT_STRING_LENGTH, "%u", n_chans);
       chans->SetText(str);
       dif->InsertEndChild(chans);
       // ***** data > dif > chip > ch ***** //
       for(unsigned ichan = 0; ichan < n_chans; ++ichan) {
-        unsigned ichan_id = ichan + 1;
-        snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan_id );
+        snprintf( str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan );
         chan = xml->NewElement(str);
         chip->InsertEndChild(chan);
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe1_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe1_%d", icol );
           pe1 = xml->NewElement(str);
           chan->InsertEndChild(pe1);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe2_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "pe2_%d", icol );
           pe2 = xml->NewElement(str);
           chan->InsertEndChild(pe2);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "gain_%d", icol );
           gain = xml->NewElement(str);  
           chan->InsertEndChild(gain);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_gain_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_gain_%d", icol );
           sigma_gain = xml->NewElement(str);  
           chan->InsertEndChild(sigma_gain);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "ped_%d", icol );
           ped = xml->NewElement(str);  
           chan->InsertEndChild(ped);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_ped_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_ped_%d", icol );
           sigma_ped = xml->NewElement(str);  
           chan->InsertEndChild(sigma_ped);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "meas_ped_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "meas_ped_%d", icol );
           meas_ped = xml->NewElement(str);  
           chan->InsertEndChild(meas_ped);
         }
-        for(unsigned icol_id = 1; icol_id <= MEMDEPTH; icol_id++) {
-          snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_meas_ped_%d", icol_id );
+        for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
+          snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_meas_ped_%d", icol );
           sigma_meas_ped = xml->NewElement(str);  
           chan->InsertEndChild(sigma_meas_ped);
         }

@@ -79,42 +79,39 @@ int wgMakeHist(const char * x_input_file_name,
   TH1::AddDirectory(kFALSE);
   
   for (unsigned ichip = 0; ichip < n_chips; ++ichip) {
-    unsigned ichip_id = ichip + 1;
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
-      unsigned ichan_id = ichan + 1;
       for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-        unsigned icol_id = icol + 1;
         // ADC count when there is a hit (hit bit is one)
-        h_name.Form("charge_hit_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("charge_hit_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_charge_hit[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_hit[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol]);
         // ADC count when there is a hit (hit bit is one) and the high gain preamp is selected
-        h_name.Form("charge_hit_HG_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("charge_hit_HG_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_charge_hit_HG[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_hit_HG[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol]);
         // ADC count when there is a hit (hit bit is one) and the low gain preamp is selected
-        h_name.Form("charge_hit_LG_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("charge_hit_LG_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_charge_hit_LG[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_hit_LG[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol]);
         // ADC count when there is not hit (hit bit is zero)
-        h_name.Form("charge_nohit_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("charge_nohit_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_charge_nohit[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_charge_nohit[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol + MEMDEPTH * 2 + 2]);
         // Photo-electrons
-        h_name.Form("pe_hit_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("pe_hit_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_pe_hit[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_pe_hit[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol]);
         // TDC count when there is a hit (hit bit is one)
-        h_name.Form("time_hit_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("time_hit_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_time_hit[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);
         h_time_hit[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol]);
         // TDC count when there is not hit (hit bit is zero)
-        h_name.Form("time_nohit_chip%u_ch%u_col%u", ichip_id, ichan_id, icol_id);
+        h_name.Form("time_nohit_chip%u_ch%u_col%u", ichip, ichan, icol);
         h_time_nohit[ichip][ichan][icol] = new TH1I(h_name, h_name, bin, min_bin, max_bin);   
         h_time_nohit[ichip][ichan][icol]->SetLineColor(wgColor::wgcolors[icol + MEMDEPTH * 2 + 2]);
       } //end col
       // BCID
-      h_name.Form("bcid_hit_chip%u_ch%u", ichip_id, ichan_id);
+      h_name.Form("bcid_hit_chip%u_ch%u", ichip, ichan);
       h_bcid_hit[ichip][ichan] = new TH1I(h_name, h_name, MAX_VALUE_16BITS, 0, MAX_VALUE_16BITS);
       h_bcid_hit[ichip][ichan]->SetLineColor(kBlack);
     } //end ch

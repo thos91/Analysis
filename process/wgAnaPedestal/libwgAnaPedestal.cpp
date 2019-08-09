@@ -89,22 +89,20 @@ int wgAnaPedestal(const char * x_input_run_dir,
   vector<vector<vector<array<int, MEMDEPTH>>>> sigma_gain      (n_difs);
   
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    unsigned idif_id = idif + 1;
-    charge_nohit[idif].resize(topol.dif_map[idif_id].size());
-    sigma_nohit [idif].resize(topol.dif_map[idif_id].size());
-    charge_hit  [idif].resize(topol.dif_map[idif_id].size());
-    sigma_hit   [idif].resize(topol.dif_map[idif_id].size());
-    gain        [idif].resize(topol.dif_map[idif_id].size());
-    sigma_gain  [idif].resize(topol.dif_map[idif_id].size());
-    for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
-      unsigned ichip_id = ichip + 1;
-      charge_nohit[idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
-      sigma_nohit [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
-      charge_hit  [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
-      sigma_hit   [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
-      gain        [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
-      sigma_gain  [idif][ichip].resize(topol.dif_map[idif_id][ichip_id]);
-      for(unsigned ichan = 0; ichan < (unsigned) topol.dif_map[idif_id][ichip_id]; ichan++) {
+    charge_nohit[idif].resize(topol.dif_map[idif].size());
+    sigma_nohit [idif].resize(topol.dif_map[idif].size());
+    charge_hit  [idif].resize(topol.dif_map[idif].size());
+    sigma_hit   [idif].resize(topol.dif_map[idif].size());
+    gain        [idif].resize(topol.dif_map[idif].size());
+    sigma_gain  [idif].resize(topol.dif_map[idif].size());
+    for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
+      charge_nohit[idif][ichip].resize(topol.dif_map[idif][ichip]);
+      sigma_nohit [idif][ichip].resize(topol.dif_map[idif][ichip]);
+      charge_hit  [idif][ichip].resize(topol.dif_map[idif][ichip]);
+      sigma_hit   [idif][ichip].resize(topol.dif_map[idif][ichip]);
+      gain        [idif][ichip].resize(topol.dif_map[idif][ichip]);
+      sigma_gain  [idif][ichip].resize(topol.dif_map[idif][ichip]);
+      for(unsigned ichan = 0; ichan < (unsigned) topol.dif_map[idif][ichip]; ichan++) {
         charge_nohit[idif][ichip][ichan].resize(MEMDEPTH);
         sigma_nohit [idif][ichip][ichan].resize(MEMDEPTH);
         charge_hit  [idif][ichip][ichan].resize(MEMDEPTH);
@@ -127,15 +125,13 @@ int wgAnaPedestal(const char * x_input_run_dir,
     // DIF
     pe_directory += "/wgAnaHistSummary/Xml";
     for (auto const & idif_directory : ListDirectories(pe_directory)) {
-      unsigned idif_id = extractIntegerFromString(GetName(idif_directory));
-      unsigned idif = idif_id - 1;
+      unsigned idif = extractIntegerFromString(GetName(idif_directory));
       
-      for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
-        unsigned ichip_id = ichip + 1;
+      for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
         
         // ************* Open XML file ************* //
 	  
-        std::string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip_id) + ".xml");
+        std::string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip) + ".xml");
         try { Edit.Open(xmlfile); }
         catch (const exception& e) {
           Log.eWrite("[wgAnaPedestal] " + string(e.what()));
@@ -144,12 +140,11 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
         // ************* Read XML file ************* //
 	  
-        for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
-          unsigned ichan_id = ichan + 1;
+        for(unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ichan++) {
 
 #ifdef DEBUG_WGANAPEDESTAL
           unsigned pe_level_from_xml;
-          try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(string("pe_level"), ichan_id); }
+          try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(string("pe_level"), ichan); }
           catch (const exception & e) {
             Log.eWrite("failed to read photo electrons equivalent threshold from XML file\n");
             return ERR_FAILED_OPEN_XML_FILE;
@@ -160,17 +155,16 @@ int wgAnaPedestal(const char * x_input_run_dir,
 #endif // DEBUG_WGANAPEDESTAL
 
           for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-            unsigned icol_id = icol + 1;
             // charge_nohit peak (slighly shifted with respect to the pedestal)
-            charge_nohit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_nohit_" + to_string(icol_id), ichan_id);
-            sigma_nohit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_nohit_"  + to_string(icol_id), ichan_id);
+            charge_nohit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_nohit_" + to_string(icol), ichan);
+            sigma_nohit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_nohit_"  + to_string(icol), ichan);
             // charge_HG peak (npe p.e. peak for high gain preamp)
             // Extract the one photo-electron peak and store it in the charge_hit
             // variable. This variable is called like this because it will serve as
             // a reference to calculate the corrected value of the pedestal:
             // corrected pedestal = pedestal reference - gain
-            charge_hit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_hit_" + to_string(icol_id), ichan_id);
-            sigma_hit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_hit_"  + to_string(icol_id), ichan_id);
+            charge_hit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_hit_" + to_string(icol), ichan);
+            sigma_hit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_hit_"  + to_string(icol), ichan);
           }
         }
         Edit.Close();
@@ -192,21 +186,18 @@ int wgAnaPedestal(const char * x_input_run_dir,
   TString name;
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    unsigned idif_id = idif + 1;
     // xbins = 80, xlow = 20, xup = 60 
-    name.Form("h_Gain_DIF%d", idif_id);
+    name.Form("h_Gain_DIF%d", idif);
     h_Gain [idif] = new TH1D(name, name, 80, 20, 60);
     // xbins = 20, xlow = 0, xup = 20, ybins = 40, ylow = 0, yup = 80
-    name.Form("h_Gain2D_DIF%d", idif_id);
+    name.Form("h_Gain2D_DIF%d", idif);
     h_Gain2D[idif] = new TH2D(name, name, 20, 0, 20, 40, 0, 80);
   }
 
   // ************* Fill the Gain and Gain2D histograms ************* //
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    unsigned idif_id = idif + 1;
-    for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
-      unsigned ichip_id = ichip + 1;
-      for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
+    for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
+      for(unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ichan++) {
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           // Difference between the 2 p.e. peak and the 1 p.e. peak (i.e. the gain value)
           gain[idif][ichip][ichan][icol] = charge_hit[idif][ichip][ichan][icol][TWO_PE] - charge_hit[idif][ichip][ichan][icol][ONE_PE];
@@ -230,7 +221,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
     c1->SetLogz(1);
     h_Gain2D[idif]->Draw("colz");
   }
-  name = output_img_dir + "/Gain.png";
+  name = output_img_dir + "/gain.png";
   c1->Print(name);
 
 
@@ -245,16 +236,15 @@ int wgAnaPedestal(const char * x_input_run_dir,
   
   h_ped_shift_global->SetTitle("pedestal shift;adc count;nEntry");
   for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-    unsigned icol_id = icol + 1;
     // xbins = 300, xlow = 400, xup = 700
-    name.Form("h_corrected_ped_%d", icol_id);
+    name.Form("h_corrected_ped_%d", icol);
     h_corrected_ped[icol] = new TH1D(name, "h_corrected_ped", std::abs(WG_END_CHARGE_NOHIT - WG_BEGIN_CHARGE_NOHIT), WG_BEGIN_CHARGE_NOHIT, WG_END_CHARGE_NOHIT);
     // xbins = 100, xlow = -50, xup = 50
-    name.Form("h_ped_shift_%d", icol_id);
+    name.Form("h_ped_shift_%d", icol);
     h_ped_shift[icol] = new TH1D(name, "h_ped_shift", std::abs(WG_PED_DIFF_MAX - WG_PED_DIFF_MIN), WG_PED_DIFF_MIN, WG_PED_DIFF_MAX);
     h_corrected_ped[icol]->SetLineColor(kBlue);
     h_ped_shift[icol]->SetLineColor(kRed);
-    name.Form("pedestal shift col%d;adc count;nEntry", icol_id);
+    name.Form("pedestal shift col%d;adc count;nEntry", icol);
     h_ped_shift[icol]->SetTitle(name);
   }
 
@@ -269,17 +259,13 @@ int wgAnaPedestal(const char * x_input_run_dir,
   }
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
-    unsigned idif_id = idif + 1;
-    for(unsigned ichip = 0; ichip < topol.dif_map[idif_id].size(); ichip++) {
-      unsigned ichip_id = ichip + 1;
-      for(unsigned ichan = 0; ichan < topol.dif_map[idif_id][ichip_id]; ichan++) {
-        unsigned ichan_id = ichan + 1;
+    for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
+      for(unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ichan++) {
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-          unsigned icol_id = icol + 1;
-          Edit.Pedestal_SetChanValue("pe1_"        + to_string(icol_id), idif_id, ichip_id, ichan_id, charge_hit[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("pe2_"        + to_string(icol_id), idif_id, ichip_id, ichan_id, charge_hit[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("gain_"       + to_string(icol_id), idif_id, ichip_id, ichan_id, gain      [idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("sigma_gain_" + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_gain[idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("pe1_"        + to_string(icol), idif, ichip, ichan, charge_hit[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("pe2_"        + to_string(icol), idif, ichip, ichan, charge_hit[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("gain_"       + to_string(icol), idif, ichip, ichan, gain      [idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_gain_" + to_string(icol), idif, ichip, ichan, sigma_gain[idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
 
           // corrected_pedestal = 1 p.e. peak - gain
           // measured_pedestal = raw pedestal when there is no hit
@@ -287,10 +273,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
           int measured_pedestal        = charge_nohit[idif][ichip][ichan][icol][ONE_PE];
           int sigma_corrected_pedestal = sqrt(pow(sigma_hit[idif][ichip][ichan][icol][ONE_PE], 2) - pow(gain[idif][ichip][ichan][icol], 2));
           int sigma_measured_pedestal  = sigma_nohit[idif][ichip][ichan][icol][ONE_PE];
-          Edit.Pedestal_SetChanValue("ped_"            + to_string(icol_id), idif_id, ichip_id, ichan_id, corrected_pedestal,       NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("sigma_ped_"      + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_corrected_pedestal, NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("meas_ped_"       + to_string(icol_id), idif_id, ichip_id, ichan_id, measured_pedestal,        CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("sigma_meas_ped_" + to_string(icol_id), idif_id, ichip_id, ichan_id, sigma_measured_pedestal,  CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("ped_"            + to_string(icol), idif, ichip, ichan, corrected_pedestal,       NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_ped_"      + to_string(icol), idif, ichip, ichan, sigma_corrected_pedestal, NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("meas_ped_"       + to_string(icol), idif, ichip, ichan, measured_pedestal,        CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_meas_ped_" + to_string(icol), idif, ichip, ichan, sigma_measured_pedestal,  CREATE_NEW_MODE);
 
           h_corrected_ped[icol]->Fill(corrected_pedestal);
           h_ped_shift[icol]->Fill(corrected_pedestal - measured_pedestal);

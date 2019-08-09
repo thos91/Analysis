@@ -8,7 +8,7 @@ then
     exit 1
 fi
 
-RUN_NAME="test_inputDAC121_pe2_dif_1_1_1"
+RUN_NAME="test_inputDAC121_pe2_dif_0"
 
 BIN_DIR="${WAGASCI_MAINDIR}/bin"
 DECODER="${BIN_DIR}/wgDecoder"
@@ -24,7 +24,7 @@ EVERYTHING_MODE=20
 
 OUTPUT_XMLDIR="${CURRENT_DIR}/xml"
 OUTPUT_IMGDIR="${CURRENT_DIR}/img"
-DIF=1
+DIF=0
 NCHIPS=20
 
 echo " wgAnaHist unit test: input DAC 121 - 2 p.e."
