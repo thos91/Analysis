@@ -13,7 +13,7 @@ DECODER="${BIN_DIR}/wgDecoder"
 MAKEHIST="${BIN_DIR}/wgMakeHist"
 ANAHIST="${BIN_DIR}/wgAnaHist"
 ANAHISTSUMMARY="${BIN_DIR}/wgAnaHistSummary"
-ANAPEDESTAL="${BIN_DIR}/wgAnaPedestal"
+ANAPEDESTAL="${BIN_DIR}/wgPedestalCalib"
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -24,7 +24,7 @@ TREE_FILE="${CURRENT_DIR}/${RUN_NAME}_tree.root"
 HIST_FILE="${CURRENT_DIR}/${RUN_NAME}_hist.root"
 ANA_DIR="${CURRENT_DIR}/AnaHist"
 ANA_SUMMARY_DIR="${CURRENT_DIR}/OnePE/wgAnaHistSummary/Xml/dif1"
-ANA_PEDESTAL_DIR="${CURRENT_DIR}/AnaPedestal"
+ANA_PEDESTAL_DIR="${CURRENT_DIR}/PedestalCalib"
 IMAGE_DIR="${CURRENT_DIR}/Images"
 
 ANA_MODE=20 # everything
@@ -33,7 +33,7 @@ NCHIPS_DECODE=20
 NCHANNELS_DECODE=32
 DIF=1
 
-echo " wgAnaPedestal unit test: input DAC 121 - 2 p.e."
+echo " wgPedestalCalib unit test: input DAC 121 - 2 p.e."
 
 if [ ! -f "${TREE_FILE}" ]; then
     echo ""
@@ -59,5 +59,5 @@ fi
 #######################################################################################################################################################
 
 echo ""
-echo " AnaPedestal : ${ANAPEDESTAL}  -f  ${CURRENT_DIR}  -o  ${ANA_PEDESTAL_DIR}  -i  ${IMAGE_DIR}"
-                    "${ANAPEDESTAL}" -f "${CURRENT_DIR}" -o "${ANA_PEDESTAL_DIR}" -i "${IMAGE_DIR}"
+echo " PedestalCalib : ${ANAPEDESTAL}  -f  ${CURRENT_DIR}  -o  ${ANA_PEDESTAL_DIR}  -i  ${IMAGE_DIR}"
+                      "${ANAPEDESTAL}" -f "${CURRENT_DIR}" -o "${ANA_PEDESTAL_DIR}" -i "${IMAGE_DIR}"

@@ -8,13 +8,13 @@
 
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
-#include "wgAnaPedestal.hpp"
+#include "wgPedestalCalib.hpp"
 #include "wgLogger.hpp"
 
 using namespace wagasci_tools;
 
 void print_help(const char * program_name) {
-  cout <<  program_name << " creates the pedestal_card.xml.\n"
+  std::cout <<  program_name << " creates the pedestal_card.xml.\n"
     "  -h         : help\n"
     "  -f (char*) : input directory (mandatory)\n"
     "  -o (char*) : output directory (default: same as input directory)\n"
@@ -25,35 +25,35 @@ void print_help(const char * program_name) {
 int main(int argc, char** argv){
   int opt;
   wgEnvironment env;
-  string inputDir("");
-  string outputXMLDir = env.XMLDATA_DIRECTORY;
-  string outputIMGDir = env.IMGDATA_DIRECTORY;
+  std::string input_dir("");
+  std::string output_xml_dir = env.XMLDATA_DIRECTORY;
+  std::string output_img_dir = env.IMGDATA_DIRECTORY;
 
 
   while((opt = getopt(argc,argv, "f:o:i:n:x:y:h")) !=-1 ) {
     switch(opt){
     case 'f':
-      inputDir = optarg;
+      input_dir = optarg;
       break;
     case 'o':
-      outputXMLDir = optarg; 
+      output_xml_dir = optarg; 
       break;
     case 'i':
-      outputIMGDir = optarg; 
+      output_img_dir = optarg; 
       break;
     case 'h':
       print_help(argv[0]);
       break;
-    default:
-      print_help(argv[0]);
+      default:
+        print_help(argv[0]);
     }   
   }
 
   int result;
-  if ( (result = wgAnaPedestal(inputDir.c_str(),
-                               outputXMLDir.c_str(),
-                               outputIMGDir.c_str())) != WG_SUCCESS ) {
-    Log.Write("[wgAnaPedestal] Returned error code " + to_string(result));
+  if ( (result = wgPedestalCalib(input_dir.c_str(),
+                                 output_xml_dir.c_str(),
+                                 output_img_dir.c_str())) != WG_SUCCESS ) {
+    Log.Write("[wgPedestalCalib] Returned error code " + std::to_string(result));
   }
 
 }

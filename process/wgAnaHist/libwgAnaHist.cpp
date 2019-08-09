@@ -99,7 +99,7 @@ int wgAnaHist(const char * x_input_file,
   // ======= Create output_xml_dir ======= //
   try { MakeDir(output_xml_dir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+    Log.eWrite("[wgAnaHist] " + string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
   // ======= Create output_img_dir ======= //
@@ -110,7 +110,7 @@ int wgAnaHist(const char * x_input_file,
         string output_img_chip_chan_dir(output_img_dir + "/chip" + to_string(ichip) + "/chan" + to_string(ichan));
         try { MakeDir(output_img_chip_chan_dir); }
         catch (const wgInvalidFile& e) {
-          Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+          Log.eWrite("[wgAnaHist] " + string(e.what()));
           return ERR_FAILED_CREATE_DIRECTORY;
         }
       }

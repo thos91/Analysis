@@ -1,4 +1,4 @@
-set(process wgAnaPedestal)
+set(process wgPedestalCalib)
 
 ################ Compiler flags ################
 

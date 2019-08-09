@@ -21,14 +21,14 @@
 #include "wgFitConst.hpp"
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
-#include "wgAnaPedestal.hpp"
+#include "wgPedestalCalib.hpp"
 
 using namespace wagasci_tools;
 
 //******************************************************************
-int wgAnaPedestal(const char * x_input_run_dir,
-                  const char * x_output_xml_dir,
-                  const char * x_output_img_dir)
+int wgPedestalCalib(const char * x_input_run_dir,
+                    const char * x_output_xml_dir,
+                    const char * x_output_img_dir)
 {
   std::string input_run_dir (x_input_run_dir);
   std::string output_xml_dir(x_output_xml_dir);
@@ -38,7 +38,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
   
 
   if (input_run_dir.empty() || !check_exist::Dir(input_run_dir)) {
-    Log.eWrite("[wgAnaPedestal] input directory doesn't exist");
+    Log.eWrite("[wgPedestalCalib] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
   
@@ -49,14 +49,14 @@ int wgAnaPedestal(const char * x_input_run_dir,
   // ============ Create output_xml_dir ============ //
   try { MakeDir(output_xml_dir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+    Log.eWrite("[wgPedestalCalib] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
   // ============ Create output_img_dir ============ //
   try { MakeDir(output_img_dir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+    Log.eWrite("[wgPedestalCalib] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
@@ -81,12 +81,12 @@ int wgAnaPedestal(const char * x_input_run_dir,
    *       Reserve memory for charge/simga_nohit and charge/simga_hit             *
    ********************************************************************************/
 
-  vector<vector<vector<vector<array<int, N_PE>>>>> charge_nohit(n_difs);
-  vector<vector<vector<vector<array<int, N_PE>>>>> sigma_nohit (n_difs);
-  vector<vector<vector<vector<array<int, N_PE>>>>> charge_hit  (n_difs);
-  vector<vector<vector<vector<array<int, N_PE>>>>> sigma_hit   (n_difs);
-  vector<vector<vector<array<int, MEMDEPTH>>>> gain            (n_difs);
-  vector<vector<vector<array<int, MEMDEPTH>>>> sigma_gain      (n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> charge_nohit(n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> sigma_nohit (n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> charge_hit  (n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> sigma_hit   (n_difs);
+  std::vector<std::vector<std::vector<std::array<int, MEMDEPTH>>>> gain            (n_difs);
+  std::vector<std::vector<std::vector<std::array<int, MEMDEPTH>>>> sigma_gain      (n_difs);
   
   for(unsigned idif = 0; idif < n_difs; idif++) {
     charge_nohit[idif].resize(topol.dif_map[idif].size());
@@ -131,10 +131,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
         
         // ************* Open XML file ************* //
 	  
-        std::string xmlfile(idif_directory + "/Summary_chip" + to_string(ichip) + ".xml");
+        std::string xmlfile(idif_directory + "/Summary_chip" + std::to_string(ichip) + ".xml");
         try { Edit.Open(xmlfile); }
-        catch (const exception& e) {
-          Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+        catch (const std::exception& e) {
+          Log.eWrite("[wgPedestalCalib] " + std::string(e.what()));
           return ERR_FAILED_OPEN_XML_FILE;
         }
 
@@ -144,7 +144,7 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
 #ifdef DEBUG_WGANAPEDESTAL
           unsigned pe_level_from_xml;
-          try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(string("pe_level"), ichan); }
+          try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(std::string("pe_level"), ichan); }
           catch (const exception & e) {
             Log.eWrite("failed to read photo electrons equivalent threshold from XML file\n");
             return ERR_FAILED_OPEN_XML_FILE;
@@ -156,15 +156,15 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
           for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
             // charge_nohit peak (slighly shifted with respect to the pedestal)
-            charge_nohit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_nohit_" + to_string(icol), ichan);
-            sigma_nohit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_nohit_"  + to_string(icol), ichan);
+            charge_nohit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_nohit_" + std::to_string(icol), ichan);
+            sigma_nohit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_nohit_"  + std::to_string(icol), ichan);
             // charge_HG peak (npe p.e. peak for high gain preamp)
             // Extract the one photo-electron peak and store it in the charge_hit
             // variable. This variable is called like this because it will serve as
             // a reference to calculate the corrected value of the pedestal:
             // corrected pedestal = pedestal reference - gain
-            charge_hit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_hit_" + to_string(icol), ichan);
-            sigma_hit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_hit_"  + to_string(icol), ichan);
+            charge_hit[idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("charge_hit_" + std::to_string(icol), ichan);
+            sigma_hit [idif][ichip][ichan][icol][ipe] = Edit.SUMMARY_GetChFitValue("sigma_hit_"  + std::to_string(icol), ichan);
           }
         }
         Edit.Close();
@@ -181,8 +181,8 @@ int wgAnaPedestal(const char * x_input_run_dir,
   
   // Define the histograms
 
-  vector<TH1D*> h_Gain  (n_difs);
-  vector<TH2D*> h_Gain2D(n_difs);
+  std::vector<TH1D*> h_Gain  (n_difs);
+  std::vector<TH2D*> h_Gain2D(n_difs);
   TString name;
 
   for(unsigned idif = 0; idif < n_difs; idif++) {
@@ -250,11 +250,11 @@ int wgAnaPedestal(const char * x_input_run_dir,
 
   /********************** PEDESTAL_CARD.XML ************************/
   
-  string xmlfile = output_xml_dir + "/pedestal_card.xml";
+  std::string xmlfile = output_xml_dir + "/pedestal_card.xml";
   Edit.Pedestal_Make(xmlfile, topol);
   try { Edit.Open(xmlfile); }
-  catch (const exception& e) {
-    Log.eWrite("[wgAnaPedestal] " + string(e.what()));
+  catch (const std::exception& e) {
+    Log.eWrite("[wgPedestalCalib] " + std::string(e.what()));
     return ERR_FAILED_OPEN_XML_FILE;
   }
 
@@ -262,10 +262,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
     for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
       for(unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ichan++) {
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
-          Edit.Pedestal_SetChanValue("pe1_"        + to_string(icol), idif, ichip, ichan, charge_hit[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("pe2_"        + to_string(icol), idif, ichip, ichan, charge_hit[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("gain_"       + to_string(icol), idif, ichip, ichan, gain      [idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("sigma_gain_" + to_string(icol), idif, ichip, ichan, sigma_gain[idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("pe1_"        + std::to_string(icol), idif, ichip, ichan, charge_hit[idif][ichip][ichan][icol][ONE_PE], NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("pe2_"        + std::to_string(icol), idif, ichip, ichan, charge_hit[idif][ichip][ichan][icol][TWO_PE], NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("gain_"       + std::to_string(icol), idif, ichip, ichan, gain      [idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_gain_" + std::to_string(icol), idif, ichip, ichan, sigma_gain[idif][ichip][ichan][icol],         NO_CREATE_NEW_MODE);
 
           // corrected_pedestal = 1 p.e. peak - gain
           // measured_pedestal = raw pedestal when there is no hit
@@ -273,10 +273,10 @@ int wgAnaPedestal(const char * x_input_run_dir,
           int measured_pedestal        = charge_nohit[idif][ichip][ichan][icol][ONE_PE];
           int sigma_corrected_pedestal = sqrt(pow(sigma_hit[idif][ichip][ichan][icol][ONE_PE], 2) - pow(gain[idif][ichip][ichan][icol], 2));
           int sigma_measured_pedestal  = sigma_nohit[idif][ichip][ichan][icol][ONE_PE];
-          Edit.Pedestal_SetChanValue("ped_"            + to_string(icol), idif, ichip, ichan, corrected_pedestal,       NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("sigma_ped_"      + to_string(icol), idif, ichip, ichan, sigma_corrected_pedestal, NO_CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("meas_ped_"       + to_string(icol), idif, ichip, ichan, measured_pedestal,        CREATE_NEW_MODE);
-          Edit.Pedestal_SetChanValue("sigma_meas_ped_" + to_string(icol), idif, ichip, ichan, sigma_measured_pedestal,  CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("ped_"            + std::to_string(icol), idif, ichip, ichan, corrected_pedestal,       NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_ped_"      + std::to_string(icol), idif, ichip, ichan, sigma_corrected_pedestal, NO_CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("meas_ped_"       + std::to_string(icol), idif, ichip, ichan, measured_pedestal,        CREATE_NEW_MODE);
+          Edit.Pedestal_SetChanValue("sigma_meas_ped_" + std::to_string(icol), idif, ichip, ichan, sigma_measured_pedestal,  CREATE_NEW_MODE);
 
           h_corrected_ped[icol]->Fill(corrected_pedestal);
           h_ped_shift[icol]->Fill(corrected_pedestal - measured_pedestal);
@@ -286,9 +286,9 @@ int wgAnaPedestal(const char * x_input_run_dir,
           // If the pedestal (charge_nohit) for one pe threshold and the pedestal for two pe threshold are significantly different, there is
           // something wrong!
           if ( abs(measured_pedestal - charge_nohit[idif][ichip][ichan][icol][TWO_PE]) / measured_pedestal > PEDESTAL_DIFFERENCE_WARNING_THRESHOLD ) {
-            Log.eWrite("[wgAnaPedestal] Difference between 1 pe pedestal_nohit (" + to_string(measured_pedestal) +
-                       ") and 2 pe pedestal_nohit (" + to_string(charge_nohit[idif][ichip][ichan][icol][TWO_PE])+
-                       ") is greater than " + to_string(int(PEDESTAL_DIFFERENCE_WARNING_THRESHOLD * 100)) + "%");
+            Log.eWrite("[wgPedestalCalib] Difference between 1 pe pedestal_nohit (" + std::to_string(measured_pedestal) +
+                       ") and 2 pe pedestal_nohit (" + std::to_string(charge_nohit[idif][ichip][ichan][icol][TWO_PE])+
+                       ") is greater than " + std::to_string(int(PEDESTAL_DIFFERENCE_WARNING_THRESHOLD * 100)) + "%");
           }
 #endif // DEBUG_WGANAPEDESTAL
         }

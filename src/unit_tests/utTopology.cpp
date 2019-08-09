@@ -52,14 +52,14 @@ int main () {
 
   std::cout << "\n ### GetTopologyFromPedestalTree test ###\n\n";
   
-  // TopologyMap from wgAnaPedestal directory tree
+  // TopologyMap from wgPedestalCalib directory tree
   Topology topology_from_pedestal_tree("/home/neo/Code/WAGASCI/Analysis/src/unit_tests/pedestal_topology_test_run", TopologySourceType::pedestal_tree);
   topology_from_pedestal_tree.PrintMapDif();
   topology_from_pedestal_tree.PrintMapGdcc();
 
   std::cout << "\n ### GetTopologyFromScurveTree test ###\n\n";
   
-  // TopologyMap from wgAnaPedestal directory tree
+  // TopologyMap from wgPedestalCalib directory tree
   Topology topology_from_scurve_tree("/home/neo/Code/WAGASCI/Analysis/src/unit_tests/scurve_topology_test_run", TopologySourceType::scurve_tree);
   topology_from_scurve_tree.PrintMapDif();
   topology_from_scurve_tree.PrintMapGdcc();

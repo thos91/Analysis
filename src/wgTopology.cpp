@@ -347,7 +347,7 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
   wgEditXML Edit;
 
   /////////////////////////////////////////////////////////////////////////////
-  //    We descend into the AnaPedestal directory tree and count the number  //
+  //    We descend into the PedestalCalib directory tree and count the number  //
   //    of directories at each level. When we get to the Summary_chip*.xml   //
   //    file we open it and read the number of channels from it.             //
   /////////////////////////////////////////////////////////////////////////////
