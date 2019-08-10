@@ -1,4 +1,4 @@
-set(process wgPreCalib)
+set(process wgGainCalib)
 
 ################ Compiler flags ################
 

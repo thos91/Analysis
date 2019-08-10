@@ -123,6 +123,12 @@ Topology::Topology(std::string source, TopologySourceType source_type) :
     this->DifMapToGdccMap();
     this->StringToUnsigned();
   }
+  else if ( source_type == TopologySourceType::gain_tree ) {
+    this->GetTopologyFromGainTree(source);
+    this->GetGdccDifMapping();
+    this->DifMapToGdccMap();
+    this->StringToUnsigned();
+  }
   else
     throw std::invalid_argument("[wgTopology] TopologySourceType not recognized");
       
@@ -512,6 +518,119 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
           }
           if (n_chans_t[iiDAC][ith][idif][ichip] != this->dif_map[idif][ichip]) {
             throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif + ", ichip = " + ichip);
+          }
+        }
+      }
+    }
+  }
+
+  // Check that the dif numbers are contiguous
+  for (unsigned idif = 0; idif < n_difs; idif++) {
+    if ( this->dif_map.count(idif) != 1 ) {
+      throw std::runtime_error("[wgTopology] DIF number is not contiguous");
+    }
+  }
+}
+
+//**********************************************************************
+void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
+
+  // First of all let's do some preliminary sanity checks. The most
+  // common mistake is to pass an empty or non existant directory.
+  
+  // Check the arguments
+  
+  if (!check_exist::Dir(input_run_dir))
+    throw wgInvalidFile("[wgTopology] Input directory doesn't exist : " + input_run_dir);
+
+  // Number of acquisitions for the iDAC
+  std::vector<std::string> iDAC_dir_list = ListDirectories(input_run_dir);
+  if ( iDAC_dir_list.size() == 0 )
+    throw std::invalid_argument("[wgTopology] Empty iDAC directory tree");
+
+  // tentative variables
+  //
+  // basically we count the number of DIFs, chips and channels for
+  // each acquisition and compare them.
+  //
+  //   iDAC               PEU                n_difs             n_chips       n_chans
+  std::map<unsigned, std::map<unsigned, std::map<unsigned, std::map<unsigned, unsigned>>>> n_chans_t;
+  
+  wgEditXML Edit;
+
+  /////////////////////////////////////////////////////////////////////////////
+  //    We descend into the GainCalib directory tree and count the number of //
+  //    directories at each level. When we get to the Summary_chip*.xml      //
+  //    file we open it and read the number of channels from it.             //
+  /////////////////////////////////////////////////////////////////////////////
+  
+  // input DAC
+  for (auto const & iDAC_directory : iDAC_dir_list) {
+    unsigned iDAC;
+    if ( (iDAC = extractIntegerFromString(GetName(iDAC_directory))) == UINT_MAX )
+      continue;
+    std::vector<std::string> pe_dir_list = ListDirectories(iDAC_directory);
+    if (pe_dir_list.size() != N_PE_GAIN_CALIB)
+      throw std::invalid_argument("[wgTopology] empty iDAC directory : " + iDAC_directory);
+
+    // pereshold
+    for (auto & pe_directory : pe_dir_list) {
+      unsigned photo_equivalent_unit;
+      if ((photo_equivalent_unit = extractIntegerFromString(GetName(pe_directory))) == UINT_MAX)
+        continue;
+
+      // DIF
+      pe_directory += "/wgAnaHistSummary/Xml";
+      std::vector<std::string> dif_dir_list = ListDirectories(pe_directory);
+      if ( dif_dir_list.size() == 0 )
+        throw std::invalid_argument("[wgTopology] empty photo_equivalent_unit directory : " + pe_directory);
+      for (auto const & idif_directory : dif_dir_list) {
+        unsigned idif;
+        if ((idif = extractIntegerFromString(GetName(idif_directory))) == UINT_MAX)
+          throw wgInvalidFile("[wgTopology] failed to read DIF ID from directory name : " + idif_directory);
+
+        // chip
+        std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
+        if ( chip_xml_list.size() == 0 )
+          throw std::invalid_argument("[wgTopology] empty DIF directory : " + idif_directory);
+        for (auto const & ichip_xml : chip_xml_list) {
+          unsigned ichip;
+          if ( (ichip = extractIntegerFromString(GetName(ichip_xml))) == UINT_MAX )
+            throw wgInvalidFile("[wgTopology] failed to read chip ID from xml file name : " + ichip_xml);
+        
+          // chan
+          try { Edit.Open(ichip_xml); }
+          catch (const std::exception& e) {
+            throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
+          }
+          this->dif_map[idif][ichip] = n_chans_t[iDAC][photo_equivalent_unit][idif][ichip] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
+          this->m_string_dif_map[std::to_string(idif)][std::to_string(ichip)] = std::to_string(this->dif_map[idif][ichip]);
+          Edit.Close();
+        }
+      }  // end loop for dif
+    }  // end loop for photo_equivalent_unit
+  }  // end loop for inputDAC
+
+  for (auto const& iDAC : n_chans_t) {
+    unsigned iiDAC = iDAC.first;
+    
+    for (auto const& pe : iDAC.second) {
+      unsigned ipe = pe.first;
+      for (auto const& dif : pe.second) {
+        unsigned idif = dif.first;
+        if (n_chans_t[iiDAC][ipe].size() != this->dif_map.size()) {
+          throw std::runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) +
+                                   ", photo_equivalent_unit = " + std::to_string(ipe) + ", idif = " + idif);
+        }
+        for (auto const& chip : dif.second) {
+          unsigned ichip = chip.first;
+          if (n_chans_t[iiDAC][ipe][idif].size() != this->dif_map[idif].size() ) {
+            throw std::runtime_error("There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) +
+                                     ", photo_equivalent_unit = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
+          }
+          if (n_chans_t[iiDAC][ipe][idif][ichip] != this->dif_map[idif][ichip]) {
+            throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + std::to_string(iiDAC) +
+                                     ", photo_equivalent_unit = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
           }
         }
       }

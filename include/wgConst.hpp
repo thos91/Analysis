@@ -129,6 +129,14 @@ const unsigned GLOBAL_INPUT_DAC_REF_START  = 36;
 const bool NO_CREATE_NEW_MODE = false;
 const bool CREATE_NEW_MODE    = true;
 
+// ============ wgPedestalCalib and wgGainCalib MACROS ============== //
+
+#define N_PE_PEDESTAL_CALIB 2
+#define N_PE_GAIN_CALIB     2
+#define N_IDAC 5
+const unsigned ONE_PE = 0; // threshold at 0.5 p.e.
+const unsigned TWO_PE = 1; // threshold at 1.5 p.e.
+
 // ===================================================================== //
 //                                                                       //
 //                                Typedef                                //

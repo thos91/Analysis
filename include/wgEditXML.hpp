@@ -282,13 +282,13 @@ public:
                           unsigned ichan);
 
   //=======================================================================//
-  //                           ??? XML files                               //
+  //                    gain calibration XML files                         //
   //=======================================================================//
   
-  void PreCalib_Make(const std::string&);
-  void PreCalib_SetValue(const std::string&,int,int,int,int,bool);
-  int PreCalib_GetValue(const std::string&,int,int,int);
-
+  void GainCalib_Make(const std::string& filename, const Topology& topol);
+  void GainCalib_SetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol, unsigned value, bool create_new);
+  double GainCalib_GetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol);
+  
   //=======================================================================//
   //                   Pedestal calibration XML files                      //
   //=======================================================================//

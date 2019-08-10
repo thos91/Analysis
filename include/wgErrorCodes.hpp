@@ -18,7 +18,7 @@ const int ERR_FAILED_GET_FILE_LIST       = 8;
 
 const int ERR_FAILED_WRITE               = 9;
 const int ERR_THRESHOLD_CARD_READ        = 10;
-const int ERR_CALIBRATION_CARD_READ      = 11;
+const int ERR_GAIN_CARD_READ             = 11;
 const int ERR_INPUTDAC_WRITE             = 12;
 const int ERR_THRESHOLD_WRITE            = 13;
 
@@ -36,7 +36,7 @@ const int ERR_VALUE_OUT_OF_RANGE         = 20;
 
 const int ERR_EMPTY_INPUT_FILE           = 21;
 const int ERR_INPUT_FILE_NOT_FOUND       = 22;
-const int ERR_CALIBRATION_CARD_NOT_FOUND = 23;
+const int ERR_GAIN_CARD_NOT_FOUND        = 23;
 const int ERR_THRESHOLD_CARD_NOT_FOUND   = 24;
 const int ERR_BITSTREAM_FILE_NOT_FOUND   = 25;
 const int ERR_CONFIG_XML_FILE_NOT_FOUND  = 26;

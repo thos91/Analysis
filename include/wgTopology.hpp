@@ -23,7 +23,8 @@ enum class TopologySourceType {
   xml_file,
   json_string,
   scurve_tree,
-  pedestal_tree
+  pedestal_tree,
+  gain_tree
 };
 
 //=======================================================================//
@@ -78,17 +79,17 @@ private:
   const std::string m_mapping_file_path;
   /* Example of dif_mapping.txt file:
      {
-       "1": {
+       "0": {
+         "0": 0,
          "1": 1,
          "2": 2,
-         "3": 3,
-         "4": 4
+         "3": 3
         },
-      "2": {
+      "1": {
+         "0": 4,
          "1": 5,
          "2": 6,
-         "3": 7,
-         "4": 8
+         "3": 7
         }
       }
   */
@@ -118,7 +119,7 @@ private:
   // Get the topology from a directory tree and the xml files
   // contained therein. It is useful only when reading the output of
   // the wgAnaHistSummary program.
-  // This works for wgAnaPedestal.
+  // This works for wgPedestalCalib.
   //
   // input_run_dir is the directory where all the files corresponding
   // to a certain run are contained. run_directory_tree is a map that
@@ -127,16 +128,10 @@ private:
   // directory for each acquisition.
   void GetTopologyFromPedestalTree(std::string input_run_dir);
 
-  // Get the topology from a directory tree and the xml files
-  // contained therein. It is useful only when reading the output of
-  // the wgAnaHistSummary program. 
-  // This works for wgScurve.
-  //
-  // input_run_dir is the directory where all the files corresponding
-  // to a certain run are contained. run_directory_tree is a map that
-  // associates to each integer starting from zero a path (relative to
-  // the input_run_dir) corresponding to the location of the Xml
-  // directory for each acquisition.
+  // Same as above but for wgGainCalib.
+  void GetTopologyFromGainTree(std::string input_run_dir);
+
+  // Same as above but for wgScurve.
   void GetTopologyFromScurveTree(std::string input_run_dir);
 
   // This function reads the JSON file
@@ -197,6 +192,12 @@ public:
   // - TopologySourceType::scurve_tree
   //
   //     GetTopologyFromScurveTree is called. Then GetGdccDifMapping is
+  //     called. Then the TopologyMapDif is converted to
+  //     TopologyMapGdcc using the DifMapToGdccMap method.
+    //
+  // - TopologySourceType::gain_tree
+  //
+  //     GetTopologyFromGainTree is called. Then GetGdccDifMapping is
   //     called. Then the TopologyMapDif is converted to
   //     TopologyMapGdcc using the DifMapToGdccMap method.
   
