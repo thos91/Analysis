@@ -99,62 +99,62 @@ std::string GetNameBeforeLastUnderBar(const std::string& str)
 }
 
 //******************************************************************
-std::vector<std::string> ListFilesWithExtension(const std::string& inputDir, const std::string& extension) {
+std::vector<std::string> ListFilesWithExtension(const std::string& input_dir, const std::string& extension) {
   std::vector<std::string> file_list;
 
-  if (boost::filesystem::exists(inputDir)) {
-    if (boost::filesystem::is_directory(inputDir)) {
-      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
+  if (boost::filesystem::exists(input_dir)) {
+    if (boost::filesystem::is_directory(input_dir)) {
+      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(input_dir))
         if (GetExtension(entry.path().string()) == extension || extension.empty()) {
           file_list.push_back(entry.path().string());
         }
     } else {
-      throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
     }
   } else {
-    throw wgInvalidFile(inputDir + " does not exist");
+    throw wgInvalidFile(input_dir + " does not exist");
   }
   return file_list;   
 }
   
 //******************************************************************
-std::vector<std::string> ListDirectories(const std::string& inputDir) {
+std::vector<std::string> ListDirectories(const std::string& input_dir) {
   std::vector<std::string> directory_list;
 
-  if (boost::filesystem::exists(inputDir)) {
-    if (boost::filesystem::is_directory(inputDir)) {
-      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
+  if (boost::filesystem::exists(input_dir)) {
+    if (boost::filesystem::is_directory(input_dir)) {
+      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(input_dir))
         if (boost::filesystem::is_directory(entry))
           directory_list.push_back(entry.path().string());
     } else {
-      throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
     }
   } else {
-    throw wgInvalidFile(inputDir + " does not exist");
+    throw wgInvalidFile(input_dir + " does not exist");
   }
   return directory_list;
 }
   
 //******************************************************************
-unsigned HowManyFilesWithExtension(const std::string& inputDir, const std::string& extension) {
+unsigned HowManyFilesWithExtension(const std::string& input_dir, const std::string& extension) {
   unsigned counter = 0;
 
-  if (boost::filesystem::exists(inputDir)) {
-    if (boost::filesystem::is_directory(inputDir)) {
-      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(inputDir))
+  if (boost::filesystem::exists(input_dir)) {
+    if (boost::filesystem::is_directory(input_dir)) {
+      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(input_dir))
         if (GetExtension(entry.path().string()) == extension || extension.empty())
           counter++;
     }
-    else throw wgInvalidFile(inputDir + " exists, but is not a regular directory");
+    else throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
   }
-  else throw wgInvalidFile(inputDir + " does not exist");
+  else throw wgInvalidFile(input_dir + " does not exist");
 
   return counter;
 }
 
 //******************************************************************
-unsigned HowManyDirectories(const std::string& inputDir) {
-  boost::filesystem::path the_path(inputDir);
+unsigned HowManyDirectories(const std::string& input_dir) {
+  boost::filesystem::path the_path(input_dir);
   unsigned counter = std::count_if( boost::filesystem::directory_iterator(the_path),
                                     boost::filesystem::directory_iterator(),
                                     static_cast<bool(*)(const boost::filesystem::path&)>(boost::filesystem::is_directory) );
