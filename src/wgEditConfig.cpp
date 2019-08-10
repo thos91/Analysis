@@ -31,7 +31,7 @@ wgEditConfig::wgEditConfig(const std::string& input, bool bitstream_string){
   if (bitstream_string) this->SetBitstream(input);
   else this->Open(input);
 }
-  
+
 //*********************************************************************************
 std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_csv) {
   
@@ -67,59 +67,6 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
 #endif
   
   return output;
-}
-
-//*********************************************************************************
-void wgEditConfig::Get_MPPCinfo(int ichip){ 
-  wgEnvironment env;
-  
-  
-  std::string mppc_csv(env.CALICOES_DIRECTORY + "/config/spiroc2d/mppc_map.csv");
-  std::string line;
-  std::vector<std::string> tmp_mppc_map;
-  double tmp_bdv;
-  int tmp_serial,tmp_ch;
-  int mppc_map[NCHIPS];
-
-  if ( !check_exist::CsvFile(mppc_csv) )
-    throw wgInvalidFile("[Get_MPPCinfo][" + mppc_csv + "] mppc_csv file not found");
-  std::ifstream ifs(mppc_csv);
-  
-  for(unsigned i = 0; i < NCHIPS; i++){
-    getline(ifs,line);
-    boost::split(tmp_mppc_map, line, boost::is_any_of(","));
-    mppc_map[stoi(tmp_mppc_map[0])] = stoi(tmp_mppc_map[1]);
-  }
-
-  std::string mppc_root(env.CALICOES_DIRECTORY + "/config/spiroc2d/arraymppc_data.root");
-  if ( !check_exist::RootFile(mppc_root) )
-    throw wgInvalidFile("[Get_MPPCinfo][" + mppc_root + "] arraymppc_data.root file not found");
-  TFile *fmppc = new TFile(mppc_root.c_str(), "read");
-  TTree *mppc = (TTree*)fmppc->Get("mppc");
-
-  mppc->SetBranchAddress("BDV",    &tmp_bdv);
-  mppc->SetBranchAddress("serial", &tmp_serial);
-  mppc->SetBranchAddress("ch",     &tmp_ch);
-
-  //set 51V to inputDAC=0, and 53.5V to inputDAC=255
-  //if break down = A, over voltage = V-53.5
-  for(unsigned i = 0; i < mppc->GetEntries(); i++) {
-    mppc->GetEntry(i);
-    if(mppc_map[ichip] == tmp_serial){
-      this->fine_inputDAC[tmp_ch] = (tmp_bdv - 51.0) * 256 / 2.5;
-      this->BDV[tmp_ch] = tmp_bdv;
-#ifdef DEBUG_CHANGECONFIG
-      std::stringstream ss;
-      ss << ichip << " / " << tmp_serial << " / " << tmp_ch << " / "<< fine_inputDAC[tmp_ch];
-      Log.Write(ss.str());
-#endif
-    }
-  }
-  ifs.close();
-  fmppc->Close();
-  delete mppc;
-  delete fmppc;
-  Read_MPPCData=true; 
 }
 
 //*********************************************************************************
@@ -163,14 +110,12 @@ void wgEditConfig::Write(const std::string& output){
   std::ofstream outputfile(output);
   outputfile << str.c_str();
   outputfile.close();  
-  wgEditConfig::Read_MPPCData = false;
 }
 
 //*********************************************************************************
 void wgEditConfig::Clear(){
   wgEditConfig::hex_config="";
   wgEditConfig::bi_config="";
-  wgEditConfig::Read_MPPCData=false;
 }
 
 //*********************************************************************************
@@ -293,16 +238,10 @@ std::string wgEditConfig::DeToBi(const std::string& input){
 
 //*********************************************************************************
 void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
-  if(chan < 0 || chan > NCHANNELS) {
+  if (chan > NCHANNELS)
     throw std::invalid_argument("channel is out of range : " + std::to_string(chan));
-  }
-  if(value + fine_inputDAC[chan] > MAX_VALUE_8BITS) {
+  if(value + fine_inputDAC[chan] > MAX_VALUE_8BITS)
     throw std::invalid_argument("value is out of range : " + std::to_string(value + fine_inputDAC[chan]));
-  }
-
-  if(this->Read_MPPCData) {
-    value += this->fine_inputDAC[chan];
-  }
 
   std::stringstream num;
   num << std::setfill('0') << std::setw(ADJ_INPUTDAC_LENGTH) << DeToBi(std::to_string(value)) << '1';
@@ -311,8 +250,7 @@ void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
     for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
       this->Modify(num.str(), ADJ_INPUTDAC_START + ichan * ADJ_INPUTDAC_OFFSET);
     }
-  }
-  else {
+  } else {
     this->Modify(num.str(), ADJ_INPUTDAC_START + chan * ADJ_INPUTDAC_OFFSET);
   }
 }

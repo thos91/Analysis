@@ -35,30 +35,20 @@ private:
   // member after converting it into binary representation
   void SetBitstream(const std::string&);
 
-  unsigned fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
-  double BDV[NCHANNELS] = {};             // breakdown voltage
-  bool Read_MPPCData;
-  
-public:
-  // constructor
-  // Open a bitstream file and initialized the members to zero
-  wgEditConfig(const std::string&, bool bitstream_string);
-  
   // wgEditConfig::GetCSV
   // read the content of the spiroc2d.csv file into a vector of vectors strings
   // Each line is decomposed using the ',' delimeter and each field is saved as
   // a string (so each line is stored as a vector of strings and the whole file
   // is stored as a vector of vector of strings)
   std::vector<std::vector<std::string>> GetCSV(std::string spiroc2d_csv = "");
-
-  // wgEditConfig::Get_MPPCinfo
-  // Use the mppc_map.csv file to get a map of an arrayed MPPC.  Then read the
-  // arraymppc_data.root file containing the breakdown voltage data into the BDV
-  // and fine_inputDAC. The fine_inputDAC will contain the value of the inputDAC
-  // corresponfing to an overvoltage of 2.5 V (assuming that the base high
-  // voltage is 51 V)
-  void Get_MPPCinfo(int);
-
+  
+  unsigned fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
+  
+public:
+  // constructor
+  // Open a bitstream file and initialized the members to zero
+  wgEditConfig(const std::string&, bool bitstream_string);
+  
   // wgEditConfig::Write
   // Write the bi_config string member to the output file
   void Write(const std::string& output);
@@ -70,7 +60,6 @@ public:
 
   // wgEditConfig::Clear
   // set the hex_config and bi_config strings to empty
-  // set the Read_MPPCData flag to false
   void Clear();
 
   // wgEditConfig::CheckAll

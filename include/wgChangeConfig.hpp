@@ -5,10 +5,9 @@
 #include "wgConst.hpp"
 
 // flags
-#define WG_CHANGE_CONFIG_FLAGS 3
+#define WG_CHANGE_CONFIG_FLAGS 2
 #define EDIT_FLAG      0
 #define OVERWRITE_FLAG 1
-#define MPPC_DATA_FLAG 2
 
 // modes
 #define EC_TRIGGER_THRESHOLD     0
@@ -20,7 +19,6 @@
 #define EC_INPUT_DAC_REFERENCE   6
 
 //#define DEBUG_CHANGECONFIG
-#define M 4
 
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
@@ -33,7 +31,6 @@ extern "C" {
                      unsigned long x_flags,
                      unsigned value,
                      unsigned mode,
-                     unsigned chip    = 0,
                      unsigned channel = NCHANNELS);
 
 #ifdef __cplusplus

@@ -31,15 +31,12 @@ int wgChangeConfig(const char * x_input_file,
                    const unsigned long flags_ulong,
                    const unsigned value,
                    const unsigned mode,
-                   const unsigned chip,
                    const unsigned channel) {
   
   
   std::bitset<WG_CHANGE_CONFIG_FLAGS> flags(flags_ulong);
   std::string input_file(x_input_file);
   std::string output_file(x_output_file);
-
-
   
   if (flags[OVERWRITE_FLAG] && output_file.empty()) output_file = input_file;
   
@@ -66,22 +63,6 @@ int wgChangeConfig(const char * x_input_file,
   try {
     wgEditConfig EditConfig(input_file, is_bitstream_string);
   
-    // fine tuning mode
-    if (flags[MPPC_DATA_FLAG] ) {
-      try { EditConfig.Get_MPPCinfo(chip); }
-      catch (const std::exception& e) {
-        Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to get MPPC info :" + e.what());
-      }
-    }
-
-    // fine tuning mode
-    if (flags[MPPC_DATA_FLAG] ) {
-      try { EditConfig.Get_MPPCinfo(chip); }
-      catch (const std::exception& e) {
-        Log.eWrite("[wgChangeConfig] failed to get MPPC info :" + std::string(e.what()));
-      }
-    }
-
     // Sanity check of the passed arguments
   
     if (flags[EDIT_FLAG]) {
@@ -156,12 +137,7 @@ int wgChangeConfig(const char * x_input_file,
           for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
             // Input DAC
             if (mode == EC_INPUT_DAC ) {
-              if (flags[MPPC_DATA_FLAG]) {
-                EditConfig.Change_inputDAC(ichan, value);
-              }
-              else {
-                EditConfig.Change_inputDAC(ichan, value);
-              }
+              EditConfig.Change_inputDAC(ichan, value);
             }
             // HG and LG preamplifier feedback capacitor 
             else if (mode == EC_HG_LG_AMPLIFIER ) {
@@ -179,12 +155,7 @@ int wgChangeConfig(const char * x_input_file,
         else {
           // Input DAC
           if (mode == EC_INPUT_DAC ) {
-            if (flags[MPPC_DATA_FLAG]) {
-              EditConfig.Change_inputDAC(channel, value);
-            }
-            else {
-              EditConfig.Change_inputDAC(channel, value);
-            }
+            EditConfig.Change_inputDAC(channel, value);
           }
           // HG and LG preamplifier feedback capacitor 
           else if (mode == EC_HG_LG_AMPLIFIER ) {	

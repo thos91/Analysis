@@ -30,10 +30,6 @@ Arguments
 - ``[-m]`` : mode (see next section)
 - ``[-b]`` : channel to modify 0-35 (if set to 36 all the channels are modified) (default: 36) 
 - ``[-v]`` : new value (the value range depends on the mode) 
-- ``[-t]`` : chip number. If a chip ID number is given, the program tries to read
-  the mppc_map.csv and the arraymppc_data.root files and extract the breakdown
-  voltage for every channel (every MPPC) of that chip. This information is used
-  to adjust the inputDAC value. This feature is still untested and experimental.
 
 Modes
 =====
@@ -74,7 +70,6 @@ C API
                                    unsigned long flags_ulong,
                                    int value,
                                    int mode,
-                                   int chip,
                                    int channel);
 
 - ``inputFile``   : complete path to the input bitstream text file
@@ -82,7 +77,6 @@ C API
 - ``flags_ulong`` : <unsigned long> containing all the flags (see next sections)
 - ``value``       : new value
 - ``mode``        : select mode (which variable to modify)
-- ``chip``        : chip
 - ``channel``     : channel
 
 Flags
@@ -96,10 +90,9 @@ represetation of that number.
 
 .. code-block:: cpp
                 
-                #define WG_CHANGE_CONFIG_FLAGS 3
+                #define WG_CHANGE_CONFIG_FLAGS 2
                 #define EDIT_FLAG      0
                 #define OVERWRITE_FLAG 1
-                #define MPPC_DATA_FLAG 2
                 ...
                 bitset<WG_CHANGE_CONFIG_FLAGS> flags(flags_ulong);
                 ...
@@ -117,7 +110,3 @@ will.
   the list of all variables in the input file is just printed on the standard
   output
 - ``flags[OVERWRITE_FLAG]`` : overwrite the output bitstream file if present
-- ``flags[MPPC_DATA_FLAG]`` : ig set to True, the program tries to read the
-  mppc_map.csv and the arraymppc_data.root files and extract the breakdown
-  voltage for every channel (every MPPC) of that chip. This information is used
-  to adjust the inputDAC value. This feature is still untested and experimental.
