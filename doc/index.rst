@@ -15,11 +15,12 @@ Welcome to WAGASCI analysis software's documentation!
    wgDecoder		 
    wgOptimize
    wgChangeConfig
-   wgAnaPedestal
    wgAnaHist
    wgAnaHistSummary
    wgMakeHist
-   wgPreCalib
+   wgPedestalCalib
+   wgGainCalib
+   wgScurve
 
 
 Indices and tables
