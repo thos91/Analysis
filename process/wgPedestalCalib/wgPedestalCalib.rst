@@ -1,6 +1,6 @@
-=============
+===============
 wgPedestalCalib
-=============
+===============
 
 The wgPedestalCalibSummay program has many uses. It can create the
 `pedestal_card.xml` file and can produce many plots about the SPIROC2D

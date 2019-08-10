@@ -8,10 +8,6 @@
 #include "wgConst.hpp"
 #include "wgTopology.hpp"
 
-#define N_PE            2  // number of photo electron macros
-const unsigned ONE_PE = 0; // threshold at 0.5 p.e.
-const unsigned TWO_PE = 1; // threshold at 1.5 p.e.
-
 #define PEDESTAL_DIFFERENCE_WARNING_THRESHOLD 0.1
 
 // This is needed to call the following functions from Python using ctypes

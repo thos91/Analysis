@@ -30,21 +30,31 @@ int wgPedestalCalib(const char * x_input_run_dir,
                     const char * x_output_xml_dir,
                     const char * x_output_img_dir)
 {
+  /////////////////////////////////////////////////////////////////////////////
+  //                          Check arguments sanity                         //
+  /////////////////////////////////////////////////////////////////////////////
+  
   std::string input_run_dir (x_input_run_dir);
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   
-  wgEnvironment env;
-  
-
   if (input_run_dir.empty() || !check_exist::Dir(input_run_dir)) {
     Log.eWrite("[wgPedestalCalib] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
   
   if (output_xml_dir.empty()) {
+    wgEnvironment env;
     output_xml_dir = env.CALIBDATA_DIRECTORY;
   }
+  if (output_img_dir.empty()) {
+    wgEnvironment env;
+    output_xml_dir = env.IMGDATA_DIRECTORY;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  //                        Create output directories                        //
+  /////////////////////////////////////////////////////////////////////////////
 
   // ============ Create output_xml_dir ============ //
   try { MakeDir(output_xml_dir); }
@@ -64,12 +74,13 @@ int wgPedestalCalib(const char * x_input_run_dir,
   Log.Write(" *****  OUTPUT XML DIRECTORY   : " + output_xml_dir);
   Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + output_img_dir);
   
-  wgEditXML Edit;
 
   /********************************************************************************
    *                       Get topology from XML files                            *
    ********************************************************************************/
 
+  wgEditXML Edit;
+  
   // The topology for each acquisition (each photo-electron equivalent
   // threshold) MUST be the same. I mean same number of DIFs, chips
   // and channels
@@ -81,10 +92,10 @@ int wgPedestalCalib(const char * x_input_run_dir,
    *       Reserve memory for charge/simga_nohit and charge/simga_hit             *
    ********************************************************************************/
 
-  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> charge_nohit(n_difs);
-  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> sigma_nohit (n_difs);
-  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> charge_hit  (n_difs);
-  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE>>>>> sigma_hit   (n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE_PEDESTAL_CALIB>>>>> charge_nohit(n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE_PEDESTAL_CALIB>>>>> sigma_nohit (n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE_PEDESTAL_CALIB>>>>> charge_hit  (n_difs);
+  std::vector<std::vector<std::vector<std::vector<std::array<int, N_PE_PEDESTAL_CALIB>>>>> sigma_hit   (n_difs);
   std::vector<std::vector<std::vector<std::array<int, MEMDEPTH>>>> gain            (n_difs);
   std::vector<std::vector<std::vector<std::array<int, MEMDEPTH>>>> sigma_gain      (n_difs);
   
@@ -123,8 +134,7 @@ int wgPedestalCalib(const char * x_input_run_dir,
     else continue;
     
     // DIF
-    pe_directory += "/wgAnaHistSummary/Xml";
-    for (auto const & idif_directory : ListDirectories(pe_directory)) {
+    for (auto const & idif_directory : ListDirectories(pe_directory + "/wgAnaHistSummary/Xml")) {
       unsigned idif = extractIntegerFromString(GetName(idif_directory));
       
       for(unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ichip++) {
@@ -142,17 +152,17 @@ int wgPedestalCalib(const char * x_input_run_dir,
 	  
         for(unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ichan++) {
 
-#ifdef DEBUG_WGANAPEDESTAL
+#ifdef DEBUG_WG_PEDESTAL_CALIB
           unsigned pe_level_from_xml;
           try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(std::string("pe_level"), ichan); }
           catch (const exception & e) {
-            Log.eWrite("failed to read photo electrons equivalent threshold from XML file\n");
+            Log.eWrite("failed to read photo electrons equivalent threshold from XML file");
             return ERR_FAILED_OPEN_XML_FILE;
           }
           if ( pe_level_from_dir != pe_level_from_xml ) {
-            Log.eWrite("Photo electrons equivalent threshold read from XML file and corrected value are different\n");
+            Log.eWrite("The PEU values read from XML file and from folder name are different");
           }
-#endif // DEBUG_WGANAPEDESTAL
+#endif // DEBUG_WG_PEDESTAL_CALIB
 
           for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
             // charge_nohit peak (slighly shifted with respect to the pedestal)
