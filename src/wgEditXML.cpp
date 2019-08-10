@@ -8,13 +8,12 @@
 
 // user includes
 #include "wgConst.hpp"
-#include "wgEditXML.hpp"
 #include "wgEditConfig.hpp"
-
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgTopology.hpp"
 #include "wgLogger.hpp"
+#include "wgEditXML.hpp"
 
 //**********************************************************************
 void wgEditXML::Write(){
@@ -642,8 +641,8 @@ void wgEditXML::OPT_Make(const std::string& filename,
   XMLElement* dif;
   XMLElement* chip;
   XMLElement* chan;
-  XMLElement* s_th[2];
-  XMLElement* i_th[2];
+  XMLElement* slope_threshold[2];
+  XMLElement* intercept_threshold[2];
   XMLElement* inputDAC;
   XMLElement* threshold;
   //XMLElement* noise[13];
@@ -667,14 +666,14 @@ void wgEditXML::OPT_Make(const std::string& filename,
         snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
         chan = xml->NewElement(str);    
         dif->InsertEndChild(chan);
-        s_th[0] = xml->NewElement("s_th1");
-        chan->InsertEndChild(s_th[0]);
-        i_th[0] = xml->NewElement("i_th1");
-        chan->InsertEndChild(i_th[0]);
-        s_th[1] = xml->NewElement("s_th2");
-        chan->InsertEndChild(s_th[1]);
-        i_th[1] = xml->NewElement("i_th2");
-        chan->InsertEndChild(i_th[1]);
+        slope_threshold[0] = xml->NewElement("slope_threshold1");
+        chan->InsertEndChild(slope_threshold[0]);
+        intercept_threshold[0] = xml->NewElement("intercept_threshold1");
+        chan->InsertEndChild(intercept_threshold[0]);
+        slope_threshold[1] = xml->NewElement("slope_threshold2");
+        chan->InsertEndChild(slope_threshold[1]);
+        intercept_threshold[1] = xml->NewElement("intercept_threshold2");
+        chan->InsertEndChild(intercept_threshold[1]);
         for(unsigned iDAC = 0; iDAC < inputDACs.size(); ++iDAC) {
           // ***** data > dif > chip > channel > inputDAC ***** //
           snprintf(str, XML_ELEMENT_STRING_LENGTH, "inputDAC_%d", inputDACs[iDAC]);

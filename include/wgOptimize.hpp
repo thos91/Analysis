@@ -17,9 +17,9 @@ extern "C" {
                  const char * x_calibration_card,
                  const char * x_config_xml_file,
                  const char * x_wagasci_config_dif_dir,
-                 int mode      = OP_THRESHOLD_MODE,
-                 int inputDAC  = 121,
-                 int pe        = 2);
+                 unsigned mode      = OP_THRESHOLD_MODE,
+                 unsigned pe        = 2,
+                 unsigned inputDAC  = 121);
 
 #ifdef __cplusplus
 }
