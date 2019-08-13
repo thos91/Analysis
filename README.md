@@ -13,7 +13,7 @@ following commands.
 cd Analysis
 mkdir build
 cd build
-cmake .. cmake .. -DCMAKE_INSTALL_PREFIX=../
+cmake .. -DCMAKE_INSTALL_PREFIX=../
 make -j4
 make install
 
