@@ -37,7 +37,7 @@ The documentation is build with
 [Sphinx](https://www.sphinx-doc.org/en/master/). It can be read with any Web
 browser by opening the file `Analysis/doc/build/index.html`.
 
-## Dependencies
+## Dependencies : Linux
 
 ### ROOT
 The `Analysis` code depends heavily on CERN
@@ -73,14 +73,14 @@ RHEL/CentOS
 sudo yum install cmake
 ```
 
-#### nlohmann-json
+### nlohmann-json
 
 Debian/Ubuntu
 ```
 sudo apt install nlohmann-json-dev
 ```
 
-#### Sphinx (optional)
+### Sphinx (optional)
 
 Debian/Ubuntu:
 
@@ -94,27 +94,27 @@ RHEL/CentOS:
 sudo yum install python-sphinx
 ```
 
-### MacOS
+## Dependencies : MacOS
 
-#### ROOT
+### ROOT
 
 Download the latest ROOT binary (.dmg) for MacOS from
 [here](https://root.cern.ch/downloading-root) and install it. No other
 configuration is necessary.
 
-#### XCode command line tools
+### XCode command line tools
 Open a terminal and issue this command
 
 ```
 sudo xcode-select --install
 ```
 
-#### MacPorts
+### MacPorts
 
 You can download the automatic installer from here
 [MacPorts](https://www.macports.org/),
 
-#### Boost
+### Boost
 
 After installing MacPorts, run the following command
 
@@ -122,7 +122,7 @@ After installing MacPorts, run the following command
 sudo port install boost
 ```
 
-#### Fix "<bits/stdc++.h> not found" error
+### Fix "<bits/stdc++.h> not found" error
 
 ```
 sudo port install wget
@@ -135,11 +135,11 @@ wget https://gist.githubusercontent.com/reza-ryte-club/97c39f35dab0c45a5d924dd9e
 The instructions above were taken from
 [here](https://qiita.com/acchan_ar/items/6a4c4c070dd76a236fdc) (Only Japanese).
 
-#### CMake
+### CMake
 
 Download the auto-installer (.dmg) from [here](https://cmake.org/download/).
 
-#### nlohmann-json
+### nlohmann-json
 
 ```
 sudo port install nlohmann-json
@@ -154,10 +154,3 @@ sudo port install py36-sphinx
 sudo port select --set python python36
 sudo port select --set sphinx py36-sphinx
 ```
-
-## (Obsolete) MAKE : Compile and install
-
-If you are on Linux you can use the old Make to compile the source code.  Just
-move to the `Analysis` directory and issue `make -j4`.  The binaries and
-libraries will be all located in the `Analysis/bin` directory. There is no
-install target.
