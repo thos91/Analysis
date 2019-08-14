@@ -15,7 +15,6 @@
 //user includes
 #include "wgExceptions.hpp"
 #include "wgFileSystemTools.hpp"
-
 #include "wgLogger.hpp"
 #include "wgEditXML.hpp"
 #include "wgTopology.hpp"
@@ -108,7 +107,10 @@ Topology::Topology(std::string source, TopologySourceType source_type) :
   else if ( source_type == TopologySourceType::json_string ) {
     this->GetTopologyFromString(source);
     this->GetGdccDifMapping();
-    this->DifMapToGdccMap();
+    if (this->m_string_gdcc_map.empty())
+      this->DifMapToGdccMap();
+    else
+      this->GdccMapToDifMap();
     this->StringToUnsigned();
   }
   else if ( source_type == TopologySourceType::scurve_tree ) {
@@ -145,13 +147,31 @@ Topology::Topology(std::string source, TopologySourceType source_type) :
 
 //**********************************************************************
 void Topology::GetTopologyFromString(const std::string& json_string) {
-  nlohmann::json json = nlohmann::json::parse(json_string);
-  std::map<std::string, nlohmann::json> dif_map = json;
-  for ( const auto& dif : dif_map ) {
-    std::map<std::string, unsigned> asu_map = dif.second;
-    for ( const auto& asu : asu_map ) {
-      this->m_string_dif_map[dif.first][asu.first] = std::to_string(asu.second);
+  int max_depth = wagasci_tools::maxDepth(json_string);
+  if (max_depth == 3) {
+    nlohmann::json json = nlohmann::json::parse(json_string);
+    std::map<std::string, nlohmann::json> gdcc_map = json;
+    for ( const auto& gdcc : gdcc_map ) {
+      std::map<std::string, nlohmann::json> dif_map = gdcc.second;
+      for ( const auto& dif : dif_map ) {
+        std::map<std::string, unsigned> asu_map = dif.second;
+        for ( const auto& asu : asu_map ) {
+          this->m_string_gdcc_map[gdcc.first][dif.first][asu.first] = std::to_string(asu.second);
+        }
+      }
     }
+  } else if (max_depth == 2) {
+    nlohmann::json json = nlohmann::json::parse(json_string);
+    std::map<std::string, nlohmann::json> dif_map = json;
+    for ( const auto& dif : dif_map ) {
+      std::map<std::string, unsigned> asu_map = dif.second;
+      for ( const auto& asu : asu_map ) {
+        this->m_string_dif_map[dif.first][asu.first] = std::to_string(asu.second);
+      }
+    }
+  }
+  else {
+    throw std::runtime_error("[wgTopology] Topology JSON string is malformed");
   }
 }
 
@@ -214,7 +234,7 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
 
         } // params loop
         if (!found)
-          throw wgElementNotFound("Number of channels not found : GDCC " + std::to_string(igdcc) + ", DIF " + std::to_string(idif) + ", ASU " + std::to_string(iasu));
+          throw wgElementNotFound("[wgTopology] Number of channels not found : GDCC " + std::to_string(igdcc) + ", DIF " + std::to_string(idif) + ", ASU " + std::to_string(iasu));
         found = false;
         iasu++;
       } // ASUs loop
@@ -267,7 +287,7 @@ std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
 void Topology::GetGdccDifMapping() {
   
   if (!check_exist::TxtFile(m_mapping_file_path))
-    throw wgInvalidFile(m_mapping_file_path + " file not found");
+    throw wgInvalidFile("[wgTopology] " + m_mapping_file_path + " file not found");
   std::ifstream mapping_file(m_mapping_file_path);
   nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
   mapping_file.close();
@@ -400,12 +420,12 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
     for (auto const& dif : pe.second) {
       unsigned idif = dif.first;
       if (n_chans_t[ipe].size() != this->dif_map.size()) {
-        throw std::runtime_error("There is something wrong with the number of DIFs detection : pe = " + std::to_string(ipe) + ", idif = " + idif);
+        throw std::runtime_error("[wgTopology] There is something wrong with the number of DIFs detection : pe = " + std::to_string(ipe) + ", idif = " + idif);
       }
       for (auto const& chip : dif.second) {
         unsigned ichip = chip.first;
         if (n_chans_t[ipe][idif].size() != this->dif_map[idif].size() ) {
-          throw std::runtime_error("There is something wrong with the number of chips detection : pe = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
+          throw std::runtime_error("[wgTopology] There is something wrong with the number of chips detection : pe = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
         }
         if (n_chans_t[ipe][idif][ichip] != this->dif_map[idif][ichip]) {
           throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : pe = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
@@ -509,12 +529,12 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
       for (auto const& dif : th.second) {
         unsigned idif = dif.first;
         if (n_chans_t[iiDAC][ith].size() != this->dif_map.size()) {
-          throw std::runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif);
+          throw std::runtime_error("[wgTopology] There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif);
         }
         for (auto const& chip : dif.second) {
           unsigned ichip = chip.first;
           if (n_chans_t[iiDAC][ith][idif].size() != this->dif_map[idif].size() ) {
-            throw std::runtime_error("There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif + ", ichip = " + ichip);
+            throw std::runtime_error("[wgTopology] There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif + ", ichip = " + ichip);
           }
           if (n_chans_t[iiDAC][ith][idif][ichip] != this->dif_map[idif][ichip]) {
             throw std::runtime_error("[wgTopology] There is something wrong with the number of channels detection : iDAC = " + std::to_string(iiDAC) + ", threshold = " + std::to_string(ith) + ", idif = " + idif + ", ichip = " + ichip);
@@ -619,13 +639,13 @@ void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
       for (auto const& dif : pe.second) {
         unsigned idif = dif.first;
         if (n_chans_t[iiDAC][ipe].size() != this->dif_map.size()) {
-          throw std::runtime_error("There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) +
+          throw std::runtime_error("[wgTopology] There is something wrong with the number of DIFs detection : iDAC = " + std::to_string(iiDAC) +
                                    ", photo_equivalent_unit = " + std::to_string(ipe) + ", idif = " + idif);
         }
         for (auto const& chip : dif.second) {
           unsigned ichip = chip.first;
           if (n_chans_t[iiDAC][ipe][idif].size() != this->dif_map[idif].size() ) {
-            throw std::runtime_error("There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) +
+            throw std::runtime_error("[wgTopology] There is something wrong with the number of chips detection : iDAC = " + std::to_string(iiDAC) +
                                      ", photo_equivalent_unit = " + std::to_string(ipe) + ", idif = " + idif + ", ichip = " + ichip);
           }
           if (n_chans_t[iiDAC][ipe][idif][ichip] != this->dif_map[idif][ichip]) {
