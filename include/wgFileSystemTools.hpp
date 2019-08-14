@@ -56,6 +56,10 @@ unsigned extractIntegerFromString(const std::string& str);
 // Try to find in the Haystack the Needle - ignore case
 bool findStringIC(const std::string & strHaystack, const std::string & strNeedle);
 
+// Helper function that takes a string and returns the maximum depth
+// nested parenthesis
+int maxDepth(std::string str);
+
 namespace check_exist {
 
 // return true if the file exists, otherwise false
