@@ -82,7 +82,7 @@ certainly result in a error, or worse a misbehavior. The files must be
 in the same folder and named:
 
 ```
-wagasci_config_gdcc%d_dif%d_chip%d.txt
+wagasci_bitstream_gdcc%d_dif%d_chip%d.txt
 ```
 
 where each integer starts from 0.

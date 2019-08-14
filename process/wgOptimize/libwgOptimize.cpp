@@ -161,7 +161,7 @@ int wgOptimize(const char * x_threshold_card,
         for (auto const & chip : dif.second) {
           unsigned ichip = chip.first;
 
-          std::string configName(wagasci_config_dif_dir + "/wagasci_config_gdcc" + std::to_string(igdcc_id) +
+          std::string configName(wagasci_config_dif_dir + "/wagasci_bitstream_gdcc" + std::to_string(igdcc_id) +
                                  "_dif" + std::to_string(rel_idif) + "_chip" + std::to_string(ichip) + ".txt");
 
           if( !check_exist::TxtFile(configName) ) {
