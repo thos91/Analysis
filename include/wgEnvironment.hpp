@@ -15,7 +15,7 @@
 // file. This very script can also be used by any user to import these
 // variables into their shell.
 //
-// The script path must be "/opt/calicoes/wagasci_environment.sh"
+// The script path must be "/opt/calicoes/config/wagasci_environment.sh"
 ///////////////////////////////////////////////////////////////////////////////
 
 class wgEnvironment{

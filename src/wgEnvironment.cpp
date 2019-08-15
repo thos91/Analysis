@@ -8,7 +8,7 @@
 #include "wgEnvironment.hpp"
 
 //***************************************
-wgEnvironment::wgEnvironment() : script_path("/opt/calicoes/wagasci_environment.sh") {
+wgEnvironment::wgEnvironment() : script_path("/opt/calicoes/config/wagasci_environment.sh") {
   this->GetENV();
 }
 
