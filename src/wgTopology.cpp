@@ -221,11 +221,10 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
               found = true;
               break;
             }
-            typedef boost::tokenizer<boost::char_separator<char>> t_tokenizer;
-            t_tokenizer token(enabled_channels, *sep);
+            boost::tokenizer<boost::char_separator<char>> token(enabled_channels, *sep);
             boost::tokenizer<boost::char_separator<char>>::iterator first = token.begin();
             boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
-            advance(first, distance(first, last) - 1);
+            std::advance(first, std::distance(first, last) - 1);
             // Number of enabled channels
             this->m_string_gdcc_map[std::to_string(igdcc)][std::to_string(idif)][std::to_string(iasu)] = std::to_string(stoi(*first) + 1);
             found = true;

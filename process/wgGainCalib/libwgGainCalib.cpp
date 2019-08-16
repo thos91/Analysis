@@ -66,8 +66,8 @@ int wgGainCalib(const char * x_input_run_dir,
   std::vector<std::vector<std::vector<std::array<std::array<std::array<unsigned, N_PE_GAIN_CALIB>, N_IDAC>, MEMDEPTH>>>> sigma_hit (topol.n_difs);
   std::vector<std::vector<std::vector<std::array<std::array<unsigned, N_IDAC>, MEMDEPTH>>>>                              gain      (topol.n_difs);
   std::vector<std::vector<std::vector<std::array<std::array<unsigned, N_IDAC>, MEMDEPTH>>>>                              sigma_gain(topol.n_difs);
-  std::vector<std::vector<std::vector<std::array<double, MEMDEPTH>>>>                                                       slope     (topol.n_difs);
-  std::vector<std::vector<std::vector<std::array<double, MEMDEPTH>>>>                                                       intercept (topol.n_difs);
+  std::vector<std::vector<std::vector<std::array<double, MEMDEPTH>>>>                                                    slope     (topol.n_difs);
+  std::vector<std::vector<std::vector<std::array<double, MEMDEPTH>>>>                                                    intercept (topol.n_difs);
 
   for (auto const& dif: topol.dif_map) {
     unsigned idif = dif.first;
