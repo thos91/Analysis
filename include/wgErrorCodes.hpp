@@ -53,5 +53,6 @@ const int ERR_WG_DECODER                 = 31;
 
 const int ERR_OVERWRITE_FLAG_NOT_SET     = 32;
 const int ERR_NOT_IMPLEMENTED_YET        = 33;
+const int ERR_EVENT_LOOP                 = 34;
 
 #endif /* WGERRORCODES_H */
