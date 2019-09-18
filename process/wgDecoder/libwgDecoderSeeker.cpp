@@ -71,6 +71,9 @@ unsigned SectionSeeker::NextSectionType(const unsigned last_section_type, const 
   if (last_section_was_found && last_section_type == ChipTrailer && m_last_ichip < m_config.n_chips) {
     m_last_ichip %= m_config.n_chips;
     return ChipHeader;
+  } else if (!last_section_was_found && last_section_type == ChipHeader) {
+    m_last_ichip %= m_config.n_chips;
+    return SpillTrailer;
   } else {
     m_last_ichip %= m_config.n_chips;
     return (m_current_section.type + 1) % m_num_section_types;
