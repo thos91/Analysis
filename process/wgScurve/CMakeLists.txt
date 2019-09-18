@@ -50,7 +50,7 @@ target_link_libraries(lib${process}
 target_include_directories(lib${process} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # install the static library in the lib folder
-install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
 #####################################################################
 #                                                                   #

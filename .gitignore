@@ -28,3 +28,4 @@ lib/*
 doc/build/*
 doc/source/*
 *.png
+unit_tests/
