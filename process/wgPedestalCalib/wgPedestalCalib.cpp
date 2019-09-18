@@ -55,6 +55,6 @@ int main(int argc, char** argv){
                                  output_img_dir.c_str())) != WG_SUCCESS ) {
     Log.Write("[wgPedestalCalib] Returned error code " + std::to_string(result));
   }
-
+  return result;
 }
 

@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <exception>
 
 // boost includes
 #include <boost/filesystem.hpp>
