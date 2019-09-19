@@ -3,12 +3,13 @@
 #include <iostream>
 #include <vector>
 #include <exception>
+#include <bitset>
 
 // boost includes
 #include <boost/filesystem.hpp>
 
 // system C includes
-#include <bits/stdc++.h>
+//#include <bits/stdc++.h>
 
 // user includes
 #include "wgConst.hpp"

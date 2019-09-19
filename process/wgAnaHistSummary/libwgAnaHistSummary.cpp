@@ -3,13 +3,14 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <bitset>
 
 // boost includes
 #include <boost/filesystem.hpp>
 
 // system C includes
-#include <cstdbool>
-#include <bits/stdc++.h>
+//#include <cstdbool>
+//#include <bits/stdc++.h>
 
 // ROOT includes
 #include "TSystem.h"

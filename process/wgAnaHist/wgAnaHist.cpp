@@ -1,9 +1,10 @@
 // system includes
 #include <iostream>
 #include <string>
+#include <bitset>
 
 // system C includes
-#include <bits/stdc++.h>
+//#include <bits/stdc++.h>
 #include <getopt.h>
 // user includes
 #include "wgConst.hpp"

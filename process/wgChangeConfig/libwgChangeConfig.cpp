@@ -3,9 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <bitset>
 
-// system C includes
-#include <bits/stdc++.h>
 
 // ROOT includes
 #include <THStack.h>

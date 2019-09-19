@@ -2,6 +2,7 @@
 #include <bitset>
 #include <istream>
 #include <functional>
+#include <iomanip>
 
 // system C includes
 #include <csignal>

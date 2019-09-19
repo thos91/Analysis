@@ -3,6 +3,7 @@
 #include <exception>
 #include <array>
 #include <regex>
+#include <sstream>
 
 // user includes
 #include "wgEnvironment.hpp"

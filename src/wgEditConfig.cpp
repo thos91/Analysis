@@ -6,6 +6,8 @@
 #include <exception>
 #include <numeric>
 #include <bitset>
+#include <iostream>
+#include <iomanip>
 
 // boost includes
 #include <boost/algorithm/string.hpp>

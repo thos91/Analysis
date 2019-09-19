@@ -356,12 +356,12 @@ void fit_scurve(TGraphErrors* Scurve,
 
   TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
-  fit_scurve->SetParLimits(0, 30000, 70000);
-  fit_scurve->SetParLimits(2, 145,   160);
-  fit_scurve->SetParLimits(3, 2000,  7000);
-  fit_scurve->SetParLimits(5, 130,   145);
-  fit_scurve->SetParLimits(6, 100,   500);
-        
+  fit_scurve->SetParLimits(0, 30000, 70000); // FIXME: these limit may change 
+  fit_scurve->SetParLimits(2, 145,   160);   // FIXME: these limit may change 
+  fit_scurve->SetParLimits(3, 2000,  7000);  // FIXME: these limit may change 
+  fit_scurve->SetParLimits(5, 130,   145);   // FIXME: these limit may change 
+  fit_scurve->SetParLimits(6, 100,   500);   // FIXME: these limit may change 
+  
   Scurve->Fit(fit_scurve, "");
         
   // From the fitting parameters, calcurate each p.e. level.
