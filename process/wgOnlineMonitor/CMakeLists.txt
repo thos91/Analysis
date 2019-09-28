@@ -14,6 +14,10 @@ elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
 endif()
 
+################ Debug flags ################
+
+add_compile_definitions(DEBUG_WG_ONLINE_MONITOR)
+
 ################ Linker flags ################
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
@@ -40,8 +44,8 @@ set_target_properties(lib${process} PROPERTIES OUTPUT_NAME "${process}")
 # Link with ...
 target_link_libraries(lib${process}
  ${ROOT_LIBRARIES}            # ROOT libraries
- ${Boost_FILESYSTEM_LIBRARY}  # boost filesystem libraries
- ${Boost_SYSTEM_LIBRARY}      # boost system libraries
+ ${Boost_LIBRARIES}           # boost libraries
+ pyrame                       # Pyrame library
  libwagasci                   # WAGASCI dynamic library
  )
 

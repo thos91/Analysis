@@ -24,7 +24,14 @@
 #include "wgConst.hpp"
 #include "wgLogger.hpp"
 #include "wgTopology.hpp"
+#include "wgStrings.hpp"
 #include "wgOnlineMonitor.hpp"
+
+const int EVEN_TIME_OFFSET = 4000; // TODO: 
+const int  ODD_TIME_OFFSET = 500; // TODO: 
+const int EVEN_RAMP_TIME = -1; // TODO: 
+const int  ODD_RAMP_TIME = 1; // TODO: 
+const int BCID_NS = 580; // ns
 
 void newevt(void   *workspace, struct event *e);
 void newblock(void *workspace, struct block *b);
@@ -32,111 +39,179 @@ void endblock(void *workspace, struct block *b);
 void reinit(void   *workspace);
 void endrun(void   *workspace);
 
-void newblock(void *workspace,struct block *block)
+void newblock(void *workspace, struct block *block)
 {
-  struct om_ws *ws = (struct om_ws *) workspace;
+  //struct om_ws *ws = (struct om_ws *) workspace;
 
-  int spillnb = std::stoi(get_block_field(block, "spill"));
+  int spill_number = std::stoi(get_block_field(block, "spill_number"));
+  int spill_flag   = std::stoi(get_block_field(block, "spill_flag"));
+  int spill_count  = std::stoi(get_block_field(block, "spill_count"));
 
-  std::printf("\nNew block\n\tID: %d | Spill number: %d\n", block->id, spillnb);
-  
+  std::cout << "\nNew block\nID: " << block->id << " | Spill number: " << spill_number <<
+      " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;  
 } //newblock
 
-// // ==================================================================
+// ==================================================================
 
-// void newevt(void *workspace,struct event *e) 
-// {
-//   struct om_ws *ws=(struct om_ws *)workspace;
+void newevt(void *workspace, struct event *event) 
+{
+  int result;
+  struct om_ws *ws = (struct om_ws *) workspace;
+
+  int spill_number;
+  if ((result = my_stoi(get_event_field(event, "spill_number"), spill_number)) != 0) {
+    Log.eWrite("Failed to convert \"spill_number\": error " + std::to_string(result));
+    spill_number = -1;
+  }
+  int spill_count;
+  if ((result = my_stoi(get_event_field(event, "spill_count"), spill_count)) != 0) {
+    Log.eWrite("Failed to convert \"spill_count\": error " + std::to_string(result));
+    spill_count = -1;
+  }
+  int spill_flag;
+  if ((result = my_stoi(get_event_field(event, "spill_flag"), spill_flag)) != 0) {
+    Log.eWrite("Failed to convert \"spill_flag\": error " + std::to_string(result));
+    spill_flag = -1;
+  }
+  int bcid;
+  if ((result = my_stoi(get_event_field(event, "bcid"), bcid)) != 0) {
+    Log.eWrite("Failed to convert \"bcid\": error " + std::to_string(result));
+    bcid = -1;
+  }
+  int time;
+  if ((result = my_stoi(get_event_field(event, "time"), time)) != 0) {
+    Log.eWrite("Failed to convert \"time\": error " + std::to_string(result));
+    time = -1;
+  }
+  int column;
+  if ((result = my_stoi(get_event_field(event, "column"), column)) != 0) {
+    Log.eWrite("Failed to convert \"column\": error " + std::to_string(result));
+    column = -1;
+  }
+  int chip;
+  if ((result = my_stoi(get_event_field(event, "chip"), chip)) != 0) {
+    Log.eWrite("Failed to convert \"chip\": error " + std::to_string(result));
+    chip = -1;
+  }
+  int channel;
+  if ((result = my_stoi(get_event_field(event, "channel"), channel)) != 0) {
+    Log.eWrite("Failed to convert \"channel\": error " + std::to_string(result));
+    channel = -1;
+  }
+  int plane;
+  if ((result = my_stoi(get_event_field(event, "plane"), plane)) != 0) {
+    Log.eWrite("Failed to convert \"plane\": error " + std::to_string(result));
+    plane = -1;
+  }
+  float x;
+  if ((result = my_stof(get_event_field(event, "x"), x)) != 0) {
+    Log.eWrite("Failed to convert \"x\": error " + std::to_string(result));
+    x = NAN;
+  }
+  float y;
+  if ((result = my_stof(get_event_field(event, "y"), y)) != 0) {
+    Log.eWrite("Failed to convert \"y\": error " + std::to_string(result));
+    y = NAN;
+  }
+  float z;
+  if ((result = my_stof(get_event_field(event, "z"), z)) != 0) {
+    Log.eWrite("Failed to convert \"z\": error " + std::to_string(result));
+    z = NAN;
+  }
+  int hit;
+  if ((result = my_stoi(get_event_field(event, "hit"), hit)) != 0) {
+    Log.eWrite("Failed to convert \"hit\": error " + std::to_string(result));
+    hit = -1;
+  }
+  int charge;
+  if ((result = my_stoi(get_event_field(event, "charge"), charge)) != 0) {
+    Log.eWrite("Failed to convert \"charge\": error " + std::to_string(result));
+    charge = -1;
+  }
+  int gain;
+  if ((result = my_stoi(get_event_field(event, "gain"), gain)) != 0) {
+    Log.eWrite("Failed to convert \"gain\": error " + std::to_string(result));
+    gain = -1;
+  }
+
+  Float_t offset_time = bcid % 2 == 0 ? EVEN_TIME_OFFSET : ODD_TIME_OFFSET;
+  Float_t ramp_time   = bcid % 2 == 0 ? EVEN_RAMP_TIME : ODD_RAMP_TIME;
+  Float_t hittiming = bcid * BCID_NS  + (time - offset_time) * ramp_time;
   
-//   Int_t spillnb  =(Int_t)atoi(get_event_field(e,"spill"   ));
-//   Int_t spillflag=(Int_t)atoi(get_event_field(e,"spill_flag")); 
-//   Int_t chip     =(Int_t)atoi(get_event_field(e,"roc"       )); 
-//   Int_t chip_ch  =(Int_t)atoi(get_event_field(e,"rocchan"   )); 
-//   Int_t bcid     =(Int_t)atoi(get_event_field(e,"bcid"      )); 
-//   Int_t sca      =(Int_t)atoi(get_event_field(e,"sca"       ));
-//   Int_t pln      =(Int_t)atoi(get_event_field(e,"plane"     )); 
-//   Int_t ch       =(Int_t)atoi(get_event_field(e,"channel"   )); 
-//   Int_t energy   =(Int_t)atoi(get_event_field(e,"en"        )); 
-//   Int_t data_time=(Int_t)atoi(get_event_field(e,"time"      )); 
-//   Int_t hit      =(Int_t)atoi(get_event_field(e,"hit"       )); 
-//   Int_t gain     =(Int_t)atoi(get_event_field(e,"gain"      ));
-//   Float_t x    = (Float_t)atoi(get_event_field(e,"x"));
-//   Float_t y    = (Float_t)atoi(get_event_field(e,"y"));
-//   Float_t z    = (Float_t)atoi(get_event_field(e,"z"));
-
-//   std::printf("\tNew event %d\n\t\tspillnb:%d | spillflag:%d | chip:%d | chip_ch:%d | bcid:%d | sca:%d | pln:%d | ch:%d | energy:%d | data_time:%d | hit:%d | gain:%d | x:%.1f | y:%.1f | z:%.1f\n", ws->nevt,spillnb,spillflag,chip,chip_ch,bcid,sca,pln,ch,energy,data_time,hit,gain,x,y,z);
-
-//   Float_t offset_time = bcid%2==0 ? OffsetTimeEven : OffsetTimeOdd;
-//   Float_t ramp_time   = bcid%2==0 ? RampTimeEven   : RampTimeOdd;
-//   Float_t hittiming = bcid*NormBCID + (data_time-offset_time)*ramp_time;
-
-//   std::printf("\t\toffset_time:%.0f | ramp_time:%.0f | hittiming:%.0f\n", offset_time, ramp_time, hittiming);
+#ifdef DEBUG_WG_ONLINE_MONITOR
+  char debug_message[1024];
+  std::snprintf(debug_message, 1024,
+                "\tNew event %d\n\tspill_number:%d | spill_count:%d | spill_flag:%d | "
+                "bcid:%d | time:%d | column:%d | chip:%d | channel:%d | plane:%d | "
+                "x:%.1f | y:%.1f | z:%.1f | hit:%d | charge:%d | gain:%d\n",
+                ws->num_events, spill_number, spill_count, spill_flag,
+                bcid, time, column, chip, channel, plane,
+                x, y, z, hit, charge, gain);
+  std::cout << debug_message;
+  std::snprintf(debug_message, 1024, "\t\toffset_time:%.0f | ramp_time:%.0f | hittiming:%.0f\n",
+                offset_time, ramp_time, hittiming);
+  std::cout << debug_message;
+#endif
   
-//   if (ws->nblock - ws->lastblock_evtdisp != 1)
-//     {
-//       printf("\t\tHouston, we've had a problem here. \"ws->nblock\" = %d | \"ws->lastblock_evtdisp\" = %d\n", ws->nblock, ws->lastblock_evtdisp);
-//     }
+  if (ws->num_blocks - ws->lastblock_evtdisp != 1 && ws->num_blocks != 0) {
+    Log.eWrite("\"ws->nblock\" = " + std::to_string(ws->num_blocks) +
+               " | \"ws->lastblock_evtdisp\" = " + std::to_string(ws->lastblock_evtdisp) + "\n");
+  }
 
-//   ws->nevt++;
+  ws->num_events++;
+} //newevt
 
-// } //newevt
+// ==================================================================
 
-// // ==================================================================
+void endblock(void *workspace, struct block *block) {
+  int result;
+  struct om_ws *ws=(struct om_ws *)workspace;
 
-// void endblock(void *workspace,struct block *b)
-// {
-//   struct om_ws *ws=(struct om_ws *)workspace;
+  int spill_number;
+  if ((result = my_stoi(get_block_field(block, "spill_number"), spill_number)) != 0) {
+    Log.eWrite("Failed to convert \"spill_number\": error " + std::to_string(result));
+    spill_number = -1;
+  }
+  int spill_count;
+  if ((result = my_stoi(get_block_field(block, "spill_count"), spill_count)) != 0) {
+    Log.eWrite("Failed to convert \"spill_count\": error " + std::to_string(result));
+    spill_count = -1;
+  }
+  int spill_flag;
+  if ((result = my_stoi(get_block_field(block, "spill_flag"), spill_flag)) != 0) {
+    Log.eWrite("Failed to convert \"spill_flag\": error " + std::to_string(result));
+    spill_flag = -1;
+  }
 
-//   Int_t spillnb = (Int_t)atoi(get_block_field(b,"spill"));
-//   Int_t spillflag = (Int_t)atoi(get_block_field(b,"spill_flag"));
-  
-//   std::printf("End block\n\tID = %d | Spill number: %d | Spill flag: %d\n", b->id, spillnb, spillflag);
+  // ------- spill gap -------
 
-//   // ------- for spill gap ----------------
-//   // Recall that spillnb is relative to the current block.
-//   // When the block is created in the newblock function:
-//   //    ws->ini_spill  = spillnb;
-//   //    ws->last_spill = spillnb - 1;
+  // When the ws->last_spill=65535 the spill number is reset to
+  // zero. Check that the spill number is always incremented by one
 
-//   // So when the block is closed the (spillnb - ws->last_spill)
-//   // difference should be one. If it is more than one it means that
-//   // one or more spills were skipped
+  if ((spill_number - ws->last_spill - 1) % MAX_VALUE_16BITS + 1 != 0) {
+    ws->num_spill_gaps++;
+    Log.eWrite("\tSpill gap: " + std::to_string(ws->num_spill_gaps));
+  }
+  ws->last_spill = spill_number;
 
-//   // When the ws->last_spill=65535 the spill number is reset to
-//   // zero.
+#ifdef DEBUG_WG_ONLINE_MONITOR
+  std::cout << "End block\n\tID = " << block->id << " | Spill number: " << spill_number <<
+      " | Spill count: " << spill_count << " | Spill flag: " << spill_flag << std::endl;
+  std::cout << "\tNumber of events: " << ws->num_events << std::endl;
+#endif
+} // endblock
 
-//   if( (spillnb - ws->last_spill > 1) || ((ws->last_spill == 65535) && (spillnb != 0))) {
-// 	ws->nb_spillgap++;
-//   }
-//   // At this point we can reset the last spill to the current spill number
-//   ws->last_spill = spillnb;
+// ==================================================================
 
-//   Float_t status_spill;
-//   // If we have less that SPILL_UGLY_THRESHOLD=10 skipped spills it is OK.
-//   // If we have less that SPILL_BAD_THRESHOLD=100 skipped spills
-//   // it is fishy but not impossible.
-//   // If we have more than 100 or negative skipped spills there is
-//   // something wrong.
-//   if     (ws->nb_spillgap < SPILL_UGLY_THRESHOLD ) status_spill = STATUS_SPILL_GOOD;
-//   else if(ws->nb_spillgap < SPILL_BAD_THRESHOLD  ) status_spill = STATUS_SPILL_UGLY;
-//   else                                             status_spill = STATUS_SPILL_BAD;
+void reinit(void *workspace) 
+{
+} //reinit
 
-//   std::printf("\tSpill gap:%d | Status spill:%.0f\n", ws->nb_spillgap, status_spill);
-//   std::printf("\tNumber of events: %d \n",ws->nevt);
+// ==================================================================
 
-// } // endblock
-
-// // ==================================================================
-
-// void reinit(void *workspace) 
-// {
-// } //reinit
-
-// // ==================================================================
-
-// void endrun(void *workspace) 
-// {
-// } //reinit
+void endrun(void *workspace) 
+{
+} //reinit
 
 
 void initialize_work_space(struct om_ws &ws) {
@@ -169,7 +244,7 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
   ws->dif_id = dif_id;
 
   char data_source_name[64];
-  std::snprintf(data_source_name, 64, "converter_dif_0_0_%d", dif_id);
+  std::snprintf(data_source_name, 64, "converter_dif_%d", dif_id);
 
   if ((ws->loop = new_event_loop(data_source_name,
                                  ws,
@@ -181,7 +256,10 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
                                  'f')) == NULL)
     return ERR_EVENT_LOOP;
 
-  run_loop(ws->loop);
+  while (true)
+    run_loop(ws->loop);
+
+  Log.Write("End of loop!");
 
   return WG_SUCCESS;
 }

@@ -1,42 +1,35 @@
 #!/bin/sh
+
 . /opt/pyrame/ports.sh
-if test $# -lt 1
-then
-echo "usage $0 data_folder"
-exit 1
-fi
 
-#sudo systemctl stop pyrame
-#sleep 1s
-#sudo systemctl start pyrame
-#sleep 2s
+BIN_DIR="${WAGASCI_MAINDIR}/bin"
+CONFIG_DIR="${WAGASCI_MAINDIR}/configs"
 
-cd $1
-for data_file in *.raw
-do
-    #source_name=`echo ${data_file}|sed -r "s/.*([0-9][0-9][0-9]_dif.*)\.raw/\1/"`
-	source_name=`echo ${data_file}|sed -r "s/.*(dif.*)\.raw/\1/"`
-	# CMD_CONVERTER
-	#   1) ds_name            : dif_1_1_X
-	#   2) port               : undef
-	#   3) uri                : ~/Code/WAGASCI/Data/online-monirot-test/run_00062
-	#   4) convert_plugin     : /opt/pyrame/spiroc2d_decoder.so
-	# SPIROC2D_DECODER arguments
-	#   1) dif_id             : 1
-	#   2) ref                : 0
-	#   3) cut_non_hit        : 1
-	#   4) min_energy         : 0
-	#   5) mapping_filename   : /home/neo/Code/WAGASCI/Configs/wagasci_mapping_table.txt
-	#   6) offset_x           : 0
-	#   7) offset_y           : 0
-	#   9) max_roc            : 20
-	cmdmod /opt/pyrame/cmd_converter.xml -a $source_name undef file://$PWD/${data_file} /opt/pyrame/spiroc2d_decoder.so 1 0 1 0 /home/neo/Code/WAGASCI/Configs/wagasci_mapping_table.txt 0 0 20 &
-done
+data_file="/home/neo/Desktop/test/scurve_test_idac1_threhsold152_ecal_dif_0.raw"
+#data_file="${CONFIG_DIR}/unit_tests/test_inputDAC121_pe2_dif_0.raw"
 
+pyrame_config=$(echo "${data_file}" | sed -E "s/_ecal_dif_[0-9]+\.raw/\.xml/")
+    
+source_name=$(echo "${data_file}" | sed -E "s/.*(dif.*)\.raw/\1/")
+# CMD_CONVERTER
+#   1) ds_name            : dif_X
+#   2) port               : undef
+#   3) uri                : data_file_path
+#   4) convert_plugin     : /opt/pyrame/spiroc2d_decoder.so
+# SPIROC2D_DECODER arguments
+#   1) dif_id             : 0
+#   3) cut_non_hit        : 1
+#   4) min_energy         : 0
+#   5) mapping_filename   : /home/neo/Code/WAGASCI/Configs/wagasci_mapping_table.txt
+#   6) offset_x           : 0
+#   7) offset_y           : 0
+#   8) offset_z           : 0
+#   9) max_roc            : n_chips
+echo "cmdmod /opt/pyrame/cmd_converter.xml -a \"$source_name\" undef \"file://${data_file}\" /opt/pyrame/spiroc2d_decoder.so 0 1 0 \"${CONFIG_DIR}/mapping/wagasci_mapping_table.txt\" 0 0 0 3 &"
+cmdmod /opt/pyrame/cmd_converter.xml -a "$source_name" undef "file://${data_file}" /opt/pyrame/spiroc2d_decoder.so 0 1 0 "${CONFIG_DIR}/mapping/wagasci_mapping_table.txt" 0 0 0 3 &
+    
 sleep 1s
-for data_file in *.raw
-do
-    #source_name=`echo ${data_file}|sed -r "s/.*([0-9][0-9][0-9]_dif.*)\.raw/\1/"`
-	source_name=`echo ${data_file}|sed -r "s/.*(dif.*)\.raw/\1/"`
-    cntds.py converter_${source_name} start_acq_converter
-done
+cntds.py "converter_${source_name}" start_acq_converter
+
+echo "\"${BIN_DIR}/wgOnlineMonitor\" --dif_id 0 --pyrame_config \"${pyrame_config}\""
+"${BIN_DIR}/wgOnlineMonitor" --dif_id 0 --pyrame_config "${pyrame_config}"
