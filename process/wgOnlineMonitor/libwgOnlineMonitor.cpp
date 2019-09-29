@@ -15,6 +15,7 @@
 // #include <TCanvas.h>
 // #include <TGraph.h>
 // #include <TText.h>
+#include <TApplication.h>
 
 // pyrame includes
 #include "pyrame.h"
@@ -222,6 +223,8 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
 
   std::string pyrame_config_file(x_pyrame_config_file);
 
+  TApplication om_app("WAGASCI online monitor", 0, NULL);
+
   // =========== Topology =========== //
 
   Topology * topol;
@@ -253,11 +256,17 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
                                  endblock,
                                  reinit,
                                  endrun,
-                                 'f')) == NULL)
+                                 'f')) == NULL) {
     return ERR_EVENT_LOOP;
+  }
 
-  while (true)
-    run_loop(ws->loop);
+  // If you want to avoid running the TApplication uncomment the while (true)
+  // below. You will then need to exit by Ctrl-C in the terminal window.
+  //
+  // while (true) 
+  run_loop(ws->loop);
+
+  om_app.Run();
 
   Log.Write("End of loop!");
 
