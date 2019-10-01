@@ -209,6 +209,13 @@ int wgScurve(const char* x_inputDir,
               gxe.push_back(0);
               gye.push_back(noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold]);
             }
+						double low=0, high=0;
+						for (unsigned i=0; i<5; i++){
+							low  += gy[i];
+							high += gy[gy.size()-i-1];
+						}
+						low = low/5;
+						high = high/5;
                                                 
             // ************* Draw S-curve Graph ************* //
             TGraphErrors* Scurve = new TGraphErrors(gx.size(), gx.data(), gy.data(), gxe.data(), gye.data());
@@ -222,7 +229,7 @@ int wgScurve(const char* x_inputDir,
 
             // ************* Fit S-curve ************* //
             double pe1_t, pe2_t;
-            fit_scurve(Scurve, pe1_t, pe2_t, idif, ichip, ichan, inputDAC[i_iDAC], outputIMGDir, true);
+            fit_scurve(Scurve, pe1_t, pe2_t, idif, ichip, ichan, inputDAC[i_iDAC], low, high, outputIMGDir, true);
             pe1[idif][ichip][ichan].push_back(pe1_t);
             pe2[idif][ichip][ichan].push_back(pe2_t);
 
@@ -347,20 +354,25 @@ void fit_scurve(TGraphErrors* Scurve,
                 unsigned ichip, 
                 unsigned ichan, 
                 unsigned inputDAC,
+								double low,
+								double high,
                 std::string outputIMGDir, 
                 bool print_flag) {
 
   // Fitting function for Scurve is summation of two sigmoid functions (and a constant).
   const char * fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
-  double c0 = 50000, c1 = 1, c2 = 155, c3 = 5000, c4 = 1, c5 = 135, c6 = 300;
+	double middle = exp((log(low)+log(high))/2);
+  double c0 = high, c1 = 0.5, c2 = 155, c3 = middle, c4 = 0.5, c5 = 135, c6 = low;
 
   TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
-  fit_scurve->SetParLimits(0, 30000, 70000); // FIXME: these limit may change 
-  fit_scurve->SetParLimits(2, 145,   160);   // FIXME: these limit may change 
-  fit_scurve->SetParLimits(3, 2000,  7000);  // FIXME: these limit may change 
-  fit_scurve->SetParLimits(5, 130,   145);   // FIXME: these limit may change 
-  fit_scurve->SetParLimits(6, 100,   500);   // FIXME: these limit may change 
+  fit_scurve->SetParLimits(0, high/2,      high*2);  
+  fit_scurve->SetParLimits(1, 0.35,        1.0);
+  fit_scurve->SetParLimits(2, 145,         165);
+  fit_scurve->SetParLimits(3, middle/1.5,  middle*1.5); 
+  fit_scurve->SetParLimits(4, 0.35,        1.0);
+  fit_scurve->SetParLimits(5, 125,         145); 
+  fit_scurve->SetParLimits(6, low/1.5,     low*1.5);
   
   Scurve->Fit(fit_scurve, "");
         

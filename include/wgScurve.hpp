@@ -33,6 +33,8 @@ void fit_scurve(TGraphErrors* Scurve,
                 unsigned ichip_id, 
                 unsigned ichan_id, 
                 unsigned inputDAC,
+								double high,
+								double low,
                 std::string outputIMGDir, 
                 bool print_flag = false);
 
