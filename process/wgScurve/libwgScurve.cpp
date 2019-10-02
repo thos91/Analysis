@@ -53,7 +53,6 @@ int wgScurve(const char* x_inputDir,
   if (outputIMGDir.empty()) {
     outputIMGDir = env.IMGDATA_DIRECTORY;
   }
-  outputIMGDir = outputIMGDir + "/" + GetName(inputDir);
 
   // ============ Create outputXMLDir ============ //
   try { MakeDir(outputXMLDir); }
@@ -69,9 +68,9 @@ int wgScurve(const char* x_inputDir,
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
-  Log.Write(" *****  READING DIRECTORY      : " + inputDir + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   : " + outputXMLDir + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + outputIMGDir + "  *****");
+  Log.Write("[wgScurve] *****  READING DIRECTORY      : " + inputDir + "  *****");
+  Log.Write("[wgScurve] *****  OUTPUT XML DIRECTORY   : " + outputXMLDir + "  *****");
+  Log.Write("[wgScurve] *****  OUTPUT IMAGE DIRECTORY : " + outputIMGDir + "  *****");
 
   try{
 
@@ -82,15 +81,17 @@ int wgScurve(const char* x_inputDir,
     // Get topology from input directory.
     // Get the number of dif, chip, channel, imputDAC and threshold. 
     Topology topol(inputDir, TopologySourceType::scurve_tree);
-    const unsigned n_inputDAC  = ListDirectories(inputDir).size();
-    const unsigned n_threshold = ListDirectories(inputDir).at(0).size(); // FIXME: maybe wrong
+		std::vector<std::string> list_dir = ListDirectoriesWithInteger(inputDir);
+    const unsigned n_inputDAC  = ListDirectoriesWithInteger(inputDir).size();
+    const unsigned n_threshold = HowManyDirectories(ListDirectoriesWithInteger(inputDir).at(0));
     unsigned n_difs = topol.n_difs;
     u1vector n_chips;
     u2vector n_chans;
     for(unsigned idif = 0; idif < n_difs; ++idif) {
-      n_chips[idif] = topol.dif_map[idif].size();
+      n_chips.push_back(topol.dif_map[idif].size());
+			n_chans.push_back(u1vector());
       for(unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
-        n_chans[idif][ichip] = topol.dif_map[idif][ichip];
+        n_chans[idif].push_back(topol.dif_map[idif][ichip]);
       }
     }
 
@@ -150,9 +151,9 @@ int wgScurve(const char* x_inputDir,
         
     unsigned i_iDAC = 0;  // index for inputDAC
     // input DAC
-    std::vector<std::string> iDAC_dir_list = ListDirectories(inputDir);
+    std::vector<std::string> iDAC_dir_list = ListDirectoriesWithInteger(inputDir);
     for (auto const & iDAC_directory : iDAC_dir_list) {
-      std::vector<std::string> th_dir_list = ListDirectories(iDAC_directory);
+      std::vector<std::string> th_dir_list = ListDirectoriesWithInteger(iDAC_directory);
       unsigned i_threshold = 0;  // index for threshold
       // threshold
       for (auto & th_directory : th_dir_list) {
@@ -174,12 +175,12 @@ int wgScurve(const char* x_inputDir,
             }
             // ************* Read XML file ************* //
             threshold[i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
-            inputDAC[i_iDAC]       = Edit.SUMMARY_GetGlobalConfigValue("inputDAC");
             // channel
             for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
               // get noise rate for each channel 
-              noise      [idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise",       ichan);
-              noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_noise", ichan);
+            	inputDAC[i_iDAC] = Edit.SUMMARY_GetChConfigValue("inputDAC",ichan);
+              noise      [idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise_rate", ichan);
+              noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_rate", ichan);
             }  // channel
             Edit.Close();
           } // chip
@@ -188,7 +189,6 @@ int wgScurve(const char* x_inputDir,
       } // threshold
       ++i_iDAC;
     } // inputDAC
-
     /********************************************************************************
      *                        Draw and fit the S-curve                              *
      ********************************************************************************/
@@ -196,6 +196,9 @@ int wgScurve(const char* x_inputDir,
     for (unsigned idif = 0; idif < n_difs; ++idif){
       for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
         for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+					std::string image_dir = outputIMGDir + "/Dif" + std::to_string(idif)
+                          + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan);;
+					MakeDir(image_dir);
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
                                         
             TCanvas *c1 = new TCanvas("c1", "c1");
@@ -311,27 +314,31 @@ int wgScurve(const char* x_inputDir,
      ********************************************************************************/
 
     std::string xmlfile(outputXMLDir + "/threshold_card.xml");
-    try { Edit.Open(xmlfile); }
+
+    try {
+      //if( !check_exist::XmlFile(xmlfile) ){
+        Edit.OPT_Make(xmlfile, inputDAC, n_difs, n_chips, n_chans);
+			//}
+			Edit.Open(xmlfile);
+    }
     catch (const wgInvalidFile & e) {
       Log.eWrite("[wgScurve] " + xmlfile + " : " + e.what());
       return ERR_FAILED_OPEN_XML_FILE;
     }
 
-    Edit.OPT_Make(xmlfile, inputDAC, n_difs, n_chips, n_chans);
-
     for (unsigned idif = 0; idif < n_difs; ++idif) {
       for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
         for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
           // Set the slope and intercept values for the result of fitting threshold-inputDAC plot.
-          Edit.OPT_SetChanValue(std::string("s_th1"), idif, ichip, ichan, slope1[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(std::string("i_th1"), idif, ichip, ichan, intercept1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(std::string("s_th2"), idif, ichip, ichan, slope2[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
-          Edit.OPT_SetChanValue(std::string("i_th2"), idif, ichip, ichan, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("slope_threshold1"), idif, ichip, ichan, slope1[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("intercept_threshold1"), idif, ichip, ichan, intercept1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("slope_threshold2"), idif, ichip, ichan, slope2[idif][ichip][ichan],     NO_CREATE_NEW_MODE);
+          Edit.OPT_SetChanValue(std::string("intercept_threshold2"), idif, ichip, ichan, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
             // Set the 2.5 pe and 1.5 pe level of ftting the scurve.
-            Edit.OPT_SetValue(std::string("threshold_1"), idif, ichip, ichan, i_iDAC, pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
-            Edit.OPT_SetValue(std::string("threshold_2"), idif, ichip, ichan, i_iDAC, pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+            Edit.OPT_SetValue(std::string("threshold_1"), idif, ichip, ichan, inputDAC[i_iDAC], pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+            Edit.OPT_SetValue(std::string("threshold_2"), idif, ichip, ichan, inputDAC[i_iDAC], pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
           }
         }
       }

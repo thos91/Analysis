@@ -14,7 +14,8 @@ void print_help(const char * program_name) {
   std::cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
       "  -h         : help\n"
       "  -f (char*) : input directory (mandatory)\n"
-      "  -o (char*) : output directory (default: same as input directory)\n";
+      "  -o (char*) : output xml directory (default: same as input directory)\n";
+      "  -i (char*) : output image directory (default: same as input directory)\n";
   exit(0);
 }
 
@@ -27,7 +28,7 @@ int main(int argc, char** argv){
   std::string outputXMLDir = env.CALIBDATA_DIRECTORY ;
   std::string outputIMGDir = env.IMGDATA_DIRECTORY;
 
-  while((opt = getopt(argc,argv, "f:o:h")) != -1 ){
+  while((opt = getopt(argc,argv, "f:o:i:h")) != -1 ){
     switch(opt){
       case 'f':
         inputDir = optarg;
@@ -35,6 +36,10 @@ int main(int argc, char** argv){
 
       case 'o':
         outputXMLDir = optarg; 
+        break;
+
+      case 'i':
+        outputIMGDir = optarg; 
         break;
 
       case 'h':
