@@ -152,6 +152,8 @@ void SectionReader::ReadSpillTrailer(std::istream& is, const SectionSeeker::Sect
   //   bitset<2*BITS_PER_LINE> unknown_field_lsb = raw_data[5].to_ulong();
   //   unsigned unknown_field = (unknown_field_msb | unknown_field_lsb).to_ullong(); 
   // }
+
+  FillTree();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -184,8 +186,6 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
     } else if ((unsigned) m_rd.get().chipid[section.ichip] != ichipid) {
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
       m_rd.get().chipid[section.ichip] = ichipid;
-    } else  {
-      m_rd.get().chipid[section.ichip] = ichipid;
     }
   }
     
@@ -206,7 +206,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
       // HIT (0: no hit, 1: hit)
       m_rd.get().hit[section.ichip][ichan][icol] = (*iraw_data)[12];
       // GAIN (0: low gain, 1: high gain)
-      m_rd.get().gs     [section.ichip][ichan][icol] = (*(iraw_data++))[13];
+      m_rd.get().gs[section.ichip][ichan][icol] = (*iraw_data)[13];
       // Only if the detector is already calibrated fithe histograms
       if (m_config.adc_is_calibrated) {
         // P.E.
@@ -219,6 +219,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
           m_rd.get().pe[section.ichip][ichan][icol] = LOW_GAIN_NORM * ( charge - pedestal ) / gain;
         }
       }
+      ++iraw_data;
     }
 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
@@ -232,12 +233,12 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
       if (m_rd.get().hit[section.ichip][ichan][icol] != (*iraw_data)[12]) {
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_HIT_BIT]++;
       }
-      if (m_rd.get().gs [section.ichip][ichan][icol] != (*(iraw_data++))[13]) {
+      if (m_rd.get().gs[section.ichip][ichan][icol] != (*iraw_data)[13]) {
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_GAIN_BIT]++;
       }
+      ++iraw_data;
     }
   }
-  FillTree();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
