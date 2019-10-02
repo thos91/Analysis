@@ -665,7 +665,7 @@ void wgEditXML::OPT_Make(const std::string& filename,
         // ***** data > dif > chip > channel ***** //
         snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
         chan = xml->NewElement(str);    
-        dif->InsertEndChild(chan);
+        chip->InsertEndChild(chan);
         slope_threshold[0] = xml->NewElement("slope_threshold1");
         chan->InsertEndChild(slope_threshold[0]);
         intercept_threshold[0] = xml->NewElement("intercept_threshold1");
@@ -678,7 +678,7 @@ void wgEditXML::OPT_Make(const std::string& filename,
           // ***** data > dif > chip > channel > inputDAC ***** //
           snprintf(str, XML_ELEMENT_STRING_LENGTH, "inputDAC_%d", inputDACs[iDAC]);
           inputDAC = xml->NewElement(str);
-          chip->InsertEndChild(inputDAC);
+          chan->InsertEndChild(inputDAC);
           for(unsigned pe = 1; pe <= 2; ++pe) {
             snprintf(str, XML_ELEMENT_STRING_LENGTH, "threshold_%d", pe);
             threshold = xml->NewElement(str);
