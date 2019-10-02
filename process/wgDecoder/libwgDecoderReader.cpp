@@ -153,6 +153,14 @@ void SectionReader::ReadSpillTrailer(std::istream& is, const SectionSeeker::Sect
   //   unsigned unknown_field = (unknown_field_msb | unknown_field_lsb).to_ullong(); 
   // }
 
+  // CHANID and COLID
+  for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+    m_rd.get().chanid[ichan] = ichan;
+  }
+  for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
+    m_rd.get().colid[icol] = icol;
+  }
+  
   FillTree();
 }
 
