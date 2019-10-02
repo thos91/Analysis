@@ -9,12 +9,12 @@
 extern "C" {
 #endif
 
-  int wgMakeHist(const char * inputFileName,
-                 const char * outputDir,
-                 bool overwrite,
-                 unsigned dif = 1,
-                 unsigned n_chips = NCHIPS);
-
+int wgMakeHist(const char * x_input_file_name,
+               const char * x_pyrame_config_file,
+               const char * x_output_dir,
+               bool overwrite = false,
+               unsigned dif = 0);
+  
 #ifdef __cplusplus
 }
 #endif

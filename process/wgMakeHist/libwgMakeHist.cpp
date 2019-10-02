@@ -17,21 +17,23 @@
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
 #include "wgLogger.hpp"
+#include "wgTopology.hpp"
 #include "wgMakeHist.hpp"
 
 using namespace wagasci_tools;
 
 int wgMakeHist(const char * x_input_file_name,
+               const char * x_pyrame_config_file,
                const char * x_output_dir,
                const bool overwrite,
-               const unsigned dif,
-               const unsigned n_chips) {
+               const unsigned dif) {
 
   /////////////////////////////////////////////////////////////////////////////
   //                          Check argument sanity                          //
   /////////////////////////////////////////////////////////////////////////////
   
   std::string input_file_name(x_input_file_name);
+  std::string pyrame_config_file(x_pyrame_config_file);
   std::string output_dir(x_output_dir);
 
   std::string output_file_name = GetNameBeforeLastUnderBar(input_file_name) + "_hist.root";
@@ -39,36 +41,56 @@ int wgMakeHist(const char * x_input_file_name,
   int pos = logfilename.rfind("_ecal_dif_") ;
   std::string logfile = GetPath(input_file_name) + logfilename.substr(0, pos ) + ".log";
 
-  if (n_chips > NCHIPS) {
-    Log.eWrite("[wgMakeHist] The number of chips per DIF must be {1-" + std::to_string(NCHIPS) + "}");
-    return ERR_WRONG_CHIP_VALUE;
-  }
-  if(!check_exist::RootFile(input_file_name)) {
-    Log.eWrite("[wgMakeHist] Input file " + input_file_name + " not found");
+  if(input_file_name.empty() || !check_exist::RootFile(input_file_name)) {
+    Log.eWrite("[wgMakeHist] Input file not found : " + input_file_name);
     return ERR_EMPTY_INPUT_FILE;
+  }
+  if (pyrame_config_file.empty() || !check_exist::XmlFile(pyrame_config_file)) {
+    Log.eWrite("[wgMakeHist] Pyrame xml configuration file not found : " + pyrame_config_file);
+    return ERR_CONFIG_XML_FILE_NOT_FOUND;
   }
   if (!wagasci_tools::check_exist::Dir(output_dir)) {
     wagasci_tools::MakeDir(output_dir);
   }
 
-  Log.Write("[wgMakeHist] *****  READING FILE     : " + input_file_name  + "  *****");
-  Log.Write("[wgMakeHist] *****  OUTPUT HIST FILE : " + output_file_name + "  *****");
-  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + output_dir       + "  *****");
-  Log.Write("[wgMakeHist] *****  LOG FILE         : " + logfilename      + "  *****");
+  Log.Write("[wgMakeHist] *****  INPUT FILE         : " + input_file_name    + "  *****");
+  Log.Write("[wgMakeHist] *****  PYRAME CONFIG FILE : " + pyrame_config_file + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT HIST FILE   : " + output_file_name   + "  *****");
+  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY   : " + output_dir         + "  *****");
+  Log.Write("[wgMakeHist] *****  LOG FILE           : " + logfilename        + "  *****");
 
+  /////////////////////////////////////////////////////////////////////////////
+  //                                 Topology                                //
+  /////////////////////////////////////////////////////////////////////////////
+
+  Topology * topol;
+  try {
+    topol = new Topology(pyrame_config_file);
+  }
+  catch (const std::exception& e) {
+    Log.eWrite("[wgMakeHist] " + std::string(e.what()));
+    return ERR_TOPOLOGY;
+  }
+  unsigned n_chips = topol->dif_map[dif].size();
+
+  if ( n_chips == 0 || n_chips > NCHIPS ) {
+    Log.eWrite("[wgMakeHist] wrong number of chips : " + std::to_string(n_chips) );
+    return ERR_WRONG_CHIP_VALUE;
+  }
+  
   /////////////////////////////////////////////////////////////////////////////
   //                            Define Histograms                            //
   /////////////////////////////////////////////////////////////////////////////
   
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_hit   (n_chips);
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_hit_HG(n_chips);
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_hit_LG(n_chips);
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_pe_hit       (n_chips);
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_charge_nohit (n_chips);
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_time_hit     (n_chips);
-  std::vector<std::array<std::array<TH1I*, MEMDEPTH>, NCHANNELS>> h_time_nohit   (n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_charge_hit   (n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_charge_hit_HG(n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_charge_hit_LG(n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_pe_hit       (n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_charge_nohit (n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_time_hit     (n_chips);
+  std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> h_time_nohit   (n_chips);
   // h_bcid_hit: For every channel fill it with the BCID of all the columns with a hit.
-  std::vector<std::array<TH1I*, NCHANNELS>> h_bcid_hit(n_chips);
+  std::vector<std::vector<TH1I*>> h_bcid_hit(n_chips);
 
   int min_bin = 0;
   int max_bin = MAX_VALUE_12BITS;
@@ -79,7 +101,16 @@ int wgMakeHist(const char * x_input_file_name,
   TH1::AddDirectory(kFALSE);
   
   for (unsigned ichip = 0; ichip < n_chips; ++ichip) {
-    for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+    unsigned n_chans = topol->dif_map[dif][ichip];
+    h_charge_hit   [ichip].resize(n_chans);
+    h_charge_hit_HG[ichip].resize(n_chans);
+    h_charge_hit_LG[ichip].resize(n_chans);
+    h_pe_hit       [ichip].resize(n_chans);
+    h_charge_nohit [ichip].resize(n_chans);
+    h_time_hit     [ichip].resize(n_chans);
+    h_time_nohit   [ichip].resize(n_chans);
+    h_bcid_hit     [ichip].resize(n_chans);
+    for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
       for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
         // ADC count when there is a hit (hit bit is one)
         h_name.Form("charge_hit_chip%u_ch%u_col%u", ichip, ichan, icol);
@@ -172,7 +203,7 @@ int wgMakeHist(const char * x_input_file_name,
         unsigned ichipid = rd.chipid[ichip];
         if (ichipid >= n_chips) continue;
         // CHANNELS loop
-        for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+        for(unsigned ichan = 0; ichan < topol->dif_map[dif][ichip]; ichan++) {
           // COLUMNS loop
           for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
             // HIT
@@ -229,7 +260,7 @@ int wgMakeHist(const char * x_input_file_name,
   output_hist_file->WriteObject(nb_lost_pkts, "nb_lost_pkts");
   output_hist_file->WriteObject(spill_count,  "spill_count");
   for (unsigned ichipid = 0; ichipid < n_chips; ichipid++) {
-    for (unsigned ichan = 0; ichan < NCHANNELS; ichan++) {
+    for (unsigned ichan = 0; ichan < topol->dif_map[dif][ichipid]; ichan++) {
       if (h_bcid_hit[ichipid][ichan] != NULL) h_bcid_hit[ichipid][ichan]->Write();
       for (unsigned icol = 0; icol < MEMDEPTH; icol++) {
         if (h_charge_hit   [ichipid][ichan][icol] != NULL) h_charge_hit   [ichipid][ichan][icol]->Write();
