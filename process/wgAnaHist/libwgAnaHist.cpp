@@ -75,9 +75,9 @@ int wgAnaHist(const char * x_input_file,
     return ERR_WRONG_DIF_VALUE;
   }
 
-  Log.Write("[wgMakeHist] *****  READING FILE     : " + input_file         + "  *****");
-  Log.Write("[wgMakeHist] *****  OUTPUT DIRECTORY : " + output_xml_dir     + "  *****");
-  Log.Write("[wgMakeHist] *****  CONFIG FILE      : " + pyrame_config_file + "  *****");
+  Log.Write("[wgAnaHist] *****  READING FILE     : " + input_file         + "  *****");
+  Log.Write("[wgAnaHist] *****  OUTPUT DIRECTORY : " + output_xml_dir     + "  *****");
+  Log.Write("[wgAnaHist] *****  CONFIG FILE      : " + pyrame_config_file + "  *****");
   
   // =========== Topology =========== //
 
@@ -185,7 +185,6 @@ int wgAnaHist(const char * x_input_file,
         }
 	  
         // ******************* FILL THE XML FILES ********************//
-
         try {
           if (first_time) {
             start_time = Fit.histos.Get_start_time();
