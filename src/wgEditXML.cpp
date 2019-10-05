@@ -132,13 +132,13 @@ bool wgEditXML::GetConfig(const std::string& configxml,
     XMLElement* acqpc = domain->FirstChildElement("acqpc");
     // GDCCs loop
     for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-      if( std::string(gdcc->Attribute("name")) == "gdcc_0_" + std::to_string(igdcc) ) {
+      if( std::string(gdcc->Attribute("name")) == "gdcc_1_" + std::to_string(igdcc) ) {
         // DIFs loop
         for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-          if( std::string(dif->Attribute("name")) == "dif_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+          if( std::string(dif->Attribute("name")) == "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
             // ASUs loop
             for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-              if( std::string(asu->Attribute("name")) == "asu_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
+              if( std::string(asu->Attribute("name")) == "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
                 XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
                 // loop to find the spiroc2d_bitstream parameter
                 for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {

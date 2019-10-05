@@ -160,7 +160,7 @@ int wgAnaHist(const char * x_input_file,
       if( flags[SELECT_CONFIG] ) {
         unsigned gdcc = topol->GetGdccDifPair(idif).first;
         unsigned dif = topol->GetGdccDifPair(idif).second;
-        if (!xml.GetConfig(pyrame_config_file, gdcc, dif, ichip, n_chans, config)) {
+        if (!xml.GetConfig(pyrame_config_file, gdcc, dif, ichip + 1, n_chans, config)) {
           Log.eWrite("[wgAnaHist] DIF " + to_string(idif) + ", chip " +
                      to_string(ichip) + " : failed to get bitstream parameters");
           return ERR_FAILED_GET_BISTREAM;
