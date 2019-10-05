@@ -66,7 +66,7 @@ int wgDecoder(const char * x_input_raw_file,
   // ======== dif ========= //
 
   if (dif > NDIFS) {
-    Log.eWrite("[wgDecoder] The DIF number must be {1-" + std::to_string(NDIFS) + "}");
+    Log.eWrite("[wgDecoder] The DIF number must be {0-" + std::to_string(NDIFS - 1) + "}");
     exit(1);
   }
   

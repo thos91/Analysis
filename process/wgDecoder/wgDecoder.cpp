@@ -18,7 +18,7 @@ void print_help(const char * program_name) {
       "  -f (char*) : input .raw file to read (mandatory)\n"
       "  -c (char*) : directory containing the calibration card files (default = WAGASCI_CONFDIR)\n"
       "  -o (char*) : output directory (default = WAGASCI_DECODEDIR)\n"
-      "  -n (int)   : DIF number 1-8 (default = 1)\n"
+      "  -n (int)   : DIF number 0-7 (default = 0)\n"
       "  -x (int)   : number of ASU chips per DIF 1-20 (default = autodetected)\n"
       "  -r         : overwrite mode (default = false)\n"
       "  -q         : compatibility mode for old data (default = false)\n"
