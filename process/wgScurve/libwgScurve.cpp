@@ -162,10 +162,12 @@ int wgScurve(const char* x_inputDir,
         std::vector<std::string> dif_dir_list = ListDirectories(th_directory);
         for (auto const & idif_directory : dif_dir_list) {
           unsigned idif = extractIntegerFromString(GetName(idif_directory));
+					unsigned i_dif = idif-1;
           // chip
           std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
           for (auto const & ichip_xml : chip_xml_list) {
             unsigned ichip = extractIntegerFromString(GetName(ichip_xml));
+						unsigned i_chip = ichip-1;
                   
             // ************* Open XML file ************* //
             try { Edit.Open(ichip_xml); }
@@ -176,11 +178,11 @@ int wgScurve(const char* x_inputDir,
             // ************* Read XML file ************* //
             threshold[i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
             // channel
-            for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+            for (unsigned ichan = 0; ichan < n_chans[i_dif][i_chip]; ++ichan) {
               // get noise rate for each channel 
             	inputDAC[i_iDAC] = Edit.SUMMARY_GetChConfigValue("inputDAC",ichan);
-              noise      [idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise_rate", ichan);
-              noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_rate", ichan);
+              noise      [i_dif][i_chip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise_rate", ichan);
+              noise_sigma[i_dif][i_chip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_rate", ichan);
             }  // channel
             Edit.Close();
           } // chip
@@ -199,6 +201,17 @@ int wgScurve(const char* x_inputDir,
 					std::string image_dir = outputIMGDir + "/Dif" + std::to_string(idif)
                           + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan);;
 					MakeDir(image_dir);
+					// If the chip does not contain the right data but UNIT_MAX, skip the loop.
+					if(noise[idif][ichip][ichan][0][0] == UINT_MAX){
+            pe1[idif][ichip][ichan].push_back(UINT_MAX);
+            pe2[idif][ichip][ichan].push_back(UINT_MAX);
+          	slope1    [idif][ichip].push_back(UINT_MAX);
+          	intercept1[idif][ichip].push_back(UINT_MAX);
+          	slope2    [idif][ichip].push_back(UINT_MAX);
+          	intercept2[idif][ichip].push_back(UINT_MAX);
+						break;
+					}
+
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
                                         
             TCanvas *c1 = new TCanvas("c1", "c1");
@@ -266,7 +279,7 @@ int wgScurve(const char* x_inputDir,
 
           TF1* fit1 = new TF1("fit1", "[0]*x + [1]", 1, 241);
           fit1->SetParameters(-0.01, 170);
-          PELinear1->Fit(fit1, "rl");
+          PELinear1->Fit(fit1, "rlq");
           fit1->Draw("same");
           slope1    [idif][ichip].push_back(fit1->GetParameter(0));
           intercept1[idif][ichip].push_back(fit1->GetParameter(1));
@@ -289,7 +302,7 @@ int wgScurve(const char* x_inputDir,
 
           TF1* fit2 = new TF1("fit2", "[0]*x + [1]", 1, 241);
           fit2->SetParameters(-0.01, 170);
-          PELinear2->Fit(fit2,"rl");
+          PELinear2->Fit(fit2,"rlq");
           fit2->Draw("same");
           slope2    [idif][ichip].push_back(fit2->GetParameter(0));
           intercept2[idif][ichip].push_back(fit2->GetParameter(1));
@@ -381,7 +394,7 @@ void fit_scurve(TGraphErrors* Scurve,
   fit_scurve->SetParLimits(5, 125,         145); 
   fit_scurve->SetParLimits(6, low/1.5,     low*1.5);
   
-  Scurve->Fit(fit_scurve, "");
+  Scurve->Fit(fit_scurve, "q");
         
   // From the fitting parameters, calcurate each p.e. level.
   // Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
