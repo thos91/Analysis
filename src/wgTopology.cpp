@@ -96,7 +96,8 @@ Topology::Topology(const char * configxml, TopologySourceType source_type) :
     Topology(std::string(configxml), source_type) {}
 
 Topology::Topology(std::string source, TopologySourceType source_type) :
-    m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
+    //m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
+    m_mapping_file_path("/Users/aoi/WAGASCI/Analysis/configs/mapping/dif_mapping.txt"){
 
   if ( source_type == TopologySourceType::xml_file ) {
     this->GetTopologyFromFile(source);
@@ -470,7 +471,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
     throw wgInvalidFile("[wgTopology] Input directory doesn't exist : " + input_run_dir);
 
   // Number of acquisitions for the iDAC
-  std::vector<std::string> iDAC_dir_list = ListDirectories(input_run_dir);
+  std::vector<std::string> iDAC_dir_list = ListDirectoriesWithInteger(input_run_dir);
   if ( iDAC_dir_list.size() == 0 )
     throw std::invalid_argument("[wgTopology] Empty iDAC directory tree");
 
@@ -495,7 +496,7 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
     unsigned iDAC;
     if ( (iDAC = extractIntegerFromString(GetName(iDAC_directory))) == UINT_MAX )
       continue;
-    std::vector<std::string> th_dir_list = ListDirectories(iDAC_directory);
+    std::vector<std::string> th_dir_list = ListDirectoriesWithInteger(iDAC_directory);
     if ( th_dir_list.size() == 0 )
       throw std::invalid_argument("[wgTopology] empty iDAC directory : " + iDAC_directory);
 
@@ -529,8 +530,8 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
           catch (const std::exception& e) {
             throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
           }
-          this->dif_map[idif][ichip] = n_chans_t[iDAC][threshold][idif][ichip] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
-          this->m_string_dif_map[std::to_string(idif)][std::to_string(ichip)] = std::to_string(this->dif_map[idif][ichip]);
+          this->dif_map[idif-1][ichip] = n_chans_t[iDAC][threshold][idif-1][ichip] = Edit.SUMMARY_GetGlobalConfigValue("n_chans");
+          this->m_string_dif_map[std::to_string(idif-1)][std::to_string(ichip)] = std::to_string(this->dif_map[idif-1][ichip]);
           Edit.Close();
         }
       }  // end loop for dif

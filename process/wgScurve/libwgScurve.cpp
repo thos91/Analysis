@@ -94,7 +94,6 @@ int wgScurve(const char* x_inputDir,
         n_chans[idif].push_back(topol.dif_map[idif][ichip]);
       }
     }
-
     // inputDAC[] and threshold[] contain true values for each index.
     // Be careful that i_iDAC and i_threshold are only the index 
     // to get the true value in the code. We may be able to get 
@@ -167,7 +166,7 @@ int wgScurve(const char* x_inputDir,
           std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
           for (auto const & ichip_xml : chip_xml_list) {
             unsigned ichip = extractIntegerFromString(GetName(ichip_xml));
-						unsigned i_chip = ichip-1;
+						//unsigned i_chip = ichip-1;
                   
             // ************* Open XML file ************* //
             try { Edit.Open(ichip_xml); }
@@ -178,11 +177,11 @@ int wgScurve(const char* x_inputDir,
             // ************* Read XML file ************* //
             threshold[i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
             // channel
-            for (unsigned ichan = 0; ichan < n_chans[i_dif][i_chip]; ++ichan) {
+            for (unsigned ichan = 0; ichan < n_chans[i_dif][ichip]; ++ichan) {
               // get noise rate for each channel 
             	inputDAC[i_iDAC] = Edit.SUMMARY_GetChConfigValue("inputDAC",ichan);
-              noise      [i_dif][i_chip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise_rate", ichan);
-              noise_sigma[i_dif][i_chip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_rate", ichan);
+              noise      [i_dif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise_rate", ichan);
+              noise_sigma[i_dif][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("sigma_rate", ichan);
             }  // channel
             Edit.Close();
           } // chip
@@ -201,7 +200,7 @@ int wgScurve(const char* x_inputDir,
 					std::string image_dir = outputIMGDir + "/Dif" + std::to_string(idif)
                           + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan);;
 					MakeDir(image_dir);
-					// If the chip does not contain the right data but UNIT_MAX, skip the loop.
+					// If the channel does not contain the meaningful data but UNIT_MAX, skip the loop.
 					if(noise[idif][ichip][ichan][0][0] == UINT_MAX){
             pe1[idif][ichip][ichan].push_back(UINT_MAX);
             pe2[idif][ichip][ichan].push_back(UINT_MAX);
