@@ -147,25 +147,25 @@ int wgDecoder(const char * x_input_raw_file,
     try {
       if ((pedestal_is_calibrated = calib.isPedestalCalibrated()))
         calib.GetPedestal(dif, rd.pedestal);
-    } catch (const exception & e ) {
+    } catch (const std::exception & e ) {
       pedestal_is_calibrated = false;
       Log.Write("[wgDecoder] pedestal is not calibrated yet : " + std::string(e.what()));
     }
     try {
       if ((gain_is_calibrated = calib.isGainCalibrated()))
         calib.GetGain(dif, rd.gain);
-    } catch (const exception & e ) {
+    } catch (const std::exception & e ) {
       adc_is_calibrated = false;
       Log.Write("[wgDecoder] ADC is not calibrated yet : " + std::string(e.what()));
     }
     try {
       if ((tdc_is_calibrated = calib.isTDCCalibrated()))
         calib.GetTDC(dif, rd.tdc_slope, rd.tdc_intcpt);
-    } catch (const exception & e ) {
+    } catch (const std::exception & e ) {
       tdc_is_calibrated = false;
       Log.Write("[wgDecoder] TDC is not calibrated yet : " + std::string(e.what()));
     }  
-  } catch (const exception & e ) {
+  } catch (const std::exception & e ) {
     Log.Write("[wgDecoder] detector is not calibrated yet : " + std::string(e.what())); 
   }
   adc_is_calibrated = pedestal_is_calibrated && gain_is_calibrated;
@@ -175,23 +175,23 @@ int wgDecoder(const char * x_input_raw_file,
   // ===================================================================== //
   
   // Get the geometrical information (position in space) for each channel
-  wgChannelMap Map;
-  if (adc_is_calibrated) {
-    vector<int> pln, ch, grid;
-    vector<double> x, y, z;
-    for(unsigned ichip = 0; ichip < n_chips; ichip++) {
-      Map.GetMap( dif,
-                  ichip,
-                  rd.pln [ichip].size(),
-                  rd.view,
-                  rd.pln [ichip].data(),
-                  rd.ch  [ichip].data(),
-                  rd.grid[ichip].data(),
-                  rd.x   [ichip].data(),
-                  rd.y   [ichip].data(),
-                  rd.z   [ichip].data());
-    }
-  }
+  // wgChannelMap Map;
+  // if (adc_is_calibrated) {
+  //   vector<int> pln, ch, grid;
+  //   vector<double> x, y, z;
+  //   for(unsigned ichip = 0; ichip < n_chips; ichip++) {
+  //     Map.GetMap( dif,
+  //                 ichip,
+  //                 rd.pln [ichip].size(),
+  //                 rd.view,
+  //                 rd.pln [ichip].data(),
+  //                 rd.chan[ichip].data(),
+  //                 rd.grid[ichip].data(),
+  //                 rd.x   [ichip].data(),
+  //                 rd.y   [ichip].data(),
+  //                 rd.z   [ichip].data());
+  //   }
+  // }
 
   // ===================================================================== //
   //                         Create the output file                        //
@@ -292,8 +292,8 @@ int wgDecoder(const char * x_input_raw_file,
   //     ============================================================      //
   // ===================================================================== //
 
-  ifstream ifs;
-  ifs.open(input_raw_file.c_str(), ios_base::in | ios_base::binary);
+  std::ifstream ifs;
+  ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
     Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
     return ERR_FAILED_OPEN_RAW_FILE;

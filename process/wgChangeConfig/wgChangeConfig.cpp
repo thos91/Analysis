@@ -11,11 +11,10 @@
 #include "wgChangeConfig.hpp"
 #include "wgLogger.hpp"
 
-using namespace std;
 using namespace wagasci_tools;
 
 void print_help(const char * program_name) {
-  cout << program_name << " checks or changes a SPIROC bitstream file.\n"
+  std::cout << program_name << " checks or changes a SPIROC bitstream file.\n"
       "  -h        : help\n"
       "  -f (char*): input file  (.txt file) (mandatory)\n"
       "  -o (char*): output file (default: test.txt)\n"
@@ -41,10 +40,10 @@ int main(int argc, char** argv){
   unsigned mode    = 0;
   unsigned channel = 0;
   unsigned value   = 0;
-  bitset<WG_CHANGE_CONFIG_FLAGS> flags;
-  string inputFile("");
-  string outputFile("");
-  string outputPath("");
+  std::bitset<WG_CHANGE_CONFIG_FLAGS> flags;
+  std::string inputFile("");
+  std::string outputFile("");
+  std::string outputPath("");
 
   while ((opt = getopt(argc,argv, "f:o:m:b:v:her")) !=-1 ) {
     switch (opt) {
@@ -93,7 +92,7 @@ int main(int argc, char** argv){
                                 value,
                                 mode,
                                 channel)) != 0) {
-    Log.eWrite(string(argv[0]) + " returned error code " + to_string(result));
+    Log.eWrite(std::string(argv[0]) + " returned error code " + std::to_string(result));
     exit(1);
   }
 
