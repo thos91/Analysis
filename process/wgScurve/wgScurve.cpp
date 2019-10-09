@@ -14,7 +14,7 @@ void print_help(const char * program_name) {
   std::cout <<  program_name << " summarizes the wgAnaHist output into a TO-DO.\n"
       "  -h         : help\n"
       "  -f (char*) : input directory (mandatory)\n"
-      "  -o (char*) : output xml directory (default: same as input directory)\n";
+      "  -o (char*) : output xml directory (default: same as input directory)\n"
       "  -i (char*) : output image directory (default: same as input directory)\n";
   exit(0);
 }
