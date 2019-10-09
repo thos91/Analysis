@@ -17,7 +17,7 @@ using namespace wagasci_tools;
 // print_help
 // prints an help message with all the arguments taken by the program
 void print_help(const char * program_name) {
-  cout << program_name << "is used to analyze the histograms created by the \n"
+  std::cout << program_name << "is used to analyze the histograms created by the \n"
 	"wgAnaHist program. The result of the analysis is stored in the outputdir.\n"
 	"usage example: " << program_name << " -f inputfile.root -r -m 10 -d 1\n"
 	"  -h        : print this help\n"
@@ -46,14 +46,14 @@ int main(int argc, char** argv){
   int opt;
   int mode = 0;
   unsigned dif = 0;
-  string inputFileName("");
-  string configFileName("");
-  bitset<M> flags;
+  std::string inputFileName("");
+  std::string configFileName("");
+  std::bitset<M> flags;
 
   // Get the output directories from
   wgEnvironment env;
-  string outputXMLDir = env.XMLDATA_DIRECTORY;
-  string outputIMGDir = env.IMGDATA_DIRECTORY;
+  std::string outputXMLDir = env.XMLDATA_DIRECTORY;
+  std::string outputIMGDir = env.IMGDATA_DIRECTORY;
 
     while((opt = getopt(argc,argv, "f:d:m:i:o:q:prh")) !=-1 ) {
     switch(opt) {
@@ -99,7 +99,7 @@ int main(int argc, char** argv){
                            mode,
                            flags.to_ulong(),
                            dif)) != WG_SUCCESS ) {
-	Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + to_string(result));
+	Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + std::to_string(result));
 	exit(1);
   }
 

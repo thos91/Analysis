@@ -11,8 +11,6 @@
 // user includes
 #include "wgConst.hpp"
 
-using namespace std;
-
 // Number of flags
 #define M 7
 
@@ -25,7 +23,7 @@ using namespace std;
 #define SELECT_CHARGE_HG   6
 
 // Set the flags according to the mode
-void ModeSelect(int mode, bitset<M>& flag);
+void ModeSelect(int mode, std::bitset<M>& flag);
 
 // Only the ROOT Minuit2 minimizer is thread-safe. All the others are
 // not. So if ROOT has not support for the Minuit2 minimizer than we
