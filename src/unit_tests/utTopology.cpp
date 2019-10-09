@@ -8,7 +8,7 @@
 #include "wgTopology.hpp"
 
 int main () {
-  std::string xml_config_file("/home/neo/Threshold120/RawData/scurve_test_iDAC100_threshold120.xml");
+  std::string xml_config_file("/home/wagasci-ana/Code/Data/calibration/scurve_test/AcqConfig/wagasci_config_scurve_test.xml");
 
   std::cout << "\n ### GetTopologyFromFile test ###\n\n";
   std::cout << " # C API test #\n\n";

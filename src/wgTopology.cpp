@@ -96,10 +96,11 @@ Topology::Topology(const char * configxml, TopologySourceType source_type) :
     Topology(std::string(configxml), source_type) {}
 
 Topology::Topology(std::string source, TopologySourceType source_type) :
-    //m_mapping_file_path("/opt/calicoes/config/dif_mapping.txt") {
-    m_mapping_file_path("/Users/aoi/WAGASCI/Analysis/configs/mapping/dif_mapping.txt"){
+    m_dif_mapping_file_path("/opt/calicoes/config/dif_mapping.txt"),
+    m_mac_mapping_file_path("/opt/calicoes/config/mac_mapping.txt") {
 
   if ( source_type == TopologySourceType::xml_file ) {
+    this->GetGdccMacMapping();
     this->GetTopologyFromFile(source);
     this->GetGdccDifMapping();
     this->GdccMapToDifMap();
@@ -194,6 +195,29 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
     if( std::string(gdcc->Attribute("name")) != "gdcc_1_" + std::to_string(igdcc) ) {
       Log.eWrite("[GetTopology] inconsistency found when counting (GDCC = " + std::to_string(igdcc) + ")");
     }
+    XMLElement* param_gdcc;
+    bool found_gdcc = false;
+    std::string gdcc_mac_addr;
+    std::string gdcc_id;
+    for (param_gdcc = gdcc->FirstChildElement("param"); param_gdcc != NULL; param_gdcc = param_gdcc->NextSiblingElement("param")) {
+      if (std::string(param_gdcc->Attribute("name")) == "gdcc_mac_addr") {
+        gdcc_mac_addr = param_gdcc->GetText();
+        found_gdcc = true;
+        // Check if the GDCC MAC address is found in the mac_mapping.txt file
+        MacToGdccMap::iterator it = m_mac_to_gdcc_map.find(gdcc_mac_addr);
+        if (it != m_mac_to_gdcc_map.end()) {
+          gdcc_id = it->second;
+          Log.Write("GDCC address \"" + gdcc_id + "\" found in mac_mapping.txt");
+        } else {
+          gdcc_id = std::to_string(igdcc);
+          Log.Write("GDCC address not found in mac_mapping.txt");
+        }
+        break;
+      }
+    }
+    if (!found_gdcc) {
+      throw wgElementNotFound("[GetTopology] GDCC mac address not found (gdcc count = " + std::to_string(igdcc) + ")");
+    }
     // DIFs loop
     for (XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
       if( std::string(dif->Attribute("name")) != "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
@@ -203,11 +227,11 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
       bool found_dif = false;
       int dif_gdcc_port;
       for (param_dif = dif->FirstChildElement("param"); param_dif != NULL; param_dif = param_dif->NextSiblingElement("param")) {
-         if (std::string(param_dif->Attribute("name")) == "dif_gdcc_port") {
-           dif_gdcc_port = std::stoi(param_dif->GetText());
-           found_dif = true;
-           break;
-         }
+        if (std::string(param_dif->Attribute("name")) == "dif_gdcc_port") {
+          dif_gdcc_port = std::stoi(param_dif->GetText());
+          found_dif = true;
+          break;
+        }
       }
       if (!found_dif) {
         throw wgElementNotFound("[GetTopology] DIF GDCC port not found (dif count = " + std::to_string(idif) + ")");
@@ -240,14 +264,14 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
               enabled_channels = std::to_string(std::stoi(*first) + 1);
             }
             // Number of enabled channels
-            this->m_string_gdcc_map[std::to_string(igdcc)][std::to_string(dif_gdcc_port)][std::to_string(iasu)] = enabled_channels;
+            this->m_string_gdcc_map[gdcc_id][std::to_string(dif_gdcc_port)][std::to_string(iasu)] = enabled_channels;
             found_n_channels = true;
             break;
           }
         } // params loop
         if (!found_n_channels)
-          throw wgElementNotFound("[wgTopology] Number of channels not found : GDCC " + std::to_string(igdcc) +
-                                  ", DIF " + std::to_string(idif) + ", ASU " + std::to_string(iasu));
+          throw wgElementNotFound("[wgTopology] Number of channels not found : GDCC " + gdcc_id +
+                                  ", DIF " + std::to_string(dif_gdcc_port) + ", ASU " + std::to_string(iasu));
         iasu++;
       } // ASUs loop
       idif++;
@@ -298,9 +322,9 @@ std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
 //**********************************************************************
 void Topology::GetGdccDifMapping() {
   
-  if (!check_exist::TxtFile(m_mapping_file_path))
-    throw wgInvalidFile("[wgTopology] " + m_mapping_file_path + " file not found");
-  std::ifstream mapping_file(m_mapping_file_path);
+  if (!check_exist::TxtFile(m_dif_mapping_file_path))
+    throw wgInvalidFile("[wgTopology] " + m_dif_mapping_file_path + " file not found");
+  std::ifstream mapping_file(m_dif_mapping_file_path);
   nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
   mapping_file.close();
 
@@ -310,6 +334,19 @@ void Topology::GetGdccDifMapping() {
       this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(i.first, j.first)] = std::to_string(j.second);
     }
   }
+}
+
+//**********************************************************************
+void Topology::GetGdccMacMapping() {
+  
+  if (!check_exist::TxtFile(m_mac_mapping_file_path))
+    throw wgInvalidFile("[wgTopology] " + m_mac_mapping_file_path + " file not found");
+  std::ifstream mapping_file(m_mac_mapping_file_path);
+  nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
+  mapping_file.close();
+
+  for (auto const &i : mapping_json.get<std::map<std::string, std::string>>())
+    this->m_mac_to_gdcc_map[i.first] = i.second;
 }
 
 //**********************************************************************

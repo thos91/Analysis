@@ -18,6 +18,7 @@ typedef std::map<unsigned, std::map<unsigned, std::map< unsigned, unsigned>>> To
 typedef std::map<unsigned, std::map< unsigned, unsigned>> TopologyMapDif;
 typedef std::map<std::pair<std::string, std::string>, std::string> GdccToDifMap;
 typedef std::map<std::string, std::pair< std::string, std::string>> DifToGdccMap;
+typedef std::map<std::string, std::string>  MacToGdccMap;
 
 enum class TopologySourceType {
   xml_file,
@@ -70,34 +71,43 @@ class Topology {
   friend const char * GetGdccTopologyCtypes(const char * configxml);
   friend const char * FreeTopologyCtypes(const char * configxml);
   
-private:
+ private:
   // This file contains the GDCC,DIF to DIF mapping. This mapping is needed
   // because we want to label each DIF using an absolute number and not the
   // position relative to the GDCC. So for example, instead of saying "second
   // DIF connected to the third GDCC" we want to just call it "eigth DIF" and so
   // on so forth.
-  const std::string m_mapping_file_path;
+  const std::string m_dif_mapping_file_path;
   /* Example of dif_mapping.txt file:
      {
-       "0": {
-         "0": 0,
-         "1": 1,
-         "2": 2,
-         "3": 3
-        },
-      "1": {
-         "0": 4,
-         "1": 5,
-         "2": 6,
-         "3": 7
-        }
-      }
+     "1": {
+     "1": 0,
+     "2": 1,
+     "3": 2,
+     "4": 3
+     },
+     "2": {
+     "1": 4,
+     "2": 5,
+     "3": 6,
+     "4": 7
+     }
+     }
+  */
+  const std::string m_mac_mapping_file_path;
+  /* Example of mac_mapping.txt file:
+     {
+     "00:0A:35:01:FE:06": 1,
+     "00:0A:35:01:FE:01": 2
+     }
   */
 
   // Map from the GDCC, DIF pair into the absolute DIF number
   GdccToDifMap m_gdcc_to_dif_map = {};
   // Map from the absolute DIF number into the GDCC, DIF pair
   DifToGdccMap m_dif_to_gdcc_map = {};
+  // Map from GDCC MAC address to GDCC number
+  MacToGdccMap m_mac_to_gdcc_map = {};
   // String version of the gdcc_map
   StringTopologyMapGdcc m_string_gdcc_map = {};
   // String version of the dif_map
@@ -141,6 +151,12 @@ private:
   // populated.
   void GetGdccDifMapping();
 
+  // This function reads the JSON file
+  // "/opt/calicoes/config/mac_mapping.txt" containing the mapping of
+  // the GDCC MAC address into the GDCC number. Then the
+  // "this->m_mac_to_gdcc_map" map is populated.
+  void GetGdccMacMapping();
+
   // Transform the TopologyMapGdcc "gdcc_map" into the TopologyMapDif
   // "dif_map". Must be called after the GetTopology* and
   // GetGdccDifMapping functions.
@@ -155,9 +171,9 @@ private:
   // into the gdcc_map and dif_map respectively
   void StringToUnsigned(void);
   
-public:
+ public:
   // These are the most important members of the class. Basically this
-  // the only thing that the user must be concerned with.
+  // is the only thing that the user must be concerned with.
   //
   // dif_map = absolute dif -> chip -> number of channels
   TopologyMapDif dif_map = {};
@@ -194,7 +210,7 @@ public:
   //     GetTopologyFromScurveTree is called. Then GetGdccDifMapping is
   //     called. Then the TopologyMapDif is converted to
   //     TopologyMapGdcc using the DifMapToGdccMap method.
-    //
+  //
   // - TopologySourceType::gain_tree
   //
   //     GetTopologyFromGainTree is called. Then GetGdccDifMapping is
