@@ -5,6 +5,7 @@
 
 // boost includes
 #include <boost/tokenizer.hpp>
+#include <boost/algorithm/string.hpp>
 
 // json includes
 #include <nlohmann/json.hpp>
@@ -204,13 +205,13 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
         gdcc_mac_addr = param_gdcc->GetText();
         found_gdcc = true;
         // Check if the GDCC MAC address is found in the mac_mapping.txt file
-        MacToGdccMap::iterator it = m_mac_to_gdcc_map.find(gdcc_mac_addr);
+        MacToGdccMap::iterator it = m_mac_to_gdcc_map.find(boost::to_upper_copy(gdcc_mac_addr));
         if (it != m_mac_to_gdcc_map.end()) {
           gdcc_id = it->second;
-          Log.Write("GDCC address \"" + gdcc_id + "\" found in mac_mapping.txt");
+          Log.Write("GDCC address \"" + boost::to_upper_copy(gdcc_mac_addr) + "\" found in mac_mapping.txt");
         } else {
           gdcc_id = std::to_string(igdcc);
-          Log.Write("GDCC address not found in mac_mapping.txt");
+          Log.Write("GDCC address \"" + boost::to_upper_copy(gdcc_mac_addr) + "\" not found in mac_mapping.txt");
         }
         break;
       }
@@ -345,8 +346,10 @@ void Topology::GetGdccMacMapping() {
   nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
   mapping_file.close();
 
-  for (auto const &i : mapping_json.get<std::map<std::string, std::string>>())
-    this->m_mac_to_gdcc_map[i.first] = i.second;
+  auto mapping = mapping_json.get<std::map<std::string, nlohmann::json>>();
+
+  for (auto const &item : mapping)
+    this->m_mac_to_gdcc_map[item.first] = item.second.get<std::string>();
 }
 
 //**********************************************************************
