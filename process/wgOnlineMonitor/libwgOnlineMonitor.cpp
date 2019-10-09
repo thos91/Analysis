@@ -20,6 +20,9 @@
 // pyrame includes
 #include "pyrame.h"
 
+// MIDAS includes
+#include "mjsonrpc.h"
+
 // user includes
 #include "wgErrorCodes.hpp"
 #include "wgConst.hpp"
@@ -48,8 +51,10 @@ void newblock(void *workspace, struct block *block)
   int spill_flag   = std::stoi(get_block_field(block, "spill_flag"));
   int spill_count  = std::stoi(get_block_field(block, "spill_count"));
 
+#ifdef DEBUG_WG_ONLINE_MONITOR
   std::cout << "\nNew block\nID: " << block->id << " | Spill number: " << spill_number <<
-      " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;  
+      " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;
+#endif
 } //newblock
 
 // ==================================================================
@@ -135,9 +140,9 @@ void newevt(void *workspace, struct event *event)
     gain = -1;
   }
 
-  Float_t offset_time = bcid % 2 == 0 ? EVEN_TIME_OFFSET : ODD_TIME_OFFSET;
-  Float_t ramp_time   = bcid % 2 == 0 ? EVEN_RAMP_TIME : ODD_RAMP_TIME;
-  Float_t hittiming = bcid * BCID_NS  + (time - offset_time) * ramp_time;
+  // Float_t offset_time = bcid % 2 == 0 ? EVEN_TIME_OFFSET : ODD_TIME_OFFSET;
+  // Float_t ramp_time   = bcid % 2 == 0 ? EVEN_RAMP_TIME : ODD_RAMP_TIME;
+  // Float_t hittiming = bcid * BCID_NS  + (time - offset_time) * ramp_time;
   
 #ifdef DEBUG_WG_ONLINE_MONITOR
   char debug_message[1024];
@@ -148,9 +153,6 @@ void newevt(void *workspace, struct event *event)
                 ws->num_events, spill_number, spill_count, spill_flag,
                 bcid, time, column, chip, channel, plane,
                 x, y, z, hit, charge, gain);
-  std::cout << debug_message;
-  std::snprintf(debug_message, 1024, "\t\toffset_time:%.0f | ramp_time:%.0f | hittiming:%.0f\n",
-                offset_time, ramp_time, hittiming);
   std::cout << debug_message;
 #endif
   
@@ -271,4 +273,44 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
   Log.Write("End of loop!");
 
   return WG_SUCCESS;
+}
+
+static MJsonNode* send_channel_data(const MJsonNode* params)
+{
+   if (!params) {
+      MJSO* doc = MJSO::I();
+      doc->D("send channel data to mhttpd for the online monitor");
+      doc->P("DIF", MJSON_INT, "DIF number");
+      doc->P("CHIP", MJSON_INT, "CHIP number");
+      doc->P("CHANNEL", MJSON_INT, "CHANNEL number");
+      doc->R("charge", MJSON_STRING, "PEU values as a base64 string");
+      doc->R("time", MJSON_STRING, "time from beam trigger as a base64 string");
+      doc->R("gain", MJSON_STRING, "gain history");
+      doc->R("dark rate", MJSON_STRING, "dark rate history");
+      return doc;
+   }
+
+   MJsonNode* error = NULL;
+
+   int dif = mjsonrpc_get_param(params, "DIF", NULL)->GetInt();
+   if (error) return error;
+   int chip = mjsonrpc_get_param(params, "CHIP", NULL)->GetInt();
+   if (error) return error;
+   int channel = mjsonrpc_get_param(params, "CHANNEL", NULL)->GetInt();
+   if (error) return error;
+   
+   if (mjsonrpc_debug)
+     std::cout << "send_channel_data(dif=" << dif << ",chip=" <<
+         chip << ",channel=" << channel << ")\n";
+
+   MJsonNode* result = MJsonNode::MakeObject();
+
+   std::string charge, time, gain, dark_rate;
+   
+   result->AddToObject("charge", MJsonNode::MakeString(charge));
+   result->AddToObject("time", MJsonNode::MakeString(time));
+   result->AddToObject("gain", MJsonNode::MakeString(gain));
+   result->AddToObject("dark_rate", MJsonNode::MakeString(dark_rate));
+
+   return mjsonrpc_make_result(result);
 }
