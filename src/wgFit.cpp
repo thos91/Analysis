@@ -47,7 +47,8 @@ void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool prin
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
   }
-
+  bcid_hit->SetDirectory(0); 
+  
   // Find the right-most bin that is non-zero.
   Int_t last_bin = bcid_hit->FindLastBinAbove(0,1);
   if (last_bin <= 0) {
@@ -55,8 +56,8 @@ void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool prin
     //throw wgElementNotFound("BCID histogram has no entries : chip = " +
     //                        std::to_string(ichip) + ", chan = " +
     //                        std::to_string(ichan));
-  	return;
-	}
+    return;
+  }
   // Number of recorded spills
   Int_t spill_count = wgFit::histos.spill_count;
   if (spill_count <= 0) {
@@ -85,6 +86,7 @@ void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool prin
                m_output_img_dir.c_str(), ichip, ichan, ichip, ichan);
     wgFit::histos.Print_bcid(image, bcid_hit);
   }
+  delete bcid_hit;
 }
 
 //**********************************************************************
@@ -106,7 +108,7 @@ void wgFit::charge_hit(unsigned ichip, unsigned ichan, unsigned icol,
     //throw wgElementNotFound("CHARGE histogram has no entries : chip = " +
     //                        std::to_string(ichip) + ", chan = " +
     //                        std::to_string(ichan));
-  	return;
+    return;
   }
  
   charge_hit->GetXaxis()->SetRange(WG_BEGIN_CHARGE_HIT, WG_END_CHARGE_HIT);
@@ -151,7 +153,7 @@ void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol,
     //throw wgElementNotFound("CHARGE histogram has no entries : chip = " +
     //                        std::to_string(ichip) + ", chan = " +
     //                        std::to_string(ichan));
-  	return;
+    return;
   }
 
   charge_hit_HG->GetXaxis()->SetRange(WG_BEGIN_CHARGE_HIT_HG, WG_END_CHARGE_HIT_HG);
@@ -195,7 +197,7 @@ void wgFit::charge_nohit(unsigned ichip, unsigned ichan, unsigned icol,
     //throw wgElementNotFound("CHARGE histogram has no entries : chip = " +
     //                        std::to_string(ichip) + ", chan = " +
     //                        std::to_string(ichan));
-  	return;
+    return;
   }
 
   charge_nohit->GetXaxis()->SetRange(WG_BEGIN_CHARGE_NOHIT, WG_END_CHARGE_NOHIT);
