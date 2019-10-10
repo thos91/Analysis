@@ -217,8 +217,8 @@ class Topology {
   //     called. Then the TopologyMapDif is converted to
   //     TopologyMapGdcc using the DifMapToGdccMap method.
   
-  Topology(std::string configxml, TopologySourceType source_type = TopologySourceType::xml_file);
-  Topology(const char * configxml, TopologySourceType source_type = TopologySourceType::xml_file);
+  Topology(std::string source, TopologySourceType source_type = TopologySourceType::xml_file);
+  Topology(const char * source, TopologySourceType source_type = TopologySourceType::xml_file);
   
   // Returns m_gdcc_to_dif_map[pair<gdcc, dif>]
   std::string GetAbsDif(const std::string& gdcc, const std::string& dif);

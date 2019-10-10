@@ -22,6 +22,14 @@
 
 using namespace wagasci_tools;
 
+///////////////////////////////////////////////////////////////////////////////
+//                               Public methods                              //
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//                              Ctypes wrappers                              //
+///////////////////////////////////////////////////////////////////////////////
+
 //**********************************************************************
 const char * GetDifTopologyCtypes(const char * x_configxml) {
   std::string configxml(x_configxml);
@@ -93,49 +101,56 @@ void FreeTopologyCtypes(char * topology_string) {
   free(topology_string);
 }
 
-Topology::Topology(const char * configxml, TopologySourceType source_type) :
-    Topology(std::string(configxml), source_type) {}
+///////////////////////////////////////////////////////////////////////////////
+//                                Constructors                               //
+///////////////////////////////////////////////////////////////////////////////
+
+Topology::Topology(const char * source, TopologySourceType source_type) :
+    Topology(std::string(source), source_type) {}
 
 Topology::Topology(std::string source, TopologySourceType source_type) :
     m_dif_mapping_file_path("/opt/calicoes/config/dif_mapping.txt"),
     m_mac_mapping_file_path("/opt/calicoes/config/mac_mapping.txt") {
 
-  if ( source_type == TopologySourceType::xml_file ) {
-    this->GetGdccMacMapping();
-    this->GetTopologyFromFile(source);
-    this->GetGdccDifMapping();
-    this->GdccMapToDifMap();
-    this->StringToUnsigned();
-  }
-  else if ( source_type == TopologySourceType::json_string ) {
-    this->GetTopologyFromString(source);
-    this->GetGdccDifMapping();
-    if (this->m_string_gdcc_map.empty())
-      this->DifMapToGdccMap();
-    else
+  switch (source_type) {
+    case TopologySourceType::xml_file:
+      this->GetGdccMacMapping();
+      this->GetTopologyFromFile(source);
+      this->GetGdccDifMapping();
       this->GdccMapToDifMap();
-    this->StringToUnsigned();
+      this->StringToUnsigned();
+      break;
+    case TopologySourceType::json_string:
+      this->GetTopologyFromString(source);
+      this->GetGdccDifMapping();
+      if (this->m_string_gdcc_map.empty())
+        this->DifMapToGdccMap();
+      else
+        this->GdccMapToDifMap();
+      this->StringToUnsigned();
+      break;
+    case TopologySourceType::scurve_tree:
+      this->GetTopologyFromScurveTree(source);
+      this->GetGdccDifMapping();
+      this->DifMapToGdccMap();
+      this->StringToUnsigned();
+      break;
+    case TopologySourceType::pedestal_tree:
+      this->GetTopologyFromPedestalTree(source);
+      this->GetGdccDifMapping();
+      this->DifMapToGdccMap();
+      this->StringToUnsigned();
+      break;
+    case TopologySourceType::gain_tree:
+      this->GetTopologyFromGainTree(source);
+      this->GetGdccDifMapping();
+      this->DifMapToGdccMap();
+      this->StringToUnsigned();
+      break;
+    default:
+      throw std::invalid_argument("[wgTopology] TopologySourceType not recognized");
+      break;
   }
-  else if ( source_type == TopologySourceType::scurve_tree ) {
-    this->GetTopologyFromScurveTree(source);
-    this->GetGdccDifMapping();
-    this->DifMapToGdccMap();
-    this->StringToUnsigned();
-  }
-  else if ( source_type == TopologySourceType::pedestal_tree ) {
-    this->GetTopologyFromPedestalTree(source);
-    this->GetGdccDifMapping();
-    this->DifMapToGdccMap();
-    this->StringToUnsigned();
-  }
-  else if ( source_type == TopologySourceType::gain_tree ) {
-    this->GetTopologyFromGainTree(source);
-    this->GetGdccDifMapping();
-    this->DifMapToGdccMap();
-    this->StringToUnsigned();
-  }
-  else
-    throw std::invalid_argument("[wgTopology] TopologySourceType not recognized");
       
   this->n_difs = this->dif_map.size();
   for ( auto const & dif : this->dif_map) {
@@ -148,6 +163,166 @@ Topology::Topology(std::string source, TopologySourceType source_type) :
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//                          Get topology properties                          //
+///////////////////////////////////////////////////////////////////////////////
+
+//**********************************************************************
+std::string Topology::GetAbsDif(const std::string& gdcc, const std::string& dif) {
+  return this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(gdcc, dif)];
+}
+
+//**********************************************************************
+unsigned Topology::GetAbsDif(unsigned gdcc, unsigned dif) {
+  return std::stoi(GetAbsDif(std::to_string(gdcc), std::to_string(dif)));
+}
+
+//**********************************************************************
+std::pair<std::string, std::string> Topology::GetGdccDifPair(const std::string& dif) {
+  return this->m_dif_to_gdcc_map[dif];
+}
+
+//**********************************************************************
+std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
+  std::pair<std::string, std::string> gdcc_dir_pair(GetGdccDifPair(std::to_string(dif)));
+  return std::pair<unsigned, unsigned>(std::stoi(gdcc_dir_pair.first), std::stoi(gdcc_dir_pair.first));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                              Private methods                              //
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
+//                            Topology converters                            //
+///////////////////////////////////////////////////////////////////////////////
+
+//**********************************************************************
+void Topology::GdccMapToDifMap() {
+  for (auto const& gdcc : this->m_string_gdcc_map) {
+    for (auto const& dif: gdcc.second) {
+      for (auto const& asu: dif.second) {
+        std::string asu_mm(std::to_string(std::stoi(asu.first) - 1));
+        this->m_string_dif_map[this->GetAbsDif(gdcc.first, dif.first)][asu_mm] = this->m_string_gdcc_map[gdcc.first][dif.first][asu.first];
+      }
+    }
+  }
+}
+
+//**********************************************************************
+void Topology::DifMapToGdccMap() {
+  for (auto const& dif : this->m_string_dif_map) {
+    for (auto const& asu: dif.second) {
+      auto gdcc_dir_pair(this->GetGdccDifPair(dif.first));
+      std::string asu_pp(std::to_string(std::stoi(asu.first) + 1));
+      this->m_string_gdcc_map[gdcc_dir_pair.first][gdcc_dir_pair.second][asu_pp] = this->m_string_dif_map[dif.first][asu.first];
+    }
+  }
+}
+
+//**********************************************************************
+void Topology::StringToUnsigned(void) {
+  for (auto const& gdcc: this->m_string_gdcc_map) {
+    for (auto const& dif: gdcc.second) {
+      for (auto const& asu: dif.second) {
+        this->gdcc_map[std::stoi(gdcc.first)][std::stoi(dif.first)][std::stoi(asu.first)] = std::stoi(asu.second);
+      }
+    }
+  }
+  for (auto const& dif: this->m_string_dif_map) {
+    for (auto const& asu: dif.second) {
+      this->dif_map[std::stoi(dif.first)][std::stoi(asu.first)] = std::stoi(asu.second);
+    }
+  }    
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                          Parse mapping JSON files                         //
+///////////////////////////////////////////////////////////////////////////////
+
+//**********************************************************************
+void Topology::GetGdccMacMapping() {
+  
+  if (!check_exist::TxtFile(m_mac_mapping_file_path))
+    throw wgInvalidFile("[wgTopology] " + m_mac_mapping_file_path + " file not found");
+  std::ifstream mapping_file(m_mac_mapping_file_path);
+  nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
+  mapping_file.close();
+
+  auto mapping = mapping_json.get<std::map<std::string, nlohmann::json>>();
+
+  for (auto const &item : mapping)
+    this->m_mac_to_gdcc_map[item.first] = item.second.get<std::string>();
+}
+
+//**********************************************************************
+void Topology::GetGdccDifMapping() {
+  
+  if (!check_exist::TxtFile(m_dif_mapping_file_path))
+    throw wgInvalidFile("[wgTopology] " + m_dif_mapping_file_path + " file not found");
+  std::ifstream mapping_file(m_dif_mapping_file_path);
+  nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
+  mapping_file.close();
+
+  for (auto const &i : mapping_json.get<std::map<std::string, nlohmann::json>>() ) {
+    for (auto const &j : i.second.get<std::map<std::string, unsigned>>()) {
+      this->m_dif_to_gdcc_map[std::to_string(j.second)] = std::pair<std::string, std::string>(i.first, j.first);
+      this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(i.first, j.first)] = std::to_string(j.second);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                               Print topology                              //
+///////////////////////////////////////////////////////////////////////////////
+
+//**********************************************************************
+void Topology::PrintMapDif() {
+  for (auto const& dif: this->dif_map) {
+    std::cout << "DIF[" << dif.first << "] ";
+    for (auto const& asu: dif.second) {
+      std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
+    }
+  }
+  std::cout << "\n";
+}
+
+//**********************************************************************
+void Topology::PrintMapGdcc() {
+  for (auto const& gdcc: this->gdcc_map) {
+    std::cout << "GDCC[" << gdcc.first << "] ";
+    for (auto const& dif: gdcc.second) {
+      std::cout << "DIF[" << dif.first << "] ";
+      for (auto const& asu: dif.second) {
+        std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
+      }
+    }
+  }
+  std::cout << "\n";
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                From string                                //
+///////////////////////////////////////////////////////////////////////////////
+
+std::map<std::string, unsigned> ParseChipRange(std::pair<std::string, unsigned> asu_key) {
+  boost::char_separator<char> sep("-");
+  boost::tokenizer<boost::char_separator<char>> token(asu_key.first, sep);
+  boost::tokenizer<boost::char_separator<char>>::iterator first = token.begin();
+  boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
+  if (std::distance(first, last) != 2)
+    throw std::invalid_argument("[wgTopology] chip range is invalid : " + asu_key.first);
+  int first_chip = std::stoi(*first);
+  int last_chip = std::stoi(*++first);
+  if (first_chip == last_chip || last_chip < first_chip ||
+      last_chip - first_chip >= (int) NCHIPS || first_chip != 1)
+    throw std::invalid_argument("[wgTopology] chip range is invalid : " + asu_key.first);
+  std::map<std::string, unsigned> asu_map;
+  for (int i = 1; i < last_chip; ++i) {
+    asu_map[std::to_string(i)] = asu_key.second;
+  }
+  return asu_map;
+}
+
 //**********************************************************************
 void Topology::GetTopologyFromString(const std::string& json_string) {
   int max_depth = wagasci_tools::maxDepth(json_string);
@@ -156,8 +331,12 @@ void Topology::GetTopologyFromString(const std::string& json_string) {
     std::map<std::string, nlohmann::json> gdcc_map = json;
     for ( const auto& gdcc : gdcc_map ) {
       std::map<std::string, nlohmann::json> dif_map = gdcc.second;
-      for ( const auto& dif : dif_map ) {
+      for ( auto& dif : dif_map ) {
         std::map<std::string, unsigned> asu_map = dif.second;
+        if (asu_map.begin()->first.find('-') != std::string::npos) {
+          asu_map.clear();
+          asu_map = ParseChipRange(*asu_map.begin());
+        }
         for ( const auto& asu : asu_map ) {
           if (gdcc.first == "0" || gdcc.first.empty() ||
               dif.first == "0" || dif.first.empty() ||
@@ -183,6 +362,10 @@ void Topology::GetTopologyFromString(const std::string& json_string) {
     throw std::runtime_error("[wgTopology] Topology JSON string is malformed");
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//                        From Pyrame config xml file                        //
+///////////////////////////////////////////////////////////////////////////////
 
 //**********************************************************************
 void Topology::GetTopologyFromFile(const std::string& configxml) {
@@ -269,6 +452,7 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
               boost::tokenizer<boost::char_separator<char>>::iterator last = token.end();
               std::advance(first, std::distance(first, last) - 1);
               enabled_channels = std::to_string(std::stoi(*first) + 1);
+              delete sep;
             }
             // Number of enabled channels
             this->m_string_gdcc_map[gdcc_id][std::to_string(dif_gdcc_port)][std::to_string(iasu)] = enabled_channels;
@@ -289,122 +473,9 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
   } // GDCCs loop
 }
 
-//**********************************************************************
-void Topology::StringToUnsigned(void) {
-  for (auto const& gdcc: this->m_string_gdcc_map) {
-    for (auto const& dif: gdcc.second) {
-      for (auto const& asu: dif.second) {
-        this->gdcc_map[std::stoi(gdcc.first)][std::stoi(dif.first)][std::stoi(asu.first)] = std::stoi(asu.second);
-      }
-    }
-  }
-  for (auto const& dif: this->m_string_dif_map) {
-    for (auto const& asu: dif.second) {
-      this->dif_map[std::stoi(dif.first)][std::stoi(asu.first)] = std::stoi(asu.second);
-    }
-  }    
-}
-
-//**********************************************************************
-std::string Topology::GetAbsDif(const std::string& gdcc, const std::string& dif) {
-  return this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(gdcc, dif)];
-}
-
-//**********************************************************************
-unsigned Topology::GetAbsDif(unsigned gdcc, unsigned dif) {
-  return std::stoi(GetAbsDif(std::to_string(gdcc), std::to_string(dif)));
-}
-
-//**********************************************************************
-std::pair<std::string, std::string> Topology::GetGdccDifPair(const std::string& dif) {
-  return this->m_dif_to_gdcc_map[dif];
-}
-
-//**********************************************************************
-std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
-  std::pair<std::string, std::string> gdcc_dir_pair(GetGdccDifPair(std::to_string(dif)));
-  return std::pair<unsigned, unsigned>(std::stoi(gdcc_dir_pair.first), std::stoi(gdcc_dir_pair.first));
-}
-
-//**********************************************************************
-void Topology::GetGdccDifMapping() {
-  
-  if (!check_exist::TxtFile(m_dif_mapping_file_path))
-    throw wgInvalidFile("[wgTopology] " + m_dif_mapping_file_path + " file not found");
-  std::ifstream mapping_file(m_dif_mapping_file_path);
-  nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
-  mapping_file.close();
-
-  for (auto const &i : mapping_json.get<std::map<std::string, nlohmann::json>>() ) {
-    for (auto const &j : i.second.get<std::map<std::string, unsigned>>()) {
-      this->m_dif_to_gdcc_map[std::to_string(j.second)] = std::pair<std::string, std::string>(i.first, j.first);
-      this->m_gdcc_to_dif_map[std::pair<std::string, std::string>(i.first, j.first)] = std::to_string(j.second);
-    }
-  }
-}
-
-//**********************************************************************
-void Topology::GetGdccMacMapping() {
-  
-  if (!check_exist::TxtFile(m_mac_mapping_file_path))
-    throw wgInvalidFile("[wgTopology] " + m_mac_mapping_file_path + " file not found");
-  std::ifstream mapping_file(m_mac_mapping_file_path);
-  nlohmann::json mapping_json = nlohmann::json::parse(mapping_file);
-  mapping_file.close();
-
-  auto mapping = mapping_json.get<std::map<std::string, nlohmann::json>>();
-
-  for (auto const &item : mapping)
-    this->m_mac_to_gdcc_map[item.first] = item.second.get<std::string>();
-}
-
-//**********************************************************************
-void Topology::GdccMapToDifMap() {
-  for (auto const& gdcc : this->m_string_gdcc_map) {
-    for (auto const& dif: gdcc.second) {
-      for (auto const& asu: dif.second) {
-        std::string asu_mm(std::to_string(std::stoi(asu.first) - 1));
-        this->m_string_dif_map[this->GetAbsDif(gdcc.first, dif.first)][asu_mm] = this->m_string_gdcc_map[gdcc.first][dif.first][asu.first];
-      }
-    }
-  }
-}
-
-//**********************************************************************
-void Topology::DifMapToGdccMap() {
-  for (auto const& dif : this->m_string_dif_map) {
-    for (auto const& asu: dif.second) {
-      auto gdcc_dir_pair(this->GetGdccDifPair(dif.first));
-      std::string asu_pp(std::to_string(std::stoi(asu.first) + 1));
-      this->m_string_gdcc_map[gdcc_dir_pair.first][gdcc_dir_pair.second][asu_pp] = this->m_string_dif_map[dif.first][asu.first];
-    }
-  }
-}
-
-//**********************************************************************
-void Topology::PrintMapDif() {
-  for (auto const& dif: this->dif_map) {
-    std::cout << "DIF[" << dif.first << "] ";
-    for (auto const& asu: dif.second) {
-      std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
-    }
-  }
-  std::cout << "\n";
-}
-
-//**********************************************************************
-void Topology::PrintMapGdcc() {
-  for (auto const& gdcc: this->gdcc_map) {
-    std::cout << "GDCC[" << gdcc.first << "] ";
-    for (auto const& dif: gdcc.second) {
-      std::cout << "DIF[" << dif.first << "] ";
-      for (auto const& asu: dif.second) {
-        std::cout << "ASU["<< asu.first << "] = " << asu.second << " ";
-      }
-    }
-  }
-  std::cout << "\n";
-}
+///////////////////////////////////////////////////////////////////////////////
+//                             From pedestal tree                            //
+///////////////////////////////////////////////////////////////////////////////
 
 //**********************************************************************
 void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
@@ -504,6 +575,10 @@ void Topology::GetTopologyFromPedestalTree(std::string input_run_dir) {
     }
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//                              From Scurve tree                             //
+///////////////////////////////////////////////////////////////////////////////
 
 //**********************************************************************
 void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
@@ -619,6 +694,10 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
     }
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//                               From gain tree                              //
+///////////////////////////////////////////////////////////////////////////////
 
 //**********************************************************************
 void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
