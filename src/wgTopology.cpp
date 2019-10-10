@@ -159,6 +159,12 @@ void Topology::GetTopologyFromString(const std::string& json_string) {
       for ( const auto& dif : dif_map ) {
         std::map<std::string, unsigned> asu_map = dif.second;
         for ( const auto& asu : asu_map ) {
+          if (gdcc.first == "0" || gdcc.first.empty() ||
+              dif.first == "0" || dif.first.empty() ||
+              asu.first == "0" || asu.first.empty() ||
+              asu.second == 0)
+            throw std::invalid_argument("[wgTopology] zero or empty key or value in topology string."
+                                        " Remember in the GDCC topology everything starts from 1");
           this->m_string_gdcc_map[gdcc.first][dif.first][asu.first] = std::to_string(asu.second);
         }
       }
