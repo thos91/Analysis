@@ -229,6 +229,8 @@ class Topology {
   std::pair<std::string, std::string> GetGdccDifPair(const std::string& dif);
   // Returns m_dif_to_gdcc_map[dif] after converting the argument into string
   std::pair<unsigned, unsigned> GetGdccDifPair(unsigned dif);
+  // Return the GDCC ID from its MAC address
+  unsigned GetGdccID(std::string mac);
   
   // Print the TopologyMapDif map member to cout
   void PrintMapDif();

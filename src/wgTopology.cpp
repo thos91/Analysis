@@ -188,6 +188,11 @@ std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
   return std::pair<unsigned, unsigned>(std::stoi(gdcc_dir_pair.first), std::stoi(gdcc_dir_pair.first));
 }
 
+//**********************************************************************
+unsigned Topology::GetGdccID(std::string mac) {
+  return (unsigned) std::stoi(this->m_mac_to_gdcc_map[mac]);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //                              Private methods                              //
 ///////////////////////////////////////////////////////////////////////////////
