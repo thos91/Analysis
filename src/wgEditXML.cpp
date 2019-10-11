@@ -669,9 +669,7 @@ void wgEditXML::SUMMARY_GetPedFitValue(int value[MEMDEPTH], const int ich){
 //**********************************************************************
 void wgEditXML::OPT_Make(const std::string& filename, 
                          u1vector inputDACs,
-                         unsigned n_difs,
-                         u1vector n_chips,
-                         u2vector n_chans) {
+                         TopologyMapDif dif_map) {
 
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
@@ -692,17 +690,17 @@ void wgEditXML::OPT_Make(const std::string& filename,
   data = xml->NewElement("data");
   xml->InsertEndChild(data);
 
-  for(unsigned idif = 0; idif < n_difs; ++idif) {
+  for (const auto &idif : dif_map) {
     // ***** data > dif ***** //
-    snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif.first);
     dif = xml->NewElement(str);
     data->InsertEndChild(dif);
-    for(unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
+    for (const auto &ichip : idif.second) {
       // ***** data > dif > chip ***** //
-      snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip);
+      snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip.first);
       chip = xml->NewElement(str);
       dif->InsertEndChild(chip);
-      for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+      for (unsigned ichan = 0; ichan < ichip.second; ++ichan) {
         // ***** data > dif > chip > channel ***** //
         snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
         chan = xml->NewElement(str);    
@@ -715,12 +713,12 @@ void wgEditXML::OPT_Make(const std::string& filename,
         chan->InsertEndChild(slope_threshold[1]);
         intercept_threshold[1] = xml->NewElement("intercept_threshold2");
         chan->InsertEndChild(intercept_threshold[1]);
-        for(unsigned iDAC = 0; iDAC < inputDACs.size(); ++iDAC) {
+        for (unsigned iDAC = 0; iDAC < inputDACs.size(); ++iDAC) {
           // ***** data > dif > chip > channel > inputDAC ***** //
           snprintf(str, XML_ELEMENT_STRING_LENGTH, "inputDAC_%d", inputDACs[iDAC]);
           inputDAC = xml->NewElement(str);
           chan->InsertEndChild(inputDAC);
-          for(unsigned pe = 1; pe <= 2; ++pe) {
+          for (unsigned pe = 1; pe <= 2; ++pe) {
             snprintf(str, XML_ELEMENT_STRING_LENGTH, "threshold_%d", pe);
             threshold = xml->NewElement(str);
             inputDAC->InsertEndChild(threshold);
