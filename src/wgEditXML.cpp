@@ -126,23 +126,61 @@ bool wgEditXML::GetConfig(const std::string& configxml,
       throw std::invalid_argument("ichip is greater than " + std::to_string(NCHIPS));
 
     XMLDocument configfile;
+    Topology topology(configxml);
     configfile.LoadFile(configxml.c_str()); 
     XMLElement* ecal = configfile.FirstChildElement("ecal");
     XMLElement* domain = ecal->FirstChildElement("domain");
     XMLElement* acqpc = domain->FirstChildElement("acqpc");
     // GDCCs loop
-    for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-      if( std::string(gdcc->Attribute("name")) == "gdcc_1_" + std::to_string(igdcc) ) {
+    unsigned gdcc_counter = 0;
+    for (XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
+         gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
+      ++gdcc_counter;
+      std::string mac;
+      bool found_mac = false;
+      for (XMLElement* param = gdcc->FirstChildElement("param");
+           param != NULL; param = param->NextSiblingElement("param")) {
+        if (std::string(param->Attribute("name")) == "gdcc_mac_addr") {
+          mac = param->GetText();
+          found_mac = true;
+          break;
+        }
+      }
+      if (!found_mac)
+        throw wgElementNotFound("[GetConfig] GDCC mac not found");
+      else if (igdcc == topology.GetGdccID(mac)) {
         // DIFs loop
-        for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-          if( std::string(dif->Attribute("name")) == "dif_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+        unsigned dif_counter = 0;
+        for (XMLElement* dif = gdcc->FirstChildElement("dif");
+             dif != NULL; dif = dif->NextSiblingElement("dif")) {
+          ++dif_counter;
+          unsigned port_nb;
+          bool found_port = false;
+          for (XMLElement* param = dif->FirstChildElement("param");
+               param != NULL; param = param->NextSiblingElement("param")) {
+            if (std::string(param->Attribute("name")) == "dif_gdcc_port") {
+              port_nb = std::stoi(param->GetText());
+              found_port = true;
+              break;
+            }
+          }
+          if (!found_port)
+            throw wgElementNotFound("[GetConfig] GDCC port not found");
+          else if (idif == port_nb) {
             // ASUs loop
-            for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-              if( std::string(asu->Attribute("name")) == "asu_1_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
+            for (XMLElement* asu = dif->FirstChildElement("asu");
+                 asu != NULL; asu = asu->NextSiblingElement("asu")) {
+              if (std::string(asu->Attribute("name")) == "asu_1_" +
+                  std::to_string(gdcc_counter) + "_" +
+                  std::to_string(dif_counter) + "_" +
+                  std::to_string(ichip)) {
                 XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
+                if (spiroc2d == NULL)
+                  throw wgElementNotFound("[GetConfig] no spiroc2d element. Probably wrong xml file.");
                 // loop to find the spiroc2d_bitstream parameter
-                for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-                  if( std::string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
+                for (XMLElement* param = spiroc2d->FirstChildElement("param");
+                     param != NULL; param = param->NextSiblingElement("param")) {
+                  if (std::string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
                     bitstream = param->GetText();
                     found=true;
                     break;
@@ -150,13 +188,13 @@ bool wgEditXML::GetConfig(const std::string& configxml,
                 }
               }
               // If the bitstream was found exit the ASU loop
-              else if (found) break;
+              if (found) break;
             }
           }
         }
       }
     }
-    if (found == false) return false;
+    if (!found) return false;
 
     wgEditConfig EditCon(bitstream, true);
     v.clear();
@@ -170,7 +208,10 @@ bool wgEditXML::GetConfig(const std::string& configxml,
     }
   }
   catch (const std::exception& e) {
-    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + std::to_string(idif) + ", chip = " + std::to_string(ichip) + " : " + std::string(e.what()));
+    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream "
+               "(DIF = " + std::to_string(idif) +
+               ", chip = " + std::to_string(ichip) +
+               " : " + std::string(e.what()));
     return false;
   }
   return true;
