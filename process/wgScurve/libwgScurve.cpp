@@ -79,40 +79,14 @@ int wgScurve(const char* x_inputDir,
      ********************************************************************************/
         
     // Get topology from input directory.
-    // Get the number of dif, chip, channel, imputDAC and threshold. 
     Topology topol(inputDir, TopologySourceType::scurve_tree);
+
+    // Get the number imputDAC and threshold
     std::vector<std::string> list_dir = ListDirectoriesWithInteger(inputDir);
     const unsigned n_inputDAC  = list_dir.size();
     const unsigned n_threshold = HowManyDirectories(list_dir.at(0));
-
-
-		std::vector<std::string> th_dir_list = ListDirectoriesWithInteger(list_dir.at(0));
-		std::string th_directory = th_dir_list.at(0);
-    th_directory += "/wgAnaHistSummary/Xml";
-    std::vector<std::string> dif_dir_list = ListDirectoriesWithInteger(th_directory);
-    std::sort(dif_dir_list.begin(), dif_dir_list.end());
-		unsigned n_difs = dif_dir_list.size();
-    u1vector n_chips;
-    u2vector n_chans;
-    unsigned dif_counter = 0;
-    for (auto const & idif_directory : dif_dir_list) {
-      std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
-      std::sort(chip_xml_list.begin(), chip_xml_list.end());
-	    n_chips.push_back(chip_xml_list.size());
-      n_chans.push_back(u1vector());
-      unsigned chip_counter = 0;
-			for (auto const & ichip_xml : chip_xml_list) {
-        try { Edit.Open(ichip_xml); }
-        catch (const std::exception& e) {
-          throw wgInvalidFile("[wgScurve] : " + std::string(e.what()));
-        }
-        n_chans[dif_counter].push_back(Edit.SUMMARY_GetGlobalConfigValue("n_chans"));
-        Edit.Close();
-				++chip_counter;
-      }
-      ++dif_counter;
-    } // dif
-
+    unsigned n_difs = topol.n_difs;
+    
     // inputDAC[] and threshold[] contain true values for each index.
     // Be careful that i_iDAC and i_threshold are only the index 
     // to get the true value in the code. We may be able to get 
@@ -132,32 +106,37 @@ int wgScurve(const char* x_inputDir,
     d5vector noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
     d5vector noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
     //  and resize them.
-    for (unsigned idif = 0; idif < n_difs; ++idif) {
-      slope1     [idif].resize(n_chips[idif]);
-      slope2     [idif].resize(n_chips[idif]);
-      intercept1 [idif].resize(n_chips[idif]);
-      intercept2 [idif].resize(n_chips[idif]);
-      pe1        [idif].resize(n_chips[idif]);
-      pe2        [idif].resize(n_chips[idif]);
-      noise      [idif].resize(n_chips[idif]);
-      noise_sigma[idif].resize(n_chips[idif]);
-      for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
-        slope1     [idif][ichip].resize(n_chans[idif][ichip]);
-        slope2     [idif][ichip].resize(n_chans[idif][ichip]);
-        intercept1 [idif][ichip].resize(n_chans[idif][ichip]);
-        intercept2 [idif][ichip].resize(n_chans[idif][ichip]);
-        pe1        [idif][ichip].resize(n_chans[idif][ichip]);
-        pe2        [idif][ichip].resize(n_chans[idif][ichip]);
-        noise      [idif][ichip].resize(n_chans[idif][ichip]);
-        noise_sigma[idif][ichip].resize(n_chans[idif][ichip]);
-        for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
-          pe1        [idif][ichip][ichan].resize(n_inputDAC);
-          pe2        [idif][ichip][ichan].resize(n_inputDAC);
-          noise      [idif][ichip][ichan].resize(n_inputDAC);
-          noise_sigma[idif][ichip][ichan].resize(n_inputDAC);
+    unsigned dif_counter = 0;
+    u1vector dif_counter_to_id;
+    for (const auto &dif : topol.dif_map) {
+      dif_counter_to_id.push_back(dif.first);
+      unsigned n_chips = dif.second.size();
+      slope1     [dif_counter].resize(n_chips);
+      slope2     [dif_counter].resize(n_chips);
+      intercept1 [dif_counter].resize(n_chips);
+      intercept2 [dif_counter].resize(n_chips);
+      pe1        [dif_counter].resize(n_chips);
+      pe2        [dif_counter].resize(n_chips);
+      noise      [dif_counter].resize(n_chips);
+      noise_sigma[dif_counter].resize(n_chips);
+      for (const auto &asu : dif.second) {
+        unsigned n_chans = asu.second;
+        slope1     [dif_counter][asu.first].resize(n_chans);
+        slope2     [dif_counter][asu.first].resize(n_chans);
+        intercept1 [dif_counter][asu.first].resize(n_chans);
+        intercept2 [dif_counter][asu.first].resize(n_chans);
+        pe1        [dif_counter][asu.first].resize(n_chans);
+        pe2        [dif_counter][asu.first].resize(n_chans);
+        noise      [dif_counter][asu.first].resize(n_chans);
+        noise_sigma[dif_counter][asu.first].resize(n_chans);
+        for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
+          pe1        [dif_counter][asu.first][ichan].resize(n_inputDAC);
+          pe2        [dif_counter][asu.first][ichan].resize(n_inputDAC);
+          noise      [dif_counter][asu.first][ichan].resize(n_inputDAC);
+          noise_sigma[dif_counter][asu.first][ichan].resize(n_inputDAC);
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
-            noise      [idif][ichip][ichan][i_iDAC].resize(n_threshold);
-            noise_sigma[idif][ichip][ichan][i_iDAC].resize(n_threshold);
+            noise      [dif_counter][asu.first][ichan][i_iDAC].resize(n_threshold);
+            noise_sigma[dif_counter][asu.first][ichan][i_iDAC].resize(n_threshold);
           }
         }
       }
@@ -167,7 +146,6 @@ int wgScurve(const char* x_inputDir,
      *                              Read XML files                                  *
      ********************************************************************************/
 
-    std::map<unsigned, unsigned> dif_counter_to_id;
     unsigned i_iDAC = 0;  // index for inputDAC
     // input DAC
     std::vector<std::string> iDAC_dir_list = ListDirectoriesWithInteger(inputDir);
@@ -181,11 +159,12 @@ int wgScurve(const char* x_inputDir,
         std::vector<std::string> dif_dir_list = ListDirectories(th_directory);
         std::sort(dif_dir_list.begin(), dif_dir_list.end());
         unsigned dif_counter = 0;
-        for (auto const & idif_directory : dif_dir_list) {
-          unsigned dif_id = extractIntegerFromString(GetName(idif_directory));
-          dif_counter_to_id[dif_counter] = dif_id;
+        for (auto const & dif_directory : dif_dir_list) {
+          unsigned dif_id = extractIntegerFromString(GetName(dif_directory));
+          if (dif_id != dif_counter_to_id[dif_counter])
+            throw std::runtime_error("DIF ID and DIF counter mismatch");
           // chip
-          std::vector<std::string> chip_xml_list = ListFilesWithExtension(idif_directory, "xml");
+          std::vector<std::string> chip_xml_list = ListFilesWithExtension(dif_directory, "xml");
           for (auto const & ichip_xml : chip_xml_list) {
             unsigned ichip = extractIntegerFromString(GetName(ichip_xml));
                   
@@ -198,7 +177,7 @@ int wgScurve(const char* x_inputDir,
             // ************* Read XML file ************* //
             threshold[i_threshold] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
             // channel
-            for (unsigned ichan = 0; ichan < n_chans[dif_counter][ichip]; ++ichan) {
+            for (unsigned ichan = 0; ichan < topol.dif_map[dif_id][ichip]; ++ichan) {
               // get noise rate for each channel 
               inputDAC[i_iDAC] = Edit.SUMMARY_GetChConfigValue("inputDAC",ichan);
               noise      [dif_counter][ichip][ichan][i_iDAC][i_threshold] = Edit.SUMMARY_GetChFitValue("noise_rate", ichan);
@@ -212,13 +191,14 @@ int wgScurve(const char* x_inputDir,
       } // threshold
       ++i_iDAC;
     } // inputDAC
+
     /********************************************************************************
      *                        Draw and fit the S-curve                              *
      ********************************************************************************/
-        
+
     for (unsigned idif = 0; idif < n_difs; ++idif){
-      for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
-        for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+      for (unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ++ichip) {
+        for (unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ++ichan) {
           std::string image_dir = outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                                   + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan);;
           MakeDir(image_dir);
@@ -350,9 +330,7 @@ int wgScurve(const char* x_inputDir,
     std::string xmlfile(outputXMLDir + "/threshold_card.xml");
 
     try {
-      //if( !check_exist::XmlFile(xmlfile) ){
-      Edit.OPT_Make(xmlfile, inputDAC, n_difs, n_chips, n_chans);
-      //}
+      Edit.OPT_Make(xmlfile, inputDAC, topol.dif_map);
       Edit.Open(xmlfile);
     }
     catch (const wgInvalidFile & e) {
@@ -361,8 +339,8 @@ int wgScurve(const char* x_inputDir,
     }
 
     for (unsigned idif = 0; idif < n_difs; ++idif) {
-      for (unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
-        for (unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+      for (unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ++ichip) {
+        for (unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ++ichan) {
           // Set the slope and intercept values for the result of fitting threshold-inputDAC plot.
           Edit.OPT_SetChanValue(std::string("slope_threshold1"),     dif_counter_to_id[idif], ichip, ichan, slope1    [idif][ichip][ichan], NO_CREATE_NEW_MODE);
           Edit.OPT_SetChanValue(std::string("intercept_threshold1"), dif_counter_to_id[idif], ichip, ichan, intercept1[idif][ichip][ichan], NO_CREATE_NEW_MODE);
