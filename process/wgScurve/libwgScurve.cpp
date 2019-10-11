@@ -196,9 +196,10 @@ int wgScurve(const char* x_inputDir,
      *                        Draw and fit the S-curve                              *
      ********************************************************************************/
 
-    for (unsigned idif = 0; idif < n_difs; ++idif){
-      for (unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ++ichip) {
-        for (unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ++ichan) {
+    for (unsigned idif = 0; idif < n_difs; ++idif) {
+      for (const auto &asu : topol.dif_map[dif_counter_to_id[idif]]) {
+        unsigned ichip = asu.first;
+        for (unsigned ichan = 0; ichan < asu.second; ++ichan) {
           std::string image_dir = outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                                   + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan);;
           MakeDir(image_dir);
