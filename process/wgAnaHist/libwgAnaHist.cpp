@@ -230,11 +230,11 @@ int wgAnaHist(const char * x_input_file,
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
               // Calculate the pedestal value and its sigma
 #ifdef ROOT_HAS_NOT_MINUIT2
-              mtx.lock();
+              MUTEX.lock();
 #endif
               Fit.charge_nohit(ichip, ichan, icol, fit_charge_nohit, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
-              mtx.unlock();
+              MUTEX.unlock();
 #endif
               xml.SetColValue(std::string("charge_nohit"), icol, fit_charge_nohit[0], CREATE_NEW_MODE);
               xml.SetColValue(std::string("sigma_nohit"),  icol, fit_charge_nohit[1], CREATE_NEW_MODE);
@@ -247,11 +247,11 @@ int wgAnaHist(const char * x_input_file,
             double fit_charge[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
-              mtx.lock();
+              MUTEX.lock();
 #endif
               Fit.charge_hit(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
-              mtx.unlock();
+              MUTEX.unlock();
 #endif
               xml.SetColValue(std::string("charge_hit"), icol, fit_charge[0], CREATE_NEW_MODE);
               xml.SetColValue(std::string("sigma_hit") , icol, fit_charge[1], CREATE_NEW_MODE);
@@ -264,11 +264,11 @@ int wgAnaHist(const char * x_input_file,
             double fit_charge_HG[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
-              mtx.lock();
+              MUTEX.lock();
 #endif
               Fit.charge_hit_HG(ichip, ichan, icol, fit_charge_HG, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
-              mtx.unlock();
+              MUTEX.unlock();
 #endif
               xml.SetColValue(std::string("charge_hit_HG"), icol, fit_charge_HG[0], CREATE_NEW_MODE);
               xml.SetColValue(std::string("sigma_hit_HG"),  icol, fit_charge_HG[1], CREATE_NEW_MODE);

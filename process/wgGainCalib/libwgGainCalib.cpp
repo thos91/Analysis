@@ -214,11 +214,11 @@ int wgGainCalib(const char * x_input_run_dir,
           }
           graphs[icol] = new TGraphErrors(root_idac, root_gain, root_idac_err, root_gain_err);
 #ifdef ROOT_HAS_NOT_MINUIT2
-          mtx.lock();
+          MUTEX.lock();
 #endif
           graphs[icol]->Fit("pol1", "QE", "same");
 #ifdef ROOT_HAS_NOT_MINUIT2
-          mtx.unlock();
+          MUTEX.unlock();
 #endif
           graphs[icol]->SetMarkerColor(632);
           graphs[icol]->SetMarkerSize(1);
