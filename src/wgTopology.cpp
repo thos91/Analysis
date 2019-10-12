@@ -402,10 +402,9 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
         MacToGdccMap::iterator it = m_mac_to_gdcc_map.find(boost::to_upper_copy(gdcc_mac_addr));
         if (it != m_mac_to_gdcc_map.end()) {
           gdcc_id = it->second;
-          Log.Write("[wgTopology] GDCC address \"" + boost::to_upper_copy(gdcc_mac_addr) + "\" found in mac_mapping.txt");
         } else {
           gdcc_id = std::to_string(igdcc);
-          Log.Write("[wgTopology] GDCC address \"" + boost::to_upper_copy(gdcc_mac_addr) + "\" not found in mac_mapping.txt");
+          Log.eWrite("[wgTopology] GDCC address \"" + boost::to_upper_copy(gdcc_mac_addr) + "\" not found in mac_mapping.txt");
         }
         break;
       }

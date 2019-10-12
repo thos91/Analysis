@@ -191,7 +191,7 @@ unsigned extractIntegerFromString(const std::string& str) {
   if (n != std::string::npos)
   {
     std::size_t const m = str.find_first_not_of("0123456789", n);
-    return stoi(str.substr(n, m != std::string::npos ? m-n : m));
+    return std::stoi(str.substr(n, m != std::string::npos ? m-n : m));
   }
   return UINT_MAX;
 }
