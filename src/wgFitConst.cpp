@@ -13,12 +13,12 @@ const int WG_BEGIN_CHARGE_HIT_HG = 350;
 const int WG_END_CHARGE_HIT_HG = 750;
 
 // limits for the dark noise rate
-const double WG_LOWER_LIMIT_1PE = 20000;
-const double WG_UPPER_LIMIT_1PE = 160000;
-const double WG_LOWER_LIMIT_2PE = 1000;
-const double WG_UPPER_LIMIT_2PE = 8000;
-const double WG_LOWER_LIMIT_3PE = 50;
-const double WG_UPPER_LIMIT_3PE = 400;
+const double WG_LOWER_LIMIT_1PE = 20000;  // 20 kHz
+const double WG_UPPER_LIMIT_1PE = 160000; // 160 kHz
+const double WG_LOWER_LIMIT_2PE = 1000;   // 1 kHz
+const double WG_UPPER_LIMIT_2PE = 8000;   // 8 kHz
+const double WG_LOWER_LIMIT_3PE = 50;     // 50 Hz
+const double WG_UPPER_LIMIT_3PE = 400;    // 400 Hz
 
 // nominal value for the MPPC gain
 const double WG_NOMINAL_GAIN = 40;
