@@ -215,6 +215,8 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_BCID]++;
   }
 
+  // std::cout << "chip counter " << section.ichip  << " | nb col " << n_columns << "\n";
+  
   for (unsigned icol = 0; icol < n_columns; ++icol) {
 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
@@ -275,6 +277,7 @@ void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Secti
 void SectionReader::FillTree() {
   if (m_tree->Fill() < 0)
     throw std::runtime_error("Failed to fill the TTree");
+  this->m_rd.get().clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

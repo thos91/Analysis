@@ -337,12 +337,9 @@ int wgDecoder(const char * x_input_raw_file,
 
       // ============ Print the progress every 1000 spills ============ //
       
-      if (current_section.type == SectionSeeker::SectionType::SpillTrailer) {
-        rd.clear();
-        if ((n_good_spills + n_bad_spills) % 1000 == 0) {
-          Log.Write("[wgDecoder] Decoded " + std::to_string(n_good_spills + n_bad_spills) + " spills");
-        }
-      }
+      if (current_section.type == SectionSeeker::SectionType::SpillTrailer &&
+          (n_good_spills + n_bad_spills) % 1000 == 0)
+        Log.Write("[wgDecoder] Decoded " + std::to_string(n_good_spills + n_bad_spills) + " spills");
       
       last_section_type = current_section.type;
     }
