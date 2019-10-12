@@ -57,9 +57,8 @@ int wgChangeConfig(const char * x_input_file,
     }
   }
 
-  bool is_bitstream_string = false;
-
   try {
+    bool is_bitstream_string = false;
     wgEditConfig EditConfig(input_file, is_bitstream_string);
   
     // Sanity check of the passed arguments
@@ -175,12 +174,12 @@ int wgChangeConfig(const char * x_input_file,
       EditConfig.Write(output_file);
     }
     catch (const std::exception &e) {
-      Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to write value :" + e.what());
+      Log.eWrite("[wgChangeConfig][" + input_file + "] failed to write value :" + e.what());
       return ERR_FAILED_WRITE;
     }
   } // catch the exception thrown by the EditConfig constructor
   catch (const std::exception& e) {
-    Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to open the input file : " + e.what());
+    Log.eWrite("[wgChangeConfig][" + input_file + "] failed to open the input file : " + e.what());
   }
   return WG_SUCCESS;
 }

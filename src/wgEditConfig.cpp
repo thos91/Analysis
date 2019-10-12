@@ -28,9 +28,9 @@
 using namespace wagasci_tools;
 
 //*********************************************************************************
-wgEditConfig::wgEditConfig(const std::string& input, bool bitstream_string){
+wgEditConfig::wgEditConfig(const std::string& input, bool is_bitstream_string){
   this->Clear();
-  if (bitstream_string) this->SetBitstream(input);
+  if (is_bitstream_string) this->SetBitstream(input);
   else this->Open(input);
 }
 
@@ -74,11 +74,12 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
 //*********************************************************************************
 void wgEditConfig::Open(const std::string& input){
   std::string str;
-  std::ifstream ifs(input.c_str());
+  std::ifstream ifs;
+  ifs.open(input);
   getline(ifs, str);
   if( str.size() != BITSTREAM_HEX_STRING_LENGTH) {
     ifs.close();
-    throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + std::to_string(input.size()));
+    throw std::invalid_argument("[Open] wrong size of the bitstream string : " + std::to_string(str.size()));
   }
   ifs.close();
   wgEditConfig::hex_config = str.substr(2, BITSTREAM_HEX_STRING_LENGTH - 2);

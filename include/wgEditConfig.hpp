@@ -47,7 +47,7 @@ private:
 public:
   // constructor
   // Open a bitstream file and initialized the members to zero
-  wgEditConfig(const std::string&, bool bitstream_string);
+  wgEditConfig(const std::string& input, bool is_bitstream_string);
   
   // wgEditConfig::Write
   // Write the bi_config string member to the output file
