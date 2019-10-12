@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <climits>
+#include <mutex>
 
 // ROOT includes
 #include <TROOT.h>

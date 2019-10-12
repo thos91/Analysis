@@ -1,3 +1,6 @@
+// system includes
+#include <mutex>
+
 // ROOT includes
 #include "TROOT.h"
 #include "TPluginManager.h"
