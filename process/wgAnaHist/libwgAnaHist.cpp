@@ -136,8 +136,9 @@ int wgAnaHist(const char * x_input_file,
     //                               Chip loop                               //
     ///////////////////////////////////////////////////////////////////////////
 
-    for (unsigned ichip = 0; ichip < n_chips; ichip++) {
-      unsigned n_chans = topol->dif_map[idif][ichip];
+    for (auto const &chip : topol->dif_map[idif]) {
+      unsigned ichip = chip.first;
+      unsigned n_chans = chip.second;
 
       // ============ Create output_xml_chip_dir ============ //
       std::string output_xml_chip_dir(output_xml_dir + "/chip" + std::to_string(ichip));

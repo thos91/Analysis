@@ -117,7 +117,7 @@ bool wgEditXML::GetConfig(const std::string& configxml,
                           const unsigned n_chans,
                           i2vector& v) {
   try {
-    bool found=false;
+    bool found = false;
     std::string bitstream("");
     
     if(!wagasci_tools::check_exist::XmlFile(configxml))

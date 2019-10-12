@@ -25,7 +25,7 @@ void print_help(const char * program_name) {
 	"  -i (char*): pyrame config file (.xml)\n"
 	"  -o (char*): outputXMLdir (default = WAGASCI_XMLDATADIR)\n"
 	"  -q (char*): outputIMGdir (default = WAGASCI_IMGDATADIR)\n"
-	"  -d (int)  : DIF number (integer starting from 1)\n"
+	"  -d (int)  : DIF number (default = 0)\n"
 	"  -m (int)  : fit mode (mandatory)\n"
 	"  -p        : print mode (default is false) \n"
 	"  -r        : overwrite mode (default is false)\n\n"

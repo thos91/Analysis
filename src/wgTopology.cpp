@@ -185,12 +185,12 @@ std::pair<std::string, std::string> Topology::GetGdccDifPair(const std::string& 
 //**********************************************************************
 std::pair<unsigned, unsigned> Topology::GetGdccDifPair(unsigned dif) {
   std::pair<std::string, std::string> gdcc_dir_pair(GetGdccDifPair(std::to_string(dif)));
-  return std::pair<unsigned, unsigned>(std::stoi(gdcc_dir_pair.first), std::stoi(gdcc_dir_pair.first));
+  return std::pair<unsigned, unsigned>(std::stoi(gdcc_dir_pair.first), std::stoi(gdcc_dir_pair.second));
 }
 
 //**********************************************************************
 unsigned Topology::GetGdccID(std::string mac) {
-  return (unsigned) std::stoi(this->m_mac_to_gdcc_map[mac]);
+  return (unsigned) std::stoi(this->m_mac_to_gdcc_map[boost::to_upper_copy(mac)]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
