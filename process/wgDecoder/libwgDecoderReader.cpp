@@ -196,7 +196,21 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
     
   // BCID
   for (unsigned icol = 0; icol < n_columns; ++icol) {
-    m_rd.get().bcid[section.ichip][icol] = (*(iraw_data++)).to_ulong();
+    int bcid = (*iraw_data & x0FFF).to_ulong();
+    int loop_bcid = ((*(iraw_data++) & xF000) >> 12).to_ulong();
+    int bcid_slope;
+    int bcid_inter;
+    switch (loop_bcid) {
+      case 1:
+        bcid_slope = -1; bcid_inter = 2 * 4096; break;
+      case 3:
+        bcid_slope = 1; bcid_inter = 2 * 4096; break;
+      case 2:
+        bcid_slope = -1; bcid_inter = 4 * 4096; break;
+      default:
+        bcid_slope = 1; bcid_inter = 0; break;
+    }
+    m_rd.get().bcid[section.ichip][icol] = bcid_inter + bcid * bcid_slope;
     if ((unsigned) m_rd.get().bcid[section.ichip][icol] > MAX_VALUE_16BITS)
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_BCID]++;
   }
