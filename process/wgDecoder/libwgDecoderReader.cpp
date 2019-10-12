@@ -96,9 +96,8 @@ void SectionReader::ReadChipHeader(std::istream& is, const SectionSeeker::Sectio
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
-  m_rd.get().chipid[section.ichip] = (raw_data[1] & x00FF).to_ulong();
-  if ((unsigned) m_rd.get().chipid[section.ichip] > m_config.n_chips ||
-      m_rd.get().chipid[section.ichip] == 0) {
+  unsigned chip_counter = (raw_data[1] & x00FF).to_ulong();
+  if (chip_counter >= m_config.n_chips || chip_counter != section.ichip + 1) {
     m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
   }
 }
@@ -112,9 +111,8 @@ void SectionReader::ReadChipTrailer(std::istream& is, const SectionSeeker::Secti
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
-  unsigned chipid = (raw_data[1] & x00FF).to_ulong();
-  if (chipid != (unsigned) m_rd.get().chipid[section.ichip] ||
-      chipid > m_config.n_chips || chipid == 0) {
+  unsigned chip_counter = (raw_data[1] & x00FF).to_ulong();
+  if (chip_counter >= m_config.n_chips || chip_counter != section.ichip + 1) {
     m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
   }
 }
@@ -186,16 +184,15 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
   std::vector<std::bitset<BITS_PER_LINE>>::reverse_iterator iraw_data = raw_data.rbegin(); 
 
   // CHIPID
-  std::vector<unsigned> chipid(m_config.n_chip_id);
-  for (auto ichipid : chipid) {
-    ichipid = (*(iraw_data++) & x00FF).to_ulong();
-    if (ichipid > m_config.n_chips) {
+  unsigned chipid = (*(iraw_data++) & x00FF).to_ulong();
+  if (chipid > m_config.n_chips)
+    m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
+  for (unsigned counter = 1; counter < m_config.n_chip_id; ++counter) {
+    unsigned duplicate_chipid = (*(iraw_data++) & x00FF).to_ulong();
+    if (duplicate_chipid != chipid)
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
-    } else if ((unsigned) m_rd.get().chipid[section.ichip] != ichipid) {
-      m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
-      m_rd.get().chipid[section.ichip] = ichipid;
-    }
   }
+  m_rd.get().chipid[section.ichip] = chipid;
     
   // BCID
   for (unsigned icol = 0; icol < n_columns; ++icol) {
