@@ -322,7 +322,7 @@ std::map<std::string, unsigned> ParseChipRange(std::pair<std::string, unsigned> 
       last_chip - first_chip >= (int) NCHIPS || first_chip != 1)
     throw std::invalid_argument("[wgTopology] chip range is invalid : " + asu_key.first);
   std::map<std::string, unsigned> asu_map;
-  for (int i = 1; i < last_chip; ++i) {
+  for (int i = 1; i <= last_chip; ++i) {
     asu_map[std::to_string(i)] = asu_key.second;
   }
   return asu_map;
@@ -339,8 +339,9 @@ void Topology::GetTopologyFromString(const std::string& json_string) {
       for ( auto& dif : dif_map ) {
         std::map<std::string, unsigned> asu_map = dif.second;
         if (asu_map.begin()->first.find('-') != std::string::npos) {
+          std::pair<std::string, unsigned> first_pair = *asu_map.begin();
           asu_map.clear();
-          asu_map = ParseChipRange(*asu_map.begin());
+          asu_map = ParseChipRange(first_pair);
         }
         for ( const auto& asu : asu_map ) {
           if (gdcc.first == "0" || gdcc.first.empty() ||
