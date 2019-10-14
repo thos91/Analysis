@@ -166,6 +166,7 @@ class SectionSeeker {
   unsigned m_last_ispill = 0;
   // The last chip count (not related to the chip ID)
   unsigned m_last_ichip = 0;
+  unsigned m_current_ichip = 0;
 
   // The seekers return true if the section was found and in good
   // shape, false if the section was not found or was hopelessly

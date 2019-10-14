@@ -58,7 +58,7 @@ class SectionReader {
   SectionReader(const RawDataConfig& config, TTree* tree, Raw_t& rd);
 
   // Read the Section section from the stream is into the Raw_t m_rd object
-  void ReadNextSection(std::istream& is, const SectionSeeker::Section section);
+  void ReadNextSection(std::istream& is, const SectionSeeker::Section& section);
   
  private:
 

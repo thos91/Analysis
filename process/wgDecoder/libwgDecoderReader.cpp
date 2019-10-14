@@ -178,6 +178,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
     Log.eWrite("[wgDecoder] ichip = " + std::to_string(section.ichip) +
                " : number of columns (" + std::to_string(n_columns) +
                ") is greater than " + std::to_string(MEMDEPTH));
+    m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_NCOLUMNS]++;
     n_columns = MEMDEPTH;
   }
 
@@ -185,8 +186,12 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
 
   // CHIPID
   unsigned chipid = (*(iraw_data++) & x00FF).to_ulong();
-  if (chipid > m_config.n_chips)
+  if (chipid > m_config.n_chips) {
+    Log.eWrite("[wgDecoder] ichip = " + std::to_string(section.ichip) +
+               " : Chip ID (" + std::to_string(chipid) +
+               ") is greater than " + std::to_string(m_config.n_chips));
     m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
+  }
   for (unsigned counter = 1; counter < m_config.n_chip_id; ++counter) {
     unsigned duplicate_chipid = (*(iraw_data++) & x00FF).to_ulong();
     if (duplicate_chipid != chipid)
@@ -266,7 +271,15 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
 //                              ReadNextSection                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Section section) {
+void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Section& section) {
+  if (section.ichip >= m_config.n_chips) {
+    m_rd.get().debug_spill[DEBUG_WRONG_NCHIPS]++;
+    Log.eWrite("[wgDecoder] Spill " + std::to_string(section.ispill) +
+               " : number of chips overflown : " + "chip counter " +
+               std::to_string(section.ichip) + " >= number of chips " +
+               std::to_string(m_config.n_chips) );
+    return;
+  }
   m_readers_ring[section.type](is, section);
 }
 
