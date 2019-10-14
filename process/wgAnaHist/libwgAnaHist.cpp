@@ -4,6 +4,7 @@
 #include <vector>
 #include <exception>
 #include <bitset>
+#include <iterator>
 
 // boost includes
 #include <boost/filesystem.hpp>
@@ -24,12 +25,12 @@
 using namespace wagasci_tools;
 
 //******************************************************************
-void ModeSelect(const int mode, std::bitset<M>& flag){
-  if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE] = true;
-  if ( mode == 2 || mode >= 10 )               flag[SELECT_PEDESTAL]   = true;
-  if ( mode == 3 || mode == 10 || mode >= 20 ) flag[SELECT_CHARGE]     = true;
-  if ( mode == 4 || mode == 11 || mode >= 20 ) flag[SELECT_CHARGE_HG]  = true;
-  if ( mode < 0  || mode > 20 )
+void ModeSelect(const int mode, std::bitset<ANAHIST_NFLAGS>& flag){
+  if (mode == 1 || mode >= 10)               flag[SELECT_DARK_NOISE] = true;
+  if (mode == 2 || mode >= 10)               flag[SELECT_PEDESTAL]   = true;
+  if (mode == 3 || mode == 10 || mode >= 20) flag[SELECT_CHARGE]     = true;
+  if (mode == 4 || mode == 11 || mode >= 20) flag[SELECT_CHARGE_HG]  = true;
+  if (mode < 0  || mode > 20)
     throw std::invalid_argument("Mode " + std::to_string(mode) + " not recognized"); 
 }
 
@@ -39,8 +40,8 @@ int wgAnaHist(const char * x_input_file,
               const char * x_output_xml_dir,
               const char * x_output_img_dir,
               int mode,
-              const unsigned long flags_ulong,
-              const unsigned idif) {
+              unsigned long flags_ulong,
+              unsigned idif) {
 
   std::string input_file(x_input_file);
   std::string pyrame_config_file(x_pyrame_config_file);
@@ -51,7 +52,7 @@ int wgAnaHist(const char * x_input_file,
 
   // =========== FLAGS decoding =========== //
 
-  std::bitset<M> flags(flags_ulong);
+  std::bitset<ANAHIST_NFLAGS> flags(flags_ulong);
   
   // Set the correct flags according to the mode
   try { ModeSelect(mode, flags); }
@@ -89,6 +90,9 @@ int wgAnaHist(const char * x_input_file,
     Log.eWrite("[wgAnaHist] " + std::string(e.what()));
     return ERR_TOPOLOGY;
   }
+
+  if (flags[SELECT_COMPATIBILITY])
+    idif = std::next(topol->dif_map.begin(), idif)->first;
   unsigned n_chips = topol->dif_map[idif].size();
 
   if ( n_chips == 0 || n_chips > NCHIPS ) {
