@@ -15,7 +15,8 @@ void print_help(const char * program_name) {
       "  -h         : help\n"
       "  -f (char*) : input directory (mandatory)\n"
       "  -o (char*) : output xml directory (default: same as input directory)\n"
-      "  -i (char*) : output image directory (default: same as input directory)\n";
+      "  -i (char*) : output image directory (default: same as input directory)\n"
+      "  -q         : compatibility mode (default: false)\n";
   exit(0);
 }
 
@@ -27,8 +28,9 @@ int main(int argc, char** argv){
   std::string inputDir("");
   std::string outputXMLDir = env.CALIBDATA_DIRECTORY ;
   std::string outputIMGDir = env.IMGDATA_DIRECTORY;
+  bool compatibility_mode = false;
 
-  while((opt = getopt(argc,argv, "f:o:i:h")) != -1 ){
+  while((opt = getopt(argc,argv, "f:o:i:qh")) != -1 ){
     switch(opt){
       case 'f':
         inputDir = optarg;
@@ -42,6 +44,10 @@ int main(int argc, char** argv){
         outputIMGDir = optarg; 
         break;
 
+      case 'q':
+        compatibility_mode = true;
+        break;
+        
       case 'h':
         print_help(argv[0]);
         break;
@@ -52,9 +58,10 @@ int main(int argc, char** argv){
   }
 
   int result;
-  if ( (result = wgScurve(inputDir.c_str(), 
-                          outputXMLDir.c_str(), 
-                          outputIMGDir.c_str())) != WG_SUCCESS){
+  if ((result = wgScurve(inputDir.c_str(), 
+                         outputXMLDir.c_str(), 
+                         outputIMGDir.c_str(),
+                         compatibility_mode)) != WG_SUCCESS) {
     Log.eWrite("[wgScurve] wgScurve returned error " + std::to_string(result));
     exit(1);
   }

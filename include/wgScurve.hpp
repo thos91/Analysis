@@ -4,9 +4,6 @@
 // system C++ includes
 #include <string>
 
-// system C includes
-#include <cstdbool>
-
 // ROOT includes
 #include <TGraphErrors.h>
 
@@ -20,7 +17,8 @@ extern "C" {
 #endif
   int wgScurve(const char* x_inputDirName,
                const char* x_outputXMLDirName = "",
-               const char* x_outputIMGDirName = "");
+               const char* x_outputIMGDirName = "",
+               const bool compatibility_mode = false);
 #ifdef __cplusplus
 }
 #endif
@@ -33,8 +31,8 @@ void fit_scurve(TGraphErrors* Scurve,
                 unsigned ichip_id, 
                 unsigned ichan_id, 
                 unsigned inputDAC,
-								double high,
-								double low,
+                double high,
+                double low,
                 std::string outputIMGDir, 
                 bool print_flag = false);
 

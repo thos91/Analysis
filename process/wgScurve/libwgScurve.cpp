@@ -41,7 +41,8 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2)
 //******************************************************************
 int wgScurve(const char* x_inputDir,
              const char* x_outputXMLDir,
-             const char* x_outputIMGDir) {
+             const char* x_outputIMGDir,
+             const bool compatibility_mode) {
 
   // ============================================================= //
   //                                                               //
@@ -194,32 +195,38 @@ int wgScurve(const char* x_inputDir,
               return ERR_FAILED_OPEN_XML_FILE;
             }
             
+            // ************* Sanity checks ************* //
+
+            if (!compatibility_mode) {
+              threshold[threshold_counter] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
+              if (threshold[threshold_counter] != th_from_dir)
+                throw std::runtime_error("Threshold value from directory ( " +
+                                         std::to_string(th_from_dir) + " ) different from the one from "
+                                         "XML file : " + std::to_string(threshold[threshold_counter]));
+              
+              unsigned dif_id_from_xml = Edit.SUMMARY_GetGlobalConfigValue("difid");
+              if (dif_id_from_xml != dif_counter_to_id[dif_counter])
+                throw std::runtime_error("DIF ID value from directory ( " +
+                                         std::to_string(dif_counter_to_id[dif_counter]) +
+                                         " ) different from the one from XML file : "
+                                         + std::to_string(dif_id_from_xml));
+            } else {
+              inputDAC[iDAC_counter] = iDAC_from_dir;
+              threshold[threshold_counter] = th_from_dir;
+            }
+
             // ************* Read XML file ************* //
-
-            // Sanity checks
-            inputDAC[iDAC_counter] = Edit.SUMMARY_GetChConfigValue("inputDAC", 0);
-            if (inputDAC[iDAC_counter] != iDAC_from_dir)
-              throw std::runtime_error("Threshold value from directory ( " +
-                                       std::to_string(th_from_dir) + " ) different from the one from "
-                                       "XML file : " + std::to_string(threshold[threshold_counter])); 
-
-            threshold[threshold_counter] = Edit.SUMMARY_GetGlobalConfigValue("trigth");
-            if (threshold[threshold_counter] != th_from_dir)
-              throw std::runtime_error("Threshold value from directory ( " +
-                                       std::to_string(th_from_dir) + " ) different from the one from "
-                                       "XML file : " + std::to_string(threshold[threshold_counter]));
             
-            unsigned dif_id_from_xml = Edit.SUMMARY_GetGlobalConfigValue("difid");
-            if (dif_id_from_xml != dif_counter_to_id[dif_counter])
-              throw std::runtime_error("DIF ID value from directory ( " +
-                                       std::to_string(dif_counter_to_id[dif_counter]) +
-                                       " ) different from the one from XML file : "
-                                       + std::to_string(dif_id_from_xml));
-
             unsigned n_channels = topol.dif_map[dif_counter_to_id[dif_counter]][chip_counter];
             for (unsigned chan_counter = 0; chan_counter < n_channels; ++chan_counter) {
               // inputDAC
-              inputDAC[iDAC_counter] = Edit.SUMMARY_GetChConfigValue("inputDAC", chan_counter);
+              if (!compatibility_mode) {
+                inputDAC[iDAC_counter] = Edit.SUMMARY_GetChConfigValue("inputDAC", chan_counter);
+                if (inputDAC[iDAC_counter] != iDAC_from_dir)
+                  throw std::runtime_error("Threshold value from directory ( " +
+                                           std::to_string(th_from_dir) + " ) different from the one from "
+                                           "XML file : " + std::to_string(threshold[threshold_counter]));
+              }
               // dark noise rate
               noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
                   Edit.SUMMARY_GetChFitValue("noise_rate", chan_counter);
