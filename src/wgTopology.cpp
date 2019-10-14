@@ -439,11 +439,13 @@ void Topology::GetTopologyFromFile(const std::string& configxml) {
         XMLElement* spiroc2d = asu;
         if (asu->FirstChildElement("spiroc2d") != NULL) spiroc2d = asu->FirstChildElement("spiroc2d");
         // param loop
-        XMLElement* param;
+        XMLElement* param_asu;
         bool found_n_channels = false;
-        for (param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-          if (std::string(param->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
-            std::string enabled_channels(param->GetText());
+        for (param_asu = spiroc2d->FirstChildElement("param"); param_asu != NULL; param_asu = param_asu->NextSiblingElement("param")) {
+          if (std::string(param_asu->Attribute("name")) == "spiroc2d_enable_preamp_chans" ) {
+            std::string enabled_channels("");
+            if (param_asu->GetText() != NULL)
+              enabled_channels = param_asu->GetText();
             boost::char_separator<char> * sep;
             if (enabled_channels.find('-') != std::string::npos)
               sep = new boost::char_separator<char>("-");
