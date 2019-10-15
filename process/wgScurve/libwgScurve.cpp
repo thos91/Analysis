@@ -243,6 +243,7 @@ int wgScurve(const char* x_inputDir,
       } // threshold
       ++iDAC_counter;
     } // inputDAC
+  	Log.Write("[wgScurve] Reading Xml Files done.");
 
     /********************************************************************************
      *                        Draw and fit the S-curve                              *
@@ -281,13 +282,6 @@ int wgScurve(const char* x_inputDir,
               gxe.push_back(0);
               gye.push_back(noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold]);
             }
-            double low=0, high=0;
-            for (unsigned i=0; i<5; i++){
-              low  += gy[i];
-              high += gy[gy.size()-i-1];
-            }
-            low = low/5;
-            high = high/5;
                                                 
             // ************* Draw S-curve Graph ************* //
             TGraphErrors* Scurve = new TGraphErrors(gx.size(), gx.data(), gy.data(),
@@ -301,6 +295,8 @@ int wgScurve(const char* x_inputDir,
             Scurve->Draw("ap*");
 
             // ************* Fit S-curve ************* //
+            double high = 1.0E+5;
+            double low  = 1.0E+2;
             double pe1_t, pe2_t;
             fit_scurve(Scurve, pe1_t, pe2_t, idif, ichip, ichan, inputDAC[i_iDAC],
                        low, high, outputIMGDir, false);
@@ -378,6 +374,7 @@ int wgScurve(const char* x_inputDir,
           delete c2;
         } // channel
       } // chip
+  		Log.Write("[wgScurve] Fitting DIF = " +  std::to_string(idif) + " done.");
     } // dif
 
     /********************************************************************************
@@ -425,6 +422,7 @@ int wgScurve(const char* x_inputDir,
     Log.eWrite("[wgScurve][" + inputDir + "] " + std::string(e.what()));
     return ERR_WG_SCURVE;
   }
+  Log.Write("[wgScurve] Writing Xml file done.");
   return WG_SUCCESS;
 }
 
@@ -448,13 +446,13 @@ void fit_scurve(TGraphErrors* Scurve,
 
   TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
-  //fit_scurve->SetParLimits(0, high/2,      high*2);  
+  fit_scurve->SetParLimits(0, high/1.5,      high*1.5);  
   //fit_scurve->SetParLimits(1, 0.35,        1.0);
   //fit_scurve->SetParLimits(2, 145,         165);
-  //fit_scurve->SetParLimits(3, middle/1.5,  middle*1.5); 
+  fit_scurve->SetParLimits(3, middle/1.5,  middle*1.5); 
   //fit_scurve->SetParLimits(4, 0.35,        1.0);
   //fit_scurve->SetParLimits(5, 125,         145); 
-  //fit_scurve->SetParLimits(6, low/1.5,     low*1.5);
+  fit_scurve->SetParLimits(6, low/1.5,     low*1.5);
   
   Scurve->Fit(fit_scurve, "q");
         
