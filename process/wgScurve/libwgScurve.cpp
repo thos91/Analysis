@@ -120,7 +120,7 @@ int wgScurve(const char* x_inputDir,
     d4vector pe2        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
     d5vector noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
     d5vector noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
-		double mean1PE, mean2PE, sigma1PE, sigma2PE;
+		double  mean1PE[n_inputDAC], mean2PE[n_inputDAC], sigma1PE[n_inputDAC], sigma2PE[n_inputDAC];
     //  and resize them.
     unsigned dif_counter = 0;
     u1vector dif_counter_to_id;
@@ -251,15 +251,20 @@ int wgScurve(const char* x_inputDir,
      *                        Draw and fit the S-curve                              *
      ********************************************************************************/
 
-		TCanvas* PECanvas = new TCanvas("PECanvas","PECanvas");
-		TH1D* Pe1Hist = new TH1D("Pe1Hist","1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
-		TH1D* Pe2Hist = new TH1D("Pe2Hist","Pe2Hist",100,100,200);
-		TF1* Pe1Fit = new TF1("Pe1Fit","gaus",100,200);
-		TF1* Pe2Fit = new TF1("Pe2Fit","gaus",100,200);
-		Pe1Hist->SetFillColor(kRed);
-		Pe1Hist->SetFillStyle(3002);
-		Pe2Hist->SetFillColor(kBlue);
-		Pe2Hist->SetFillStyle(3004);
+    TH1D* Pe1Hist[n_inputDAC];
+    TH1D* Pe2Hist[n_inputDAC];
+		for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
+			std::string name1 = "Pe1Hist_" + std::to_string(inputDAC[i_iDAC]);
+			std::string name2 = "Pe2Hist_" + std::to_string(inputDAC[i_iDAC]);
+      Pe1Hist[i_iDAC] = new TH1D(name1.c_str(),"1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
+      Pe2Hist[i_iDAC] = new TH1D(name2.c_str(),"Pe2Hist",100,100,200);
+		  Pe1Hist[i_iDAC]->SetStats(0);
+      Pe1Hist[i_iDAC]->SetFillColor(kRed);
+      Pe1Hist[i_iDAC]->SetFillStyle(3002);
+      Pe2Hist[i_iDAC]->SetFillColor(kBlue);
+      Pe2Hist[i_iDAC]->SetFillStyle(3004);
+		}
+
     for (unsigned idif = 0; idif < n_difs; ++idif) {
       for (const auto &asu : topol.dif_map[dif_counter_to_id[idif]]) {
         unsigned ichip = asu.first;
@@ -267,7 +272,7 @@ int wgScurve(const char* x_inputDir,
           std::string image_dir = outputIMGDir +
                                   "/Dif" + std::to_string(dif_counter_to_id[idif]) +
                                   "/Chip" + std::to_string(ichip) +
-                                  "/Channel" + std::to_string(ichan);;
+                                  "/Channel" + std::to_string(ichan);
           MakeDir(image_dir);
           // If the channel does not contain the meaningful data but UNIT_MAX, skip the loop.
           if (noise[idif][ichip][ichan][0][0] == UINT_MAX) {
@@ -313,8 +318,8 @@ int wgScurve(const char* x_inputDir,
                        low, high, outputIMGDir, false);
             pe1[idif][ichip][ichan][i_iDAC] = pe1_t;
             pe2[idif][ichip][ichan][i_iDAC] = pe2_t;
-            Pe1Hist->Fill(pe1_t);
-            Pe2Hist->Fill(pe2_t);
+            Pe1Hist[i_iDAC]->Fill(pe1_t);
+            Pe2Hist[i_iDAC]->Fill(pe2_t);
 
             // ************* Save S-curve Graph as png ************* //
             TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
@@ -389,20 +394,30 @@ int wgScurve(const char* x_inputDir,
       } // chip
   		Log.Write("[wgScurve] Fitting DIF = " +  std::to_string(idif) + " done.");
     } // dif
-		PECanvas->cd();
-		Pe1Hist->Draw();
-		Pe2Hist->Draw("same");
-		Pe1Hist->Fit(Pe1Fit,"rlq");
-		Pe2Hist->Fit(Pe2Fit,"rlq");
-		mean1PE = Pe1Fit->GetParameter(1); sigma1PE = Pe1Fit->GetParameter(2);
-		mean2PE = Pe2Fit->GetParameter(1); sigma2PE = Pe2Fit->GetParameter(2);
-		TString name(outputIMGDir + "/PEdistribution.png");
-		PECanvas->Print(name);
-		delete Pe1Hist;
-		delete Pe2Hist;
-		delete Pe1Fit;
-		delete Pe2Fit;
-		delete PECanvas;
+		
+		// Draw p.e. distribution histgrams for each inputDAC and
+		// save them under the inputIMGDir.
+    std::string pe_dir = outputIMGDir + "/PE_Distribution";
+    MakeDir(pe_dir);
+		for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
+      TCanvas* PECanvas = new TCanvas("PECanvas","PECanvas");
+      TF1* Pe1Fit = new TF1("Pe1Fit","gaus",100,200);
+      TF1* Pe2Fit = new TF1("Pe2Fit","gaus",100,200);
+		  PECanvas->cd();
+		  Pe1Hist[i_iDAC]->Draw();
+		  Pe2Hist[i_iDAC]->Draw("same");
+		  Pe1Hist[i_iDAC]->Fit(Pe1Fit,"rlq");
+		  Pe2Hist[i_iDAC]->Fit(Pe2Fit,"rlq");
+		  mean1PE[i_iDAC] = Pe1Fit->GetParameter(1); sigma1PE[i_iDAC] = Pe1Fit->GetParameter(2);
+		  mean2PE[i_iDAC] = Pe2Fit->GetParameter(1); sigma2PE[i_iDAC] = Pe2Fit->GetParameter(2);
+		  TString name(outputIMGDir + "/PE_Distribution/iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png");
+		  PECanvas->Print(name);
+		  delete Pe1Fit;
+		  delete Pe2Fit;
+		  delete PECanvas;
+		  delete Pe1Hist[i_iDAC];
+		  delete Pe2Hist[i_iDAC];
+		}
 
     /********************************************************************************
      *                           threshold_card.xml                                 *
@@ -439,13 +454,13 @@ int wgScurve(const char* x_inputDir,
                               inputDAC[i_iDAC], pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
             Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
                               inputDAC[i_iDAC], pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
-						// If 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
-						// it will recorded in "failed_channels.txt" with the number of 
-						// DIF, CHIP, CHANNEL, InputDAC.
-						if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE) > 2*sigma1PE ||
-						    std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE) > 2*sigma2PE  ){
-						  fout << idif << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << std::endl;
-						}
+            // If 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
+            // it will recorded in "failed_channels.txt" with the number of 
+            // DIF, CHIP, CHANNEL, InputDAC.
+            if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE[i_iDAC]) > 2*sigma1PE[i_iDAC] ||
+                std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC]) > 2*sigma2PE[i_iDAC]  ){
+              fout << idif << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << std::endl;
+            }
           }
         }
       }
