@@ -40,7 +40,7 @@ int main(int argc, char** argv){
   int opt;
   unsigned mode    = 0;
   unsigned channel = 0;
-  unsigned value   = 0;
+  int value        = 0;
   bitset<WG_CHANGE_CONFIG_FLAGS> flags;
   string inputFile("");
   string outputFile("");

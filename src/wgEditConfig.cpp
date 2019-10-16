@@ -240,14 +240,16 @@ std::string wgEditConfig::DeToBi(const std::string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
+void wgEditConfig::Change_inputDAC(const unsigned chan, int value) {
   if (chan > NCHANNELS)
     throw std::invalid_argument("channel is out of range : " + std::to_string(chan));
-  if(value + fine_inputDAC[chan] > MAX_VALUE_8BITS)
-    throw std::invalid_argument("value is out of range : " + std::to_string(value + fine_inputDAC[chan]));
+  if(value + m_fine_inputDAC[chan] > (int) MAX_VALUE_8BITS)
+    throw std::invalid_argument("value is out of range : " + std::to_string(value + m_fine_inputDAC[chan]));
 
   std::stringstream num;
-  num << std::setfill('0') << std::setw(ADJ_INPUTDAC_LENGTH) << DeToBi(std::to_string(value)) << '1';
+  std::string on_off_bit(value < 0 ? "0" : "1");
+  value = (value < 0 ? 0 : value);
+  num << std::setfill('0') << std::setw(ADJ_INPUTDAC_LENGTH) << DeToBi(std::to_string(value)) << on_off_bit;
 
   if(chan == NCHANNELS) {
     for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {

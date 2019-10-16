@@ -42,7 +42,7 @@ private:
   // is stored as a vector of vector of strings)
   std::vector<std::vector<std::string>> GetCSV(std::string spiroc2d_csv = "");
   
-  unsigned fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
+  int m_fine_inputDAC[NCHANNELS] = {}; // fine-tuned input DAC (voltage adjustment)
   
 public:
   // constructor
@@ -75,7 +75,7 @@ public:
   // wgEditConfig::Change_inputDAC
   // Change the channel by channel adjustable 8-bit inputDAC.
   // The inputDAC is the channel by channel high voltage correction.
-  void Change_inputDAC(unsigned chan, unsigned value);
+  void Change_inputDAC(unsigned chan, int value);
 
   // wgEditConfig::Change_ampDAC
   // Change the channel by channel adjustable 6-bit high gain (HG) preamp.
