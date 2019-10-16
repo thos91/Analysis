@@ -1,6 +1,7 @@
 // system includes
 #include <string>
 #include <vector>
+#include <fstream>
 #include <map>
 
 // boost includes
@@ -119,6 +120,7 @@ int wgScurve(const char* x_inputDir,
     d4vector pe2        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
     d5vector noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
     d5vector noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
+		double mean1PE, mean2PE, sigma1PE, sigma2PE;
     //  and resize them.
     unsigned dif_counter = 0;
     u1vector dif_counter_to_id;
@@ -249,6 +251,15 @@ int wgScurve(const char* x_inputDir,
      *                        Draw and fit the S-curve                              *
      ********************************************************************************/
 
+		TCanvas* PECanvas = new TCanvas("PECanvas","PECanvas");
+		TH1D* Pe1Hist = new TH1D("Pe1Hist","1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
+		TH1D* Pe2Hist = new TH1D("Pe2Hist","Pe2Hist",100,100,200);
+		TF1* Pe1Fit = new TF1("Pe1Fit","gaus",100,200);
+		TF1* Pe2Fit = new TF1("Pe2Fit","gaus",100,200);
+		Pe1Hist->SetFillColor(kRed);
+		Pe1Hist->SetFillStyle(3002);
+		Pe2Hist->SetFillColor(kBlue);
+		Pe2Hist->SetFillStyle(3004);
     for (unsigned idif = 0; idif < n_difs; ++idif) {
       for (const auto &asu : topol.dif_map[dif_counter_to_id[idif]]) {
         unsigned ichip = asu.first;
@@ -300,8 +311,10 @@ int wgScurve(const char* x_inputDir,
             double pe1_t, pe2_t;
             fit_scurve(Scurve, pe1_t, pe2_t, idif, ichip, ichan, inputDAC[i_iDAC],
                        low, high, outputIMGDir, false);
-            pe1[idif][ichip][ichan].push_back(pe1_t);
-            pe2[idif][ichip][ichan].push_back(pe2_t);
+            pe1[idif][ichip][ichan][i_iDAC] = pe1_t;
+            pe2[idif][ichip][ichan][i_iDAC] = pe2_t;
+            Pe1Hist->Fill(pe1_t);
+            Pe2Hist->Fill(pe2_t);
 
             // ************* Save S-curve Graph as png ************* //
             TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
@@ -335,8 +348,8 @@ int wgScurve(const char* x_inputDir,
           fit1->SetParameters(-0.01, 170);
           PELinear1->Fit(fit1, "rlq");
           fit1->Draw("same");
-          slope1    [idif][ichip].push_back(fit1->GetParameter(0));
-          intercept1[idif][ichip].push_back(fit1->GetParameter(1));
+          slope1    [idif][ichip][ichan] = fit1->GetParameter(0);
+          intercept1[idif][ichip][ichan] = fit1->GetParameter(1);
         
           // ************* Save plot as png ************* //
           TString image1(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
@@ -358,8 +371,8 @@ int wgScurve(const char* x_inputDir,
           fit2->SetParameters(-0.01, 170);
           PELinear2->Fit(fit2,"rlq");
           fit2->Draw("same");
-          slope2    [idif][ichip].push_back(fit2->GetParameter(0));
-          intercept2[idif][ichip].push_back(fit2->GetParameter(1));
+          slope2    [idif][ichip][ichan] = fit2->GetParameter(0);
+          intercept2[idif][ichip][ichan] = fit2->GetParameter(1);
 
           // ************* Save plot as png ************* //
           TString image2(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
@@ -376,11 +389,26 @@ int wgScurve(const char* x_inputDir,
       } // chip
   		Log.Write("[wgScurve] Fitting DIF = " +  std::to_string(idif) + " done.");
     } // dif
+		PECanvas->cd();
+		Pe1Hist->Draw();
+		Pe2Hist->Draw("same");
+		Pe1Hist->Fit(Pe1Fit,"rlq");
+		Pe2Hist->Fit(Pe2Fit,"rlq");
+		mean1PE = Pe1Fit->GetParameter(1); sigma1PE = Pe1Fit->GetParameter(2);
+		mean2PE = Pe2Fit->GetParameter(1); sigma2PE = Pe2Fit->GetParameter(2);
+		TString name(outputIMGDir + "/PEdistribution.png");
+		PECanvas->Print(name);
+		delete Pe1Hist;
+		delete Pe2Hist;
+		delete Pe1Fit;
+		delete Pe2Fit;
+		delete PECanvas;
 
     /********************************************************************************
      *                           threshold_card.xml                                 *
      ********************************************************************************/
 
+		std::ofstream fout(outputXMLDir + "/failed_channels.txt");
     std::string xmlfile(outputXMLDir + "/threshold_card.xml");
 
     try {
@@ -411,10 +439,18 @@ int wgScurve(const char* x_inputDir,
                               inputDAC[i_iDAC], pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
             Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
                               inputDAC[i_iDAC], pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+						// If 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
+						// it will recorded in "failed_channels.txt" with the number of 
+						// DIF, CHIP, CHANNEL, InputDAC.
+						if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE) > 2*sigma1PE ||
+						    std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE) > 2*sigma2PE  ){
+						  fout << idif << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << std::endl;
+						}
           }
         }
       }
     }
+		fout.close();
     Edit.Write();
     Edit.Close();
   }  // end try
@@ -452,7 +488,7 @@ void fit_scurve(TGraphErrors* Scurve,
   fit_scurve->SetParLimits(3, middle/1.5,  middle*1.5); 
   //fit_scurve->SetParLimits(4, 0.35,        1.0);
   //fit_scurve->SetParLimits(5, 125,         145); 
-  fit_scurve->SetParLimits(6, low/1.5,     low*1.5);
+  fit_scurve->SetParLimits(6, low/1.5,     low*4.0);
   
   Scurve->Fit(fit_scurve, "q");
         
@@ -463,7 +499,7 @@ void fit_scurve(TGraphErrors* Scurve,
   double a = fit_scurve->GetParameter(5);
   double b = fit_scurve->GetParameter(2);
   pe1_t =  (  a + b) / 2;
-  pe2_t =  (3*a + b) / 2;
+  pe2_t =  (3*a - b) / 2;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
