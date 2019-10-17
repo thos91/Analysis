@@ -253,11 +253,19 @@ int wgScurve(const char* x_inputDir,
 
     TH1D* Pe1Hist[n_inputDAC];
     TH1D* Pe2Hist[n_inputDAC];
+    TH1D* ChiHist[n_inputDAC];
+    TH1D* ChiOverNdfHist[n_inputDAC];
 		for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
 			std::string name1 = "Pe1Hist_" + std::to_string(inputDAC[i_iDAC]);
 			std::string name2 = "Pe2Hist_" + std::to_string(inputDAC[i_iDAC]);
+			std::string name3 = "ChiSquareHist_" + std::to_string(inputDAC[i_iDAC]);
+			std::string name4 = "ChiSquareOverNdfHist_" + std::to_string(inputDAC[i_iDAC]);
       Pe1Hist[i_iDAC] = new TH1D(name1.c_str(),"1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
       Pe2Hist[i_iDAC] = new TH1D(name2.c_str(),"Pe2Hist",100,100,200);
+      ChiHist[i_iDAC] = new TH1D(name3.c_str(),"Chi Square; Chi square; Count",100,0,1000);
+      ChiOverNdfHist[i_iDAC] = new TH1D(name4.c_str(),"Chi Square / Ndf; Chi square / Ndf; Count",100,0,100);
+      ChiHist[i_iDAC]->SetStats(0);
+      ChiOverNdfHist[i_iDAC]->SetStats(0);
 		  Pe1Hist[i_iDAC]->SetStats(0);
       Pe1Hist[i_iDAC]->SetFillColor(kRed);
       Pe1Hist[i_iDAC]->SetFillStyle(3002);
@@ -316,10 +324,14 @@ int wgScurve(const char* x_inputDir,
             double pe1_t, pe2_t;
             fit_scurve(Scurve, pe1_t, pe2_t, idif, ichip, ichan, inputDAC[i_iDAC],
                        low, high, outputIMGDir, false);
+            fit_scurve(Scurve, pe1_t, pe2_t, ChiSquare, NDF, idif, ichip, ichan, inputDAC[i_iDAC],
+                       outputIMGDir, false);
             pe1[idif][ichip][ichan][i_iDAC] = pe1_t;
             pe2[idif][ichip][ichan][i_iDAC] = pe2_t;
             Pe1Hist[i_iDAC]->Fill(pe1_t);
             Pe2Hist[i_iDAC]->Fill(pe2_t);
+            ChiHist[i_iDAC]->Fill(ChiSquare);
+            ChiOverNdfHist[i_iDAC]->Fill(ChiSquare/(double)NDF);
 
             // ************* Save S-curve Graph as png ************* //
             TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
@@ -397,27 +409,45 @@ int wgScurve(const char* x_inputDir,
 		
 		// Draw p.e. distribution histgrams for each inputDAC and
 		// save them under the inputIMGDir.
-    std::string pe_dir = outputIMGDir + "/PE_Distribution";
+    std::string pe_dir = outputIMGDir + "/EvaluationOfFit";
     MakeDir(pe_dir);
-		for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
+    for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
       TCanvas* PECanvas = new TCanvas("PECanvas","PECanvas");
+      TCanvas* ChiCanvas = new TCanvas("ChiCanvas","ChiCanvas");
+      TCanvas* ChiOverNdfCanvas = new TCanvas("ChiOverNdfCanvas","ChiOverNdfCanvas");
+      ChiOverNdfCanvas->SetLogy();
+      // PE distribution
       TF1* Pe1Fit = new TF1("Pe1Fit","gaus",100,200);
       TF1* Pe2Fit = new TF1("Pe2Fit","gaus",100,200);
-		  PECanvas->cd();
-		  Pe1Hist[i_iDAC]->Draw();
-		  Pe2Hist[i_iDAC]->Draw("same");
-		  Pe1Hist[i_iDAC]->Fit(Pe1Fit,"rlq");
-		  Pe2Hist[i_iDAC]->Fit(Pe2Fit,"rlq");
-		  mean1PE[i_iDAC] = Pe1Fit->GetParameter(1); sigma1PE[i_iDAC] = Pe1Fit->GetParameter(2);
-		  mean2PE[i_iDAC] = Pe2Fit->GetParameter(1); sigma2PE[i_iDAC] = Pe2Fit->GetParameter(2);
-		  TString name(outputIMGDir + "/PE_Distribution/iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png");
-		  PECanvas->Print(name);
-		  delete Pe1Fit;
-		  delete Pe2Fit;
-		  delete PECanvas;
-		  delete Pe1Hist[i_iDAC];
-		  delete Pe2Hist[i_iDAC];
-		}
+      PECanvas->cd();
+      Pe1Hist[i_iDAC]->Draw();
+      Pe2Hist[i_iDAC]->Draw("same");
+      Pe1Hist[i_iDAC]->Fit(Pe1Fit,"rlq");
+      Pe2Hist[i_iDAC]->Fit(Pe2Fit,"rlq");
+      mean1PE[i_iDAC] = Pe1Fit->GetParameter(1); sigma1PE[i_iDAC] = Pe1Fit->GetParameter(2);
+      mean2PE[i_iDAC] = Pe2Fit->GetParameter(1); sigma2PE[i_iDAC] = Pe2Fit->GetParameter(2);
+      TString name(outputIMGDir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png");
+      PECanvas->Print(name);
+      // Chi square distribution
+      ChiCanvas->cd();
+      ChiHist[i_iDAC]->Draw();
+      name = outputIMGDir + "/EvaluationOfFit/Chisquare_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
+      ChiCanvas->Print(name);
+      // Chi square over ndf distribution
+      ChiOverNdfCanvas->cd();
+      ChiOverNdfHist[i_iDAC]->Draw();
+      name = outputIMGDir + "/EvaluationOfFit/ChisquareOverNdf_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
+      ChiOverNdfCanvas->Print(name);
+      delete Pe1Fit;
+      delete Pe2Fit;
+      delete PECanvas;
+      delete ChiCanvas;
+      delete ChiOverNdfCanvas;
+      delete Pe1Hist[i_iDAC];
+      delete Pe2Hist[i_iDAC];
+      delete ChiHist[i_iDAC];
+      delete ChiOverNdfHist[i_iDAC];
+    }
 
     /********************************************************************************
      *                           threshold_card.xml                                 *
@@ -481,6 +511,8 @@ int wgScurve(const char* x_inputDir,
 void fit_scurve(TGraphErrors* Scurve, 
                 double& pe1_t, 
                 double& pe2_t, 
+                double& ChiSquare,
+                int&    NDF,
                 unsigned idif, 
                 unsigned ichip, 
                 unsigned ichan, 
@@ -513,6 +545,8 @@ void fit_scurve(TGraphErrors* Scurve,
   // Set 1.5 pe as the middle point between two sigmoid functions' center.
   double a = fit_scurve->GetParameter(5);
   double b = fit_scurve->GetParameter(2);
+  ChiSquare = fit_scurve->GetChisquare();
+  NDF = fit_scurve->GetNDF();
   pe1_t =  (  a + b) / 2;
   pe2_t =  (3*a - b) / 2;
 

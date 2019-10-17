@@ -27,6 +27,8 @@ extern "C" {
 void fit_scurve(TGraphErrors* Scurve, 
                 double& pe1_t, 
                 double& pe2_t, 
+                double& ChiSquare,
+                int&    NDF,
                 unsigned idif_id, 
                 unsigned ichip_id, 
                 unsigned ichan_id, 
