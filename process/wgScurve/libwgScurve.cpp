@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <map>
+#include <time.h>
 
 // boost includes
 #include <boost/filesystem.hpp>
@@ -293,6 +294,7 @@ int wgScurve(const char* x_inputDir,
 		}
 
     for (unsigned idif = 0; idif < n_difs; ++idif) {
+      clock_t start = clock();
       for (const auto &asu : topol.dif_map[dif_counter_to_id[idif]]) {
         unsigned ichip = asu.first;
         for (unsigned ichan = 0; ichan < asu.second; ++ichan) {
@@ -423,7 +425,9 @@ int wgScurve(const char* x_inputDir,
           delete c2;
         } // channel
       } // chip
-  		Log.Write("[wgScurve] Fitting DIF = " +  std::to_string(idif) + " done.");
+      clock_t end = clock();
+      const double time = static_cast<double>(end-start)/CLOCKS_PER_SEC;
+      Log.Write("[wgScurve] Fitting DIF = " +  std::to_string(idif) + " done. (time = " + std::to_string(time) + " s)");
     } // dif
 		
 		// Draw p.e. distribution histgrams for each inputDAC and
