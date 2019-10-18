@@ -38,6 +38,7 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2)
   else return false;
 }
 
+#define LOG_SCURVE 1 // comment out when not using log-scale
 
 //******************************************************************
 int wgScurve(const char* x_inputDir,
@@ -235,7 +236,8 @@ int wgScurve(const char* x_inputDir,
               if(noiserate == UINT_MAX || noiserate <= 1 || std::isnan(noiserate)){
                 noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
                 noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
-							}else{
+              }else{
+#ifdef LOG_SCURVE
 								/* Log-scaled version of Scurve */
                 // log of dark noise rate
                 noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
@@ -243,15 +245,16 @@ int wgScurve(const char* x_inputDir,
                 // log of dark noise rate sigma
                 noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = 0.5;
                     //(std::log(noiserate+noiseratesigma) - std::log(noiserate-noiseratesigma))/2;
-                
+#else 
                 /* Not log-scaled version of Scurve */
-//                // dark noise rate
-//                noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
-//                    Edit.SUMMARY_GetChFitValue("noise_rate", chan_counter);
-//                // dark noise rate sigma
-//                noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
-//                    Edit.SUMMARY_GetChFitValue("sigma_rate", chan_counter);
-							}
+                // dark noise rate
+                noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
+                    Edit.SUMMARY_GetChFitValue("noise_rate", chan_counter);
+                // dark noise rate sigma
+                noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
+                    Edit.SUMMARY_GetChFitValue("sigma_rate", chan_counter);
+#endif
+              }
             } // chan
             Edit.Close();
           } // chip
@@ -312,7 +315,9 @@ int wgScurve(const char* x_inputDir,
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
                                         
             TCanvas *c1 = new TCanvas("c1", "c1");
-            //c1->SetLogy();  /* log-scaled -> comment out; not log-scaled -> not comment out */
+#ifndef LOG_SCURVE
+            c1->SetLogy();
+#endif
             // These are temporary variables for x, y and their errors used to draw the graph.
             d1vector gx, gy, gxe, gye;
 
@@ -536,22 +541,22 @@ void fit_scurve(TGraphErrors* Scurve,
 
   // Fitting function for Scurve is summation of two sigmoid functions (and a constant).
   const char * fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
-  
+  TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
+#ifdef LOG_SCURVE
 	/* for log-scaled Scurve */
 	double c0 = 3.0, c1 = 0.5, c2 = 155, c3 = 2.5, c4 = 0.5, c5 = 135, c6 = 5.0;
-	/* for not log-scaled Scurve */
-//  double c0 = 1.0E+5, c1 = 0.5, c2 = 155, c3 = 3.0E+3, c4 = 0.5, c5 = 135, c6 = 1.0E+2;
-
-  TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
-	/* for log-scaled Scurve */
   fit_scurve->SetParLimits(0, c0-0.5, c0+0.5);  
   fit_scurve->SetParLimits(3, c3-0.5, c3+0.5); 
   fit_scurve->SetParLimits(6, c6-0.5, c6+0.5);
-	/* for not log-scaled Scurve */
-//  fit_scurve->SetParLimits(0, c0/1.5, c0*1.5);  
-//  fit_scurve->SetParLimits(3, c3/1.5, c3*1.5); 
-//  fit_scurve->SetParLimits(6, c6/1.5, c6*4.0);
+#else 
+  /* for not log-scaled Scurve */
+  double c0 = 1.0E+5, c1 = 0.5, c2 = 155, c3 = 3.0E+3, c4 = 0.5, c5 = 135, c6 = 1.0E+2;
+  fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
+  fit_scurve->SetParLimits(0, c0/1.5, c0*1.5);  
+  fit_scurve->SetParLimits(3, c3/1.5, c3*1.5); 
+  fit_scurve->SetParLimits(6, c6/1.5, c6*4.0);
+#endif
   
   Scurve->Fit(fit_scurve, "q");
         
