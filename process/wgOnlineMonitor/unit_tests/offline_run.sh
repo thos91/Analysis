@@ -4,8 +4,9 @@
 
 BIN_DIR="${WAGASCI_MAINDIR}/bin"
 CONFIG_DIR="${WAGASCI_MAINDIR}/configs"
+DIF_ID=4
 
-data_file="/home/neo/Desktop/test/scurve_test_idac1_threhsold152_ecal_dif_0.raw"
+data_file="/home/neo/Desktop/Test/scurve_test_iDAC1_threshold150_ecal_dif_${DIF_ID}.raw "
 #data_file="${CONFIG_DIR}/unit_tests/test_inputDAC121_pe2_dif_0.raw"
 
 pyrame_config=$(echo "${data_file}" | sed -E "s/_ecal_dif_[0-9]+\.raw/\.xml/")
@@ -17,7 +18,7 @@ source_name=$(echo "${data_file}" | sed -E "s/.*(dif.*)\.raw/\1/")
 #   3) uri                : data_file_path
 #   4) convert_plugin     : /opt/pyrame/spiroc2d_decoder.so
 # SPIROC2D_DECODER arguments
-#   1) dif_id             : 0
+#   1) dif_id             : DIF_ID
 #   3) cut_non_hit        : 1
 #   4) min_energy         : 0
 #   5) mapping_filename   : /home/neo/Code/WAGASCI/Configs/wagasci_mapping_table.txt
@@ -25,11 +26,11 @@ source_name=$(echo "${data_file}" | sed -E "s/.*(dif.*)\.raw/\1/")
 #   7) offset_y           : 0
 #   8) offset_z           : 0
 #   9) max_roc            : n_chips
-echo "cmdmod /opt/pyrame/cmd_converter.xml -a \"$source_name\" undef \"file://${data_file}\" /opt/pyrame/spiroc2d_decoder.so 0 1 0 \"${CONFIG_DIR}/mapping/wagasci_mapping_table.txt\" 0 0 0 3 &"
-cmdmod /opt/pyrame/cmd_converter.xml -a "$source_name" undef "file://${data_file}" /opt/pyrame/spiroc2d_decoder.so 0 1 0 "${CONFIG_DIR}/mapping/wagasci_mapping_table.txt" 0 0 0 3 &
+echo "cmdmod /opt/pyrame/cmd_converter.xml -a \"$source_name\" undef \"file://${data_file}\" /opt/pyrame/spiroc2d_decoder.so ${DIF_ID} 1 0 \"${CONFIG_DIR}/mapping/wagasci_mapping_table.txt\" 0 0 0 20 > /dev/null 2>&1 &"
+cmdmod /opt/pyrame/cmd_converter.xml -a "$source_name" undef "file://${data_file}" /opt/pyrame/spiroc2d_decoder.so ${DIF_ID} 1 0 "${CONFIG_DIR}/mapping/wagasci_mapping_table.txt" 0 0 0 20 > /dev/null 2>&1 &
     
 sleep 1s
 cntds.py "converter_${source_name}" start_acq_converter
 
-echo "\"${BIN_DIR}/wgOnlineMonitor\" --dif_id 0 --pyrame_config \"${pyrame_config}\""
-"${BIN_DIR}/wgOnlineMonitor" --dif_id 0 --pyrame_config "${pyrame_config}"
+echo "\"${BIN_DIR}/wgOnlineMonitor\" --dif_id ${DIF_ID} --pyrame_config \"${pyrame_config}\""
+"${BIN_DIR}/wgOnlineMonitor" --dif_id ${DIF_ID} --pyrame_config "${pyrame_config}"
