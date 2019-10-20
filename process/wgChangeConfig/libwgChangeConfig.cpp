@@ -65,11 +65,11 @@ int wgChangeConfig(const char * x_input_file,
   
     if (flags[EDIT_FLAG]) {
       if (mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD || mode == EC_CHIPID) {
-        if ((mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD) && value > MAX_VALUE_10BITS) {
+        if ((mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD) && value > (int) MAX_VALUE_10BITS) {
           Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
-        else if (mode == EC_CHIPID && value > MAX_VALUE_8BITS) {
+        else if (mode == EC_CHIPID && value > (int) MAX_VALUE_8BITS) {
           Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
@@ -86,13 +86,13 @@ int wgChangeConfig(const char * x_input_file,
           }
         }
         else if (mode == EC_HG_LG_AMPLIFIER) {
-          if (value > MAX_VALUE_6BITS) {
+          if (value > (int) MAX_VALUE_6BITS) {
             Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
         }
         else if (mode == EC_THRESHOLD_ADJUSTMENT) {
-          if (value > MAX_VALUE_4BITS) {
+          if (value > (int) MAX_VALUE_4BITS) {
             Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
