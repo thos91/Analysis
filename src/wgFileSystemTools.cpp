@@ -25,6 +25,8 @@ namespace filesys = boost::filesystem;
 
 namespace wagasci_tools {
 
+BOOST_STATIC_ASSERT(BOOST_VERSION >= 106200);
+
 std::string GetExtension(const std::string& str)
 {
   std::string ext;
