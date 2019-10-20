@@ -21,7 +21,7 @@
 #include "pyrame.h"
 
 // MIDAS includes
-#include "mjsonrpc.h"
+// #include "mjsonrpc.h"
 
 // user includes
 #include "wgErrorCodes.hpp"
@@ -273,44 +273,4 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
   Log.Write("End of loop!");
 
   return WG_SUCCESS;
-}
-
-static MJsonNode* send_channel_data(const MJsonNode* params)
-{
-   if (!params) {
-      MJSO* doc = MJSO::I();
-      doc->D("send channel data to mhttpd for the online monitor");
-      doc->P("DIF", MJSON_INT, "DIF number");
-      doc->P("CHIP", MJSON_INT, "CHIP number");
-      doc->P("CHANNEL", MJSON_INT, "CHANNEL number");
-      doc->R("charge", MJSON_STRING, "PEU values as a base64 string");
-      doc->R("time", MJSON_STRING, "time from beam trigger as a base64 string");
-      doc->R("gain", MJSON_STRING, "gain history");
-      doc->R("dark rate", MJSON_STRING, "dark rate history");
-      return doc;
-   }
-
-   MJsonNode* error = NULL;
-
-   int dif = mjsonrpc_get_param(params, "DIF", NULL)->GetInt();
-   if (error) return error;
-   int chip = mjsonrpc_get_param(params, "CHIP", NULL)->GetInt();
-   if (error) return error;
-   int channel = mjsonrpc_get_param(params, "CHANNEL", NULL)->GetInt();
-   if (error) return error;
-   
-   if (mjsonrpc_debug)
-     std::cout << "send_channel_data(dif=" << dif << ",chip=" <<
-         chip << ",channel=" << channel << ")\n";
-
-   MJsonNode* result = MJsonNode::MakeObject();
-
-   std::string charge, time, gain, dark_rate;
-   
-   result->AddToObject("charge", MJsonNode::MakeString(charge));
-   result->AddToObject("time", MJsonNode::MakeString(time));
-   result->AddToObject("gain", MJsonNode::MakeString(gain));
-   result->AddToObject("dark_rate", MJsonNode::MakeString(dark_rate));
-
-   return mjsonrpc_make_result(result);
 }
