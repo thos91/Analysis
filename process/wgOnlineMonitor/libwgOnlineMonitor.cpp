@@ -109,18 +109,18 @@ void newevt(void *workspace, struct event *event)
     Log.eWrite("Failed to convert \"plane\": error " + std::to_string(result));
     plane = -1;
   }
-  float x;
-  if ((result = my_stof(get_event_field(event, "x"), x)) != 0) {
+  double x;
+  if ((result = my_stod(get_event_field(event, "x"), x)) != 0) {
     Log.eWrite("Failed to convert \"x\": error " + std::to_string(result));
     x = NAN;
   }
-  float y;
-  if ((result = my_stof(get_event_field(event, "y"), y)) != 0) {
+  double y;
+  if ((result = my_stod(get_event_field(event, "y"), y)) != 0) {
     Log.eWrite("Failed to convert \"y\": error " + std::to_string(result));
     y = NAN;
   }
-  float z;
-  if ((result = my_stof(get_event_field(event, "z"), z)) != 0) {
+  double z;
+  if ((result = my_stod(get_event_field(event, "z"), z)) != 0) {
     Log.eWrite("Failed to convert \"z\": error " + std::to_string(result));
     z = NAN;
   }
@@ -140,9 +140,9 @@ void newevt(void *workspace, struct event *event)
     gain = -1;
   }
 
-  // Float_t offset_time = bcid % 2 == 0 ? EVEN_TIME_OFFSET : ODD_TIME_OFFSET;
-  // Float_t ramp_time   = bcid % 2 == 0 ? EVEN_RAMP_TIME : ODD_RAMP_TIME;
-  // Float_t hittiming = bcid * BCID_NS  + (time - offset_time) * ramp_time;
+  // Double_t offset_time = bcid % 2 == 0 ? EVEN_TIME_OFFSET : ODD_TIME_OFFSET;
+  // Double_t ramp_time   = bcid % 2 == 0 ? EVEN_RAMP_TIME : ODD_RAMP_TIME;
+  // Double_t hittiming = bcid * BCID_NS  + (time - offset_time) * ramp_time;
   
 #ifdef DEBUG_WG_ONLINE_MONITOR
   char debug_message[1024];
@@ -232,13 +232,13 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
   Topology * topol;
   try { topol = new Topology(pyrame_config_file); }
   catch (const std::exception& e) {
-    Log.eWrite("[wgAnaHist] " + std::string(e.what()));
+    Log.eWrite("[wgOnlineMonitor] " + std::string(e.what()));
     return ERR_TOPOLOGY;
   }
   unsigned n_chips = topol->dif_map[dif_id].size();
 
   if ( n_chips == 0 || n_chips > NCHIPS ) {
-    Log.eWrite("[wgAnaHist] wrong number of chips : " + std::to_string(n_chips) );
+    Log.eWrite("[wgOnlineMonitor] wrong number of chips : " + std::to_string(n_chips) );
     return ERR_WRONG_CHIP_VALUE;
   }
   
