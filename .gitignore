@@ -28,3 +28,6 @@ lib/*
 doc/build/*
 doc/source/*
 *.png
+unit_tests/*
+.dir-locals.el
+configs/environment/wagasci_environment.sh

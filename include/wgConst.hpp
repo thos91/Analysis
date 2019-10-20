@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <climits>
+#include <mutex>
 
 // ROOT includes
 #include <TROOT.h>
@@ -17,6 +18,14 @@
 #include "wgContiguousVectors.hpp"
 #include "wgErrorCodes.hpp"
 #include "wgEnvironment.hpp"
+
+// Only the ROOT Minuit2 minimizer is thread-safe. All the others are
+// not. So if ROOT has not support for the Minuit2 minimizer than we
+// have to restrict access to the fitting sections only to one thread
+// at a time
+#ifdef ROOT_HAS_NOT_MINUIT2
+extern std::mutex MUTEX;
+#endif
 
 // ================================================================ //
 //                                                                  //
@@ -41,10 +50,32 @@ const unsigned SPILL_NUMBER_LENGTH   = 3;
 // n_channels times    +
 // n_channels charges
 const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
-
 const unsigned MAX_EVENT = UINT_MAX;
-const unsigned N_DEBUG_SPILL = 7;
-const unsigned N_DEBUG_CHIP = 6;
+
+// Debug macros to fill the debug_spill and debug_chip histograms
+// spill
+enum SPILL_DEBUG_CODES {
+  DEBUG_SPILL_MODE        = 0,
+  DEBUG_SAME_SPILL_NUMBER = 1,
+  DEBUG_SPILL_NUMBER_GAP  = 2,
+  DEBUG_SAME_SPILL_COUNT  = 3,
+  DEBUG_SPILL_COUNT_GAP   = 4,
+  DEBUG_SPILL_TRAILER     = 5,
+  DEBUG_WRONG_NCHIPS      = 6,
+  N_DEBUG_SPILL           = 7
+};
+
+// chip
+enum CHIP_DEBUG_CODES {
+  DEBUG_WRONG_BCID        = 0,
+  DEBUG_WRONG_HIT_BIT     = 1,
+  DEBUG_WRONG_GAIN_BIT    = 2,
+  DEBUG_WRONG_ADC         = 3,
+  DEBUG_WRONG_TDC         = 4,
+  DEBUG_WRONG_CHIPID      = 5,
+  DEBUG_WRONG_NCOLUMNS    = 6,
+  N_DEBUG_CHIP            = 7
+};
 
 enum SPILL_TYPE {
   NON_BEAM_SPILL = 0,  // non beam spill bit (spill_flag)

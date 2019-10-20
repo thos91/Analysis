@@ -195,17 +195,7 @@ unsigned GetNumChips(std::string & input_raw_file) {
   
   if (n_chips_vec.size() == 0) return 0;
 
-  unsigned max = 0;
-  unsigned most_common_n_chips = -1;
-  std::map<unsigned, unsigned> m;
-  for (auto vi = n_chips_vec.begin(); vi != n_chips_vec.end(); vi++) {
-    m[*vi]++;
-    if (m[*vi] > max) {
-      max = m[*vi]; 
-      most_common_n_chips = *vi;
-    }
-  }
-  return most_common_n_chips;
+  return *std::max_element(n_chips_vec.begin(), n_chips_vec.end());
 }
 
 } // namespace wagasci_decoder_utils

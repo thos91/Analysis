@@ -1,9 +1,9 @@
 // system C++ includes
 #include <string>
 #include <iostream>
+#include <bitset>
 
 // system C includes
-#include <bits/stdc++.h>
 #include <getopt.h>
 
 // user includes

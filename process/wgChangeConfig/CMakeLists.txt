@@ -22,10 +22,10 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ################ includes ################
 
 # WAGASCI include directory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../include")
 
 # ROOT include directory
-include_directories(${ROOT_INCLUDE_DIRS})
+include_directories("${ROOT_INCLUDE_DIRS}")
 
 #####################################################################
 #                                                                   #
@@ -46,10 +46,10 @@ target_link_libraries(lib${process}
  )
 
 # make the library discoverable from all the programs
-target_include_directories(lib${process} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(lib${process} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # install the static library in the lib folder
-install(TARGETS lib${process} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../../lib)
+install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
 #####################################################################
 #                                                                   #

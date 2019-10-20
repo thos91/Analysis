@@ -2,16 +2,36 @@
 
 Analysis software for the WAGASCI experiment.
 
-## CMAKE : Compile and install
+T2K experiment
+--------------
+
+T2K (Tokai-to-Kamioka) is a long-baseline off-axis neutrino oscillation
+experiment that focuses on measuring muon (anti)-neutrinos oscillating into
+electron (anti)-neutrinos. A very pure muon neutrino beam is produced at J-PARC
+accelerator complex and detected 295 km away at the Super-Kamiokande (SK) far
+detector. T2K uses a set of near detectors in order to reduce the large
+uncertainties on the oscillation parameters that come from the neutrino fluxes
+and interaction models.
+
+WAGASCI experiment
+------------------
+
+WAGASCI (WAter-Grid-SCIintilator-Detector) is proposed to
+
+- reduce the T2K systematic error
+- measurement of the charge current cross-section ratio between water and
+  scintillator targets with 3% accuracy
+- measurement of different charged current neutrino interaction channels with
+  high precision and large acceptance.
+
+## Installation
 
 Recently the WAGASCI Analysis software has switched from Make to CMake to
-support multiple OS and platforms, in particular MacOS and Linux.  To compile
+support multiple OS and platforms, in particular, MacOS and Linux.  To compile
 and install with CMake create a build directory somewhere and issue the
 following commands.
 
 ```
-cd Analysis
-mkdir build
 cd build
 cmake .. -DCMAKE_INSTALL_PREFIX=../
 make -j4
@@ -22,7 +42,7 @@ make install
 In the example above the build directory is called `build` and is created just
 inside the `Analysis` folder. If you place the build directory somewhere else,
 substitute the double dots `..` with the correct path to the `Analysis`
-directory. If you want, ou can modify the `CMAKE_INSTALL_PREFIX` too.
+directory. If you want, you can modify the `CMAKE_INSTALL_PREFIX` too.
 
 To uninstall, move to the build directory and issue:
 
@@ -40,12 +60,14 @@ browser by opening the file `Analysis/doc/build/index.html`.
 ## Dependencies : Linux
 
 ### ROOT
+
 The `Analysis` code depends heavily on CERN
 [ROOT](https://root.cern.ch/). Please install it and be sure that the `ROOTSYS`
 variable (and all the ROOT environment) are correctly set before compiling the
 `Analysis` code.
 
 ### BOOST
+
 You also need to install boost libraries (at least `system` and
 `filesystem`). Boost is always present in the repositories of every major Linux
 distribution. For example in Ubuntu you just need to
@@ -60,14 +82,15 @@ And in Centos just
 yum install boost-devel
 ```
 
-In MacOS download [MacPorts](https://www.macports.org/), and run the following
-command
+### CMake
+
+- Debian/Ubuntu
 
 ```
 sudo apt install cmake
 ```
 
-RHEL/CentOS
+- RHEL/CentOS
 
 ```
 sudo yum install cmake
@@ -75,20 +98,20 @@ sudo yum install cmake
 
 ### nlohmann-json
 
-Debian/Ubuntu
+- Debian/Ubuntu
 ```
 sudo apt install nlohmann-json-dev
 ```
 
 ### Sphinx (optional)
 
-Debian/Ubuntu:
+- Debian/Ubuntu:
 
 ```
 sudo apt-get install python3-sphinx
 ```
 
-RHEL/CentOS:
+- RHEL/CentOS:
 
 ```
 sudo yum install python-sphinx
@@ -121,19 +144,6 @@ After installing MacPorts, run the following command
 ```
 sudo port install boost
 ```
-
-### Fix "<bits/stdc++.h> not found" error
-
-```
-sudo port install wget
-cd /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
-mkdir bits
-cd bits
-wget https://gist.githubusercontent.com/reza-ryte-club/97c39f35dab0c45a5d924dd9e50c445f/raw/47ecad34033f986b0972cdbf4636e22f838a1313/stdc++.h
-```
-
-The instructions above were taken from
-[here](https://qiita.com/acchan_ar/items/6a4c4c070dd76a236fdc) (Only Japanese).
 
 ### CMake
 

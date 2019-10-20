@@ -3,13 +3,14 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <bitset>
 
 // boost includes
 #include <boost/filesystem.hpp>
 
 // system C includes
-#include <cstdbool>
-#include <bits/stdc++.h>
+//#include <cstdbool>
+//#include <bits/stdc++.h>
 
 // ROOT includes
 #include "TSystem.h"
@@ -107,9 +108,9 @@ int wgAnaHistSummary(const char * x_inputDir,
     }
   }
 
-  Log.Write(" *****  READING DIRECTORY      :" + inputDir     + "  *****");
-  Log.Write(" *****  OUTPUT XML DIRECTORY   :" + outputXMLDir + "  *****");
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY :" + outputIMGDir + "  *****");
+  Log.Write("[wgAnaHistSummary] *****  READING DIRECTORY      :" + inputDir     + "  *****");
+  Log.Write("[wgAnaHistSummary] *****  OUTPUT XML DIRECTORY   :" + outputXMLDir + "  *****");
+  Log.Write("[wgAnaHistSummary] *****  OUTPUT IMAGE DIRECTORY :" + outputIMGDir + "  *****");
 
 
 

@@ -3,9 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <bitset>
 
-// system C includes
-#include <bits/stdc++.h>
 
 // ROOT includes
 #include <THStack.h>
@@ -29,7 +28,7 @@ using namespace wagasci_tools;
 int wgChangeConfig(const char * x_input_file,
                    const char * x_output_file,
                    const unsigned long flags_ulong,
-                   const unsigned value,
+                   const int value,
                    const unsigned mode,
                    const unsigned channel) {
   
@@ -58,9 +57,8 @@ int wgChangeConfig(const char * x_input_file,
     }
   }
 
-  bool is_bitstream_string = false;
-
   try {
+    bool is_bitstream_string = false;
     wgEditConfig EditConfig(input_file, is_bitstream_string);
   
     // Sanity check of the passed arguments
@@ -82,7 +80,7 @@ int wgChangeConfig(const char * x_input_file,
           return ERR_WRONG_CHANNEL_VALUE;
         }
         else if (mode == EC_INPUT_DAC) {
-          if (value > MAX_VALUE_8BITS) {
+          if (value > (int) MAX_VALUE_8BITS) {
             Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
@@ -154,15 +152,15 @@ int wgChangeConfig(const char * x_input_file,
 		
         else {
           // Input DAC
-          if (mode == EC_INPUT_DAC ) {
+          if (mode == EC_INPUT_DAC) {
             EditConfig.Change_inputDAC(channel, value);
           }
           // HG and LG preamplifier feedback capacitor 
-          else if (mode == EC_HG_LG_AMPLIFIER ) {	
+          else if (mode == EC_HG_LG_AMPLIFIER) {	
             EditConfig.Change_ampDAC(channel, value);
           }
           // Threshold fine tuning
-          else if (mode == EC_THRESHOLD_ADJUSTMENT ) {
+          else if (mode == EC_THRESHOLD_ADJUSTMENT) {
             EditConfig.Change_trigadj(channel, value);
           } 
         }
@@ -176,12 +174,12 @@ int wgChangeConfig(const char * x_input_file,
       EditConfig.Write(output_file);
     }
     catch (const std::exception &e) {
-      Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to write value :" + e.what());
+      Log.eWrite("[wgChangeConfig][" + input_file + "] failed to write value : " + e.what());
       return ERR_FAILED_WRITE;
     }
   } // catch the exception thrown by the EditConfig constructor
   catch (const std::exception& e) {
-    Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to open the input file : " + e.what());
+    Log.eWrite("[wgChangeConfig][" + input_file + "] failed to open the input file : " + e.what());
   }
   return WG_SUCCESS;
 }

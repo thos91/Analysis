@@ -6,6 +6,8 @@
 #include <exception>
 #include <numeric>
 #include <bitset>
+#include <iostream>
+#include <iomanip>
 
 // boost includes
 #include <boost/algorithm/string.hpp>
@@ -26,9 +28,9 @@
 using namespace wagasci_tools;
 
 //*********************************************************************************
-wgEditConfig::wgEditConfig(const std::string& input, bool bitstream_string){
+wgEditConfig::wgEditConfig(const std::string& input, bool is_bitstream_string){
   this->Clear();
-  if (bitstream_string) this->SetBitstream(input);
+  if (is_bitstream_string) this->SetBitstream(input);
   else this->Open(input);
 }
 
@@ -72,11 +74,12 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
 //*********************************************************************************
 void wgEditConfig::Open(const std::string& input){
   std::string str;
-  std::ifstream ifs(input.c_str());
+  std::ifstream ifs;
+  ifs.open(input);
   getline(ifs, str);
   if( str.size() != BITSTREAM_HEX_STRING_LENGTH) {
     ifs.close();
-    throw std::invalid_argument("[wgEditConfig::SetBitstream] wrong size of the bitstream string : " + std::to_string(input.size()));
+    throw std::invalid_argument("[Open] wrong size of the bitstream string : " + std::to_string(str.size()));
   }
   ifs.close();
   wgEditConfig::hex_config = str.substr(2, BITSTREAM_HEX_STRING_LENGTH - 2);
@@ -237,14 +240,16 @@ std::string wgEditConfig::DeToBi(const std::string& input){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_inputDAC(const unsigned chan, unsigned value) {
+void wgEditConfig::Change_inputDAC(const unsigned chan, int value) {
   if (chan > NCHANNELS)
     throw std::invalid_argument("channel is out of range : " + std::to_string(chan));
-  if(value + fine_inputDAC[chan] > MAX_VALUE_8BITS)
-    throw std::invalid_argument("value is out of range : " + std::to_string(value + fine_inputDAC[chan]));
+  if(value + m_fine_inputDAC[chan] > (int) MAX_VALUE_8BITS)
+    throw std::invalid_argument("value is out of range : " + std::to_string(value + m_fine_inputDAC[chan]));
 
   std::stringstream num;
-  num << std::setfill('0') << std::setw(ADJ_INPUTDAC_LENGTH) << DeToBi(std::to_string(value)) << '1';
+  std::string on_off_bit(value < 0 ? "0" : "1");
+  value = (value < 0 ? 0 : value);
+  num << std::setfill('0') << std::setw(ADJ_INPUTDAC_LENGTH) << DeToBi(std::to_string(value)) << on_off_bit;
 
   if(chan == NCHANNELS) {
     for(unsigned ichan = 0; ichan < NCHANNELS; ichan++) {

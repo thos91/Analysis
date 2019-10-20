@@ -66,7 +66,7 @@ int wgDecoder(const char * x_input_raw_file,
   // ======== dif ========= //
 
   if (dif > NDIFS) {
-    Log.eWrite("[wgDecoder] The DIF number must be {1-" + std::to_string(NDIFS) + "}");
+    Log.eWrite("[wgDecoder] The DIF number must be {0-" + std::to_string(NDIFS - 1) + "}");
     exit(1);
   }
   
@@ -218,29 +218,34 @@ int wgDecoder(const char * x_input_raw_file,
   TString tree_name("tree_dif_" + std::to_string(dif));
   TString tree_title("ROOT tree containing decoded data : DIF " + std::to_string(dif));
   TTree * tree = new TTree(tree_name, tree_title);
+  
   tree->SetDirectory(output_file);
   tree->Branch("spill_number",&rd.spill_number     ,"spill_number/I"                                               );
   tree->Branch("spill_mode"  ,&rd.spill_mode       ,"spill_mode/I"                                                 );
   tree->Branch("spill_count" ,&rd.spill_count      ,"spill_count/I"                                                );
-  tree->Branch("bcid"        ,rd.bcid.data()       ,Form("bcid[%d][%d]/I"           ,n_chips,            MEMDEPTH ));
+
+  tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                      ));
+  tree->Branch("chanid"      ,rd.chanid.data()     ,Form("chanid[%d]/I"             ,         NCHANNELS           ));
+  tree->Branch("colid"       ,rd.colid.data()      ,Form("colid[%d]/I"              ,                    MEMDEPTH ));
+
   tree->Branch("charge"      ,rd.charge.data()     ,Form("charge[%d][%d][%d]/I"     ,n_chips, NCHANNELS, MEMDEPTH ));
   tree->Branch("time"        ,rd.time.data()       ,Form("time[%d][%d][%d]/I"       ,n_chips, NCHANNELS, MEMDEPTH ));
-  tree->Branch("gs"          ,rd.gs.data()         ,Form("gs[%d][%d][%d]/I"         ,n_chips, NCHANNELS, MEMDEPTH ));
+  tree->Branch("bcid"        ,rd.bcid.data()       ,Form("bcid[%d][%d]/I"           ,n_chips,            MEMDEPTH ));
   tree->Branch("hit"         ,rd.hit.data()        ,Form("hit[%d][%d][%d]/I"        ,n_chips, NCHANNELS, MEMDEPTH ));
-  tree->Branch("chipid"      ,rd.chipid.data()     ,Form("chipid[%d]/I"             ,n_chips                      ));
-  tree->Branch("col"         ,rd.col.data()        ,Form("col[%d]/I"                ,                    MEMDEPTH ));
-  tree->Branch("chan"        ,rd.chan.data()       ,Form("chan[%d]/I"               ,         NCHANNELS           ));
-  tree->Branch("chip"        ,rd.chip.data()       ,Form("chip[%d]/I"               ,n_chips                      ));
+  tree->Branch("gs"          ,rd.gs.data()         ,Form("gs[%d][%d][%d]/I"         ,n_chips, NCHANNELS, MEMDEPTH ));
+
   tree->Branch("debug_chip"  ,rd.debug_chip.data() ,Form("debug_chip[%d][%d]/I"     ,n_chips, N_DEBUG_CHIP        ));
   tree->Branch("debug_spill" ,rd.debug_spill.data(),Form("debug_spill[%d]/I"        ,N_DEBUG_SPILL                ));
-  tree->Branch("view"        ,&rd.view             ,"view/I"                                                       );
-  tree->Branch("pln"         ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, NCHANNELS           ));
-  tree->Branch("ch"          ,rd.ch.data()         ,Form("ch[%d][%d]/I"             ,n_chips, NCHANNELS           ));
-  tree->Branch("grid"        ,rd.grid.data()       ,Form("grid[%d][%d]/I"           ,n_chips, NCHANNELS           ));
-  tree->Branch("x"           ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, NCHANNELS           ));
-  tree->Branch("y"           ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, NCHANNELS           ));
-  tree->Branch("z"           ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, NCHANNELS           ));
+  
   if (adc_is_calibrated) {
+    tree->Branch("view"      ,&rd.view             ,"view/I"                                                       );
+    tree->Branch("pln"       ,rd.pln.data()        ,Form("pln[%d][%d]/I"            ,n_chips, NCHANNELS           ));
+    tree->Branch("chan"      ,rd.chan.data()       ,Form("chan[%d][%d]/I"           ,n_chips, NCHANNELS           ));
+    tree->Branch("grid"      ,rd.grid.data()       ,Form("grid[%d][%d]/I"           ,n_chips, NCHANNELS           ));
+    tree->Branch("x"         ,rd.x.data()          ,Form("x[%d][%d]/D"              ,n_chips, NCHANNELS           ));
+    tree->Branch("y"         ,rd.y.data()          ,Form("y[%d][%d]/D"              ,n_chips, NCHANNELS           ));
+    tree->Branch("z"         ,rd.z.data()          ,Form("z[%d][%d]/D"              ,n_chips, NCHANNELS           ));
+    
     tree->Branch("pedestal"  ,rd.pedestal.data()   ,Form("pedestal[%d][%d][%d]/D"   ,n_chips, NCHANNELS, MEMDEPTH ));
     tree->Branch("pe"        ,rd.pe.data()         ,Form("pe[%d][%d][%d]/D"         ,n_chips, NCHANNELS, MEMDEPTH ));
     tree->Branch("gain"      ,rd.gain.data()       ,Form("gain[%d][%d][%d]/D"       ,n_chips, NCHANNELS, MEMDEPTH ));
@@ -332,12 +337,9 @@ int wgDecoder(const char * x_input_raw_file,
 
       // ============ Print the progress every 1000 spills ============ //
       
-      if (current_section.type == SectionSeeker::SectionType::SpillTrailer) {
-        rd.clear();
-        if ((n_good_spills + n_bad_spills) % 1000 == 0) {
-          Log.Write("[wgDecoder] Decoded " + std::to_string(n_good_spills + n_bad_spills) + " spills");
-        }
-      }
+      if (current_section.type == SectionSeeker::SectionType::SpillTrailer &&
+          (n_good_spills + n_bad_spills) % 1000 == 0)
+        Log.Write("[wgDecoder] Decoded " + std::to_string(n_good_spills + n_bad_spills) + " spills");
       
       last_section_type = current_section.type;
     }
