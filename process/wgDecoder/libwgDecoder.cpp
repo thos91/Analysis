@@ -22,7 +22,6 @@
 #include "wgFileSystemTools.hpp"
 #include "wgExceptions.hpp"
 #include "wgGetCalibData.hpp"
-#include "wgChannelMap.hpp"
 #include "wgRawData.hpp"
 #include "wgDecoder.hpp"
 #include "wgDecoderSeeker.hpp"
