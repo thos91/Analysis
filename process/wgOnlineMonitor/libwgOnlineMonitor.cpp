@@ -155,11 +155,6 @@ void newevt(void *workspace, struct event *event)
                 x, y, z, hit, charge, gain);
   std::cout << debug_message;
 #endif
-  
-  if (ws->num_blocks - ws->lastblock_evtdisp != 1 && ws->num_blocks != 0) {
-    Log.eWrite("\"ws->nblock\" = " + std::to_string(ws->num_blocks) +
-               " | \"ws->lastblock_evtdisp\" = " + std::to_string(ws->lastblock_evtdisp) + "\n");
-  }
 
   ws->num_events++;
 } //newevt
@@ -202,6 +197,13 @@ void endblock(void *workspace, struct block *block) {
       " | Spill count: " << spill_count << " | Spill flag: " << spill_flag << std::endl;
   std::cout << "\tNumber of events: " << ws->num_events << std::endl;
 #endif
+
+  if (ws->num_blocks - ws->lastblock_evtdisp != 1 && ws->num_blocks != 0) {
+    Log.eWrite("\"ws->nblock\" = " + std::to_string(ws->num_blocks) +
+               " | \"ws->lastblock_evtdisp\" = " + std::to_string(ws->lastblock_evtdisp) +
+               "\n");
+  }
+  
 } // endblock
 
 // ==================================================================
@@ -244,21 +246,20 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
   
   // =========== Event loop =========== //
   
-  struct om_ws *ws = new struct om_ws;
-  initialize_work_space(*ws);
-  ws->dif_id = dif_id;
+  om_ws ws = {};
+  ws.dif_id = dif_id;
 
   char data_source_name[64];
   std::snprintf(data_source_name, 64, "converter_dif_%d", dif_id);
 
-  if ((ws->loop = new_event_loop(data_source_name,
-                                 ws,
-                                 newevt,
-                                 newblock,
-                                 endblock,
-                                 reinit,
-                                 endrun,
-                                 'f')) == NULL) {
+  if ((ws.loop = new_event_loop(data_source_name,
+                                &ws,
+                                newevt,
+                                newblock,
+                                endblock,
+                                reinit,
+                                endrun,
+                                'f')) == NULL) {
     return ERR_EVENT_LOOP;
   }
 
@@ -266,7 +267,7 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
   // below. You will then need to exit by Ctrl-C in the terminal window.
   //
   // while (true) 
-  run_loop(ws->loop);
+  run_loop(ws.loop);
 
   om_app.Run();
 
