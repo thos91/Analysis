@@ -28,7 +28,7 @@ using namespace wagasci_tools;
 void ModeSelect(const int mode, std::bitset<ANAHIST_NFLAGS>& flag){
   if (mode == 1 || mode >= 10)               flag[SELECT_DARK_NOISE] = true;
   if (mode == 2 || mode >= 10)               flag[SELECT_PEDESTAL]   = true;
-  if (mode == 3 || mode == 10 || mode >= 20) flag[SELECT_CHARGE]     = true;
+  if (mode == 3 || mode == 10 || mode >= 20) flag[SELECT_CHARGE_LG]  = true;
   if (mode == 4 || mode == 11 || mode >= 20) flag[SELECT_CHARGE_HG]  = true;
   if (mode < 0  || mode > 20)
     throw std::invalid_argument("Mode " + std::to_string(mode) + " not recognized"); 
@@ -246,20 +246,20 @@ int wgAnaHist(const char * x_input_file,
             } 
           }
 
-          //************* SELECT_CHARGE *************//
+          //************* SELECT_CHARGE_LG *************//
 
-          if ( flags[SELECT_CHARGE] ) {
+          if ( flags[SELECT_CHARGE_LG] ) {
             double fit_charge[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.charge_hit(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
+              Fit.charge_hit_LG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
-              xml.SetColValue(std::string("charge_hit"), icol, fit_charge[0], CREATE_NEW_MODE);
-              xml.SetColValue(std::string("sigma_hit") , icol, fit_charge[1], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("charge_hit_LG"), icol, fit_charge[0], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("sigma_hit_LG") , icol, fit_charge[1], CREATE_NEW_MODE);
             }
           }
 

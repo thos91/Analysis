@@ -7,7 +7,7 @@
 // user includes
 #include "wgGetHist.hpp"
 
-#define DEBUG_WGFIT
+
 
 class wgFit
 {
@@ -16,6 +16,12 @@ private:
 
 public:
   wgGetHist histos;
+
+  enum gain_select {
+    low_gain,
+    high_gain,
+    pedestal
+  };
   
   // Just call the GetHist constructor. Exceptions may be thrown.
   wgFit(const std::string& inputfile);
@@ -25,10 +31,11 @@ public:
   // dark noise rate mean value is saved in x[0] and its variance in x[1].  If
   // the mode is PRINT_HIST_MODE, an image of the fitted histogram is saved in
   // the default WAGASCI_IMGDATADIR directory.
+  static void noise_rate(TH1I * bcid_hit, double (&x)[2]);
   void noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag = false);
 
   // Calculate the charge (ADC count) peak value for chip "ichip",
-  // channel "ichan" and column "icol" from the charge_hit histogram.
+  // channel "ichan" and column "icol" from the charge_hit_HG histogram.
   // It is assumed that only one peak is present corresponding to low
   // p.e. events (mainly dark noise). The charge distribution is
   // fitted with a 3-parameter gaussian. The fit results are stored in
@@ -38,11 +45,12 @@ public:
   // value is store in the x[3] element. If the mode is
   // PRINT_HIST_MODE, an image of the fitted histogram is saved in the
   // default WAGASCI_IMGDATADIR directory.
-  void charge_hit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
-
-  // Same as above but uses the charge_hit_HG histogram (only the hits from the
-  // high gain preamp are considered)
+  static void charge_hit(TH1I * charge_hit, double (&x)[3], gain_select gs = high_gain);
   void charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
+
+  // Same as above but uses the charge_hit_LG histogram (only the hits from the
+  // low gain preamp are considered)
+  void charge_hit_LG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
   // Same as above but uses the charge_nohit histogram
   void charge_nohit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);

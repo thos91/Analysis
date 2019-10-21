@@ -1,10 +1,6 @@
 #ifndef WGFITCONST_H_INCLUDE
 #define WGFITCONST_H_INCLUDE
 
-// fit range for the charge_hit histogram
-extern const int WG_BEGIN_CHARGE_HIT;
-extern const int WG_END_CHARGE_HIT;
-
 // fit range for the charge_nohit histogram
 extern const int WG_BEGIN_CHARGE_NOHIT;
 extern const int WG_END_CHARGE_NOHIT;
@@ -12,6 +8,8 @@ extern const int WG_END_CHARGE_NOHIT;
 // fit range for the charge_hit_HG histogram
 extern const int WG_BEGIN_CHARGE_HIT_HG;
 extern const int WG_END_CHARGE_HIT_HG;
+extern const int WG_BEGIN_CHARGE_HIT_LG;
+extern const int WG_END_CHARGE_HIT_LG;
 
 // limits for the dark noise rate
 extern const double WG_LOWER_LIMIT_1PE;

@@ -1,16 +1,14 @@
 #include "wgFitConst.hpp"
 
-// fit range for the charge_hit histogram
-const int WG_BEGIN_CHARGE_HIT = 350;
-const int WG_END_CHARGE_HIT = 750;
-
 // fit range for the charge_nohit histogram
 const int WG_BEGIN_CHARGE_NOHIT = 300;
 const int WG_END_CHARGE_NOHIT = 700;
 
-// fit range for the charge_hit_HG histogram
+// fit range for the charge_hit_* histogram
 const int WG_BEGIN_CHARGE_HIT_HG = 350;
 const int WG_END_CHARGE_HIT_HG = 750;
+const int WG_BEGIN_CHARGE_HIT_LG = 0; // TODO: 
+const int WG_END_CHARGE_HIT_LG = 0; // TODO: 
 
 // limits for the dark noise rate
 const double WG_LOWER_LIMIT_1PE = 20000;  // 20 kHz
