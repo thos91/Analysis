@@ -9,12 +9,9 @@
 #include <boost/program_options.hpp>
 
 // ROOT includes
-// #include <TROOT.h>
-// #include <TH1F.h>
-// #include <TH2F.h>
-// #include <TCanvas.h>
-// #include <TGraph.h>
-// #include <TText.h>
+#include <TH1I.h>
+#include <TH2D.h>
+#include <TString.h>
 #include <TApplication.h>
 
 // pyrame includes
@@ -29,13 +26,8 @@
 #include "wgLogger.hpp"
 #include "wgTopology.hpp"
 #include "wgStrings.hpp"
+#include "wgFit.hpp"
 #include "wgOnlineMonitor.hpp"
-
-const int EVEN_TIME_OFFSET = 4000; // TODO: 
-const int  ODD_TIME_OFFSET = 500; // TODO: 
-const int EVEN_RAMP_TIME = -1; // TODO: 
-const int  ODD_RAMP_TIME = 1; // TODO: 
-const int BCID_NS = 580; // ns
 
 void newevt(void   *workspace, struct event *e);
 void newblock(void *workspace, struct block *b);
@@ -140,9 +132,10 @@ void newevt(void *workspace, struct event *event)
     gain = -1;
   }
 
-  // Double_t offset_time = bcid % 2 == 0 ? EVEN_TIME_OFFSET : ODD_TIME_OFFSET;
-  // Double_t ramp_time   = bcid % 2 == 0 ? EVEN_RAMP_TIME : ODD_RAMP_TIME;
-  // Double_t hittiming = bcid * BCID_NS  + (time - offset_time) * ramp_time;
+  if (hit == 1 && gain == 1) {
+    ws->h_charge[chip][channel]->Fill(charge);
+    ws->h_bcid[chip][channel]->Fill(bcid);
+  }
   
 #ifdef DEBUG_WG_ONLINE_MONITOR
   char debug_message[1024];
@@ -181,6 +174,20 @@ void endblock(void *workspace, struct block *block) {
     spill_flag = -1;
   }
 
+  // ------- Calculate gain and dark noise -------
+
+  double fit_charge_hit_HG[3] = {};
+  for (auto const& h_chip_charge : ws->h_charge) {
+    for (auto const& h_chan_charge : h_chip_charge) {
+      if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_IS) {
+        wgFit::charge_hit(h_chan_charge, fit_charge_hit_HG, wgFit::gain_select::high_gain);
+        if (fit_charge_hit_HG[0] == NAN) continue;
+      }
+      
+    }
+  }
+  
+
   // ------- spill gap -------
 
   // When the ws->last_spill=65535 the spill number is reset to
@@ -208,20 +215,58 @@ void endblock(void *workspace, struct block *block) {
 
 // ==================================================================
 
-void reinit(void *workspace) 
-{
-} //reinit
+void reinit(void *) {}
 
 // ==================================================================
 
-void endrun(void *workspace) 
-{
-} //reinit
+void endrun(void *) {}
 
+// ==================================================================
 
-void initialize_work_space(struct om_ws &ws) {
-    ws.dif_id = -1;
+unsigned initialize_work_space(struct om_ws &ws, Topology *topol, unsigned dif_id) {
+  TString name;
+  unsigned n_chips = topol->dif_map[dif_id].size();
+  if ( n_chips == 0 || n_chips > NCHIPS ) {
+    Log.eWrite("[wgOnlineMonitor] wrong number of chips : " + std::to_string(n_chips) );
+    return ERR_WRONG_CHIP_VALUE;
+  }
+  ws.dif_id = dif_id;
+  ws.h_charge.resize(n_chips);
+  for (auto const &chip : topol->dif_map[dif_id]) {
+    unsigned chip_id = chip.first;
+    unsigned n_channels = chip.second;
+    ws.h_charge[chip_id] = std::vector<TH1I*>(n_channels, NULL);
+    ws.h_bcid[chip_id] = std::vector<TH1I*>(n_channels, NULL);
+    for (unsigned ichan = 0; ichan < n_channels; ++ichan) {
+      name.Form("charge_%d_%d", chip_id, ichan);      
+      ws.h_charge[chip_id][ichan] = new TH1I(name, name, 400, 400, 800);
+      name.Form("bcid_%d_%d", chip_id, ichan);      
+      ws.h_bcid[chip_id][ichan] = new TH1I(name, name, 400, 400, 800); 
+    }
+  }
+
+  Int_t ini_time = (Int_t) time(NULL);
+  Int_t bin_time = 1000; //ms
+  Int_t fin_time = ini_time + bin_time * 20; //every 20sec
+  Int_t max_gain = 50;
+  Int_t min_gain = 0;
+  Int_t bin_gain = max_gain  - min_gain;
+  ws.h_gain_st = new TH2D("GainStability", "GainStability",
+                          bin_time, ini_time, fin_time,
+                          bin_gain, min_gain, max_gain);
+  ws.h_gain_st ->GetXaxis()->SetTimeDisplay(1);
+  ws.h_gain_st ->GetXaxis()->SetTimeFormat("%d/%b");
+  ws.h_gain_st ->GetXaxis()->SetNdivisions(510);
+  ws.h_gain_st ->GetYaxis()->SetNdivisions(205);
+  ws.h_gain_st ->GetXaxis()->SetLabelOffset(0.01);
+  ws.h_gain_st ->GetXaxis()->SetLabelSize(0.08);
+  ws.h_gain_st ->GetYaxis()->SetLabelSize(0.08);
+  ws.h_gain_st ->Draw("colz");
+  
+  return n_chips;
 }
+
+// ==================================================================
 
 int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
 
@@ -237,17 +282,18 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
     Log.eWrite("[wgOnlineMonitor] " + std::string(e.what()));
     return ERR_TOPOLOGY;
   }
-  unsigned n_chips = topol->dif_map[dif_id].size();
-
-  if ( n_chips == 0 || n_chips > NCHIPS ) {
-    Log.eWrite("[wgOnlineMonitor] wrong number of chips : " + std::to_string(n_chips) );
-    return ERR_WRONG_CHIP_VALUE;
-  }
   
-  // =========== Event loop =========== //
+  // =========== Work space initialization =========== //
   
   om_ws ws = {};
-  ws.dif_id = dif_id;
+  try { initialize_work_space(ws, topol, dif_id); }
+  catch (const std::exception& e) {
+    Log.eWrite("[wgOnlineMonitor] Error during workspace initialization : "
+               + std::string(e.what()));
+    return ERR_WORKSPACE_INITIALIZATION;
+  }
+
+  // =========== Event loop =========== //
 
   char data_source_name[64];
   std::snprintf(data_source_name, 64, "converter_dif_%d", dif_id);
