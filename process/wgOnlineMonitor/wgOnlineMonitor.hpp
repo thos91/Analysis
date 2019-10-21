@@ -5,7 +5,8 @@
 #include <vector>
 
 // ROOT includes
-#include "TH1I.h"
+#include <TH1I.h>
+#include <TH2D.h>
 
 const int FIT_WHEN_CHARGE_ENTRIES_IS = 1000;
 
@@ -28,8 +29,7 @@ struct om_ws
   std::vector<std::vector<TH1I*>> h_bcid;    // BCID histogram array for each
                                              // dif and channel
 
-  TH2D *h_gain_st;       // Time profile of the gain for all the channels
-                         // (gain stability)
+  TH2D *h_gain_stability; // Time profile of the gain for all the channels
 };
 
 int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id); 

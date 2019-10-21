@@ -1,6 +1,7 @@
 // system includes
 #include <string>
 #include <exception>
+#include <chrono>
 
 // system C includes
 #include <cstdio>
@@ -13,6 +14,7 @@
 #include <TH2D.h>
 #include <TString.h>
 #include <TApplication.h>
+#include <TError.h>
 
 // pyrame includes
 #include "pyrame.h"
@@ -28,6 +30,8 @@
 #include "wgStrings.hpp"
 #include "wgFit.hpp"
 #include "wgOnlineMonitor.hpp"
+
+using namespace std::chrono;
 
 void newevt(void   *workspace, struct event *e);
 void newblock(void *workspace, struct block *b);
@@ -176,28 +180,36 @@ void endblock(void *workspace, struct block *block) {
 
   // ------- Calculate gain and dark noise -------
 
-  double fit_charge_hit_HG[3] = {};
+  Double_t time = duration<double>(system_clock::now().time_since_epoch()).count();
+  
+  double fit_gain[2] = {};
   for (auto const& h_chip_charge : ws->h_charge) {
     for (auto const& h_chan_charge : h_chip_charge) {
       if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_IS) {
-        wgFit::charge_hit(h_chan_charge, fit_charge_hit_HG, wgFit::gain_select::high_gain);
-        if (fit_charge_hit_HG[0] == NAN) continue;
+        wgFit::gain(h_chan_charge, fit_gain);
+        if (!std::isnan(fit_gain[0])) {
+          ws->h_gain_stability->Fill(time, fit_gain[0]);
+          std::cout << "time " << time << " gain " << fit_gain[0] << "\n";
+          h_chan_charge->Reset();
+        }
       }
-      
     }
   }
-  
 
   // ------- spill gap -------
 
   // When the ws->last_spill=65535 the spill number is reset to
   // zero. Check that the spill number is always incremented by one
 
-  if ((spill_number - ws->last_spill - 1) % MAX_VALUE_16BITS + 1 != 0) {
-    ws->num_spill_gaps++;
-    Log.eWrite("\tSpill gap: " + std::to_string(ws->num_spill_gaps));
+  unsigned spill_gap;
+  if ((spill_gap = (spill_count - ws->last_spill - 1) % MAX_VALUE_16BITS) != 0) {
+    ws->num_spill_gaps += spill_gap;
+    std::stringstream ss;
+    ss << "spill gap: " << spill_gap << " | spill count: " << spill_count
+       << " | last spill number: " << ws->last_spill;
+    Log.eWrite(ss.str());
   }
-  ws->last_spill = spill_number;
+  ws->last_spill = spill_count;
 
 #ifdef DEBUG_WG_ONLINE_MONITOR
   std::cout << "End block\n\tID = " << block->id << " | Spill number: " << spill_number <<
@@ -232,6 +244,7 @@ unsigned initialize_work_space(struct om_ws &ws, Topology *topol, unsigned dif_i
   }
   ws.dif_id = dif_id;
   ws.h_charge.resize(n_chips);
+  ws.h_bcid.resize(n_chips);
   for (auto const &chip : topol->dif_map[dif_id]) {
     unsigned chip_id = chip.first;
     unsigned n_channels = chip.second;
@@ -240,8 +253,10 @@ unsigned initialize_work_space(struct om_ws &ws, Topology *topol, unsigned dif_i
     for (unsigned ichan = 0; ichan < n_channels; ++ichan) {
       name.Form("charge_%d_%d", chip_id, ichan);      
       ws.h_charge[chip_id][ichan] = new TH1I(name, name, 400, 400, 800);
+      ws.h_charge[chip_id][ichan]->SetDirectory(0);
       name.Form("bcid_%d_%d", chip_id, ichan);      
-      ws.h_bcid[chip_id][ichan] = new TH1I(name, name, 400, 400, 800); 
+      ws.h_bcid[chip_id][ichan] = new TH1I(name, name, 400, 400, 800);
+      ws.h_bcid[chip_id][ichan]->SetDirectory(0);
     }
   }
 
@@ -251,25 +266,27 @@ unsigned initialize_work_space(struct om_ws &ws, Topology *topol, unsigned dif_i
   Int_t max_gain = 50;
   Int_t min_gain = 0;
   Int_t bin_gain = max_gain  - min_gain;
-  ws.h_gain_st = new TH2D("GainStability", "GainStability",
-                          bin_time, ini_time, fin_time,
-                          bin_gain, min_gain, max_gain);
-  ws.h_gain_st ->GetXaxis()->SetTimeDisplay(1);
-  ws.h_gain_st ->GetXaxis()->SetTimeFormat("%d/%b");
-  ws.h_gain_st ->GetXaxis()->SetNdivisions(510);
-  ws.h_gain_st ->GetYaxis()->SetNdivisions(205);
-  ws.h_gain_st ->GetXaxis()->SetLabelOffset(0.01);
-  ws.h_gain_st ->GetXaxis()->SetLabelSize(0.08);
-  ws.h_gain_st ->GetYaxis()->SetLabelSize(0.08);
-  ws.h_gain_st ->Draw("colz");
-  
+
+  ws.h_gain_stability = new TH2D("GainStability", "GainStability",
+                                 bin_time, ini_time, fin_time,
+                                 bin_gain, min_gain, max_gain);
+  ws.h_gain_stability->SetDirectory(0);
+  ws.h_gain_stability->GetXaxis()->SetTimeDisplay(1);
+  ws.h_gain_stability->GetXaxis()->SetTimeFormat("%d/%b");
+  ws.h_gain_stability->GetXaxis()->SetNdivisions(510);
+  ws.h_gain_stability->GetYaxis()->SetNdivisions(205);
+  ws.h_gain_stability->GetXaxis()->SetLabelOffset(0.01);
+  ws.h_gain_stability->GetXaxis()->SetLabelSize(0.04);
+  ws.h_gain_stability->GetYaxis()->SetLabelSize(0.04);
+
   return n_chips;
 }
 
 // ==================================================================
 
 int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
-
+  gErrorIgnoreLevel = kError;
+  
   std::string pyrame_config_file(x_pyrame_config_file);
 
   TApplication om_app("WAGASCI online monitor", 0, NULL);

@@ -16,7 +16,7 @@ endif()
 
 ################ Debug flags ################
 
-add_compile_definitions(DEBUG_WG_ONLINE_MONITOR)
+#add_compile_definitions(DEBUG_WG_ONLINE_MONITOR)
 
 ################ Linker flags ################
 
