@@ -55,12 +55,12 @@ void wgFit::noise_rate(TH1I * bcid_hit, double (&x)[2], unsigned spill_count) {
   // that we want to roughly select only half of the columns (8
   // columns out of 16) to avoid finite memory artifacts.
   Double_t time_interval = 0.5 * last_bin;
-  Double_t sigma = bcid_hit->Integral(0, time_interval);
+  Double_t sum = bcid_hit->Integral(0, time_interval);
   bcid_hit->GetXaxis()->SetRange(0, 2 * time_interval + 10);
 
   // in Hertz
-  x[0] = sigma / ((time_interval * spill_count - sigma) * TIME_BCID);
-  x[1] = ((time_interval * spill_count - sigma) * sqrt(sigma)) /
+  x[0] = sum / ((time_interval * spill_count - sum) * TIME_BCID);
+  x[1] = ((time_interval * spill_count - sum) * sqrt(sum)) /
          (pow(time_interval, 2) * pow(spill_count, 2) * TIME_BCID);
 }
 

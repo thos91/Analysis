@@ -13,7 +13,6 @@
 #include <TH1I.h>
 #include <TH2D.h>
 #include <TString.h>
-#include <TApplication.h>
 #include <TError.h>
 
 // pyrame includes
@@ -32,6 +31,8 @@
 #include "wgOnlineMonitor.hpp"
 
 using namespace std::chrono;
+
+bool WG_ONLINE_MONITOR_CONTINUE_TO_RUN = true;
 
 void newevt(void   *workspace, struct event *e);
 void newblock(void *workspace, struct block *b);
@@ -138,7 +139,7 @@ void newevt(void *workspace, struct event *event)
 
   if (hit == 1 && gain == 1) {
     ws->h_charge[chip][channel]->Fill(charge);
-    ws->h_bcid[chip][channel]->Fill(bcid);
+    ws->h_bcid[chip][channel].first->Fill(bcid);
   }
   
 #ifdef DEBUG_WG_ONLINE_MONITOR
@@ -185,12 +186,29 @@ void endblock(void *workspace, struct block *block) {
   double fit_gain[2] = {};
   for (auto const& h_chip_charge : ws->h_charge) {
     for (auto const& h_chan_charge : h_chip_charge) {
-      if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_IS) {
+      if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_ARE) {
         wgFit::gain(h_chan_charge, fit_gain);
         if (!std::isnan(fit_gain[0])) {
           ws->h_gain_stability->Fill(time, fit_gain[0]);
-          std::cout << "time " << time << " gain " << fit_gain[0] << "\n";
+          std::cout << "gain " << fit_gain[0] << "\n";
           h_chan_charge->Reset();
+        }
+      }
+    }
+  }
+
+  double fit_dark_noise[2] = {};
+  for (auto& h_chip_bcid : ws->h_bcid) {
+    for (auto& h_chan_bcid : h_chip_bcid) {
+      if (h_chan_bcid.first->GetEntries() >= FIT_WHEN_BCID_ENTRIES_ARE) {
+        int previous_spill_count = h_chan_bcid.second;
+        h_chan_bcid.second = spill_count;
+        int nb_spills = TMath::Abs(spill_count - previous_spill_count);
+        wgFit::noise_rate(h_chan_bcid.first, fit_dark_noise, nb_spills);
+        if (!std::isnan(fit_dark_noise[0])) {
+          ws->h_dark_noise_stability->Fill(time, fit_dark_noise[0]);
+          std::cout << "dark noise " << fit_dark_noise[0] << " nb spills " << nb_spills << "\n";
+          h_chan_bcid.first->Reset();
         }
       }
     }
@@ -249,28 +267,26 @@ unsigned initialize_work_space(struct om_ws &ws, Topology *topol, unsigned dif_i
     unsigned chip_id = chip.first;
     unsigned n_channels = chip.second;
     ws.h_charge[chip_id] = std::vector<TH1I*>(n_channels, NULL);
-    ws.h_bcid[chip_id] = std::vector<TH1I*>(n_channels, NULL);
+    ws.h_bcid[chip_id] = std::vector<std::pair<TH1I*, int>>(n_channels);
     for (unsigned ichan = 0; ichan < n_channels; ++ichan) {
       name.Form("charge_%d_%d", chip_id, ichan);      
       ws.h_charge[chip_id][ichan] = new TH1I(name, name, 400, 400, 800);
-      ws.h_charge[chip_id][ichan]->SetDirectory(0);
       name.Form("bcid_%d_%d", chip_id, ichan);      
-      ws.h_bcid[chip_id][ichan] = new TH1I(name, name, 400, 400, 800);
-      ws.h_bcid[chip_id][ichan]->SetDirectory(0);
+      ws.h_bcid[chip_id][ichan].first = new TH1I(name, name, 400, 400, 800);
+      ws.h_bcid[chip_id][ichan].second = 0;
     }
   }
 
   Int_t ini_time = (Int_t) time(NULL);
   Int_t bin_time = 1000; //ms
   Int_t fin_time = ini_time + bin_time * 20; //every 20sec
-  Int_t max_gain = 50;
+  Int_t max_gain = 80;
   Int_t min_gain = 0;
   Int_t bin_gain = max_gain  - min_gain;
 
   ws.h_gain_stability = new TH2D("GainStability", "GainStability",
                                  bin_time, ini_time, fin_time,
                                  bin_gain, min_gain, max_gain);
-  ws.h_gain_stability->SetDirectory(0);
   ws.h_gain_stability->GetXaxis()->SetTimeDisplay(1);
   ws.h_gain_stability->GetXaxis()->SetTimeFormat("%d/%b");
   ws.h_gain_stability->GetXaxis()->SetNdivisions(510);
@@ -279,17 +295,48 @@ unsigned initialize_work_space(struct om_ws &ws, Topology *topol, unsigned dif_i
   ws.h_gain_stability->GetXaxis()->SetLabelSize(0.04);
   ws.h_gain_stability->GetYaxis()->SetLabelSize(0.04);
 
+  Int_t max_dark_noise = 10000;
+  Int_t min_dark_noise = 0;
+  Int_t bin_dark_noise = max_gain  - min_gain;
+  
+  ws.h_dark_noise_stability = new TH2D("DarkNoiseStability", "DarkNoiseStability",
+                                       bin_time, ini_time, fin_time,
+                                       bin_dark_noise, min_dark_noise, max_dark_noise);
+  ws.h_dark_noise_stability->GetXaxis()->SetTimeDisplay(1);
+  ws.h_dark_noise_stability->GetXaxis()->SetTimeFormat("%d/%b");
+  ws.h_dark_noise_stability->GetXaxis()->SetNdivisions(510);
+  ws.h_dark_noise_stability->GetYaxis()->SetNdivisions(205);
+  ws.h_dark_noise_stability->GetXaxis()->SetLabelOffset(0.01);
+  ws.h_dark_noise_stability->GetXaxis()->SetLabelSize(0.04);
+  ws.h_dark_noise_stability->GetYaxis()->SetLabelSize(0.04);
+
   return n_chips;
 }
 
 // ==================================================================
 
-int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
-  gErrorIgnoreLevel = kError;
+void free_workspace(struct om_ws &ws) {
+  for (auto const& h_chip_charge : ws.h_charge)
+    for (auto const& h_chan_charge : h_chip_charge)
+      delete h_chan_charge;
+  for (auto const& h_chip_bcid : ws.h_bcid)
+    for (auto const& h_chan_bcid : h_chip_bcid)
+      delete h_chan_bcid.first;
+  delete ws.h_gain_stability;
+  delete ws.h_dark_noise_stability;
+}
   
-  std::string pyrame_config_file(x_pyrame_config_file);
+// ==================================================================
 
-  TApplication om_app("WAGASCI online monitor", 0, NULL);
+void signal_handler(int signal_num) { WG_ONLINE_MONITOR_CONTINUE_TO_RUN = false; }
+
+// ==================================================================
+
+int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
+  std::string pyrame_config_file(x_pyrame_config_file);
+  
+  gErrorIgnoreLevel = kError;
+  signal(SIGINT, signal_handler);
 
   // =========== Topology =========== //
 
@@ -326,15 +373,20 @@ int wgOnlineMonitor(const char * x_pyrame_config_file, unsigned dif_id) {
     return ERR_EVENT_LOOP;
   }
 
-  // If you want to avoid running the TApplication uncomment the while (true)
-  // below. You will then need to exit by Ctrl-C in the terminal window.
-  //
-  // while (true) 
-  run_loop(ws.loop);
-
-  om_app.Run();
+  Log.Write("Press ! to exit");
+  
+  while (WG_ONLINE_MONITOR_CONTINUE_TO_RUN) {
+    run_loop(ws.loop);
+    std::string command;
+    std::cin >> command;
+    if (command == "!") break;
+  }
 
   Log.Write("End of loop!");
+
+  stop_loop(ws.loop);
+  free_event_loop(ws.loop);
+  free_workspace(ws);
 
   return WG_SUCCESS;
 }
