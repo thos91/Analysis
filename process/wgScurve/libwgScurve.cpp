@@ -39,7 +39,7 @@ bool numeric_string_compare(const std::string& s1, const std::string& s2)
   else return false;
 }
 
-#define LOG_SCURVE 1 // comment out when not using log-scale
+//#define LOG_SCURVE 1 // comment out when not using log-scale
 
 //******************************************************************
 int wgScurve(const char* x_inputDir,
@@ -122,7 +122,7 @@ int wgScurve(const char* x_inputDir,
     d4vector pe2        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
     d5vector noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
     d5vector noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
-		double  mean1PE[n_inputDAC], mean2PE[n_inputDAC], sigma1PE[n_inputDAC], sigma2PE[n_inputDAC];
+    double  mean1PE[n_inputDAC], mean2PE[n_inputDAC], sigma1PE[n_inputDAC], sigma2PE[n_inputDAC];
     //  and resize them.
     unsigned dif_counter = 0;
     u1vector dif_counter_to_id;
@@ -239,13 +239,13 @@ int wgScurve(const char* x_inputDir,
                 noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
               }else{
 #ifdef LOG_SCURVE
-								/* Log-scaled version of Scurve */
+                /* Log-scaled version of Scurve */
                 // log of dark noise rate
                 noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] =
                     std::log(noiserate);
                 // log of dark noise rate sigma
-                noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = 0.5;
-                    //(std::log(noiserate+noiseratesigma) - std::log(noiserate-noiseratesigma))/2;
+                noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = 
+                    (std::log(noiserate+noiseratesigma) - std::log(noiserate-noiseratesigma))/2;
 #else 
                 /* Not log-scaled version of Scurve */
                 // dark noise rate
@@ -275,23 +275,23 @@ int wgScurve(const char* x_inputDir,
     TH1D* Pe2Hist[n_inputDAC];
     TH1D* ChiHist[n_inputDAC];
     TH1D* ChiOverNdfHist[n_inputDAC];
-		for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
-			std::string name1 = "Pe1Hist_" + std::to_string(inputDAC[i_iDAC]);
-			std::string name2 = "Pe2Hist_" + std::to_string(inputDAC[i_iDAC]);
-			std::string name3 = "ChiSquareHist_" + std::to_string(inputDAC[i_iDAC]);
-			std::string name4 = "ChiSquareOverNdfHist_" + std::to_string(inputDAC[i_iDAC]);
+    for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
+      std::string name1 = "Pe1Hist_" + std::to_string(inputDAC[i_iDAC]);
+      std::string name2 = "Pe2Hist_" + std::to_string(inputDAC[i_iDAC]);
+      std::string name3 = "ChiSquareHist_" + std::to_string(inputDAC[i_iDAC]);
+      std::string name4 = "ChiSquareOverNdfHist_" + std::to_string(inputDAC[i_iDAC]);
       Pe1Hist[i_iDAC] = new TH1D(name1.c_str(),"1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
       Pe2Hist[i_iDAC] = new TH1D(name2.c_str(),"Pe2Hist",100,100,200);
-      ChiHist[i_iDAC] = new TH1D(name3.c_str(),"Chi Square; Chi square; Count",100,0,1000);
-      ChiOverNdfHist[i_iDAC] = new TH1D(name4.c_str(),"Chi Square / Ndf; Chi square / Ndf; Count",100,0,100);
+      ChiHist[i_iDAC] = new TH1D(name3.c_str(),"Chi Square; Chi square; Count",100,0,500000);
+      ChiOverNdfHist[i_iDAC] = new TH1D(name4.c_str(),"Chi Square / Ndf; Chi square / Ndf; Count",100,0,500000);
       ChiHist[i_iDAC]->SetStats(0);
       ChiOverNdfHist[i_iDAC]->SetStats(0);
-		  Pe1Hist[i_iDAC]->SetStats(0);
+      Pe1Hist[i_iDAC]->SetStats(0);
       Pe1Hist[i_iDAC]->SetFillColor(kRed);
       Pe1Hist[i_iDAC]->SetFillStyle(3002);
       Pe2Hist[i_iDAC]->SetFillColor(kBlue);
       Pe2Hist[i_iDAC]->SetFillStyle(3004);
-		}
+    }
 
     for (unsigned idif = 0; idif < n_difs; ++idif) {
       clock_t start = clock();
@@ -476,7 +476,7 @@ int wgScurve(const char* x_inputDir,
      *                           threshold_card.xml                                 *
      ********************************************************************************/
 
-		std::ofstream fout(outputXMLDir + "/failed_channels.txt");
+    std::ofstream fout(outputXMLDir + "/failed_channels.txt");
     std::string xmlfile(outputXMLDir + "/threshold_card.xml");
 
     try {
@@ -502,23 +502,29 @@ int wgScurve(const char* x_inputDir,
                                 ichan, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
-            // Set the 2.5 pe and 1.5 pe level after fitting the scurve.
-            Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
-                              inputDAC[i_iDAC], pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
-            Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
-                              inputDAC[i_iDAC], pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
             // If 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
             // it will recorded in "failed_channels.txt" with the number of 
-            // DIF, CHIP, CHANNEL, InputDAC.
+            // DIF, CHIP, CHANNEL, InputDAC. Also mean threshold value will 
+            // be recorded in threshold_card.xml, instead.
             if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE[i_iDAC]) > 2*sigma1PE[i_iDAC] ||
                 std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC]) > 2*sigma2PE[i_iDAC]  ){
               fout << idif << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << std::endl;
+              Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
+                                inputDAC[i_iDAC], mean1PE[i_iDAC], NO_CREATE_NEW_MODE);
+              Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
+                                inputDAC[i_iDAC], mean2PE[i_iDAC], NO_CREATE_NEW_MODE);
+            }else{
+              // Set the 2.5 pe and 1.5 pe level after fitting the scurve.
+              Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
+                                inputDAC[i_iDAC], pe1[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
+              Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
+                                inputDAC[i_iDAC], pe2[idif][ichip][ichan][i_iDAC], NO_CREATE_NEW_MODE);
             }
           }
         }
       }
     }
-		fout.close();
+    fout.close();
     Edit.Write();
     Edit.Close();
   }  // end try
@@ -563,7 +569,7 @@ void fit_scurve(TGraphErrors* Scurve,
 #endif
   
   Scurve->Fit(fit_scurve, "q");
-        
+
   // From the fitting parameters, calcurate each p.e. level.
   // Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
   // variables a and b indicates the center point of each sigmoid function.
