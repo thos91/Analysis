@@ -232,9 +232,9 @@ int wgScurve(const char* x_inputDir,
                                            "XML file : " + std::to_string(threshold[threshold_counter]));
               }
 
-              double noiserate = Edit.SUMMARY_GetChFitValue("noise_rate", chan_counter);
-              double noiseratesigma = Edit.SUMMARY_GetChFitValue("sigma_rate", chan_counter);
-              if(noiserate == UINT_MAX || noiserate <= 1 || std::isnan(noiserate)){
+              unsigned noiserate = Edit.SUMMARY_GetChFitValue("noise_rate", chan_counter);
+              unsigned noiseratesigma = Edit.SUMMARY_GetChFitValue("sigma_rate", chan_counter);
+              if(noiserate == UINT_MAX || noiserate < 0 || std::isnan(noiserate)){
                 noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
                 noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
               }else{
@@ -305,18 +305,21 @@ int wgScurve(const char* x_inputDir,
           MakeDir(image_dir);
           // If the channel does not contain the meaningful data but UNIT_MAX, skip the loop.
           if (noise[idif][ichip][ichan][0][0] == UINT_MAX) {
-            pe1[idif][ichip][ichan].push_back(UINT_MAX);
-            pe2[idif][ichip][ichan].push_back(UINT_MAX);
-            slope1    [idif][ichip].push_back(UINT_MAX);
-            intercept1[idif][ichip].push_back(UINT_MAX);
-            slope2    [idif][ichip].push_back(UINT_MAX);
-            intercept2[idif][ichip].push_back(UINT_MAX);
-            break;
+            for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
+              pe1[idif][ichip][ichan][i_iDAC] = UINT_MAX;
+              pe2[idif][ichip][ichan][i_iDAC] = UINT_MAX;
+            }
+            slope1    [idif][ichip][ichan] = UINT_MAX;
+            intercept1[idif][ichip][ichan] = UINT_MAX;
+            slope2    [idif][ichip][ichan] = UINT_MAX;
+            intercept2[idif][ichip][ichan] = UINT_MAX;
+            continue;
           }
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
                                         
             TCanvas *c1 = new TCanvas("c1", "c1");
+            c1->SetGrid(1,1);
 #ifndef LOG_SCURVE
             c1->SetLogy();
 #endif
@@ -489,8 +492,8 @@ int wgScurve(const char* x_inputDir,
     }
 
     for (unsigned idif = 0; idif < n_difs; ++idif) {
-      for (unsigned ichip = 0; ichip < topol.dif_map[idif].size(); ++ichip) {
-        for (unsigned ichan = 0; ichan < topol.dif_map[idif][ichip]; ++ichan) {
+      for (unsigned ichip = 0; ichip < topol.dif_map[dif_counter_to_id[idif]].size(); ++ichip) {
+        for (unsigned ichan = 0; ichan < topol.dif_map[dif_counter_to_id[idif]][ichip]; ++ichan) {
           // Set the slope and intercept values for the result of fitting threshold-inputDAC plot.
           Edit.OPT_SetChanValue(std::string("slope_threshold1"),     dif_counter_to_id[idif], ichip,
                                 ichan, slope1    [idif][ichip][ichan], NO_CREATE_NEW_MODE);
@@ -502,13 +505,20 @@ int wgScurve(const char* x_inputDir,
                                 ichan, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
-            // If 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
-            // it will recorded in "failed_channels.txt" with the number of 
-            // DIF, CHIP, CHANNEL, InputDAC. Also mean threshold value will 
-            // be recorded in threshold_card.xml, instead.
-            if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE[i_iDAC]) > 2*sigma1PE[i_iDAC] ||
-                std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC]) > 2*sigma2PE[i_iDAC]  ){
-              fout << idif << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << std::endl;
+            if( pe1[idif][ichip][ichan][i_iDAC] == UINT_MAX ||
+                pe2[idif][ichip][ichan][i_iDAC] == UINT_MAX){
+              fout << dif_counter_to_id[idif] << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << "   !!! channel broken !!!" << std::endl;
+              Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
+                                inputDAC[i_iDAC], UINT_MAX, NO_CREATE_NEW_MODE);
+              Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
+                                inputDAC[i_iDAC], UINT_MAX, NO_CREATE_NEW_MODE);
+            }else if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE[i_iDAC]) > 2*sigma1PE[i_iDAC] ||
+                      std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC]) > 2*sigma2PE[i_iDAC]  ){
+              // If 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
+              // it will recorded in "failed_channels.txt" with the number of 
+              // DIF, CHIP, CHANNEL, InputDAC. Also mean threshold value will 
+              // be recorded in threshold_card.xml, instead.
+              fout << dif_counter_to_id[idif] << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << std::endl;
               Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
                                 inputDAC[i_iDAC], mean1PE[i_iDAC], NO_CREATE_NEW_MODE);
               Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
@@ -563,9 +573,9 @@ void fit_scurve(TGraphErrors* Scurve,
   /* for not log-scaled Scurve */
   double c0 = 1.0E+5, c1 = 0.5, c2 = 155, c3 = 3.0E+3, c4 = 0.5, c5 = 135, c6 = 1.0E+2;
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
-  fit_scurve->SetParLimits(0, c0/1.5, c0*1.5);  
+  fit_scurve->SetParLimits(0, c0/2.0, c0*1.5);  
   fit_scurve->SetParLimits(3, c3/1.5, c3*1.5); 
-  fit_scurve->SetParLimits(6, c6/1.5, c6*4.0);
+  fit_scurve->SetParLimits(6, c6/2.0, c6*4.0);
 #endif
   
   Scurve->Fit(fit_scurve, "q");
