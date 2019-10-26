@@ -5,9 +5,12 @@
 #include "wgConst.hpp"
 
 // modes
-#define OP_THRESHOLD_MODE 0
-#define OP_INPUTDAC_MODE  1
-
+enum OPTIMIZE_MODES {
+  OP_THRESHOLD_MODE = 0,
+  OP_INPUTDAC_MODE = 1,
+  NUM_OPTIMIZE_MODES
+};
+  
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
 extern "C" {
