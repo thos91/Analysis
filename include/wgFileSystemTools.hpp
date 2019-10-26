@@ -38,6 +38,8 @@ std::vector<std::string> ListFilesWithExtension(const std::string& inputDir,
 // absolute path to the directories as a vector of std::strings.
 std::vector<std::string> ListDirectories(const std::string& inputDir);
 
+std::vector<std::string> ListDirectoriesWithInteger(const std::string& inputDir);
+
 // count all the files with extension "extension" present in the
 // folder "inputDir"
 unsigned HowManyFilesWithExtension(const std::string& inputDir,

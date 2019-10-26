@@ -1,24 +1,22 @@
 #include "wgFitConst.hpp"
 
-// fit range for the charge_hit histogram
-const int WG_BEGIN_CHARGE_HIT = 350;
-const int WG_END_CHARGE_HIT = 750;
-
 // fit range for the charge_nohit histogram
 const int WG_BEGIN_CHARGE_NOHIT = 300;
 const int WG_END_CHARGE_NOHIT = 700;
 
-// fit range for the charge_hit_HG histogram
+// fit range for the charge_hit_* histogram
 const int WG_BEGIN_CHARGE_HIT_HG = 350;
 const int WG_END_CHARGE_HIT_HG = 750;
+const int WG_BEGIN_CHARGE_HIT_LG = 0; // TODO: 
+const int WG_END_CHARGE_HIT_LG = 0; // TODO: 
 
 // limits for the dark noise rate
-const double WG_LOWER_LIMIT_1PE = 20000;
-const double WG_UPPER_LIMIT_1PE = 160000;
-const double WG_LOWER_LIMIT_2PE = 1000;
-const double WG_UPPER_LIMIT_2PE = 8000;
-const double WG_LOWER_LIMIT_3PE = 50;
-const double WG_UPPER_LIMIT_3PE = 400;
+const double WG_LOWER_LIMIT_1PE = 20000;  // 20 kHz
+const double WG_UPPER_LIMIT_1PE = 160000; // 160 kHz
+const double WG_LOWER_LIMIT_2PE = 1000;   // 1 kHz
+const double WG_UPPER_LIMIT_2PE = 8000;   // 8 kHz
+const double WG_LOWER_LIMIT_3PE = 50;     // 50 Hz
+const double WG_UPPER_LIMIT_3PE = 400;    // 400 Hz
 
 // nominal value for the MPPC gain
 const double WG_NOMINAL_GAIN = 40;

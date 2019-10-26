@@ -1,11 +1,17 @@
+// system includes
+#include <mutex>
+
 // ROOT includes
 #include "TROOT.h"
 #include "TPluginManager.h"
 #include "TMinuitMinimizer.h"
 
 // user includes
+#include "wgConst.hpp"
 #include "wgLogger.hpp"
 #include "wgEnableThreadSafety.hpp"
+
+std::mutex MUTEX;
 
 void wgEnableThreadSafety() {
   ROOT::EnableThreadSafety();

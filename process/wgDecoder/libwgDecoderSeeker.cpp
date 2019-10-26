@@ -39,9 +39,8 @@ SectionSeeker::SectionSeeker(const RawDataConfig &config) : m_config(config) {
 SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
   bool found = true;
   unsigned last_section_type = m_current_section.type;
-  m_current_section.ichip = m_last_ichip;
-  m_current_section.ispill = m_last_ispill;
-  
+  m_last_ichip = m_current_ichip;
+
   do {
     m_current_section.type = NextSectionType(m_current_section.type, found);
     found = m_seekers_ring[m_current_section.type](is);
@@ -50,12 +49,20 @@ SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
   if (!found) {
     std::bitset<BITS_PER_LINE> raw_data_line;
     wg_utils::ReadLine(is, raw_data_line);
-    std::stringstream res;
-    res << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << raw_data_line.to_ulong();
-    Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
+    //std::stringstream res;
+    //res << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << raw_data_line.to_ulong();
+    //Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
     return this->SeekNextSection(is);
   }
 
+  // In any case the chip counter cannot get bigger than the number of chips
+  if (m_current_ichip <= m_config.n_chips) {
+    m_current_ichip %= m_config.n_chips;
+    m_current_section.ichip = m_last_ichip;
+  } else {
+      m_current_section.ichip = UINT_MAX;
+  }
+  m_current_section.ispill = m_last_ispill;
   m_current_section.lines = GetNumberOfLines(m_current_section);
   return m_current_section;
 }
@@ -65,20 +72,24 @@ SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
 ///////////////////////////////////////////////////////////////////////////////
 
 unsigned SectionSeeker::NextSectionType(const unsigned last_section_type, const bool last_section_was_found) {
-  // Select what is the next section to look for. Only if the last
-  // section whas a chip trailer we need to be cautious because we may
-  // need to go back to the ChipHeader and increment the current_chip
-  // by one
-  if (last_section_was_found && last_section_type == ChipTrailer && m_last_ichip < m_config.n_chips) {
-    m_last_ichip %= m_config.n_chips;
+  // Select what is the next section to look for.
+
+  // If the last section was a spill trailer (or phantom menace), then all the
+  // chips are read and we can reset the chip counter
+  if (last_section_was_found &&
+      (last_section_type == SpillTrailer || last_section_type == PhantomMenace))
+    m_current_ichip = 0;
+
+  // If the last section is a chip trailer and we have not read all the chips
+  // yet, we try to read the next chip
+  if (last_section_was_found && last_section_type == ChipTrailer && m_current_ichip < m_config.n_chips)
     return ChipHeader;
-  } else if (!last_section_was_found && last_section_type == ChipHeader) {
-    m_last_ichip %= m_config.n_chips;
+  // If we have not found the chip header it (should) mean that all the chips
+  // are read
+  else if (!last_section_was_found && last_section_type == ChipHeader)
     return SpillTrailer;
-  } else {
-    m_last_ichip %= m_config.n_chips;
-    return (m_current_section.type + 1) % m_num_section_types;
-  }
+
+  return (m_current_section.type + 1) % m_num_section_types;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -254,7 +265,7 @@ bool SectionSeeker::SeekChipTrailer(std::istream& is) {
     m_current_section.start = start_read;
     m_current_section.stop = stop_read;
     m_current_section.type = ChipTrailer;
-    ++m_last_ichip;
+    ++m_current_ichip;
     return true;
   }
   // If the chip trailer is corrupted we may as well skip it and go
@@ -279,7 +290,7 @@ bool SectionSeeker::SeekChipTrailer(std::istream& is) {
     }
     m_current_section.type = ChipTrailer;
     is.seekg(start_read + std::streampos((pos + 1) * BYTES_PER_LINE));
-    ++m_last_ichip;
+    ++m_current_ichip;
     return false;
   }
   // In all other cases just rewind and try with another seeker  

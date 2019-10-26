@@ -11,13 +11,6 @@
 #include "wgDetectorConst.hpp"
 #include "wgConst.hpp"
 
-// #define DEBUG_CHMAP
-// #ifndef DEBUG
-// #define DEBUG
-// #endif
-
-using namespace std;
-
 //******************************************************************************
 Map::Map() : Map(NDIFS, NCHIPS, NCHANNELS) {}
 Map::Map(size_t n_difs, size_t n_chips, size_t n_chans) {
@@ -365,45 +358,46 @@ bool wgChannelMap::GetViewPlnCh(const int dif_id, const int chip_id, const int c
 } //GetViewPlnCh
 
 //******************************************************************************
-bool wgChannelMap::GetXYZ(int view, int pln, int ch, double& x, double& y, double& z)
-{
+bool wgChannelMap::GetXYZ(VIEW view, int pln, int chan, double& x, double& y, double& z) {
 
-  unsigned short grid = (ch/20)&0b11;
-  if(view==SideView){
-    x = 0.;
-    if((grid&0b10)==0b00){
-      y = C_WMChStart + C_WMScintiWidth*ch;
-      z = C_WMPlnStart + C_WMPlnDist*pln;
-    }
-    else if((grid&0b11)==0b10){
-      y = C_WMGridChStart + C_WMScintiSlitStep*(ch-C_WMNumXYLayerCh);
-      z = C_WMPlnStart + C_WMPlnDist*pln + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
-    }
-    else if((grid&0b11)==0b11){
-      y = C_WMGridChStart + C_WMScintiSlitStep*(ch-C_WMNumXYLayerCh-C_WMNumGridCh);
-      z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
-    }
-    else{
-      cout << "GetXYZ >> wrong ch alignment" << endl;
-      return false;
-    }
-  }
-  else if(view==TopView){
+  unsigned short grid = (chan/20) & 0b11;
+  switch view {
+      case SIDE_VIEW:
+        x = 0.;
+        if ((grid & 0b10) == 0b00) {
+          y = C_WMChStart + C_WMScintiWidth * chan;
+          z = C_WMPlnStart + C_WMPlnDist * pln;
+        } else if((grid&0b11)==0b10){
+          y = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh);
+          z = C_WMPlnStart + C_WMPlnDist * pln + C_WMScintiThick / 2. + C_WMScintiWidth / 2. + 0.1;
+        }
+        else if((grid&0b11)==0b11){
+          y = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh-C_WMNumGridCh);
+          z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
+        }
+        else{
+          cout << "GetXYZ >> wrong chan alignment" << endl;
+          return false;
+        }
+
+        
+    case TOP_VIEW:
+    else if(view==TopView){
     y = 0.;
     if((grid&0b10)==0b00){
-      x = C_WMChStart + C_WMScintiWidth*ch;
+      x = C_WMChStart + C_WMScintiWidth*chan;
       z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist;
     }
     else if((grid&0b11)==0b10){
-      x = C_WMGridChStart + C_WMScintiSlitStep*(ch-C_WMNumXYLayerCh);
+      x = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh);
       z = C_WMPlnStart + C_WMPlnDist*pln + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
     }
     else if((grid&0b11)==0b11){
-      x = C_WMGridChStart + C_WMScintiSlitStep*(ch-C_WMNumXYLayerCh-C_WMNumGridCh);
+      x = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh-C_WMNumGridCh);
       z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
     }
     else{
-     cout << "GetXYZ >> wrong ch alignment" << endl;
+     cout << "GetXYZ >> wrong chan alignment" << endl;
       return false;
     }
   }

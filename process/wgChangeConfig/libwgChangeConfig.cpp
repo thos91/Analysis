@@ -28,7 +28,7 @@ using namespace wagasci_tools;
 int wgChangeConfig(const char * x_input_file,
                    const char * x_output_file,
                    const unsigned long flags_ulong,
-                   const unsigned value,
+                   const int value,
                    const unsigned mode,
                    const unsigned channel) {
   
@@ -57,20 +57,19 @@ int wgChangeConfig(const char * x_input_file,
     }
   }
 
-  bool is_bitstream_string = false;
-
   try {
+    bool is_bitstream_string = false;
     wgEditConfig EditConfig(input_file, is_bitstream_string);
   
     // Sanity check of the passed arguments
   
     if (flags[EDIT_FLAG]) {
       if (mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD || mode == EC_CHIPID) {
-        if ((mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD) && value > MAX_VALUE_10BITS) {
+        if ((mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD) && value > (int) MAX_VALUE_10BITS) {
           Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
-        else if (mode == EC_CHIPID && value > MAX_VALUE_8BITS) {
+        else if (mode == EC_CHIPID && value > (int) MAX_VALUE_8BITS) {
           Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
@@ -81,19 +80,19 @@ int wgChangeConfig(const char * x_input_file,
           return ERR_WRONG_CHANNEL_VALUE;
         }
         else if (mode == EC_INPUT_DAC) {
-          if (value > MAX_VALUE_8BITS) {
+          if (value > (int) MAX_VALUE_8BITS) {
             Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
         }
         else if (mode == EC_HG_LG_AMPLIFIER) {
-          if (value > MAX_VALUE_6BITS) {
+          if (value > (int) MAX_VALUE_6BITS) {
             Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
         }
         else if (mode == EC_THRESHOLD_ADJUSTMENT) {
-          if (value > MAX_VALUE_4BITS) {
+          if (value > (int) MAX_VALUE_4BITS) {
             Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
@@ -153,15 +152,15 @@ int wgChangeConfig(const char * x_input_file,
 		
         else {
           // Input DAC
-          if (mode == EC_INPUT_DAC ) {
+          if (mode == EC_INPUT_DAC) {
             EditConfig.Change_inputDAC(channel, value);
           }
           // HG and LG preamplifier feedback capacitor 
-          else if (mode == EC_HG_LG_AMPLIFIER ) {	
+          else if (mode == EC_HG_LG_AMPLIFIER) {	
             EditConfig.Change_ampDAC(channel, value);
           }
           // Threshold fine tuning
-          else if (mode == EC_THRESHOLD_ADJUSTMENT ) {
+          else if (mode == EC_THRESHOLD_ADJUSTMENT) {
             EditConfig.Change_trigadj(channel, value);
           } 
         }
@@ -175,12 +174,12 @@ int wgChangeConfig(const char * x_input_file,
       EditConfig.Write(output_file);
     }
     catch (const std::exception &e) {
-      Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to write value :" + e.what());
+      Log.eWrite("[wgChangeConfig][" + input_file + "] failed to write value : " + e.what());
       return ERR_FAILED_WRITE;
     }
   } // catch the exception thrown by the EditConfig constructor
   catch (const std::exception& e) {
-    Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] failed to open the input file : " + e.what());
+    Log.eWrite("[wgChangeConfig][" + input_file + "] failed to open the input file : " + e.what());
   }
   return WG_SUCCESS;
 }

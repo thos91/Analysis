@@ -29,7 +29,7 @@ extern "C" {
   int wgChangeConfig(const char * x_inputFile,
                      const char * x_outputFile,
                      unsigned long x_flags,
-                     unsigned value,
+                     int value,
                      unsigned mode,
                      unsigned channel = NCHANNELS);
 
