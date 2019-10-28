@@ -352,6 +352,13 @@ int wgScurve(const char* x_inputDir,
             // ************* Draw S-curve Graph ************* //
             TGraphErrors* Scurve = new TGraphErrors(gx.size(), gx.data(), gy.data(),
                                                     gxe.data(), gye.data());
+#ifdef LOG_SCURVE
+            Scurve->GetHistogram()->SetMaximum(12);
+            Scurve->GetHistogram()->SetMinimum(0.0);
+#else
+            Scurve->GetHistogram()->SetMaximum(2.0E+5);
+            Scurve->GetHistogram()->SetMinimum(1.0);
+#endif
             TString title("Dif" + std::to_string(dif_counter_to_id[idif])
                           + "_Chip" + std::to_string(ichip)
                           + "_Channel" + std::to_string(ichan)
@@ -361,19 +368,40 @@ int wgScurve(const char* x_inputDir,
             Scurve->Draw("ap*");
 
             // ************* Fit S-curve ************* //
+            const char * fit_fun1 = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
+            TF1* fit_func1 = new TF1("fit_scurve", fit_fun1, 120, 170);
             double pe1_t, pe2_t, pe3_t;
             double ChiSquare;
             int NDF;
-            fit_scurve(Scurve, pe1_t, pe2_t, pe3_t, ChiSquare, NDF, idif, ichip, ichan, inputDAC[i_iDAC],
+            double pe1_t2, pe2_t2, pe3_t2;
+            double ChiSquare2;
+            int NDF2;
+            fit_scurve(Scurve, fit_func1, pe1_t, pe2_t, pe3_t, ChiSquare, NDF, idif, ichip, ichan, inputDAC[i_iDAC],
                        outputIMGDir, false);
-            pe1[idif][ichip][ichan][i_iDAC] = pe1_t;
-            pe2[idif][ichip][ichan][i_iDAC] = pe2_t;
-            pe3[idif][ichip][ichan][i_iDAC] = pe3_t;
-            Pe1Hist[i_iDAC]->Fill(pe1_t);
-            Pe2Hist[i_iDAC]->Fill(pe2_t);
-            Pe3Hist[i_iDAC]->Fill(pe3_t);
-            ChiHist[i_iDAC]->Fill(ChiSquare);
-            ChiOverNdfHist[i_iDAC]->Fill(ChiSquare/(double)NDF);
+            fit_scurve2(Scurve, pe1_t2, pe2_t2, pe3_t2, ChiSquare2, NDF2, idif, ichip, ichan, inputDAC[i_iDAC],
+                       outputIMGDir, false);
+            fit_func1->Draw("same");
+            double goodness1 = ChiSquare/(double)NDF;
+            double goodness2 = ChiSquare2/(double)NDF2;
+            if(goodness1 < goodness2){
+              pe1[idif][ichip][ichan][i_iDAC] = pe1_t;
+              pe2[idif][ichip][ichan][i_iDAC] = pe2_t;
+              pe3[idif][ichip][ichan][i_iDAC] = pe3_t;
+              Pe1Hist[i_iDAC]->Fill(pe1_t);
+              Pe2Hist[i_iDAC]->Fill(pe2_t);
+              Pe3Hist[i_iDAC]->Fill(pe3_t);
+              ChiHist[i_iDAC]->Fill(ChiSquare);
+              ChiOverNdfHist[i_iDAC]->Fill(goodness1);
+            }else{
+              pe1[idif][ichip][ichan][i_iDAC] = pe1_t2;
+              pe2[idif][ichip][ichan][i_iDAC] = pe2_t2;
+              pe3[idif][ichip][ichan][i_iDAC] = pe3_t2;
+              Pe1Hist[i_iDAC]->Fill(pe1_t2);
+              Pe2Hist[i_iDAC]->Fill(pe2_t2);
+              Pe3Hist[i_iDAC]->Fill(pe3_t2);
+              ChiHist[i_iDAC]->Fill(ChiSquare2);
+              ChiOverNdfHist[i_iDAC]->Fill(goodness2);
+            }
 
             // ************* Save S-curve Graph as png ************* //
             TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
@@ -382,6 +410,7 @@ int wgScurve(const char* x_inputDir,
             c1->Print(image);
                                                 
             delete Scurve;
+            delete fit_func1;
             delete c1;
           } // inputDAC
 
@@ -606,6 +635,7 @@ int wgScurve(const char* x_inputDir,
 
 //**********************************************************************
 void fit_scurve(TGraphErrors* Scurve, 
+                TF1* fit_scurve,
                 double& pe1_t, 
                 double& pe2_t, 
                 double& pe3_t, 
@@ -620,7 +650,7 @@ void fit_scurve(TGraphErrors* Scurve,
 
   // Fitting function for Scurve is summation of two sigmoid functions (and a constant).
   const char * fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
-  TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
+  //fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
 #ifdef LOG_SCURVE
 	/* for log-scaled Scurve */
 	double c0 = 3.0, c1 = 0.5, c2 = 155, c3 = 2.5, c4 = 0.5, c5 = 135, c6 = 5.0;
@@ -633,8 +663,72 @@ void fit_scurve(TGraphErrors* Scurve,
   double c0 = 1.0E+5, c1 = 0.5, c2 = 155, c3 = 3.0E+3, c4 = 0.5, c5 = 135, c6 = 1.0E+2;
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
   fit_scurve->SetParLimits(0, c0/2.0, c0*1.5);  
-  fit_scurve->SetParLimits(3, c3/1.5, c3*1.5); 
+  fit_scurve->SetParLimits(3, c3/3.0, c3*1.5); 
   fit_scurve->SetParLimits(6, c6/2.0, c6*4.0);
+#endif
+  
+  Scurve->Fit(fit_scurve, "q");
+
+  // From the fitting parameters, calcurate each p.e. level.
+  // Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
+  // variables a and b indicates the center point of each sigmoid function.
+  // Set 1.5 pe as the middle point between two sigmoid functions' center.
+  double a = fit_scurve->GetParameter(5);
+  double b = fit_scurve->GetParameter(2);
+  ChiSquare = fit_scurve->GetChisquare();
+  NDF = fit_scurve->GetNDF();
+  pe1_t =  (3*b - a) / 2;
+  pe2_t =  (  a + b) / 2;
+  pe3_t =  (3*a - b) / 2;
+
+  if( print_flag && (!outputIMGDir.empty()) ) {
+    TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
+                  "/Channel" + std::to_string(ichan) + "/InputDAC" + std::to_string(inputDAC) +
+                  "_fit.png");
+    TCanvas * canvas = new TCanvas("canvas", "canvas");
+    canvas->SetCanvasSize(1024, 768);
+    canvas->SetLogy();
+    Scurve->Draw("ap*");
+    fit_scurve->Draw("same");
+    canvas->Print(image);
+    delete canvas; 
+  }
+  //delete fit_scurve;
+}
+
+//**********************************************************************
+void fit_scurve2(TGraphErrors* Scurve, 
+                 double& pe1_t, 
+                 double& pe2_t, 
+                 double& pe3_t, 
+                 double& ChiSquare,
+                 int&    NDF,
+                 unsigned idif, 
+                 unsigned ichip, 
+                 unsigned ichan, 
+                 unsigned inputDAC,
+                 std::string outputIMGDir, 
+                 bool print_flag) {
+
+  // Fitting function for Scurve is summation of two sigmoid functions (and a constant).
+  const char * fit_function = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]/(1+exp(-[7]*(x-[8]))) + [9]";
+  TF1* fit_scurve = new TF1("fit_scurve", fit_function, 120, 170);
+  fit_scurve->SetLineColor(kBlue);;
+#ifdef LOG_SCURVE
+	/* for log-scaled Scurve */
+	double c0 = 3.0, c1 = 0.5, c2 = 155, c3 = 2.5, c4 = 0.5, c5 = 135, c6 = 5.0;
+  fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
+  fit_scurve->SetParLimits(0, c0-0.5, c0+0.5);  
+  fit_scurve->SetParLimits(3, c3-0.5, c3+0.5); 
+  fit_scurve->SetParLimits(6, c6-0.5, c6+0.5);
+#else 
+  /* for not log-scaled Scurve */
+  double c0 = 1.0E+5, c1 = 0.5, c2 = 155, c3 = 3.0E+3, c4 = 0.5, c5 = 135, c6 = 2.0E+2, c7 = 0.5, c8 = 127, c9 = 10;
+  fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6, c7, c8, c9);
+  fit_scurve->SetParLimits(0, c0/2.0, c0*1.5);  
+  fit_scurve->SetParLimits(3, c3/3.0, c3*1.5); 
+  fit_scurve->SetParLimits(6, c6/1.5, c6*2.0);
+  fit_scurve->SetParLimits(9, c9/4.0, c9*2.0);
 #endif
   
   Scurve->Fit(fit_scurve, "q");
