@@ -283,7 +283,7 @@ int wgScurve(const char* x_inputDir,
 
     TH1D* Pe1Hist[n_inputDAC];
     TH1D* Pe2Hist[n_inputDAC];
-    TH1D* Pe3Hist[n_inputDAC];
+    TH1D* Pe3Hist[n_inputDAC][3];
     TH1D* ChiHist[n_inputDAC];
     TH1D* ChiOverNdfHist[n_inputDAC];
     for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
@@ -294,7 +294,10 @@ int wgScurve(const char* x_inputDir,
       std::string name5 = "ChiSquareOverNdfHist_" + std::to_string(inputDAC[i_iDAC]);
       Pe1Hist[i_iDAC] = new TH1D(name1.c_str(),"0.5, 1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
       Pe2Hist[i_iDAC] = new TH1D(name2.c_str(),"Pe2Hist",100,100,200);
-      Pe3Hist[i_iDAC] = new TH1D(name3.c_str(),"Pe3Hist",100,100,200);
+      for(size_t i=0; i<3; i++){
+      	name3 = name3 + "_" + std::to_string(i);
+        Pe3Hist[i_iDAC][i] = new TH1D(name3.c_str(),"Pe3Hist",100,100,200);
+      }
       ChiHist[i_iDAC] = new TH1D(name4.c_str(),"Chi Square; Chi square; Count",100,0,500000);
       ChiOverNdfHist[i_iDAC] = new TH1D(name5.c_str(),"Chi Square / Ndf; Chi square / Ndf; Count",100,0,500000);
       ChiHist[i_iDAC]->SetStats(0);
@@ -304,8 +307,12 @@ int wgScurve(const char* x_inputDir,
       Pe1Hist[i_iDAC]->SetFillStyle(3002);
       Pe2Hist[i_iDAC]->SetFillColor(kBlue);
       Pe2Hist[i_iDAC]->SetFillStyle(3004);
-      Pe3Hist[i_iDAC]->SetFillColor(kGreen);
-      Pe3Hist[i_iDAC]->SetFillStyle(3006);
+      Pe3Hist[i_iDAC][0]->SetFillColor(kGreen);
+      Pe3Hist[i_iDAC][0]->SetFillStyle(3005);
+      Pe3Hist[i_iDAC][1]->SetFillColor(kOrange);
+      Pe3Hist[i_iDAC][1]->SetFillStyle(3006);
+      Pe3Hist[i_iDAC][2]->SetFillColor(kViolet);
+      Pe3Hist[i_iDAC][2]->SetFillStyle(3007);
     }
 
     for (unsigned idif = 0; idif < n_difs; ++idif) {
@@ -528,21 +535,29 @@ int wgScurve(const char* x_inputDir,
       TCanvas* PECanvas = new TCanvas("PECanvas","PECanvas");
       TCanvas* ChiCanvas = new TCanvas("ChiCanvas","ChiCanvas");
       TCanvas* ChiOverNdfCanvas = new TCanvas("ChiOverNdfCanvas","ChiOverNdfCanvas");
+      ChiCanvas->SetLogy();
       ChiOverNdfCanvas->SetLogy();
       // PE distribution
       TF1* Pe1Fit = new TF1("Pe1Fit","gaus",100,200);
       TF1* Pe2Fit = new TF1("Pe2Fit","gaus",100,200);
-      TF1* Pe3Fit = new TF1("Pe3Fit","gaus",100,200);
+      TF1* Pe3Fit[3];
+      for(size_t i=0; i<3; i++){
+      	Pe3Fit[i] = new TF1("Pe3Fit","gaus",100,200);
+      }
       PECanvas->cd();
       Pe1Hist[i_iDAC]->Draw();
       Pe2Hist[i_iDAC]->Draw("same");
-      Pe3Hist[i_iDAC]->Draw("same");
+      for(size_t i=0; i<3; i++){
+        Pe3Hist[i_iDAC][i]->Draw("same");
+      }
       Pe1Hist[i_iDAC]->Fit(Pe1Fit,"rlq");
       Pe2Hist[i_iDAC]->Fit(Pe2Fit,"rlq");
-      Pe3Hist[i_iDAC]->Fit(Pe3Fit,"rlq");
+      for(size_t i=0; i<3; i++){
+        Pe3Hist[i_iDAC][i]->Fit(Pe3Fit[i],"rlq");
+      }
       mean1PE[i_iDAC] = Pe1Fit->GetParameter(1); sigma1PE[i_iDAC] = Pe1Fit->GetParameter(2);
       mean2PE[i_iDAC] = Pe2Fit->GetParameter(1); sigma2PE[i_iDAC] = Pe2Fit->GetParameter(2);
-      mean3PE[i_iDAC] = Pe3Fit->GetParameter(1); sigma3PE[i_iDAC] = Pe3Fit->GetParameter(2);
+      mean3PE[i_iDAC] = Pe3Fit[0]->GetParameter(1); sigma3PE[i_iDAC] = Pe3Fit[0]->GetParameter(2);
       TString name(outputIMGDir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png");
       PECanvas->Print(name);
       // Chi square distribution
@@ -557,13 +572,17 @@ int wgScurve(const char* x_inputDir,
       ChiOverNdfCanvas->Print(name);
       delete Pe1Fit;
       delete Pe2Fit;
-      delete Pe3Fit;
+      for(size_t i=0; i<3; i++){
+        delete Pe3Fit[i];
+      }
       delete PECanvas;
       delete ChiCanvas;
       delete ChiOverNdfCanvas;
       delete Pe1Hist[i_iDAC];
       delete Pe2Hist[i_iDAC];
-      delete Pe3Hist[i_iDAC];
+      for(size_t i=0; i<3; i++){
+        delete Pe3Hist[i_iDAC][i];
+      }
       delete ChiHist[i_iDAC];
       delete ChiOverNdfHist[i_iDAC];
     }
