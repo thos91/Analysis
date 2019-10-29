@@ -187,7 +187,7 @@ void endblock(void *workspace, struct block *block) {
   for (auto const& h_chip_charge : ws->h_charge) {
     for (auto const& h_chan_charge : h_chip_charge) {
       if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_ARE) {
-        wgFit::gain(h_chan_charge, fit_gain);
+        wgFit::Gain(h_chan_charge, fit_gain);
         if (!std::isnan(fit_gain[0])) {
           ws->h_gain_stability->Fill(time, fit_gain[0]);
           std::cout << "gain " << fit_gain[0] << "\n";
@@ -204,7 +204,7 @@ void endblock(void *workspace, struct block *block) {
         int previous_spill_count = h_chan_bcid.second;
         h_chan_bcid.second = spill_count;
         int nb_spills = TMath::Abs(spill_count - previous_spill_count);
-        wgFit::noise_rate(h_chan_bcid.first, fit_dark_noise, nb_spills);
+        wgFit::NoiseRate(h_chan_bcid.first, fit_dark_noise, nb_spills);
         if (!std::isnan(fit_dark_noise[0])) {
           ws->h_dark_noise_stability->Fill(time, fit_dark_noise[0]);
           std::cout << "dark noise " << fit_dark_noise[0] << " nb spills " << nb_spills << "\n";
