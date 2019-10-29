@@ -373,12 +373,11 @@ int wgScurve(const char* x_inputDir,
 
             // ************* Fit S-curve ************* //
             TF1* fit_func[3];
-            const char * fit_fun1 = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
-            fit_func[0] = new TF1("fit_scurve1", fit_fun1, 120, 170);
-            const char * fit_fun2 = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]/(1+exp(-[7]*(x-[8]))) + [9]";
-            fit_func[1] = new TF1("fit_scurve2", fit_fun2, 120, 170);
-            const char * fit_fun3 = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]/(1+exp(-[7]*(x-[8]))) + [9]";
-            fit_func[2] = new TF1("fit_scurve3", fit_fun3, 120, 170);
+            const char* sigmoid_double = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]";
+            const char* sigmoid_triple = "[0]/(1+exp(-[1]*(x-[2]))) + [3]/(1+exp(-[4]*(x-[5]))) + [6]/(1+exp(-[7]*(x-[8]))) + [9]";
+            fit_func[0] = new TF1("fit_scurve1", sigmoid_double, 120, 170);
+            fit_func[1] = new TF1("fit_scurve2", sigmoid_triple, 120, 170);
+            fit_func[2] = new TF1("fit_scurve3", sigmoid_triple, 120, 170);
             double pe1_t[3], pe2_t[3], pe3_t[3];
             double ChiSquare[3];
             int NDF[3];
@@ -401,17 +400,19 @@ int wgScurve(const char* x_inputDir,
             for(size_t i=0; i<3; i++){
               if(i != bestFit){
                 fit_func[i]->SetLineColor(kBlue);
+                fit_func[i]->SetLineStyle(2);
+                fit_func[i]->Draw("same");
               }
-              fit_func[i]->Draw("same");
             }
-              pe1[idif][ichip][ichan][i_iDAC] = pe1_t[bestFit];
-              pe2[idif][ichip][ichan][i_iDAC] = pe2_t[bestFit];
-              pe3[idif][ichip][ichan][i_iDAC] = pe3_t[bestFit];
-              Pe1Hist[i_iDAC]->Fill(pe1_t[bestFit]);
-              Pe2Hist[i_iDAC]->Fill(pe2_t[bestFit]);
-              Pe3Hist[i_iDAC]->Fill(pe3_t[bestFit]);
-              ChiHist[i_iDAC]->Fill(ChiSquare[bestFit]);
-              ChiOverNdfHist[i_iDAC]->Fill(goodness[bestFit]);
+            fit_func[bestFit]->Draw("same");
+            pe1[idif][ichip][ichan][i_iDAC] = pe1_t[bestFit];
+            pe2[idif][ichip][ichan][i_iDAC] = pe2_t[bestFit];
+            pe3[idif][ichip][ichan][i_iDAC] = pe3_t[bestFit];
+            Pe1Hist[i_iDAC]->Fill(pe1_t[bestFit]);
+            Pe2Hist[i_iDAC]->Fill(pe2_t[bestFit]);
+            Pe3Hist[i_iDAC]->Fill(pe3_t[bestFit]);
+            ChiHist[i_iDAC]->Fill(ChiSquare[bestFit]);
+            ChiOverNdfHist[i_iDAC]->Fill(goodness[bestFit]);
             
             // ************* Save S-curve Graph as png ************* //
             TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
