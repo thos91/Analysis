@@ -6,10 +6,12 @@
 
 // system C includes
 #include <csignal>
+#include <cstring>
 
 // user includes
 #include "wgConst.hpp"
 #include "wgExceptions.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgLogger.hpp"
 #include "wgDecoder.hpp"
 #include "wgDecoderUtils.hpp"
@@ -68,7 +70,7 @@ unsigned GetNumChipID(std::string & input_raw_file) {
   std::ifstream ifs;
   ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
+    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(std::strerror(errno)));
     return ERR_FAILED_OPEN_RAW_FILE;
   }
   

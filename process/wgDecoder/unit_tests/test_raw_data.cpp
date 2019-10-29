@@ -1,4 +1,5 @@
 #include <string>
+#include <getopt.h>
 
 #include "wgDecoderUtils.hpp"
 #include "wgRawEmulator.hpp"

@@ -17,7 +17,7 @@ using namespace wagasci_tools;
 
 //************************************************************************
 wgGetHist::wgGetHist(const std::string& hist_file) {
-  if (!check_exist::RootFile(hist_file))
+  if (!check_exist::root_file(hist_file))
     throw wgInvalidFile("[wgGetHist] histogram file not found : " + hist_file);
   try { wgGetHist::m_hist_file = new TFile(hist_file.c_str(),"read"); }
   catch (const std::exception& e) {

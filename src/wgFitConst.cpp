@@ -32,7 +32,7 @@ const unsigned MAX_BCID_BIN = 12288;
 const int WG_PED_DIFF_MAX = 10;  
 const int WG_PED_DIFF_MIN = -50;
 
-double NoiseToPe(const double noise) {
+double noise_to_pe(const double noise) {
   if      (noise >  WG_UPPER_LIMIT_1PE)                               return 0.5;
   else if (noise >= WG_LOWER_LIMIT_1PE && noise < WG_UPPER_LIMIT_1PE) return 1.0;
   else if (noise >= WG_UPPER_LIMIT_2PE && noise < WG_LOWER_LIMIT_1PE) return 1.5;

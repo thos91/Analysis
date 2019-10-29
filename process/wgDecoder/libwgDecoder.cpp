@@ -20,6 +20,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgExceptions.hpp"
 #include "wgGetCalibData.hpp"
 #include "wgRawData.hpp"
@@ -42,7 +43,7 @@ int wgDecoder(const char * x_input_raw_file,
   std::string input_raw_file(x_input_raw_file);
   std::string calibration_dir(x_calibration_dir);
   std::string output_dir(x_output_dir);
-  std::string output_file_name = GetName(input_raw_file) + "_tree.root";
+  std::string output_file_name = get_stats::basename(input_raw_file) + "_tree.root";
 
   // ===================================================================== //
   //                         Arguments sanity check                        //
@@ -50,7 +51,7 @@ int wgDecoder(const char * x_input_raw_file,
 
   // ======== input_raw_file ========= //
   
-  if (input_raw_file.empty() || !check_exist::RawFile(input_raw_file)) { 
+  if (input_raw_file.empty() || !check_exist::raw_file(input_raw_file)) { 
     Log.eWrite("[wgDecoder] Input file doesn't exist : " + input_raw_file);
     return ERR_INPUT_FILE_NOT_FOUND;
   }
@@ -84,13 +85,13 @@ int wgDecoder(const char * x_input_raw_file,
 
   // This is not the output log file but the log file that should be already
   // present in the input folder and was created together with the .raw file
-  std::string pyrame_log_file  = GetName(input_raw_file);
+  std::string pyrame_log_file  = get_stats::basename(input_raw_file);
   size_t pos  = pyrame_log_file.rfind("_ecal_dif_") ;
-  pyrame_log_file = GetPath(input_raw_file) + pyrame_log_file.substr(0, pos) + ".log";
+  pyrame_log_file = get_stats::dirname(input_raw_file) + pyrame_log_file.substr(0, pos) + ".log";
 
   // ============ Create output_dir ============ //
   
-  try { MakeDir(output_dir); }
+  try { make::directory(output_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgDecoder] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
@@ -107,7 +108,7 @@ int wgDecoder(const char * x_input_raw_file,
   // If the number of DIFs is not provided as an argument, try to infer it from
   // the file name
   if (dif == 0) {
-    std::string input_raw_file_name = wagasci_tools::GetName(input_raw_file);
+    std::string input_raw_file_name = wagasci_tools::get_stats::basename(input_raw_file);
     if ((pos = input_raw_file_name.find("dif_1_1_")) != std::string::npos) {
       try {
         dif = stoi(input_raw_file_name.substr(pos + 8, pos + 9));
@@ -199,7 +200,7 @@ int wgDecoder(const char * x_input_raw_file,
   TFile * output_file;
   TString output_file_path(output_dir + "/" + output_file_name);
   if (!overwrite) {
-    if (check_exist::RootFile(output_file_path)) {
+    if (check_exist::root_file(output_file_path)) {
       Log.eWrite("[wgDecoder] Error:" + std::string(output_file_path.Data()) +
                  " already exists!");
       return ERR_OVERWRITE_FLAG_NOT_SET;
@@ -259,15 +260,15 @@ int wgDecoder(const char * x_input_raw_file,
   //                        Read Pyrame log file                           //
   // ===================================================================== //
 
-  if( check_exist::LogFile(pyrame_log_file) ) {
+  if( check_exist::log_file(pyrame_log_file) ) {
     // Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
     std::vector<std::string> v_log;
     wgEditXML edit;
     edit.GetLog(pyrame_log_file, v_log);
     // Start time of the acquisition that produced the .raw file
-    tree->GetUserInfo()->Add(new TParameter<Int_t>("start_time", datetime::DatetimeToSeconds(v_log[0])));
+    tree->GetUserInfo()->Add(new TParameter<Int_t>("start_time", datetime::datetime_to_seconds(v_log[0])));
     // Stop time of the acquisition that produced the .raw file
-    tree->GetUserInfo()->Add(new TParameter<Int_t>("stop_time", datetime::DatetimeToSeconds(v_log[1])));
+    tree->GetUserInfo()->Add(new TParameter<Int_t>("stop_time", datetime::datetime_to_seconds(v_log[1])));
     // Number of data packets acquired as reported by Pyrame in the acquisition log file
     tree->GetUserInfo()->Add(new TParameter<Int_t>("nb_data_pkts", std::stoi(v_log[2])));
     // Number of lost packets acquired as reported by Pyrame in the acquisition log file

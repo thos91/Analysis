@@ -4,10 +4,11 @@
 #include <bitset>
 
 // system C includes
-//#include <bits/stdc++.h>
 #include <getopt.h>
+
 // user includes
 #include "wgConst.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgAnaHist.hpp"
 #include "wgLogger.hpp"
@@ -103,7 +104,7 @@ int main(int argc, char** argv){
                            mode,
                            flags.to_ulong(),
                            dif)) != WG_SUCCESS ) {
-    Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + std::to_string(result));
+    Log.eWrite("[wgAnaHist] wgAnaHist returned error " + std::to_string(result));
     exit(1);
   }
 

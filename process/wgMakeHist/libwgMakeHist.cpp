@@ -14,6 +14,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgColor.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgGetTree.hpp"
 #include "wgExceptions.hpp"
@@ -26,9 +27,9 @@ using namespace wagasci_tools;
 //******************************************************************
 void ModeSelect(const int mode, std::bitset<N_MODES>& flag){
   if ( mode == 1 || mode >= 10 )               flag[SELECT_DARK_NOISE] = true;
-  if ( mode == 2 || mode >= 10 )               flag[SELECT_CHARGE]   = true;
-  if ( mode == 3 || mode == 10 || mode >= 20 ) flag[SELECT_PEDESTAL]     = true;
-  if ( mode == 4 || mode == 11 || mode >= 20 ) flag[SELECT_TIME]  = true;
+  if ( mode == 2 || mode >= 10 )               flag[SELECT_CHARGE]     = true;
+  if ( mode == 3 || mode == 10 || mode >= 20 ) flag[SELECT_PEDESTAL]   = true;
+  if ( mode == 4 || mode == 11 || mode >= 20 ) flag[SELECT_TIME]       = true;
   if ( mode < 0  || mode > 20 )
     throw std::invalid_argument("Mode " + std::to_string(mode) + " not recognized"); 
 }
@@ -48,21 +49,21 @@ int wgMakeHist(const char * x_input_file_name,
   std::string pyrame_config_file(x_pyrame_config_file);
   std::string output_dir(x_output_dir);
 
-  std::string output_file_name = GetNameBeforeLastUnderBar(input_file_name) + "_hist.root";
-  std::string logfilename  = GetName(input_file_name);
+  std::string output_file_name = get_stats::name_before_last_under_bar(input_file_name) + "_hist.root";
+  std::string logfilename  = get_stats::basename(input_file_name);
   int pos = logfilename.rfind("_ecal_dif_") ;
-  std::string logfile = GetPath(input_file_name) + logfilename.substr(0, pos ) + ".log";
+  std::string logfile = get_stats::dirname(input_file_name) + logfilename.substr(0, pos ) + ".log";
 
-  if(input_file_name.empty() || !check_exist::RootFile(input_file_name)) {
+  if(input_file_name.empty() || !check_exist::root_file(input_file_name)) {
     Log.eWrite("[wgMakeHist] Input file not found : " + input_file_name);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if (pyrame_config_file.empty() || !check_exist::XmlFile(pyrame_config_file)) {
+  if (pyrame_config_file.empty() || !check_exist::xml_file(pyrame_config_file)) {
     Log.eWrite("[wgMakeHist] Pyrame xml configuration file not found : " + pyrame_config_file);
     return ERR_CONFIG_XML_FILE_NOT_FOUND;
   }
-  if (!wagasci_tools::check_exist::Dir(output_dir)) {
-    wagasci_tools::MakeDir(output_dir);
+  if (!wagasci_tools::check_exist::directory(output_dir)) {
+    wagasci_tools::make::directory(output_dir);
   }
 
   Log.Write("[wgMakeHist] *****  INPUT FILE         : " + input_file_name    + "  *****");

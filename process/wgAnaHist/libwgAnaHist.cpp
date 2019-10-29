@@ -14,6 +14,7 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgFit.hpp"
 #include "wgFitConst.hpp"
@@ -63,11 +64,11 @@ int wgAnaHist(const char * x_input_file,
 
   // =========== Arguments sanity check =========== //
 
-  if(input_file.empty() || !check_exist::RootFile(input_file)) {
+  if(input_file.empty() || !check_exist::root_file(input_file)) {
     Log.eWrite("[wgAnaHist] Input file not found : " + input_file);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if ( flags[SELECT_CONFIG] && ( pyrame_config_file.empty() || !check_exist::XmlFile(pyrame_config_file)) ) {
+  if ( flags[SELECT_CONFIG] && ( pyrame_config_file.empty() || !check_exist::xml_file(pyrame_config_file)) ) {
     Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + pyrame_config_file);
     exit(1);
   }
@@ -103,7 +104,7 @@ int wgAnaHist(const char * x_input_file,
   // =========== Create output directories =========== //
 
   // ======= Create output_xml_dir ======= //
-  try { MakeDir(output_xml_dir); }
+  try { make::directory(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaHist] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
@@ -114,7 +115,7 @@ int wgAnaHist(const char * x_input_file,
       unsigned n_chans = topol->dif_map[idif][ichip];
       for ( unsigned ichan = 0; ichan < n_chans; ichan++ ) {
         std::string output_img_chip_chan_dir(output_img_dir + "/chip" + std::to_string(ichip) + "/chan" + std::to_string(ichan));
-        try { MakeDir(output_img_chip_chan_dir); }
+        try { make::directory(output_img_chip_chan_dir); }
         catch (const wgInvalidFile& e) {
           Log.eWrite("[wgAnaHist] " + std::string(e.what()));
           return ERR_FAILED_CREATE_DIRECTORY;
@@ -146,7 +147,7 @@ int wgAnaHist(const char * x_input_file,
 
       // ============ Create output_xml_chip_dir ============ //
       std::string output_xml_chip_dir(output_xml_dir + "/chip" + std::to_string(ichip));
-      try { MakeDir(output_xml_chip_dir); }
+      try { make::directory(output_xml_chip_dir); }
       catch (const wgInvalidFile& e) {
         Log.eWrite("[wgAnaHist] " + std::string(e.what()));
         return ERR_FAILED_CREATE_DIRECTORY;
@@ -180,7 +181,7 @@ int wgAnaHist(const char * x_input_file,
         // Open the outputxmlfile as an XML file
         std::string outputxmlfile(output_xml_chip_dir + "/chan" + std::to_string(ichan) + ".xml");
         try {
-          if( !check_exist::XmlFile(outputxmlfile) || flags[SELECT_OVERWRITE] )
+          if( !check_exist::xml_file(outputxmlfile) || flags[SELECT_OVERWRITE] )
             xml.Make(outputxmlfile, idif, ichip, ichan);
           xml.Open(outputxmlfile);
         }
@@ -192,8 +193,8 @@ int wgAnaHist(const char * x_input_file,
         // ******************* FILL THE XML FILES ********************//
         try {
           if (first_time) {
-            start_time = Fit.histos.Get_start_time();
-            stop_time  = Fit.histos.Get_stop_time();
+            start_time = Fit.Histos.Get_start_time();
+            stop_time  = Fit.Histos.Get_stop_time();
             first_time = false;
           }
           xml.SetConfigValue(std::string("start_time"), start_time);
@@ -221,7 +222,7 @@ int wgAnaHist(const char * x_input_file,
             // calculate the dark noise rate for chip "ichip" and channel "ichan" and
             // save the mean and standard deviation in fit_bcid[0] and fit_bcid[1]
             // respectively.
-            Fit.noise_rate(ichip, ichan, fit_bcid, flags[SELECT_PRINT]);
+            Fit.NoiseRate(ichip, ichan, fit_bcid, flags[SELECT_PRINT]);
             // Save the noise rate and its standard deviation in the outputxmlfile xml
             // file
             xml.SetChValue(std::string("noise_rate"), fit_bcid[0], CREATE_NEW_MODE); // mean
@@ -237,7 +238,7 @@ int wgAnaHist(const char * x_input_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.charge_nohit(ichip, ichan, icol, fit_charge_nohit, flags[SELECT_PRINT]);
+              Fit.ChargeNohit(ichip, ichan, icol, fit_charge_nohit, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
@@ -254,7 +255,7 @@ int wgAnaHist(const char * x_input_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.charge_hit_LG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
+              Fit.ChargeHitLG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
@@ -271,7 +272,7 @@ int wgAnaHist(const char * x_input_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.charge_hit_HG(ichip, ichan, icol, fit_charge_HG, flags[SELECT_PRINT]);
+              Fit.ChargeHitHG(ichip, ichan, icol, fit_charge_HG, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif

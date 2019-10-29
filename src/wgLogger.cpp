@@ -37,7 +37,7 @@ wgLogger::wgLogger(const std::string& log_dir)
   
     // If the log directory is not found, create it
         
-    if ( !wagasci_tools::check_exist::Dir(dir) ) {
+    if ( !wagasci_tools::check_exist::directory(dir) ) {
       boost::filesystem::path dir_path(dir);
       if( !boost::filesystem::create_directories(dir_path) ) {
         std::string error_message("[wgTools][" + dir + "] failed to create directory");

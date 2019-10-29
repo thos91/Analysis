@@ -9,6 +9,7 @@
 #include "wgEditXML.hpp"
 #include "wgEditConfig.hpp"
 #include "wgFileSystemTools.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgConst.hpp"
 #include "wgExceptions.hpp"
 #include "wgTopology.hpp"
@@ -43,15 +44,15 @@ int wgOptimize(const char * x_threshold_card,
     Log.eWrite("[wgOptimize] Input DAC must be in {1,21,41,61,81,101,121,141,161,181,201,221,241}");
     return ERR_WRONG_INPUTDAC_VALUE;
   }
-  if ( threshold_card.empty() || !check_exist::XmlFile(threshold_card) ) {
+  if ( threshold_card.empty() || !check_exist::xml_file(threshold_card) ) {
     Log.eWrite("[wgOptimize] Threshold card not found");
     return ERR_THRESHOLD_CARD_NOT_FOUND;
   }
-  if ( (mode == OP_INPUTDAC_MODE) && (gain_card.empty() || !check_exist::XmlFile(gain_card)) ) {
+  if ( (mode == OP_INPUTDAC_MODE) && (gain_card.empty() || !check_exist::xml_file(gain_card)) ) {
     Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
     return ERR_GAIN_CARD_NOT_FOUND;
   }
-  if ( !check_exist::XmlFile(config_xml_file)) {
+  if ( !check_exist::xml_file(config_xml_file)) {
     Log.eWrite("[wgOptimize] Pyrame config file doesn't exist : " + config_xml_file);
     return ERR_CONFIG_XML_FILE_NOT_FOUND;
   }
@@ -164,7 +165,7 @@ int wgOptimize(const char * x_threshold_card,
           std::string configName(wagasci_config_dif_dir + "/wagasci_bitstream_gdcc" + std::to_string(igdcc_id) +
                                  "_dif" + std::to_string(rel_idif) + "_chip" + std::to_string(ichip) + ".txt");
 
-          if( !check_exist::TxtFile(configName) ) {
+          if( !check_exist::txt_file(configName) ) {
             Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);
             return ERR_BITSTREAM_FILE_NOT_FOUND;
           }

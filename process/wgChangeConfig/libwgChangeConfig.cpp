@@ -39,18 +39,18 @@ int wgChangeConfig(const char * x_input_file,
   
   if (flags[OVERWRITE_FLAG] && output_file.empty()) output_file = input_file;
   
-  if (input_file.empty() || !check_exist::TxtFile(input_file)) {
+  if (input_file.empty() || !check_exist::txt_file(input_file)) {
     Log.eWrite("[wgChangeConfig] input file doesn't exists : " + input_file);
     return ERR_INPUT_FILE_NOT_FOUND;
   }
 
-  if (!flags[OVERWRITE_FLAG] && flags[EDIT_FLAG] && check_exist::TxtFile(output_file)) {
+  if (!flags[OVERWRITE_FLAG] && flags[EDIT_FLAG] && check_exist::txt_file(output_file)) {
     Log.eWrite("[wgChangeConfig] overwrite flag must be set in edit mode");
     return ERR_OVERWRITE_FLAG_NOT_SET;
   }
 
   if (!output_file.empty()) {
-    try { MakeDir(GetPath(output_file)); }
+    try { make::directory(get_stats::dirname(output_file)); }
     catch (const wgInvalidFile& e) {
       Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
       return ERR_FAILED_CREATE_DIRECTORY;
@@ -66,46 +66,46 @@ int wgChangeConfig(const char * x_input_file,
     if (flags[EDIT_FLAG]) {
       if (mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD || mode == EC_CHIPID) {
         if ((mode == EC_TRIGGER_THRESHOLD || mode == EC_GAIN_SELECT_THRESHOLD) && value > (int) MAX_VALUE_10BITS) {
-          Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
+          Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
         else if (mode == EC_CHIPID && value > (int) MAX_VALUE_8BITS) {
-          Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
+          Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
       }
       else if (mode == EC_INPUT_DAC || mode == EC_HG_LG_AMPLIFIER || mode == EC_THRESHOLD_ADJUSTMENT) {
         if (channel > NCHANNELS) {
-          Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] channel is out of range : " + std::to_string(channel));
+          Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] channel is out of range : " + std::to_string(channel));
           return ERR_WRONG_CHANNEL_VALUE;
         }
         else if (mode == EC_INPUT_DAC) {
           if (value > (int) MAX_VALUE_8BITS) {
-            Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
+            Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
         }
         else if (mode == EC_HG_LG_AMPLIFIER) {
           if (value > (int) MAX_VALUE_6BITS) {
-            Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
+            Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
         }
         else if (mode == EC_THRESHOLD_ADJUSTMENT) {
           if (value > (int) MAX_VALUE_4BITS) {
-            Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
+            Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] value is out of range : " + std::to_string(value));
             return ERR_VALUE_OUT_OF_RANGE;
           }
         }
       }
       else if (mode == EC_INPUT_DAC_REFERENCE) {
         if (value != 0 && value != 1) {
-          Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] value is out of range : " + std::to_string(value));
+          Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] value is out of range : " + std::to_string(value));
           return ERR_VALUE_OUT_OF_RANGE;
         }
       }
       else {
-        Log.eWrite("[wgChangeConfig][" + GetName(input_file) + "] mode not recognized : " + std::to_string(mode));
+        Log.eWrite("[wgChangeConfig][" + get_stats::basename(input_file) + "] mode not recognized : " + std::to_string(mode));
         return ERR_WRONG_MODE;
       }
     } // if (flags[EDIT_FLAG])

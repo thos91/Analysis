@@ -36,6 +36,6 @@ extern const int WG_PED_DIFF_MIN;
 // Guess the threshold value (in p.e.) given the dark noise rate
 // This little function tries to guess the threshold level (0.5, 1.5 or 2.5)
 // given the value of the noise rate.
-double NoiseToPe(const double noise);
+double noise_to_pe(const double noise);
 
 #endif

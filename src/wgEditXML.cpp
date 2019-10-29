@@ -23,7 +23,7 @@ void wgEditXML::Write(){
 //**********************************************************************
 void wgEditXML::Open(const std::string& filename){
   
-  if(!wagasci_tools::check_exist::XmlFile(filename))
+  if(!wagasci_tools::check_exist::xml_file(filename))
     throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
   wgEditXML::filename=filename; 
   wgEditXML::xml = new XMLDocument();
@@ -120,7 +120,7 @@ bool wgEditXML::GetConfig(const std::string& configxml,
     bool found = false;
     std::string bitstream("");
     
-    if(!wagasci_tools::check_exist::XmlFile(configxml))
+    if(!wagasci_tools::check_exist::xml_file(configxml))
       throw wgInvalidFile(configxml + " wasn't found or is not valid");
     if(ichip > NCHIPS)
       throw std::invalid_argument("ichip is greater than " + std::to_string(NCHIPS));
