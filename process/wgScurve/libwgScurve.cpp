@@ -17,6 +17,7 @@
 #include <TGraphErrors.h>
 #include <TF1.h>
 #include <TString.h>
+#include <TGaxis.h>
 
 // user includes
 #include "wgFileSystemTools.hpp"
@@ -425,7 +426,19 @@ int wgScurve(const char* x_inputDir,
             Pe3Hist[i_iDAC][bestFit]->Fill(pe3_t[bestFit]);
             ChiHist[i_iDAC]->Fill(ChiSquare[bestFit]);
             ChiOverNdfHist[i_iDAC]->Fill(goodness[bestFit]);
-            
+            // Show each p.e. level line
+            TGaxis *a1 = new TGaxis(max_bin_counter,1.0E+3,max_bin_counter,2.0E+5,0,0,0,"");
+            TGaxis *a2 = new TGaxis(pe2_t[bestFit],1.0E+2,pe2_t[bestFit],2.0E+4,0,0,0,"");
+            TGaxis *a3 = new TGaxis(pe3_t[bestFit],10,pe3_t[bestFit],1.0E+3,0,0,0,"");
+            a1->SetLineColor(kGreen+1);
+            a1->SetLineWidth(2);
+            a2->SetLineColor(kGreen+1);
+            a2->SetLineWidth(2);
+            a3->SetLineColor(kGreen+1);
+            a3->SetLineWidth(2);
+            a1->Draw();
+            a2->Draw();
+            a3->Draw();
             // ************* Save S-curve Graph as png ************* //
             TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                           + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan)
