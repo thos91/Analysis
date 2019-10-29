@@ -348,14 +348,19 @@ int wgScurve(const char* x_inputDir,
 #endif
             // These are temporary variables for x, y and their errors used to draw the graph.
             d1vector gx, gy, gxe, gye;
-
+            unsigned max_bin_counter = 0;
             for (unsigned i_threshold = 0; i_threshold < n_threshold; ++i_threshold) {
               gx.push_back(threshold[i_threshold]);
               gy.push_back(noise[idif][ichip][ichan][i_iDAC][i_threshold]);
               gxe.push_back(0);
               gye.push_back(noise_sigma[idif][ichip][ichan][i_iDAC][i_threshold]);
+              if(0.0 < noise[idif][ichip][ichan][i_iDAC][i_threshold] && 
+                 noise[idif][ichip][ichan][i_iDAC][i_threshold] < 2.0E+5 && 
+                 max_bin_counter < threshold[i_threshold]){
+                max_bin_counter = threshold[i_threshold];
+              }
             }
-                                                
+                                         
             // ************* Draw S-curve Graph ************* //
             TGraphErrors* Scurve = new TGraphErrors(gx.size(), gx.data(), gy.data(),
                                                     gxe.data(), gye.data());
@@ -397,7 +402,7 @@ int wgScurve(const char* x_inputDir,
             std::vector<double> goodness;
             std::vector<size_t> gn_index = {0, 1, 2};
             for(size_t i=0; i<3; i++){
-            	goodness.push_back(ChiSquare[i]/(double)NDF[i]);
+              goodness.push_back(std::abs(1.0 - ChiSquare[i]/(double)NDF[i]));
             }
             std::sort(gn_index.begin(), gn_index.end(), [&goodness](size_t i1, size_t i2){
               return goodness[i1] < goodness[i2];
@@ -412,12 +417,12 @@ int wgScurve(const char* x_inputDir,
               }
             }
             fit_func[bestFit]->Draw("same");
-            pe1[idif][ichip][ichan][i_iDAC] = pe1_t[bestFit];
+            pe1[idif][ichip][ichan][i_iDAC] = max_bin_counter;
             pe2[idif][ichip][ichan][i_iDAC] = pe2_t[bestFit];
             pe3[idif][ichip][ichan][i_iDAC] = pe3_t[bestFit];
-            Pe1Hist[i_iDAC]->Fill(pe1_t[bestFit]);
+            Pe1Hist[i_iDAC]->Fill(max_bin_counter);
             Pe2Hist[i_iDAC]->Fill(pe2_t[bestFit]);
-            Pe3Hist[i_iDAC]->Fill(pe3_t[bestFit]);
+            Pe3Hist[i_iDAC][bestFit]->Fill(pe3_t[bestFit]);
             ChiHist[i_iDAC]->Fill(ChiSquare[bestFit]);
             ChiOverNdfHist[i_iDAC]->Fill(goodness[bestFit]);
             
@@ -696,6 +701,8 @@ void fit_scurve1(TGraphErrors* Scurve,
   fit_scurve->SetParLimits(0, c0/2.0, c0*1.5);  
   fit_scurve->SetParLimits(3, c3/3.0, c3*1.5); 
   fit_scurve->SetParLimits(6, c6/2.0, c6*4.0);
+  fit_scurve->SetParLimits(2, c2-5.0, c2+5.0);
+  fit_scurve->SetParLimits(5, c5-5.0, c5+5.0);
 #endif
   
   Scurve->Fit(fit_scurve, "q");
@@ -704,13 +711,13 @@ void fit_scurve1(TGraphErrors* Scurve,
   // Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
   // variables a and b indicates the center point of each sigmoid function.
   // Set 1.5 pe as the middle point between two sigmoid functions' center.
-  double a = fit_scurve->GetParameter(5);
-  double b = fit_scurve->GetParameter(2);
+  double a = fit_scurve->GetParameter(2);
+  double b = fit_scurve->GetParameter(5);
   ChiSquare = fit_scurve->GetChisquare();
   NDF = fit_scurve->GetNDF();
-  pe1_t =  (3*b - a) / 2;
-  pe2_t =  (  a + b) / 2;
-  pe3_t =  (3*a - b) / 2;
+  pe1_t = (3*a - b) / 2;
+  pe2_t = (  a + b) / 2;
+  pe3_t = (3*b - a) / 2;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
@@ -769,13 +776,14 @@ void fit_scurve2(TGraphErrors* Scurve,
   // Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
   // variables a and b indicates the center point of each sigmoid function.
   // Set 1.5 pe as the middle point between two sigmoid functions' center.
-  double a = fit_scurve->GetParameter(5);
-  double b = fit_scurve->GetParameter(2);
+  double a = fit_scurve->GetParameter(2);
+  double b = fit_scurve->GetParameter(5);
+  double c = fit_scurve->GetParameter(8);
   ChiSquare = fit_scurve->GetChisquare();
   NDF = fit_scurve->GetNDF();
-  pe1_t =  (3*b - a) / 2;
-  pe2_t =  (  a + b) / 2;
-  pe3_t =  (3*a - b) / 2;
+  pe1_t = (3*a - b) / 2;
+  pe2_t = (  a + b) / 2;
+  pe3_t = (  b + c) / 2;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
@@ -833,13 +841,14 @@ void fit_scurve3(TGraphErrors* Scurve,
   // Here, pe1 -> 1.5 pe threshold, pe2 -> 2.5 pe threshold.
   // variables a and b indicates the center point of each sigmoid function.
   // Set 1.5 pe as the middle point between two sigmoid functions' center.
-  double a = fit_scurve->GetParameter(5);
-  double b = fit_scurve->GetParameter(2);
+  double a = fit_scurve->GetParameter(2);
+  double b = fit_scurve->GetParameter(5);
+  double c = fit_scurve->GetParameter(8);
   ChiSquare = fit_scurve->GetChisquare();
   NDF = fit_scurve->GetNDF();
-  pe1_t =  (3*b - a) / 2;
-  pe2_t =  (  a + b) / 2;
-  pe3_t =  (3*a - b) / 2;
+  pe1_t = (3*a - b) / 2;
+  pe2_t = (  a + b) / 2;
+  pe3_t = (  b + c) / 2;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
