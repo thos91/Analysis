@@ -580,7 +580,7 @@ int wgScurve(const char* x_inputDir,
       }
       Pe1Hist[i_iDAC]->Fit(Pe1Fit,"rlq");
       for(size_t i=0; i<3; i++){
-        Pe2Hist[i_iDAC][i]->Fit(Pe3Fit[i],"rlq");
+        Pe2Hist[i_iDAC][i]->Fit(Pe2Fit[i],"rlq");
         Pe3Hist[i_iDAC][i]->Fit(Pe3Fit[i],"rlq");
       }
       mean1PE[i_iDAC] = Pe1Fit->GetParameter(1); sigma1PE[i_iDAC] = Pe1Fit->GetParameter(2);
