@@ -729,8 +729,8 @@ void fit_scurve1(TGraphErrors* Scurve,
   ChiSquare = fit_scurve->GetChisquare();
   NDF = fit_scurve->GetNDF();
   pe1_t = (3*a - b) / 2;
-  pe2_t = (  a + b) / 2;
-  pe3_t = (3*b - a) / 2;
+  pe2_t = (a + 2*b) / 3;
+  pe3_t = (5*b - 2*a) / 3;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
@@ -795,8 +795,8 @@ void fit_scurve2(TGraphErrors* Scurve,
   ChiSquare = fit_scurve->GetChisquare();
   NDF = fit_scurve->GetNDF();
   pe1_t = (3*a - b) / 2;
-  pe2_t = (  a + b) / 2;
-  pe3_t = (  b + c) / 2;
+  pe2_t = (a + 2*b) / 3;
+  pe3_t = (b + 2*c) / 3;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
@@ -860,8 +860,8 @@ void fit_scurve3(TGraphErrors* Scurve,
   ChiSquare = fit_scurve->GetChisquare();
   NDF = fit_scurve->GetNDF();
   pe1_t = (3*a - b) / 2;
-  pe2_t = (  a + b) / 2;
-  pe3_t = (  b + c) / 2;
+  pe2_t = (a + 2*b) / 3;
+  pe3_t = (b + 2*c) / 3;
 
   if( print_flag && (!outputIMGDir.empty()) ) {
     TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
