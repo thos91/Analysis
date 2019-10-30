@@ -285,17 +285,20 @@ namespace check_exist {
 bool generic_file(const std::string& filename, const std::string & ext)
 {
   try {
+    std::string extension(ext);
+    if (!extension.empty() && extension[0] != '.')
+      extension.insert(0, ".");
     // check for correct extension
-    if(get_stats::extension(filename) != ext)
-      throw wgInvalidFile(filename + " has not ." + ext + " extension");
-    // _create a _path object from given path string
+    if(get_stats::extension(filename) != extension)
+      throw wgInvalidFile(filename + " has not ." + extension + " extension");
+    // create a path object from given path string
     filesys::path path_obj(filename);
-    // _check if path exists and is of a regular file
+    // check if path exists and is of a regular file
     if (filesys::exists(path_obj) && filesys::is_regular_file(path_obj))
       return true;
   }
   catch(const std::exception& e) {
-    Log.Write("[wg_error_code][" + ext +"_file] " + std::string(e.what()));
+    Log.Write("[wgFileSystemTools]" + std::string(e.what()));
     return false;
   }
   return false;
@@ -307,16 +310,16 @@ bool root_file(const TString& filename) {
 
 bool root_file(const std::string& filename) {
   try {
-    if (generic_file(filename, std::string("root")) == false)
+    if (generic_file(filename, std::string(".root")) == false)
       return false;
-    // _check if the _r_o_o_t file is zombie
+    // check if the ROOT file is zombie
     TFile file(filename.c_str());
     if (file.IsZombie())
       throw wgInvalidFile(filename + " is zombie");
-    // _check if the _r_o_o_t file was successfully recovered
+    // check if the ROOT file was successfully recovered
     if (file.TestBit(TFile::kRecovered))
       Log.Write("[wg_error_code][_root_file] " + filename + " was successfully recovered");
-    // _if everything is fine return true
+    // if everything is fine return true
     return true;
   }
   catch(const std::exception& e) {
@@ -327,27 +330,27 @@ bool root_file(const std::string& filename) {
 
 bool raw_file(const std::string& filename)
 {
-  return generic_file(filename, std::string("raw"));
+  return generic_file(filename, std::string(".raw"));
 }
 
 bool txt_file(const std::string& filename)
 {
-  return generic_file(filename, std::string("txt"));
+  return generic_file(filename, std::string(".txt"));
 }
 
 bool csv_file(const std::string& filename)
 {
-  return generic_file(filename, std::string("csv"));
+  return generic_file(filename, std::string(".csv"));
 }
 
 bool xml_file(const std::string& filename)
 {
-  return generic_file(filename, std::string("xml"));
+  return generic_file(filename, std::string(".xml"));
 }
 
 bool log_file(const std::string& filename)
 {
-  return generic_file(filename, std::string("log"));
+  return generic_file(filename, std::string(".log"));
 }
 
 bool directory(const std::string& file_path)
