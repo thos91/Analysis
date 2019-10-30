@@ -126,7 +126,8 @@ int wgScurve(const char* x_inputDir,
     d4vector pe3        (n_difs); // [dif][chip][chan][iDAC] optimized threshold at 2.5 p.e.
     d5vector noise      (n_difs); // [dif][chip][chan][iDAC][thr] dark noise count
     d5vector noise_sigma(n_difs); // [dif][chip][chan][iDAC][thr] dark noise count error
-    double  mean1PE[n_inputDAC], mean2PE[n_inputDAC], mean3PE[n_inputDAC], sigma1PE[n_inputDAC], sigma2PE[n_inputDAC], sigma3PE[n_inputDAC];
+    double  mean1PE[n_inputDAC], mean2PE[n_inputDAC][3], mean3PE[n_inputDAC][3], sigma1PE[n_inputDAC], sigma2PE[n_inputDAC][3], sigma3PE[n_inputDAC][3];
+    s4vector bestFit    (n_difs);
     //  and resize them.
     unsigned dif_counter = 0;
     u1vector dif_counter_to_id;
@@ -144,6 +145,7 @@ int wgScurve(const char* x_inputDir,
       pe3        [dif_counter].resize(n_chips);
       noise      [dif_counter].resize(n_chips);
       noise_sigma[dif_counter].resize(n_chips);
+      bestFit    [dif_counter].resize(n_chips);
       for (const auto &asu : dif.second) {
         unsigned n_chans = asu.second;
         slope1     [dif_counter][asu.first].resize(n_chans);
@@ -157,12 +159,14 @@ int wgScurve(const char* x_inputDir,
         pe3        [dif_counter][asu.first].resize(n_chans);
         noise      [dif_counter][asu.first].resize(n_chans);
         noise_sigma[dif_counter][asu.first].resize(n_chans);
+        bestFit    [dif_counter][asu.first].resize(n_chans);
         for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
           pe1        [dif_counter][asu.first][ichan].resize(n_inputDAC);
           pe2        [dif_counter][asu.first][ichan].resize(n_inputDAC);
           pe3        [dif_counter][asu.first][ichan].resize(n_inputDAC);
           noise      [dif_counter][asu.first][ichan].resize(n_inputDAC);
           noise_sigma[dif_counter][asu.first][ichan].resize(n_inputDAC);
+          bestFit    [dif_counter][asu.first][ichan].resize(n_inputDAC);
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
             noise      [dif_counter][asu.first][ichan][i_iDAC].resize(n_threshold);
             noise_sigma[dif_counter][asu.first][ichan][i_iDAC].resize(n_threshold);
@@ -283,7 +287,7 @@ int wgScurve(const char* x_inputDir,
      ********************************************************************************/
 
     TH1D* Pe1Hist[n_inputDAC];
-    TH1D* Pe2Hist[n_inputDAC];
+    TH1D* Pe2Hist[n_inputDAC][3];
     TH1D* Pe3Hist[n_inputDAC][3];
     TH1D* ChiHist[n_inputDAC];
     TH1D* ChiOverNdfHist[n_inputDAC];
@@ -294,9 +298,10 @@ int wgScurve(const char* x_inputDir,
       std::string name4 = "ChiSquareHist_" + std::to_string(inputDAC[i_iDAC]);
       std::string name5 = "ChiSquareOverNdfHist_" + std::to_string(inputDAC[i_iDAC]);
       Pe1Hist[i_iDAC] = new TH1D(name1.c_str(),"0.5, 1.5 and 2.5 p.e. Cut Level Distribution; Threshold; # of Channels",100,100,200);
-      Pe2Hist[i_iDAC] = new TH1D(name2.c_str(),"Pe2Hist",100,100,200);
       for(size_t i=0; i<3; i++){
-      	name3 = name3 + "_" + std::to_string(i);
+        name2 = name2 + "_" + std::to_string(i);
+        name3 = name3 + "_" + std::to_string(i);
+        Pe2Hist[i_iDAC][i] = new TH1D(name2.c_str(),"Pe2Hist",100,100,200);
         Pe3Hist[i_iDAC][i] = new TH1D(name3.c_str(),"Pe3Hist",100,100,200);
       }
       ChiHist[i_iDAC] = new TH1D(name4.c_str(),"Chi Square; Chi square; Count",100,0,500000);
@@ -306,8 +311,12 @@ int wgScurve(const char* x_inputDir,
       Pe1Hist[i_iDAC]->SetStats(0);
       Pe1Hist[i_iDAC]->SetFillColor(kRed);
       Pe1Hist[i_iDAC]->SetFillStyle(3002);
-      Pe2Hist[i_iDAC]->SetFillColor(kBlue);
-      Pe2Hist[i_iDAC]->SetFillStyle(3004);
+      Pe2Hist[i_iDAC][0]->SetFillColor(kGreen);
+      Pe2Hist[i_iDAC][0]->SetFillStyle(3005);
+      Pe2Hist[i_iDAC][1]->SetFillColor(kOrange);
+      Pe2Hist[i_iDAC][1]->SetFillStyle(3006);
+      Pe2Hist[i_iDAC][2]->SetFillColor(kViolet);
+      Pe2Hist[i_iDAC][2]->SetFillStyle(3007);
       Pe3Hist[i_iDAC][0]->SetFillColor(kGreen);
       Pe3Hist[i_iDAC][0]->SetFillStyle(3005);
       Pe3Hist[i_iDAC][1]->SetFillColor(kOrange);
@@ -408,28 +417,28 @@ int wgScurve(const char* x_inputDir,
             std::sort(gn_index.begin(), gn_index.end(), [&goodness](size_t i1, size_t i2){
               return goodness[i1] < goodness[i2];
             });
-            size_t bestFit = gn_index[0];
-            
+            bestFit[idif][ichip][ichan][i_iDAC] = gn_index[0];
+            size_t bestFit_t = bestFit[idif][ichip][ichan][i_iDAC];
             for(size_t i=0; i<3; i++){
-              if(i != bestFit){
+              if(i != bestFit_t){
                 fit_func[i]->SetLineColor(kBlue);
                 fit_func[i]->SetLineStyle(2);
                 fit_func[i]->Draw("same");
               }
             }
-            fit_func[bestFit]->Draw("same");
+            fit_func[bestFit_t]->Draw("same");
             pe1[idif][ichip][ichan][i_iDAC] = max_bin_counter;
-            pe2[idif][ichip][ichan][i_iDAC] = pe2_t[bestFit];
-            pe3[idif][ichip][ichan][i_iDAC] = pe3_t[bestFit];
+            pe2[idif][ichip][ichan][i_iDAC] = pe2_t[bestFit_t];
+            pe3[idif][ichip][ichan][i_iDAC] = pe3_t[bestFit_t];
             Pe1Hist[i_iDAC]->Fill(max_bin_counter);
-            Pe2Hist[i_iDAC]->Fill(pe2_t[bestFit]);
-            Pe3Hist[i_iDAC][bestFit]->Fill(pe3_t[bestFit]);
-            ChiHist[i_iDAC]->Fill(ChiSquare[bestFit]);
-            ChiOverNdfHist[i_iDAC]->Fill(goodness[bestFit]);
+            Pe2Hist[i_iDAC][bestFit_t]->Fill(pe2_t[bestFit_t]);
+            Pe3Hist[i_iDAC][bestFit_t]->Fill(pe3_t[bestFit_t]);
+            ChiHist[i_iDAC]->Fill(ChiSquare[bestFit_t]);
+            ChiOverNdfHist[i_iDAC]->Fill(goodness[bestFit_t]);
             // Show each p.e. level line
             TGaxis *a1 = new TGaxis(max_bin_counter,1.0E+3,max_bin_counter,2.0E+5,0,0,0,"");
-            TGaxis *a2 = new TGaxis(pe2_t[bestFit],1.0E+2,pe2_t[bestFit],2.0E+4,0,0,0,"");
-            TGaxis *a3 = new TGaxis(pe3_t[bestFit],10,pe3_t[bestFit],1.0E+3,0,0,0,"");
+            TGaxis *a2 = new TGaxis(pe2_t[bestFit_t],1.0E+2,pe2_t[bestFit_t],2.0E+4,0,0,0,"");
+            TGaxis *a3 = new TGaxis(pe3_t[bestFit_t],10,pe3_t[bestFit_t],1.0E+3,0,0,0,"");
             a1->SetLineColor(kGreen+1);
             a1->SetLineWidth(2);
             a2->SetLineColor(kGreen+1);
@@ -557,25 +566,28 @@ int wgScurve(const char* x_inputDir,
       ChiOverNdfCanvas->SetLogy();
       // PE distribution
       TF1* Pe1Fit = new TF1("Pe1Fit","gaus",100,200);
-      TF1* Pe2Fit = new TF1("Pe2Fit","gaus",100,200);
+      TF1* Pe2Fit[3];
       TF1* Pe3Fit[3];
       for(size_t i=0; i<3; i++){
+      	Pe2Fit[i] = new TF1("Pe2Fit","gaus",100,200);
       	Pe3Fit[i] = new TF1("Pe3Fit","gaus",100,200);
       }
       PECanvas->cd();
       Pe1Hist[i_iDAC]->Draw();
-      Pe2Hist[i_iDAC]->Draw("same");
       for(size_t i=0; i<3; i++){
+        Pe2Hist[i_iDAC][i]->Draw("same");
         Pe3Hist[i_iDAC][i]->Draw("same");
       }
       Pe1Hist[i_iDAC]->Fit(Pe1Fit,"rlq");
-      Pe2Hist[i_iDAC]->Fit(Pe2Fit,"rlq");
       for(size_t i=0; i<3; i++){
+        Pe2Hist[i_iDAC][i]->Fit(Pe3Fit[i],"rlq");
         Pe3Hist[i_iDAC][i]->Fit(Pe3Fit[i],"rlq");
       }
       mean1PE[i_iDAC] = Pe1Fit->GetParameter(1); sigma1PE[i_iDAC] = Pe1Fit->GetParameter(2);
-      mean2PE[i_iDAC] = Pe2Fit->GetParameter(1); sigma2PE[i_iDAC] = Pe2Fit->GetParameter(2);
-      mean3PE[i_iDAC] = Pe3Fit[0]->GetParameter(1); sigma3PE[i_iDAC] = Pe3Fit[0]->GetParameter(2);
+      for(size_t i=0; i<3; i++){
+        mean2PE[i_iDAC][i] = Pe2Fit[i]->GetParameter(1); sigma2PE[i_iDAC][i] = Pe2Fit[i]->GetParameter(2);
+        mean3PE[i_iDAC][i] = Pe3Fit[i]->GetParameter(1); sigma3PE[i_iDAC][i] = Pe3Fit[i]->GetParameter(2);
+      }
       TString name(outputIMGDir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png");
       PECanvas->Print(name);
       // Chi square distribution
@@ -589,16 +601,16 @@ int wgScurve(const char* x_inputDir,
       name = outputIMGDir + "/EvaluationOfFit/ChisquareOverNdf_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
       ChiOverNdfCanvas->Print(name);
       delete Pe1Fit;
-      delete Pe2Fit;
       for(size_t i=0; i<3; i++){
+        delete Pe2Fit[i];
         delete Pe3Fit[i];
       }
       delete PECanvas;
       delete ChiCanvas;
       delete ChiOverNdfCanvas;
       delete Pe1Hist[i_iDAC];
-      delete Pe2Hist[i_iDAC];
       for(size_t i=0; i<3; i++){
+        delete Pe2Hist[i_iDAC][i];
         delete Pe3Hist[i_iDAC][i];
       }
       delete ChiHist[i_iDAC];
@@ -635,6 +647,7 @@ int wgScurve(const char* x_inputDir,
                                 ichan, intercept2[idif][ichip][ichan], NO_CREATE_NEW_MODE);
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
+            size_t bestFit_t = bestFit[idif][ichip][ichan][i_iDAC];
             if( pe1[idif][ichip][ichan][i_iDAC] == UINT_MAX ||
                 pe2[idif][ichip][ichan][i_iDAC] == UINT_MAX ||
                 pe3[idif][ichip][ichan][i_iDAC] == UINT_MAX ){
@@ -646,8 +659,8 @@ int wgScurve(const char* x_inputDir,
               Edit.OPT_SetValue(std::string("threshold_3"), dif_counter_to_id[idif], ichip, ichan,
                                 inputDAC[i_iDAC], UINT_MAX, NO_CREATE_NEW_MODE);
             }else if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE[i_iDAC]) > 2*sigma1PE[i_iDAC] ||
-                      std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC]) > 2*sigma2PE[i_iDAC] ||
-                      std::abs(pe3[idif][ichip][ichan][i_iDAC] - mean3PE[i_iDAC]) > 2*sigma3PE[i_iDAC] ){
+                      std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC][bestFit_t]) > 2*sigma2PE[i_iDAC][bestFit_t] ||
+                      std::abs(pe3[idif][ichip][ichan][i_iDAC] - mean3PE[i_iDAC][bestFit_t]) > 2*sigma3PE[i_iDAC][bestFit_t] ){
               // If 0.5, 1.5 or 2.5 pe level is far from the mean value by 2-sigma, 
               // it will recorded in "failed_channels.txt" with the number of 
               // DIF, CHIP, CHANNEL, InputDAC. Also mean threshold value will 
@@ -656,9 +669,9 @@ int wgScurve(const char* x_inputDir,
               Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
                                 inputDAC[i_iDAC], mean1PE[i_iDAC], NO_CREATE_NEW_MODE);
               Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
-                                inputDAC[i_iDAC], mean2PE[i_iDAC], NO_CREATE_NEW_MODE);
+                                inputDAC[i_iDAC], mean2PE[i_iDAC][bestFit_t], NO_CREATE_NEW_MODE);
               Edit.OPT_SetValue(std::string("threshold_3"), dif_counter_to_id[idif], ichip, ichan,
-                                inputDAC[i_iDAC], mean3PE[i_iDAC], NO_CREATE_NEW_MODE);
+                                inputDAC[i_iDAC], mean3PE[i_iDAC][bestFit_t], NO_CREATE_NEW_MODE);
             }else{
               // Set the 0.5 pe, 1.5 pe and 2.5 pe level after fitting the scurve.
               Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,

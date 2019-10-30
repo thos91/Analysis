@@ -199,6 +199,7 @@ typedef std::vector<unsigned> u1vector;
 typedef Contiguous3Vector<unsigned> u3CCvector;
 typedef Contiguous2Vector<unsigned> u2CCvector;
 
+typedef std::vector<std::vector<std::vector<std::vector<size_t>>>>s4vector;
 
 
 // ===================================================================== //
