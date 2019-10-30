@@ -359,6 +359,7 @@ int wgScurve(const char* x_inputDir,
             // These are temporary variables for x, y and their errors used to draw the graph.
             d1vector gx, gy, gxe, gye;
             unsigned max_bin_counter = 0;
+            unsigned under10_counter = 0;
             for (unsigned i_threshold = 0; i_threshold < n_threshold; ++i_threshold) {
               gx.push_back(threshold[i_threshold]);
               gy.push_back(noise[idif][ichip][ichan][i_iDAC][i_threshold]);
@@ -368,6 +369,10 @@ int wgScurve(const char* x_inputDir,
                  noise[idif][ichip][ichan][i_iDAC][i_threshold] < 2.0E+5 && 
                  max_bin_counter < threshold[i_threshold]){
                 max_bin_counter = threshold[i_threshold];
+              }
+              if(0.0 < noise[idif][ichip][ichan][i_iDAC][i_threshold] && 
+                 noise[idif][ichip][ichan][i_iDAC][i_threshold] <= 10){ 
+                under10_counter++;
               }
             }
                                          
@@ -413,6 +418,9 @@ int wgScurve(const char* x_inputDir,
             std::vector<size_t> gn_index = {0, 1, 2};
             for(size_t i=0; i<3; i++){
               goodness.push_back(std::abs(1.0 - ChiSquare[i]/(double)NDF[i]));
+            }
+            if(under10_counter > 5){
+            	goodness[0] = 999999.9;
             }
             std::sort(gn_index.begin(), gn_index.end(), [&goodness](size_t i1, size_t i2){
               return goodness[i1] < goodness[i2];
@@ -858,7 +866,7 @@ void fit_scurve3(TGraphErrors* Scurve,
   fit_scurve->SetParLimits(9, c9/4.0, c9*2.0);
   fit_scurve->SetParLimits(2, c2-5.0, c2+5.0);
   fit_scurve->SetParLimits(5, c5-5.0, c5+5.0);
-  fit_scurve->SetParLimits(8, c8-5.0, c8+5.0);
+  fit_scurve->SetParLimits(8, c8-8.0, c8+8.0);
 #endif
   
   Scurve->Fit(fit_scurve, "q");
