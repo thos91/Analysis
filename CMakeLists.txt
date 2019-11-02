@@ -34,8 +34,8 @@ if ( CMAKE_COMPILER_IS_GNUCC )
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
 endif ( CMAKE_COMPILER_IS_GNUCC )
 
-# boost system and filesystem are required
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+# boost program_options, system and filesystem are required
+find_package(Boost COMPONENTS program_options system filesystem REQUIRED)
 
 # ROOT
 find_package(ROOT CONFIG REQUIRED)

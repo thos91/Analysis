@@ -25,7 +25,7 @@ wgGetTree::wgGetTree(const std::string& root_file_name, Raw_t& rd, unsigned dif)
 
 //************************************************************************
 void wgGetTree::Open() {
-  if(!check_exist::RootFile(m_finputname))
+  if(!check_exist::root_file(m_finputname))
     throw wgInvalidFile("[wgGetTree] TTree file not found : " +
                         m_finputname);
   

@@ -4,10 +4,11 @@
 #include <bitset>
 
 // system C includes
-//#include <bits/stdc++.h>
 #include <getopt.h>
+
 // user includes
 #include "wgConst.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgAnaHist.hpp"
 #include "wgLogger.hpp"
@@ -33,9 +34,9 @@ void print_help(const char * program_name) {
       "   =========   fit modes   ========= \n\n"
       "   1  : only dark noise\n"
       "   2  : only pedestal\n"
-      "   3  : only charge_hit\n"
-      "   4  : only charge_hitHG\n"
-      "   10 : dark noise + pedestal + charge_hit\n"
+      "   3  : only charge_hit_LG\n"
+      "   4  : only charge_hit_HG\n"
+      "   10 : dark noise + pedestal + charge_hit_LG\n"
       "   11 : dark noise + pedestal + charge_hit_HG\n"
       "   20 : everything\n";
   exit(0);
@@ -103,7 +104,7 @@ int main(int argc, char** argv){
                            mode,
                            flags.to_ulong(),
                            dif)) != WG_SUCCESS ) {
-    Log.eWrite("[" + GetName( inputFileName) + "][wgAnaHist] wgAnaHist returned error " + std::to_string(result));
+    Log.eWrite("[wgAnaHist] wgAnaHist returned error " + std::to_string(result));
     exit(1);
   }
 

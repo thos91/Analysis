@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "wgConst.hpp"
 #include "wgRawData.hpp"
 
@@ -57,9 +59,9 @@ void Raw_t::clear(){
   Raw_t::pln.fill                                                   (-1);
   Raw_t::chan.fill                                                  (-1);
   Raw_t::grid.fill                                                  (-1);
-  Raw_t::x.fill                                                    (NAN);
-  Raw_t::y.fill                                                    (NAN);
-  Raw_t::z.fill                                                    (NAN);
+  Raw_t::x.fill                                          (std::nan("x"));
+  Raw_t::y.fill                                          (std::nan("y"));
+  Raw_t::z.fill                                          (std::nan("z"));
   
   Raw_t::pedestal.fill                                              (-1);
   Raw_t::pe.fill                                                    (-1);

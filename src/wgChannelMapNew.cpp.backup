@@ -1,0 +1,392 @@
+// system includes
+#include <string>
+#include <iostream>
+#include <unordered_map>
+
+// user includes
+// #include "wgChannelMap.hpp"
+#include "wgContiguousVectors.hpp"
+#include "wgDetectorConst.hpp"
+#include "wgLogger.hpp"
+
+class wgChannelMap {
+ public:
+  enum View {
+    SideView = 0,
+    TopView,
+    BottomView
+  };
+  
+ private:
+  std::unordered_map<unsigned, View> DifOrientation {
+    {0, TopView},
+    {1, BottomView},
+    {2, TopView},
+    {3, BottomView},
+    {4, TopView},
+    {5, SideView},
+    {6, TopView},
+    {7, SideView}
+  };
+  static const std::string MPPCChannelMapping[32];
+  static const int ChipAlloc[2][20][2];
+
+  bool GetViewPlnChanGrid(const std::size_t dif_id,
+                          const std::size_t chip_id,
+                          const std::size_t chip_ch,
+                          int& view,
+                          int& pln,
+                          int& ch,
+                          int& grid);
+
+  bool ChipchToMPPCch(const int chip_ch, std::string& mppc_ch);
+
+  bool GetChipAlloc(const std::size_t dif_id,
+                    const std::size_t chip_id,
+                    int& id_z,
+                    int& id_xy);
+
+  bool GetMPPCPlnChanGrid(std::string mppc_chan,
+                          View view,
+                          int& pln,
+                          int& chan,
+                          int& grid);
+  
+ public:
+  bool GetChipMap (const std::size_t dif_id,
+                   const std::size_t chip_id,
+                   const std::size_t n_channels,
+                   int & view,
+                   int * const pln,
+                   int * const chan,
+                   int * const grid,
+                   double * const x,
+                   double * const y,
+                   double * const z);
+};
+
+bool wgChannelMap::GetChipMap (const std::size_t dif_id,
+                               const std::size_t chip_id,
+                               const std::size_t n_channels,
+                               int & view,
+                               int * const pln,
+                               int * const chan,
+                               int * const grid,
+                               double * const x,
+                               double * const y,
+                               double * const z) {
+  
+  for (std::size_t ichan = 0; ichan < n_channels; ichan++) {
+    if (!GetViewPlnChanGrid(dif_id,
+                            chip_id,
+                            ichan,
+                            view,
+                            pln[ichan],
+                            chan[ichan],
+                            grid[ichan])) {
+      std::stringstream ss;
+      ss << "DIF " << dif_id << ", chip " << chip_id <<
+          " : Failed to GetViewPlnChGrid";
+      Log.eWrite(ss.str());
+      return false;
+    }    
+    if (!GetXYZ(view,
+                pln[ichan],
+                chan[ichan],
+                x[ichan],
+                y[ichan],
+                z[ichan])) {
+      std::stringstream ss;
+      ss << "DIF " << dif_id << ", chip " << chip_id <<
+          " : Failed to GetXYZ";
+      Log.eWrite(ss.str());
+      return false;
+    }
+  }
+  return true;
+}
+
+//***********************************************************************
+bool wgChannelMap::GetViewPlnChanGrid(const std::size_t dif_id,
+                                      const std::size_t chip_id,
+                                      const std::size_t chip_ch,
+                                      int& view,
+                                      int& pln,
+                                      int& pln_chan,
+                                      int& grid) {
+  view = (int) this->DifOrientation[dif_id];
+  
+  std::string MPPC_channel;
+  if (this->ChipchToMPPCch(chip_ch, MPPC_ch) == false) return false;
+  if (this->GetMPPCPlnChanGrid(MPPC_ch, view, pln, pln_chan, grid) == false) return false;
+
+  int id_xy, id_z;
+  if (this->GetChipAlloc(dif_id, chip_id, id_z, id_xy)) return false;
+
+  pln = pln + 2 * id_z;
+
+  switch (grid) {
+    case 0 :
+      pln_chan  = pln_chan  + 8 * id_xy;
+      break;
+    case 1 :
+      pln_chan  = pln_chan  + 4 * id_xy;
+      break;
+    default : 
+      Log.eWrite("grid flag should be 0 or 1.");
+      return false;
+      break;
+  }
+
+  if ( (view < 0) || (view >= NUM_VIEWS) ||
+       (pln  < 0) || (pln  >= NUM_PLANES) ||
+       (pln_chan < 0) || (pln_chan >= NUM_CHANNELS_PER_PLANE)) {
+    Log.eWrite("wrong alignement. view:" << view << " pln:" << pln << " pln_chan:" << pln_chan);
+    return false;
+  }
+  
+  return true;
+} //GetViewPlnCh
+
+
+//************************************************************************
+bool wgChannelMap::ChipchToMPPCch(const int chip_ch, std::string& mppc_ch) {
+  switch (chip_ch) {
+    case 0 ... 31:
+      mppc_ch = this->MPPCChannelMapping[chip_ch];
+      break;
+    case 32 ... N_CHANNELS:
+      mppc_ch = this->MPPCChannelMapping[chip_ch - 32];
+      break;
+    default:
+      Log.eWrite("Channel out of range " << std::to_string(chip_ch));
+      return false;
+      break;
+  }
+  return true;
+}
+
+//************************************************************************
+const std::string wgChannelMap::MPPCChannelMapping[32] = {
+  "B1", "B2", "B3", "B4",
+  "A1", "A2", "A3", "A4",
+  "C4", "C2", "D4", "D2",
+  "C3", "C1", "D3", "D1",
+  "H1", "H3", "G1", "G3",
+  "F1", "F3", "E1", "E3",
+  "F2", "F4", "E4", "E2",
+  "G4", "G2", "H4", "H2"
+};
+
+//******************************************************************************
+bool wgChannelMap::GetMPPCPlnChanGrid(std::string mppc_chan,
+                                      View view,
+                                      int& pln,
+                                      int& pln_chan,
+                                      int& grid) {
+  switch (view) {
+    case SideView:
+      switch (mppc_chan) {
+        case "A1" : pln=0; pln_chan= 7; grid=0; break;
+        case "B1" : pln=0; pln_chan= 6; grid=0; break;
+        case "C1" : pln=0; pln_chan= 5; grid=0; break;
+        case "D1" : pln=0; pln_chan= 4; grid=0; break;
+        case "E1" : pln=0; pln_chan= 3; grid=0; break;
+        case "F1" : pln=0; pln_chan= 2; grid=0; break;
+        case "G1" : pln=0; pln_chan= 1; grid=0; break;
+        case "H1" : pln=0; pln_chan= 0; grid=0; break;
+        case "A2" : pln=0; pln_chan=43; grid=1; break;
+        case "B2" : pln=0; pln_chan=42; grid=1; break;
+        case "C2" : pln=0; pln_chan=41; grid=1; break;
+        case "D2" : pln=0; pln_chan=40; grid=1; break;
+        case "E2" : pln=0; pln_chan=63; grid=1; break;
+        case "F2" : pln=0; pln_chan=62; grid=1; break;
+        case "G2" : pln=0; pln_chan=61; grid=1; break;
+        case "H2" : pln=0; pln_chan=60; grid=1; break;
+        case "A3" : pln=1; pln_chan= 7; grid=0; break;
+        case "B3" : pln=1; pln_chan= 6; grid=0; break;
+        case "C3" : pln=1; pln_chan= 5; grid=0; break;
+        case "D3" : pln=1; pln_chan= 4; grid=0; break;
+        case "E3" : pln=1; pln_chan= 3; grid=0; break;
+        case "F3" : pln=1; pln_chan= 2; grid=0; break;
+        case "G3" : pln=1; pln_chan= 1; grid=0; break;
+        case "H3" : pln=1; pln_chan= 0; grid=0; break;
+        case "A4" : pln=1; pln_chan=43; grid=1; break;
+        case "B4" : pln=1; pln_chan=42; grid=1; break;
+        case "C4" : pln=1; pln_chan=41; grid=1; break;
+        case "D4" : pln=1; pln_chan=40; grid=1; break;
+        case "E4" : pln=1; pln_chan=63; grid=1; break;
+        case "F4" : pln=1; pln_chan=62; grid=1; break;
+        case "G4" : pln=1; pln_chan=61; grid=1; break;
+        case "H4" : pln=1; pln_chan=60; grid=1; break;
+        default   : return false; break;
+      }
+    case TopView:
+      switch (mppc_chan) {
+        case "A1" : pln=1; pln_chan=60; grid=1; break;
+        case "B1" : pln=1; pln_chan=61; grid=1; break;
+        case "C1" : pln=1; pln_chan=62; grid=1; break;
+        case "D1" : pln=1; pln_chan=63; grid=1; break;
+        case "E1" : pln=1; pln_chan= 4; grid=0; break;
+        case "F1" : pln=1; pln_chan= 5; grid=0; break;
+        case "G1" : pln=1; pln_chan= 6; grid=0; break;
+        case "H1" : pln=1; pln_chan= 7; grid=0; break;
+        case "A2" : pln=1; pln_chan= 0; grid=0; break;
+        case "B2" : pln=1; pln_chan= 1; grid=0; break;
+        case "C2" : pln=1; pln_chan= 2; grid=0; break;
+        case "D2" : pln=1; pln_chan= 3; grid=0; break;
+        case "E2" : pln=1; pln_chan=40; grid=1; break;
+        case "F2" : pln=1; pln_chan=41; grid=1; break;
+        case "G2" : pln=1; pln_chan=42; grid=1; break;
+        case "H2" : pln=1; pln_chan=43; grid=1; break;
+        case "A3" : pln=0; pln_chan=60; grid=1; break;
+        case "B3" : pln=0; pln_chan=61; grid=1; break;
+        case "C3" : pln=0; pln_chan=62; grid=1; break;
+        case "D3" : pln=0; pln_chan=63; grid=1; break;
+        case "E3" : pln=0; pln_chan= 4; grid=0; break;
+        case "F3" : pln=0; pln_chan= 5; grid=0; break;
+        case "G3" : pln=0; pln_chan= 6; grid=0; break;
+        case "H3" : pln=0; pln_chan= 7; grid=0; break;
+        case "A4" : pln=0; pln_chan= 0; grid=0; break;
+        case "B4" : pln=0; pln_chan= 1; grid=0; break;
+        case "C4" : pln=0; pln_chan= 2; grid=0; break;
+        case "D4" : pln=0; pln_chan= 3; grid=0; break;
+        case "E4" : pln=0; pln_chan=40; grid=1; break;
+        case "F4" : pln=0; pln_chan=41; grid=1; break;
+        case "G4" : pln=0; pln_chan=42; grid=1; break;
+        case "H4" : pln=0; pln_chan=43; grid=1; break;
+        case default : return false; break;
+      }
+  }
+  return true;
+} //GetMPPCPlnChan
+
+//******************************************************************************
+const int wgChannelMap::ChipAlloc[2][20][2] = {
+  { //TopView
+    {3,4},{3,3},{3,2},{3,1},{3,0},
+    {2,4},{2,3},{2,2},{2,1},{2,0},
+    {1,4},{1,3},{1,2},{1,1},{1,0},
+    {0,4},{0,3},{0,2},{0,1},{0,0}
+  },
+  { //SideView
+    {0,0},{0,1},{0,2},{0,3},{0,4},
+    {1,0},{1,1},{1,2},{1,3},{1,4},
+    {2,0},{2,1},{2,2},{2,3},{2,4},
+    {3,0},{3,1},{3,2},{3,3},{3,4}
+  }
+};
+
+//******************************************************************************
+bool wgChannelMap::GetChipAlloc(const std::size_t dif_id,
+                                const std::size_t chip_id,
+                                int& id_z,
+                                int& id_xy) {
+  id_z  = this->ChipAlloc[dif_id][chip_id][TopView];
+  id_xy = this->ChipAlloc[dif_id][chip_id][SideView];
+  return true;
+} //GetChipAlloc
+
+//******************************************************************************
+bool wgChannelMap::GetXYZ(View view,
+                          const int pln,
+                          const int pln_chan,
+                          double& x,
+                          double& y,
+                          double& z) {
+
+    unsigned short grid = pln_chan / 20;
+  switch (view) {
+      case SideView:
+        x = 0.;
+        switch (grid) {
+          case 0: 
+          case 1:
+            y = PLANE_CHANNEL_START + SCINTILLATOR_WIDTH * pln_chan;
+            z = PLANE_START + PLANE_DISTANCE * pln;
+            break;
+          case 2:
+          case 3:
+          default :
+
+        if ((grid & 0b10) == 0b00) {
+          y = C_WMChStart + C_WMScintiWidth * chan;
+          z = C_WMPlnStart + C_WMPlnDist * pln;
+        } else if((grid&0b11)==0b10){
+          y = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh);
+          z = C_WMPlnStart + C_WMPlnDist * pln + C_WMScintiThick / 2. + C_WMScintiWidth / 2. + 0.1;
+        }
+        else if((grid&0b11)==0b11){
+          y = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh-C_WMNumGridCh);
+          z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
+        }
+        else{
+          cout << "GetXYZ >> wrong chan alignment" << endl;
+          return false;
+        }
+        
+    case TOP_VIEW:
+    else if(view==TopView){
+    y = 0.;
+    if((grid&0b10)==0b00){
+      x = C_WMChStart + C_WMScintiWidth*chan;
+      z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist;
+    }
+    else if((grid&0b11)==0b10){
+      x = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh);
+      z = C_WMPlnStart + C_WMPlnDist*pln + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
+    }
+    else if((grid&0b11)==0b11){
+      x = C_WMGridChStart + C_WMScintiSlitStep*(chan-C_WMNumXYLayerCh-C_WMNumGridCh);
+      z = C_WMPlnStart + C_WMPlnDist*pln + C_WMLayerDist + C_WMScintiThick/2. + C_WMScintiWidth/2.+0.1;
+    }
+    else{
+     cout << "GetXYZ >> wrong chan alignment" << endl;
+      return false;
+    }
+  }
+  else{
+    cout << "GetXYZ >> view should be 0 or 1" << endl;
+    return false;
+  }
+  return true;
+} //GetXYZ
+
+
+//************************************************************************
+// Convert SPIROC channel to MPPC PIN
+int wgChannelMap::SPIROCtoPIN(int chan) {
+  switch (chan) {
+    case 0  ... 7:  return 26 - chan;
+    case 8  ... 15: return 16 - chan;
+    case 16 ... 23: return chan + 21;
+    case 24 ... 31: return chan + 31;
+  }
+  return -1;
+}
+
+//************************************************************************
+std::string wgChannelMap::PINtoNUM1(int pin) {
+  return std::to_string(4 - pin % 4);
+}
+
+//************************************************************************
+std::string wgChannelMap::PINtoNUM2(int pin) {
+  return std::to_string(pin % 4 + 1);
+}
+
+//************************************************************************
+// Convert MPPC PIN to MPPC Position
+std::string wgChannelMap::PINtoMPPC(int pin){
+  switch (pin) {
+    case 1  ... 4:  return "A" + PINtoNUM1(pin - 1);
+    case 5  ... 8:  return "B" + PINtoNUM1(pin - 5);
+    case 19 ... 22: return "C" + PINtoNUM1(pin - 19);
+    case 23 ... 26: return "D" + PINtoNUM1(pin - 23);
+    case 59 ... 62: return "E" + PINtoNUM2(pin - 59);
+    case 55 ... 58: return "F" + PINtoNUM2(pin - 55);
+    case 41 ... 44: return "G" + PINtoNUM2(pin - 41);
+    case 37 ... 40: return "H" + PINtoNUM2(pin - 37);
+  }
+  return ""; 
+}

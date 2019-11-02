@@ -6,6 +6,9 @@
 #include <istream>
 #include <functional>
 
+// ROOT includes
+#include "TTree.h"
+
 // user includes
 #include "wgConst.hpp"
 #include "wgRawData.hpp"

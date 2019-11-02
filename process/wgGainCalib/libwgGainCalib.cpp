@@ -17,12 +17,15 @@
 #include <TVectorD.h>
 
 // user includes
+#include "wgErrorCodes.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgEditXML.hpp"
 #include "wgLogger.hpp"
 #include "wgGainCalib.hpp"
 
 using namespace wagasci_tools;
+
+#define N_IDAC 5
 
 //******************************************************************
 int wgGainCalib(const char * x_input_run_dir,
@@ -37,7 +40,7 @@ int wgGainCalib(const char * x_input_run_dir,
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   
-  if (input_run_dir.empty() || !check_exist::Dir(input_run_dir)) {
+  if (input_run_dir.empty() || !check_exist::directory(input_run_dir)) {
     Log.eWrite("[wgGainCalib] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
@@ -62,8 +65,8 @@ int wgGainCalib(const char * x_input_run_dir,
   Topology topol(input_run_dir, TopologySourceType::gain_tree );
 
   //   DIF         ASU         channel     column     inputDAC   pe
-  std::vector<std::vector<std::vector<std::array<std::array<std::array<unsigned, N_PE_GAIN_CALIB>, N_IDAC>, MEMDEPTH>>>> charge_hit(topol.n_difs);
-  std::vector<std::vector<std::vector<std::array<std::array<std::array<unsigned, N_PE_GAIN_CALIB>, N_IDAC>, MEMDEPTH>>>> sigma_hit (topol.n_difs);
+  std::vector<std::vector<std::vector<std::array<std::array<std::array<unsigned, NUM_PE>, N_IDAC>, MEMDEPTH>>>> charge_hit(topol.n_difs);
+  std::vector<std::vector<std::vector<std::array<std::array<std::array<unsigned, NUM_PE>, N_IDAC>, MEMDEPTH>>>> sigma_hit (topol.n_difs);
   std::vector<std::vector<std::vector<std::array<std::array<unsigned, N_IDAC>, MEMDEPTH>>>>                              gain      (topol.n_difs);
   std::vector<std::vector<std::vector<std::array<std::array<unsigned, N_IDAC>, MEMDEPTH>>>>                              sigma_gain(topol.n_difs);
   std::vector<std::vector<std::vector<std::array<double, MEMDEPTH>>>>                                                    slope     (topol.n_difs);
@@ -95,7 +98,7 @@ int wgGainCalib(const char * x_input_run_dir,
   /////////////////////////////////////////////////////////////////////////////
 
   // ============ Create output_xml_dir ============ //
-  try { MakeDir(output_xml_dir); }
+  try { make::directory(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgGainCalib] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
@@ -106,7 +109,7 @@ int wgGainCalib(const char * x_input_run_dir,
     unsigned idif = dif.first;
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
-      try { MakeDir(output_img_dir + "/dif" + std::to_string(idif) + "/chip" + std::to_string(ichip)); }
+      try { make::directory(output_img_dir + "/dif" + std::to_string(idif) + "/chip" + std::to_string(ichip)); }
       catch (const wgInvalidFile& e) {
         Log.eWrite("[wgGainCalib] " + std::string(e.what()));
         return ERR_FAILED_CREATE_DIRECTORY;
@@ -121,18 +124,18 @@ int wgGainCalib(const char * x_input_run_dir,
   wgEditXML Edit;
   
   // input DAC
-  std::vector<std::string> idac_dir_list = ListDirectories(input_run_dir);
+  std::vector<std::string> idac_dir_list = list::list_directories(input_run_dir, true);
   std::vector<unsigned> v_idac;
   for (auto const& idac_directory : idac_dir_list) {
 
-    unsigned i_idac = extractIntegerFromString(GetName(idac_directory));
+    unsigned i_idac =string::extract_integer(get_stats::basename(idac_directory));
     if ( i_idac > MAX_VALUE_8BITS ) continue;
     else v_idac.push_back(i_idac);
 
     // PEU
-    std::vector<std::string> pe_dir_list = ListDirectories(idac_directory);
-    for (auto const& pe_directory : ListDirectories(input_run_dir)) {
-      unsigned pe_level_from_dir = extractIntegerFromString(GetName(pe_directory));
+    std::vector<std::string> pe_dir_list = list::list_directories(idac_directory, true);
+    for (auto const& pe_directory : list::list_directories(input_run_dir, true)) {
+      unsigned pe_level_from_dir =string::extract_integer(get_stats::basename(pe_directory));
       unsigned ipe;
       if      (pe_level_from_dir == 1) ipe = ONE_PE;
       else if (pe_level_from_dir == 2) ipe = TWO_PE;

@@ -3,9 +3,10 @@
 
 // system C includes
 #include <getopt.h>
+
 // user includes
 #include "wgFileSystemTools.hpp"
-
+#include "wgErrorCodes.hpp"
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
 #include "wgPedestalCalib.hpp"

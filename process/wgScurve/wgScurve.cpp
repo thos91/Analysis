@@ -7,6 +7,7 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgLogger.hpp"
 #include "wgScurve.hpp"
 

@@ -41,7 +41,7 @@ std::vector<std::vector<std::string>> wgEditConfig::GetCSV(std::string spiroc2d_
     wgEnvironment env;
     spiroc2d_csv = std::string(env.MAIN_DIRECTORY + "/configs/spiroc2d/spiroc2d.csv");
   }
-  if (!check_exist::CsvFile(spiroc2d_csv))
+  if (!check_exist::csv_file(spiroc2d_csv))
     throw wgInvalidFile("[wgEditConfig::GetCSV][" + spiroc2d_csv + "] file not found");
   std::ifstream ifs(spiroc2d_csv.c_str());
 	  

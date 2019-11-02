@@ -42,7 +42,6 @@ public:
   TH1I * Get_charge_hit_HG(unsigned int i, unsigned int j, unsigned int k);
   TH1I * Get_charge_hit_LG(unsigned int i, unsigned int j, unsigned int k);
   TH1I * Get_charge_nohit (unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_charge_hit   (unsigned int i, unsigned int j, unsigned int k);
   TH1I * Get_time_hit     (unsigned int i, unsigned int j, unsigned int k);
   TH1I * Get_time_nohit   (unsigned int i, unsigned int j, unsigned int k);
   TH1I * Get_bcid_hit     (unsigned int i, unsigned int j);
@@ -55,7 +54,6 @@ public:
   int  Get_stop_time();
 
   // Print the histograms
-  void Print_charge       (const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);
   void Print_charge_hit_HG(const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);
   void Print_charge_hit_LG(const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);
   void Print_charge_nohit (const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);

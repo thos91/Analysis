@@ -22,7 +22,7 @@ wgGetCalibData::wgGetCalibData(unsigned dif) : m_dif(dif) {
 //******************************************************************************
 wgGetCalibData::wgGetCalibData(const std::string& calibration_dir, unsigned dif) :
     m_dif(dif), m_calibration_dir(calibration_dir) {
-  if (!check_exist::Dir(m_calibration_dir))
+  if (!check_exist::directory(m_calibration_dir))
     throw wgInvalidFile("[wgGetCalibData] calibration directory not found : " + m_calibration_dir);
   m_have_pedestal_calibration = FindPedestalCard();
   m_have_gain_calibration     = FindGainCard();
@@ -31,8 +31,8 @@ wgGetCalibData::wgGetCalibData(const std::string& calibration_dir, unsigned dif)
 
 //******************************************************************************
 bool wgGetCalibData::FindPedestalCard() {
-  for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
-    if (findStringIC(xmlfile, "ped")) {
+  for (auto const xmlfile : list::list_files(m_calibration_dir, false, "xml")) {
+    if (string::find_string_ic(xmlfile, "ped")) {
       m_pedestal_card = xmlfile;
       return true;
     }
@@ -42,8 +42,8 @@ bool wgGetCalibData::FindPedestalCard() {
 
 //******************************************************************************
 bool wgGetCalibData::FindGainCard() {
-  for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
-    if (findStringIC(xmlfile, "adc") || findStringIC(xmlfile, "gain")) {
+  for (auto const xmlfile : list::list_files(m_calibration_dir, false, "xml")) {
+    if (string::find_string_ic(xmlfile, "adc") || string::find_string_ic(xmlfile, "gain")) {
       m_gain_card = xmlfile;
       return true;
     }
@@ -53,8 +53,8 @@ bool wgGetCalibData::FindGainCard() {
 
 //******************************************************************************
 bool wgGetCalibData::FindTDCCalibrationCard() {
-  for (auto const xmlfile : ListFilesWithExtension(m_calibration_dir, "xml")) {
-    if (findStringIC(xmlfile, "tdc") || findStringIC(xmlfile, "time")) {
+  for (auto const xmlfile : list::list_files(m_calibration_dir, false, "xml")) {
+    if (string::find_string_ic(xmlfile, "tdc") || string::find_string_ic(xmlfile, "time")) {
       m_tdc_calibration_card = xmlfile;
       return true;
     }

@@ -21,5 +21,8 @@ RawData:
 EditXML:
 	$(CXX) $(ROOT_FLAGS) $(CXX_FLAGS) utEditXML.cpp -o utEditXML $(LIB_FLAGS) $(ROOT_LIBS) $(WAGASCI_LIBS)
 
+Fit:
+	$(CXX) $(ROOT_FLAGS) $(CXX_FLAGS) utFit.cpp -o utFit $(LIB_FLAGS) $(ROOT_LIBS) $(WAGASCI_LIBS)
+
 clean:
 	$(RM) -rf utConst utTopology utRawData

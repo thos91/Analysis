@@ -13,6 +13,7 @@
 #include "wgEditXML.hpp"
 #include "wgEditConfig.hpp"
 #include "wgFileSystemTools.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgConst.hpp"
 #include "wgExceptions.hpp"
 #include "wgTopology.hpp"
@@ -56,31 +57,27 @@ int wgOptimize(const char * x_threshold_card,
     Log.eWrite("Photo-electrons (" + std::to_string(pe) + ") must be in {1,2}");
     return ERR_WRONG_PE_VALUE;
   }
-  
-  if (threshold_card.empty())
-    threshold_card = "/opt/calicoes/config/threshold_card.xml";
-  if (!check_exist::XmlFile(threshold_card)) {
+  if ( threshold_card.empty() || !check_exist::xml_file(threshold_card) ) {
     Log.eWrite("[wgOptimize] Threshold card not found");
     return ERR_THRESHOLD_CARD_NOT_FOUND;
   }
-  
-  switch (mode) {
-    case OP_INPUTDAC_MODE:
-      if (gain_card.empty())
-        gain_card = "/opt/calicoes/config/gain_card.xml";
-      if (!check_exist::XmlFile(gain_card)) {
-        Log.eWrite("[wgOptimize] A valid calibration card is needed "
-                   "in OP_INPUTDAC_MODE");
-        return ERR_GAIN_CARD_NOT_FOUND;
-      }
-    case OP_THRESHOLD_MODE:
-      if ((inputDAC % 20) != 1 || inputDAC < 1 || inputDAC > 241) {
-        Log.eWrite("[wgOptimize] Input DAC must be in {1,21,41,61,81,101,121,"
-                   "141,161,181,201,221,241} range");
-        return ERR_WRONG_INPUTDAC_VALUE;
-      }
+  if ( (mode == OP_INPUTDAC_MODE) && (gain_card.empty() || !check_exist::xml_file(gain_card)) ) {
+    Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
+    return ERR_GAIN_CARD_NOT_FOUND;
   }
-  
+  if ( !check_exist::xml_file(config_xml_file)) {
+    Log.eWrite("[wgOptimize] Pyrame config file doesn't exist : " + config_xml_file);
+    return ERR_CONFIG_XML_FILE_NOT_FOUND;
+  }
+  if ( pe != 1 && pe != 2 ) {
+    Log.eWrite("Photo-electrons (" + std::to_string(pe) + ") must be in {1,2}");
+    return ERR_WRONG_PE_VALUE;
+  }
+  if ( mode != OP_THRESHOLD_MODE && mode != OP_INPUTDAC_MODE ) {
+    Log.eWrite("Mode not recognized : " + std::to_string(mode));
+    return ERR_WRONG_MODE;
+  }
+
   // ================ Get the electronics topology ================= //
   
   std::unique_ptr<Topology> topol;
@@ -195,16 +192,14 @@ int wgOptimize(const char * x_threshold_card,
                                    "/wagasci_bitstream_dif" + std::to_string(idif) +
                                    "_chip" + std::to_string(ichip) + ".txt");
 
-        if( !check_exist::TxtFile(bitstream_file) ) {
-          Log.eWrite("[wgOptimize] bitstream file doesn't exist : " +
-                     bitstream_file);
-          return ERR_BITSTREAM_FILE_NOT_FOUND;
-        }
-        wgEditConfig edit_config(bitstream_file, false);
-        switch (mode) {
-          case OP_THRESHOLD_MODE:
-            edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]);
-          case OP_INPUTDAC_MODE:
+          if( !check_exist::txt_file(configName) ) {
+            Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);
+            return ERR_BITSTREAM_FILE_NOT_FOUND;
+          }
+          wgEditConfig edit_config(configName, false);
+          if (mode == OP_THRESHOLD_MODE) {
+          edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]);
+          } else if (mode == OP_INPUTDAC_MODE) {
             for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
               unsigned optimized_input_dac =
                   (WG_NOMINAL_GAIN - intercept_iDAC_gain[idif][ichip][ichan]) /

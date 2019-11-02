@@ -17,7 +17,7 @@ using namespace wagasci_tools;
 
 //************************************************************************
 wgGetHist::wgGetHist(const std::string& hist_file) {
-  if (!check_exist::RootFile(hist_file))
+  if (!check_exist::root_file(hist_file))
     throw wgInvalidFile("[wgGetHist] histogram file not found : " + hist_file);
   try { wgGetHist::m_hist_file = new TFile(hist_file.c_str(),"read"); }
   catch (const std::exception& e) {
@@ -83,16 +83,6 @@ TH1I * wgGetHist::Get_time_nohit(unsigned i, unsigned j, unsigned k) {
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_charge_hit(unsigned i, unsigned j, unsigned k) {
-  TString charge_hit;
-  charge_hit.Form("charge_hit_chip%u_ch%u_col%u", i, j, k);
-  if (m_hist_file->GetListOfKeys()->Contains(charge_hit))
-    return (TH1I*) m_hist_file->Get(charge_hit);
-  else
-    return NULL;
-}
-
-//************************************************************************
 TH1I * wgGetHist::Get_bcid_hit(unsigned i, unsigned j) {
   TString bcid_hit;
   bcid_hit.Form("bcid_hit_chip%u_ch%u", i, j);
@@ -139,14 +129,6 @@ TCanvas * wgGetHist::Make_Canvas(const char * name, bool y_logscale) {
   canvas->SetCanvasSize(1024,768);
   if(y_logscale) canvas->SetLogy();
   return canvas;
-}
-
-//************************************************************************
-void wgGetHist::Print_charge(const TString& h_name, TH1I * h_charge_hit, const char* option, bool y_logscale) {
-  TCanvas * canvas = this->Make_Canvas("canvas", y_logscale);
-  h_charge_hit->Draw(option);
-  canvas->Print(h_name);
-  delete canvas;
 }
 
 //************************************************************************

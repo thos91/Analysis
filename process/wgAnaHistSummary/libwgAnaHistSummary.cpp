@@ -24,7 +24,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
-
+#include "wgErrorCodes.hpp"
 #include "wgEditXML.hpp"
 #include "wgColor.hpp"
 #include "wgFitConst.hpp"
@@ -49,31 +49,31 @@ void MakeSummaryXmlFile(const std::string& dir, const bool overwrite, const unsi
   
   std::string outputxmlfile("");
   outputxmlfile = dir + "/Summary_chip" + std::to_string(ichip) + ".xml";
-  if( (check_exist::XmlFile(outputxmlfile) && overwrite) || !check_exist::XmlFile(outputxmlfile) )
+  if( (check_exist::xml_file(outputxmlfile) && overwrite) || !check_exist::xml_file(outputxmlfile) )
     Edit.SUMMARY_Make(outputxmlfile, n_chans);
   else
     throw wgInvalidFile("File " + outputxmlfile + " already exists and overwrite mode is not set");
 }
 
 //******************************************************************
-int wgAnaHistSummary(const char * x_inputDir,
+int wgAnaHistSummary(const char * x_input_dir,
                      const char * x_outputXMLDir,
                      const char * x_outputIMGDir,
                      const int mode,
                      const bool overwrite,
                      const bool print) {
 
-  std::string inputDir(x_inputDir);
+  std::string input_dir(x_input_dir);
   std::string outputXMLDir(x_outputXMLDir);
   std::string outputIMGDir(x_outputIMGDir);
 
   wgColor wgColor;
 
-  if(inputDir.empty() || !check_exist::Dir(inputDir)) {
+  if(input_dir.empty() || !check_exist::directory(input_dir)) {
     Log.eWrite("[wgAnaHistSummary] No input directory");
     return ERR_EMPTY_INPUT_FILE;
   }
-  if(outputXMLDir.empty()) outputXMLDir = inputDir;
+  if(outputXMLDir.empty()) outputXMLDir = input_dir;
     
   std::bitset<M> flags;
   flags[SELECT_PRINT] = print;
@@ -85,15 +85,15 @@ int wgAnaHistSummary(const char * x_inputDir,
   }
 
   // ============ Count number of chips and channels ============ //
-  unsigned n_chips = HowManyDirectories(inputDir);
+  unsigned n_chips = list::how_many_directories(input_dir, true);
   std::vector<unsigned> n_chans;
   for (unsigned ichip = 0; ichip < n_chips; ichip++) {
-    n_chans.push_back(HowManyFilesWithExtension(inputDir + "/chip" + std::to_string(ichip), "xml"));
+    n_chans.push_back(list::how_many_files(input_dir + "/chip" + std::to_string(ichip), true, ".xml"));
     // std::cout << "chip = " << ichip << " : channels = " << n_chans[ichip]  << "\n";
   }
   
   // ============ Create outputXMLDir ============ //
-  try { MakeDir(outputXMLDir); }
+  try { make::directory(outputXMLDir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
@@ -101,18 +101,16 @@ int wgAnaHistSummary(const char * x_inputDir,
 
   // ============ Create outputIMGDir ============ //
   if( flags[SELECT_PRINT] ) {
-    try { MakeDir(outputIMGDir); }
+    try { make::directory(outputIMGDir); }
     catch (const wgInvalidFile& e) {
       Log.eWrite("[wgAnaHistSummary] " + std::string(e.what()));
       return ERR_FAILED_CREATE_DIRECTORY;
     }
   }
 
-  Log.Write("[wgAnaHistSummary] *****  READING DIRECTORY      :" + inputDir     + "  *****");
+  Log.Write("[wgAnaHistSummary] *****  READING DIRECTORY      :" + input_dir     + "  *****");
   Log.Write("[wgAnaHistSummary] *****  OUTPUT XML DIRECTORY   :" + outputXMLDir + "  *****");
   Log.Write("[wgAnaHistSummary] *****  OUTPUT IMAGE DIRECTORY :" + outputIMGDir + "  *****");
-
-
 
   try {
     std::string xmlfile("");
@@ -197,7 +195,7 @@ int wgAnaHistSummary(const char * x_inputDir,
 
     //*** Read data ***//
     wgEditXML Edit;
-    try { Edit.Open(inputDir + "/chip1/chan1.xml"); }
+    try { Edit.Open(input_dir + "/chip1/chan1.xml"); }
     catch (const wgInvalidFile & e) {
       Log.eWrite("[wgAnaHist] " + std::string(e.what()));
       return ERR_FAILED_OPEN_XML_FILE;
@@ -214,7 +212,7 @@ int wgAnaHistSummary(const char * x_inputDir,
       charge_hit_error  [ichip].reserve(n_chans[ichip]);
       
       for(unsigned ichan = 0; ichan < n_chans[ichip]; ichan++) {
-        xmlfile = inputDir + "/chip" + std::to_string(ichip) + "/chan" + std::to_string(ichan) + ".xml";
+        xmlfile = input_dir + "/chip" + std::to_string(ichip) + "/chan" + std::to_string(ichan) + ".xml";
         try { Edit.Open(xmlfile); }
         catch (const wgInvalidFile & e) {
           Log.eWrite("[wgAnaHist]" + std::string(e.what()));
@@ -231,7 +229,7 @@ int wgAnaHistSummary(const char * x_inputDir,
         chanid[ichip].push_back(Edit.GetConfigValue(std::string("chanid")));
         noise[ichip].push_back(Edit.GetChValue(std::string("noise_rate")));
         noise_error[ichip].push_back(Edit.GetChValue(std::string("sigma_rate")));
-        pe_level[ichip].push_back(NoiseToPe(noise[ichip][ichan]));
+        pe_level[ichip].push_back(noise_to_pe(noise[ichip][ichan]));
 
         for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
           if( flags[SELECT_CHARGE_NOHIT] || flags[SELECT_DIFF] ) {

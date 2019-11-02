@@ -21,6 +21,7 @@
 
 // user includes
 #include "wgFileSystemTools.hpp"
+#include "wgErrorCodes.hpp"
 #include "wgEditXML.hpp"
 #include "wgLogger.hpp"
 #include "wgTopology.hpp"
@@ -28,24 +29,14 @@
 
 using namespace wagasci_tools;
 
-bool numeric_string_compare(const std::string& s1, const std::string& s2)
-{
-  unsigned n1 = extractIntegerFromString(GetName(s1));
-  unsigned n2 = extractIntegerFromString(GetName(s2));
-  if (n1 == UINT_MAX || n2 == UINT_MAX) {
-    std::string::const_iterator it1 = s1.begin(), it2 = s2.begin();
-    return std::lexicographical_compare(it1, s1.end(), it2, s2.end());
-  }
-  if (n1 != n2) return n1 < n2;
-  else return false;
-}
+//#define LOG_SCURVE 1 // comment out when not using log-scale
 
 //#define LOG_SCURVE 1 // comment out when not using log-scale
 
 //******************************************************************
-int wgScurve(const char* x_inputDir,
-             const char* x_outputXMLDir,
-             const char* x_outputIMGDir,
+int wgScurve(const char* x_input_dir,
+             const char* x_output_xml_dir,
+             const char* x_output_img_dir,
              const bool compatibility_mode) {
 
   // ============================================================= //
@@ -54,41 +45,41 @@ int wgScurve(const char* x_inputDir,
   //                                                               //
   // ============================================================= //
   
-  std::string inputDir    (x_inputDir);
-  std::string outputXMLDir(x_outputXMLDir);
-  std::string outputIMGDir(x_outputIMGDir);
+  std::string input_dir    (x_input_dir);
+  std::string output_xml_dir(x_output_xml_dir);
+  std::string output_img_dir(x_output_img_dir);
 
   wgEnvironment env;
   wgEditXML Edit;
 
   // ============ Check directories ============ //
-  if (inputDir.empty() || !check_exist::Dir(inputDir)) { 
-    Log.eWrite("[wgScurve] Input directory " + inputDir + " doesn't exist");
+  if (input_dir.empty() || !check_exist::directory(input_dir)) { 
+    Log.eWrite("[wgScurve] Input directory " + input_dir + " doesn't exist");
     exit(1);
   }
-  if (outputXMLDir.empty()) {
-    outputXMLDir = env.CALIBDATA_DIRECTORY;
+  if (output_xml_dir.empty()) {
+    output_xml_dir = env.CALIBDATA_DIRECTORY;
   }
-  if (outputIMGDir.empty()) {
-    outputIMGDir = env.IMGDATA_DIRECTORY;
+  if (output_img_dir.empty()) {
+    output_img_dir = env.IMGDATA_DIRECTORY;
   }
 
-  // ============ Create outputXMLDir ============ //
-  try { MakeDir(outputXMLDir); }
+  // ============ Create output_xml_dir ============ //
+  try { make::directory(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgScurve] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
-  // ============ Create outputIMGDir ============ //
-  try { MakeDir(outputIMGDir); }
+  // ============ Create output_img_dir ============ //
+  try { make::directory(output_img_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgScurve] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
-  Log.Write("[wgScurve] *****  READING DIRECTORY      : " + inputDir + "  *****");
-  Log.Write("[wgScurve] *****  OUTPUT XML DIRECTORY   : " + outputXMLDir + "  *****");
-  Log.Write("[wgScurve] *****  OUTPUT IMAGE DIRECTORY : " + outputIMGDir + "  *****");
+  Log.Write("[wgScurve] *****  READING DIRECTORY      : " + input_dir + "  *****");
+  Log.Write("[wgScurve] *****  OUTPUT XML DIRECTORY   : " + output_xml_dir + "  *****");
+  Log.Write("[wgScurve] *****  OUTPUT IMAGE DIRECTORY : " + output_img_dir + "  *****");
 
   try{
 
@@ -97,12 +88,12 @@ int wgScurve(const char* x_inputDir,
      ********************************************************************************/
         
     // Get topology from input directory.
-    Topology topol(inputDir, TopologySourceType::scurve_tree);
+    Topology topol(input_dir, TopologySourceType::scurve_tree);
 
     // Get the number imputDAC and threshold
-    std::vector<std::string> list_dir = ListDirectoriesWithInteger(inputDir);
+    std::vector<std::string> list_dir = list::list_directories(input_dir, true);
     const unsigned n_inputDAC  = list_dir.size();
-    const unsigned n_threshold = HowManyDirectories(list_dir.at(0));
+    const unsigned n_threshold = list::how_many_directories(list_dir.at(0), true);
     unsigned n_difs = topol.n_difs;
     
     // inputDAC[] and threshold[] contain true values for each index.
@@ -181,31 +172,27 @@ int wgScurve(const char* x_inputDir,
      ********************************************************************************/
 
     // input DAC
-    std::vector<std::string> iDAC_dir_list = ListDirectoriesWithInteger(inputDir);
-    std::sort(iDAC_dir_list.begin(), iDAC_dir_list.end(), numeric_string_compare);
+    std::vector<std::string> iDAC_dir_list = list::list_directories(input_dir, true);
     unsigned iDAC_counter = 0;  // index for inputDAC
     for (auto const & iDAC_dir : iDAC_dir_list) {
-        unsigned iDAC_from_dir = extractIntegerFromString(GetName(iDAC_dir));
-        
+      unsigned iDAC_from_dir = string::extract_integer(get_stats::basename(iDAC_dir));
+
       // threshold
-      std::vector<std::string> th_dir_list = ListDirectoriesWithInteger(iDAC_dir);
-      std::sort(th_dir_list.begin(), th_dir_list.end(), numeric_string_compare);
+      std::vector<std::string> th_dir_list = list::list_directories(iDAC_dir, true);
       unsigned threshold_counter = 0;  // index for threshold
       for (auto & th_dir : th_dir_list) {
-        unsigned th_from_dir = extractIntegerFromString(GetName(th_dir));
+        unsigned th_from_dir = string::extract_integer(get_stats::basename(th_dir));
         
         // DIF
         th_dir += "/wgAnaHistSummary/Xml";
-        std::vector<std::string> dif_dir_list = ListDirectories(th_dir);
-        std::sort(dif_dir_list.begin(), dif_dir_list.end(), numeric_string_compare);
+        std::vector<std::string> dif_dir_list = list::list_directories(th_dir, true);
         unsigned dif_counter = 0;
         for (auto const & dif_dir : dif_dir_list) {
 
           // chip
-          std::vector<std::string> chip_xml_list = ListFilesWithExtension(dif_dir, "xml");
-          std::sort(chip_xml_list.begin(), chip_xml_list.end(), numeric_string_compare);
+          std::vector<std::string> chip_xml_list = list::list_files(dif_dir, true, ".xml");
           for (auto const & chip_xml : chip_xml_list) {
-            unsigned chip_counter = extractIntegerFromString(GetName(chip_xml));
+            unsigned chip_counter = string::extract_integer(get_stats::basename(chip_xml));
             
             // ************* Open XML file ************* //
             try { Edit.Open(chip_xml); }
@@ -341,11 +328,11 @@ int wgScurve(const char* x_inputDir,
       for (const auto &asu : topol.dif_map[dif_counter_to_id[idif]]) {
         unsigned ichip = asu.first;
         for (unsigned ichan = 0; ichan < asu.second; ++ichan) {
-          std::string image_dir = outputIMGDir +
+          std::string image_dir = output_img_dir +
                                   "/Dif" + std::to_string(dif_counter_to_id[idif]) +
                                   "/Chip" + std::to_string(ichip) +
                                   "/Channel" + std::to_string(ichan);
-          MakeDir(image_dir);
+          make::directory(image_dir);
           // If the channel does not contain the meaningful data but UNIT_MAX, skip the loop.
           if (noise[idif][ichip][ichan][0][0] == UINT_MAX) {
             for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
@@ -476,7 +463,7 @@ int wgScurve(const char* x_inputDir,
             a2->Draw();
             a3->Draw();
             // ************* Save S-curve Graph as png ************* //
-            TString image(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
+            TString image(output_img_dir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                           + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan)
                           + "/InputDAC" + std::to_string(inputDAC[i_iDAC]) + ".png");
             c1->Print(image);
@@ -516,7 +503,7 @@ int wgScurve(const char* x_inputDir,
           intercept1[idif][ichip][ichan] = fit1->GetParameter(1);
         
           // ************* Save plot as png ************* //
-          TString image1(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
+          TString image1(output_img_dir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                          + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan)
                          + "/PE1vsInputDAC.png");
           c2->Print(image1);
@@ -539,7 +526,7 @@ int wgScurve(const char* x_inputDir,
           intercept2[idif][ichip][ichan] = fit2->GetParameter(1);
         
           // ************* Save plot as png ************* //
-          TString image2(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
+          TString image2(output_img_dir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                          + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan)
                          + "/PE2vsInputDAC.png");
           c2->Print(image2);
@@ -631,11 +618,11 @@ int wgScurve(const char* x_inputDir,
       ChiOverNdfCanvas->SetLogy();
       ChiCanvas->cd();
       ChiHist[i_iDAC]->Draw();
-      name = outputIMGDir + "/EvaluationOfFit/Chisquare_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
+      name = output_img_dir + "/EvaluationOfFit/Chisquare_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
       ChiCanvas->Print(name);
       ChiOverNdfCanvas->cd();
       ChiOverNdfHist[i_iDAC]->Draw();
-      name = outputIMGDir + "/EvaluationOfFit/ChisquareOverNdf_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
+      name = output_img_dir + "/EvaluationOfFit/ChisquareOverNdf_iDAC_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
       ChiOverNdfCanvas->Print(name);
       // Delete all objects
       for(size_t i=0; i<3; i++){
@@ -728,7 +715,7 @@ int wgScurve(const char* x_inputDir,
     Edit.Close();
   }  // end try
   catch (const std::exception& e){
-    Log.eWrite("[wgScurve][" + inputDir + "] " + std::string(e.what()));
+    Log.eWrite("[wgScurve][" + input_dir + "] " + std::string(e.what()));
     return ERR_WG_SCURVE;
   }
   Log.Write("[wgScurve] Writing Xml file done.");
@@ -747,12 +734,12 @@ void fit_scurve1(TGraphErrors* Scurve,
                 unsigned ichip, 
                 unsigned ichan, 
                 unsigned inputDAC,
-                std::string outputIMGDir, 
+                std::string output_img_dir, 
                 bool print_flag) {
 
 #ifdef LOG_SCURVE
-	/* for log-scaled Scurve */
-	double c0 = 3.0, c1 = 0.5, c2 = 155, c3 = 2.5, c4 = 0.5, c5 = 135, c6 = 5.0;
+  /* for log-scaled Scurve */
+  double c0 = 3.0, c1 = 0.5, c2 = 155, c3 = 2.5, c4 = 0.5, c5 = 135, c6 = 5.0;
   fit_scurve->SetParameters(c0, c1, c2, c3, c4, c5, c6);
   fit_scurve->SetParLimits(0, c0-0.5, c0+0.5);  
   fit_scurve->SetParLimits(3, c3-0.5, c3+0.5); 
@@ -781,8 +768,8 @@ void fit_scurve1(TGraphErrors* Scurve,
   pe2_t = (a + 2*b) / 3;
   pe3_t = (5*b - 2*a) / 3;
 
-  if( print_flag && (!outputIMGDir.empty()) ) {
-    TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
+  if( print_flag && (!output_img_dir.empty()) ) {
+    TString image(output_img_dir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
                   "/Channel" + std::to_string(ichan) + "/InputDAC" + std::to_string(inputDAC) +
                   "_fit.png");
     TCanvas * canvas = new TCanvas("canvas", "canvas");
