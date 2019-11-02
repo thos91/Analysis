@@ -39,11 +39,11 @@ int main(int argc, char** argv){
   int opt;
   unsigned mode    = 0;
   unsigned channel = 0;
-  unsigned value   = 0;
-  std::bitset<WG_CHANGE_CONFIG_FLAGS> flags;
-  std::string inputFile("");
-  std::string outputFile("");
-  std::string outputPath("");
+  int value        = 0;
+  bitset<WG_CHANGE_CONFIG_FLAGS> flags;
+  string inputFile("");
+  string outputFile("");
+  string outputPath("");
 
   while ((opt = getopt(argc,argv, "f:o:m:b:v:her")) !=-1 ) {
     switch (opt) {

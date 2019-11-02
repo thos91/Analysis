@@ -243,9 +243,7 @@ public:
   
   void OPT_Make(const std::string& filename, 
                 u1vector inputDACs,
-                unsigned n_difs,
-                u1vector n_chips,
-                u2vector n_chans);
+                TopologyMapDif dif_map);
 
   // wgEditXML::OPT_SetValue
   // data -> dif_%d -> chip_%d -> chan_%d -> inputDAC_%d

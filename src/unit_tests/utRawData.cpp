@@ -14,14 +14,20 @@ int main() {
   std::cout << rd.spill_mode << "\n";
   std::cout << "spill_count\n";
   std::cout << rd.spill_count << "\n";
+  
   std::cout << "chipid\n";
   for (unsigned ichip = 0; ichip < N_CHIPS_TEST; ++ichip) {
     std::cout << rd.chipid[ichip] << "\n";
   }
-  std::cout << "difid\n";
-  for (unsigned ichip = 0; ichip < N_CHIPS_TEST; ++ichip) {
-    std::cout << rd.difid[ichip] << "\n";
+  std::cout << "chanid\n";
+  for (unsigned ichan = 0; ichan < N_CHANNELS_TEST; ++ichan) {
+    std::cout << rd.chanid[ichan] << "\n";
   }
+  std::cout << "colid\n";
+  for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
+    std::cout << rd.colid[icol] << "\n";
+  }
+  
   std::cout << "charge\n";
   for (unsigned ichip = 0; ichip < N_CHIPS_TEST; ++ichip) {
     for (unsigned ichan = 0; ichan < N_CHANNELS_TEST; ++ichan) {

@@ -96,9 +96,8 @@ void SectionReader::ReadChipHeader(std::istream& is, const SectionSeeker::Sectio
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
-  m_rd.get().chipid[section.ichip] = (raw_data[1] & x00FF).to_ulong();
-  if ((unsigned) m_rd.get().chipid[section.ichip] > m_config.n_chips ||
-      m_rd.get().chipid[section.ichip] == 0) {
+  unsigned chip_counter = (raw_data[1] & x00FF).to_ulong();
+  if (chip_counter >= m_config.n_chips || chip_counter != section.ichip + 1) {
     m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
   }
 }
@@ -112,9 +111,8 @@ void SectionReader::ReadChipTrailer(std::istream& is, const SectionSeeker::Secti
   std::vector<std::bitset<BITS_PER_LINE>> raw_data(section.lines);
   wg_utils::ReadChunk(is, raw_data);
 
-  unsigned chipid = (raw_data[1] & x00FF).to_ulong();
-  if (chipid != (unsigned) m_rd.get().chipid[section.ichip] ||
-      chipid > m_config.n_chips || chipid == 0) {
+  unsigned chip_counter = (raw_data[1] & x00FF).to_ulong();
+  if (chip_counter >= m_config.n_chips || chip_counter != section.ichip + 1) {
     m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
   }
 }
@@ -152,6 +150,16 @@ void SectionReader::ReadSpillTrailer(std::istream& is, const SectionSeeker::Sect
   //   bitset<2*BITS_PER_LINE> unknown_field_lsb = raw_data[5].to_ulong();
   //   unsigned unknown_field = (unknown_field_msb | unknown_field_lsb).to_ullong(); 
   // }
+
+  // CHANID and COLID
+  for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+    m_rd.get().chanid[ichan] = ichan;
+  }
+  for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
+    m_rd.get().colid[icol] = icol;
+  }
+  
+  FillTree();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -170,32 +178,50 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
     Log.eWrite("[wgDecoder] ichip = " + std::to_string(section.ichip) +
                " : number of columns (" + std::to_string(n_columns) +
                ") is greater than " + std::to_string(MEMDEPTH));
+    m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_NCOLUMNS]++;
     n_columns = MEMDEPTH;
   }
 
   std::vector<std::bitset<BITS_PER_LINE>>::reverse_iterator iraw_data = raw_data.rbegin(); 
 
   // CHIPID
-  std::vector<unsigned> chipid(m_config.n_chip_id);
-  for (auto ichipid : chipid) {
-    ichipid = (*(iraw_data++) & x00FF).to_ulong();
-    if (ichipid > m_config.n_chips) {
-      m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
-    } else if ((unsigned) m_rd.get().chipid[section.ichip] != ichipid) {
-      m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
-      m_rd.get().chipid[section.ichip] = ichipid;
-    } else  {
-      m_rd.get().chipid[section.ichip] = ichipid;
-    }
+  unsigned chipid = (*(iraw_data++) & x00FF).to_ulong();
+  if (chipid > m_config.n_chips) {
+    Log.eWrite("[wgDecoder] ichip = " + std::to_string(section.ichip) +
+               " : Chip ID (" + std::to_string(chipid) +
+               ") is greater than " + std::to_string(m_config.n_chips));
+    m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
   }
+  for (unsigned counter = 1; counter < m_config.n_chip_id; ++counter) {
+    unsigned duplicate_chipid = (*(iraw_data++) & x00FF).to_ulong();
+    if (duplicate_chipid != chipid)
+      m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_CHIPID]++;
+  }
+  m_rd.get().chipid[section.ichip] = chipid;
     
   // BCID
   for (unsigned icol = 0; icol < n_columns; ++icol) {
-    m_rd.get().bcid[section.ichip][icol] = (*(iraw_data++)).to_ulong();
+    int bcid = (*iraw_data & x0FFF).to_ulong();
+    int loop_bcid = ((*(iraw_data++) & xF000) >> 12).to_ulong();
+    int bcid_slope;
+    int bcid_inter;
+    switch (loop_bcid) {
+      case 1:
+        bcid_slope = -1; bcid_inter = 2 * 4096; break;
+      case 3:
+        bcid_slope = 1; bcid_inter = 2 * 4096; break;
+      case 2:
+        bcid_slope = -1; bcid_inter = 4 * 4096; break;
+      default:
+        bcid_slope = 1; bcid_inter = 0; break;
+    }
+    m_rd.get().bcid[section.ichip][icol] = bcid_inter + bcid * bcid_slope;
     if ((unsigned) m_rd.get().bcid[section.ichip][icol] > MAX_VALUE_16BITS)
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_BCID]++;
   }
 
+  // std::cout << "chip counter " << section.ichip  << " | nb col " << n_columns << "\n";
+  
   for (unsigned icol = 0; icol < n_columns; ++icol) {
 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
@@ -206,7 +232,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
       // HIT (0: no hit, 1: hit)
       m_rd.get().hit[section.ichip][ichan][icol] = (*iraw_data)[12];
       // GAIN (0: low gain, 1: high gain)
-      m_rd.get().gs     [section.ichip][ichan][icol] = (*(iraw_data++))[13];
+      m_rd.get().gs[section.ichip][ichan][icol] = (*iraw_data)[13];
       // Only if the detector is already calibrated fithe histograms
       if (m_config.adc_is_calibrated) {
         // P.E.
@@ -219,6 +245,7 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
           m_rd.get().pe[section.ichip][ichan][icol] = LOW_GAIN_NORM * ( charge - pedestal ) / gain;
         }
       }
+      ++iraw_data;
     }
 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
@@ -232,19 +259,27 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
       if (m_rd.get().hit[section.ichip][ichan][icol] != (*iraw_data)[12]) {
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_HIT_BIT]++;
       }
-      if (m_rd.get().gs [section.ichip][ichan][icol] != (*(iraw_data++))[13]) {
+      if (m_rd.get().gs[section.ichip][ichan][icol] != (*iraw_data)[13]) {
         m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_GAIN_BIT]++;
       }
+      ++iraw_data;
     }
   }
-  FillTree();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 //                              ReadNextSection                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Section section) {
+void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Section& section) {
+  if (section.ichip >= m_config.n_chips) {
+    m_rd.get().debug_spill[DEBUG_WRONG_NCHIPS]++;
+    Log.eWrite("[wgDecoder] Spill " + std::to_string(section.ispill) +
+               " : number of chips overflown : " + "chip counter " +
+               std::to_string(section.ichip) + " >= number of chips " +
+               std::to_string(m_config.n_chips) );
+    return;
+  }
   m_readers_ring[section.type](is, section);
 }
 
@@ -255,6 +290,7 @@ void SectionReader::ReadNextSection(std::istream& is, const SectionSeeker::Secti
 void SectionReader::FillTree() {
   if (m_tree->Fill() < 0)
     throw std::runtime_error("Failed to fill the TTree");
+  this->m_rd.get().clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

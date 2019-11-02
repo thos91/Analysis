@@ -18,5 +18,8 @@ Topology:
 RawData:
 	$(CXX) $(ROOT_FLAGS) $(CXX_FLAGS) utRawData.cpp -o utRawData $(LIB_FLAGS) $(ROOT_LIBS) $(WAGASCI_LIBS)
 
+EditXML:
+	$(CXX) $(ROOT_FLAGS) $(CXX_FLAGS) utEditXML.cpp -o utEditXML $(LIB_FLAGS) $(ROOT_LIBS) $(WAGASCI_LIBS)
+
 clean:
 	$(RM) -rf utConst utTopology utRawData

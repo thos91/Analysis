@@ -137,6 +137,19 @@ std::vector<std::string> ListDirectories(const std::string& input_dir) {
 }
   
 //******************************************************************
+std::vector<std::string> ListDirectoriesWithInteger(const std::string& input_dir) {
+  std::vector<std::string> temp_directory_list = ListDirectories(input_dir);
+  std::vector<std::string> directory_list;
+	
+	for(auto const &x : temp_directory_list){
+		if(extractIntegerFromString(GetName(x)) != UINT_MAX){
+			directory_list.push_back(x);
+		}
+	}
+  return directory_list;
+}
+  
+//******************************************************************
 unsigned HowManyFilesWithExtension(const std::string& input_dir, const std::string& extension) {
   unsigned counter = 0;
 
@@ -178,7 +191,7 @@ unsigned extractIntegerFromString(const std::string& str) {
   if (n != std::string::npos)
   {
     std::size_t const m = str.find_first_not_of("0123456789", n);
-    return stoi(str.substr(n, m != std::string::npos ? m-n : m));
+    return std::stoi(str.substr(n, m != std::string::npos ? m-n : m));
   }
   return UINT_MAX;
 }

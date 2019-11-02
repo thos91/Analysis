@@ -12,24 +12,6 @@
 #include "wgDecoder.hpp"
 #include "wgDecoderSeeker.hpp"
 
-// Debug macros to fill the debug_spill and debug_chip histograms
-// spill
-const unsigned DEBUG_SPILL_MODE        = 0;
-const unsigned DEBUG_SAME_SPILL_NUMBER = 1;
-const unsigned DEBUG_SPILL_NUMBER_GAP  = 2;
-const unsigned DEBUG_SAME_SPILL_COUNT  = 3;
-const unsigned DEBUG_SPILL_COUNT_GAP   = 4;
-const unsigned DEBUG_SPILL_TRAILER     = 5;
-const unsigned DEBUG_WRONG_NCHIPS      = 6;
-
-// chip
-const unsigned DEBUG_WRONG_BCID        = 0;
-const unsigned DEBUG_WRONG_HIT_BIT     = 1;
-const unsigned DEBUG_WRONG_GAIN_BIT    = 2;
-const unsigned DEBUG_WRONG_ADC         = 3;
-const unsigned DEBUG_WRONG_TDC         = 4;
-const unsigned DEBUG_WRONG_CHIPID      = 5;
-
 ///////////////////////////////////////////////////////////////////////////////
 //                             SectionReader class                           //
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,7 +58,7 @@ class SectionReader {
   SectionReader(const RawDataConfig& config, TTree* tree, Raw_t& rd);
 
   // Read the Section section from the stream is into the Raw_t m_rd object
-  void ReadNextSection(std::istream& is, const SectionSeeker::Section section);
+  void ReadNextSection(std::istream& is, const SectionSeeker::Section& section);
   
  private:
 
