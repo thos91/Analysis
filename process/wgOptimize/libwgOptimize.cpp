@@ -39,7 +39,7 @@ int wgOptimize(const char * x_threshold_card,
   std::string gain_card("");
   if (x_gain_card != NULL)
     gain_card = x_gain_card;
-    std::string topology_source("");
+  std::string topology_source("");
   if (x_topology_source != NULL)
     topology_source = x_topology_source;
   std::string wagasci_bitstream_dir("");
@@ -52,7 +52,6 @@ int wgOptimize(const char * x_threshold_card,
     Log.eWrite("Mode not recognized : " + std::to_string(mode));
     return ERR_WRONG_MODE;
   }
-  
   if ( pe != 1 && pe != 2 ) {
     Log.eWrite("Photo-electrons (" + std::to_string(pe) + ") must be in {1,2}");
     return ERR_WRONG_PE_VALUE;
@@ -64,10 +63,6 @@ int wgOptimize(const char * x_threshold_card,
   if ( (mode == OP_INPUTDAC_MODE) && (gain_card.empty() || !check_exist::xml_file(gain_card)) ) {
     Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
     return ERR_GAIN_CARD_NOT_FOUND;
-  }
-  if ( !check_exist::xml_file(config_xml_file)) {
-    Log.eWrite("[wgOptimize] Pyrame config file doesn't exist : " + config_xml_file);
-    return ERR_CONFIG_XML_FILE_NOT_FOUND;
   }
   if ( pe != 1 && pe != 2 ) {
     Log.eWrite("Photo-electrons (" + std::to_string(pe) + ") must be in {1,2}");
@@ -192,11 +187,11 @@ int wgOptimize(const char * x_threshold_card,
                                    "/wagasci_bitstream_dif" + std::to_string(idif) +
                                    "_chip" + std::to_string(ichip) + ".txt");
 
-          if( !check_exist::txt_file(configName) ) {
-            Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + configName);
+          if( !check_exist::txt_file(bitstream_file) ) {
+            Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + bitstream_file);
             return ERR_BITSTREAM_FILE_NOT_FOUND;
           }
-          wgEditConfig edit_config(configName, false);
+          wgEditConfig edit_config(bitstream_file, false);
           if (mode == OP_THRESHOLD_MODE) {
           edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]);
           } else if (mode == OP_INPUTDAC_MODE) {
