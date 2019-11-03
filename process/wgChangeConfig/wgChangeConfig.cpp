@@ -40,10 +40,10 @@ int main(int argc, char** argv){
   unsigned mode    = 0;
   unsigned channel = 0;
   int value        = 0;
-  bitset<WG_CHANGE_CONFIG_FLAGS> flags;
-  string inputFile("");
-  string outputFile("");
-  string outputPath("");
+  std::bitset<WG_CHANGE_CONFIG_FLAGS> flags;
+  std::string inputFile("");
+  std::string outputFile("");
+  std::string outputPath("");
 
   while ((opt = getopt(argc,argv, "f:o:m:b:v:her")) !=-1 ) {
     switch (opt) {

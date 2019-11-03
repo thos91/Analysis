@@ -412,11 +412,11 @@ int wgScurve(const char* x_input_dir,
             double ChiSquare[3];
             int NDF[3];
             fit_scurve1(Scurve, fit_func[0], pe1_t[0], pe2_t[0], pe3_t[0], ChiSquare[0], NDF[0], idif, ichip, ichan, inputDAC[i_iDAC],
-                        outputIMGDir, false);
+                        output_img_dir, false);
             fit_scurve2(Scurve, fit_func[1], pe1_t[1], pe2_t[1], pe3_t[1], ChiSquare[1], NDF[1], idif, ichip, ichan, inputDAC[i_iDAC],
-                        outputIMGDir, false);
+                        output_img_dir, false);
             fit_scurve3(Scurve, fit_func[2], pe1_t[2], pe2_t[2], pe3_t[2], ChiSquare[2], NDF[2], idif, ichip, ichan, inputDAC[i_iDAC],
-                        outputIMGDir, false);
+                        output_img_dir, false);
             std::vector<double> goodness;
             std::vector<size_t> gn_index = {0, 1, 2};
             for(size_t i=0; i<3; i++){
@@ -549,7 +549,7 @@ int wgScurve(const char* x_input_dir,
           intercept3[idif][ichip][ichan] = fit3->GetParameter(1);
 
           // ************* Save plot as png ************* //
-          TString image3(outputIMGDir + "/Dif" + std::to_string(dif_counter_to_id[idif])
+          TString image3(output_img_dir + "/Dif" + std::to_string(dif_counter_to_id[idif])
                          + "/Chip" + std::to_string(ichip) + "/Channel" + std::to_string(ichan)
                          + "/PE3vsInputDAC.png");
           c2->Print(image3);
@@ -569,8 +569,8 @@ int wgScurve(const char* x_input_dir,
     } // dif
 		
     // Draw p.e. distribution histgrams for each inputDAC and save them under the inputIMGDir.
-    std::string pe_dir = outputIMGDir + "/EvaluationOfFit";
-    MakeDir(pe_dir);
+    std::string pe_dir = output_img_dir + "/EvaluationOfFit";
+    make::directory(pe_dir);
     for(unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC){
       // p.e. distribution for all channel.
       TCanvas* PeSumCanvas = new TCanvas("PeSumCanvas","PeSumCanvas");
@@ -578,7 +578,7 @@ int wgScurve(const char* x_input_dir,
       AllPeHist[i_iDAC][0]->Draw();
       AllPeHist[i_iDAC][1]->Draw("same");
       AllPeHist[i_iDAC][2]->Draw("same");
-      TString nameall = outputIMGDir + "/EvaluationOfFit/PE_Distribution_All_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
+      TString nameall = output_img_dir + "/EvaluationOfFit/PE_Distribution_All_" + std::to_string(inputDAC[i_iDAC]) +  ".png";
       PeSumCanvas->Print(nameall);
       // p.e. distribution for each fitting patterns.
       TCanvas* PECanvas[3];
@@ -606,9 +606,9 @@ int wgScurve(const char* x_input_dir,
         mean2PE[i_iDAC][i] = Pe2Fit[i]->GetParameter(1); sigma2PE[i_iDAC][i] = Pe2Fit[i]->GetParameter(2);
         mean3PE[i_iDAC][i] = Pe3Fit[i]->GetParameter(1); sigma3PE[i_iDAC][i] = Pe3Fit[i]->GetParameter(2);
       }
-      TString name(outputIMGDir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]));
+      TString name(output_img_dir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]));
       for(size_t i=0; i<3; i++){
-        TString name_pe_c = outputIMGDir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]) + "_" + std::to_string(i) + ".png";
+        TString name_pe_c = output_img_dir + "/EvaluationOfFit/iDAC_" + std::to_string(inputDAC[i_iDAC]) + "_" + std::to_string(i) + ".png";
         PECanvas[i]->Print(name_pe_c);
       }
       // Chi-square and chi-square/NDF distribution.
@@ -646,8 +646,8 @@ int wgScurve(const char* x_input_dir,
      *                           threshold_card.xml                                 *
      ********************************************************************************/
 
-    std::ofstream fout(outputXMLDir + "/failed_channels.txt");
-    std::string xmlfile(outputXMLDir + "/threshold_card.xml");
+    std::ofstream fout(output_xml_dir + "/failed_channels.txt");
+    std::string xmlfile(output_xml_dir + "/threshold_card.xml");
 
     try {
       Edit.OPT_Make(xmlfile, inputDAC, topol.dif_map);
@@ -794,7 +794,7 @@ void fit_scurve2(TGraphErrors* Scurve,
                  unsigned ichip, 
                  unsigned ichan, 
                  unsigned inputDAC,
-                 std::string outputIMGDir, 
+                 std::string output_img_dir, 
                  bool print_flag) {
 
 #ifdef LOG_SCURVE
@@ -831,8 +831,8 @@ void fit_scurve2(TGraphErrors* Scurve,
   pe2_t = (a + 2*b) / 3;
   pe3_t = (b + 2*c) / 3;
 
-  if( print_flag && (!outputIMGDir.empty()) ) {
-    TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
+  if( print_flag && (!output_img_dir.empty()) ) {
+    TString image(output_img_dir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
                   "/Channel" + std::to_string(ichan) + "/InputDAC" + std::to_string(inputDAC) +
                   "_fit.png");
     TCanvas * canvas = new TCanvas("canvas", "canvas");
@@ -857,7 +857,7 @@ void fit_scurve3(TGraphErrors* Scurve,
                  unsigned ichip, 
                  unsigned ichan, 
                  unsigned inputDAC,
-                 std::string outputIMGDir, 
+                 std::string output_img_dir, 
                  bool print_flag) {
 
 #ifdef LOG_SCURVE
@@ -894,8 +894,8 @@ void fit_scurve3(TGraphErrors* Scurve,
   pe2_t = (a + 2*b) / 3;
   pe3_t = (b + 2*c) / 3;
 
-  if( print_flag && (!outputIMGDir.empty()) ) {
-    TString image(outputIMGDir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
+  if( print_flag && (!output_img_dir.empty()) ) {
+    TString image(output_img_dir + "/Dif" + std::to_string(idif) + "/Chip" + std::to_string(ichip) +
                   "/Channel" + std::to_string(ichan) + "/InputDAC" + std::to_string(inputDAC) +
                   "_fit.png");
     TCanvas * canvas = new TCanvas("canvas", "canvas");
