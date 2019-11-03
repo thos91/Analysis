@@ -698,32 +698,37 @@ void Topology::GetTopologyFromScurveTree(std::string input_run_dir) {
 
   for (auto const& iDAC : n_chans_t) {
     unsigned iiDAC = iDAC.first;
-    
     for (auto const& th : iDAC.second) {
       unsigned ith = th.first;
+      if (n_chans_t[iiDAC][ith].size() != this->dif_map.size()) {
+        throw std::runtime_error("[wgTopology] There is something wrong with the number of "
+                                 "DIFs detection : iDAC = " + std::to_string(iiDAC) +
+                                 ", threshold = " + std::to_string(ith) +
+                                 " : topology n_difs = " + std::to_string(this->dif_map.size()) +
+                                 " folder n_difs = " + n_chans_t[iiDAC][ith].size());
+      }
       for (auto const& dif : th.second) {
         unsigned idif = dif.first;
-        if (n_chans_t[iiDAC][ith].size() != this->dif_map.size()) {
-          throw std::runtime_error("[wgTopology] There is something wrong with the number of "
-                                   "DIFs detection : iDAC = " + std::to_string(iiDAC) +
-                                   ", threshold = " + std::to_string(ith) + ", idif = "
-                                   + std::to_string(idif));
+
+        if (n_chans_t[iiDAC][ith][idif].size() != this->dif_map[idif].size() ) {
+          throw std::runtime_error("[wgTopology] There is something wrong with the number of"
+                                   " chips detection : iDAC = " + std::to_string(iiDAC) +
+                                   ", threshold = " + std::to_string(ith) +
+                                   ", idif = " + std::to_string(idif) +
+                                   " : topology n_chips = " + std::to_string(this->dif_map[idif].size()) +
+                                   " folder n_chips = " + std::to_string(n_chans_t[iiDAC][ith][idif].size()));
         }
         for (auto const& chip : dif.second) {
           unsigned ichip = chip.first;
-          if (n_chans_t[iiDAC][ith][idif].size() != this->dif_map[idif].size() ) {
-            throw std::runtime_error("[wgTopology] There is something wrong with the number of"
-                                     " chips detection : iDAC = " + std::to_string(iiDAC) +
-                                     ", threshold = " + std::to_string(ith) +
-                                     ", idif = " + std::to_string(idif) +
-                                     ", ichip = " + ichip);
-          }
+
           if (n_chans_t[iiDAC][ith][idif][ichip] != this->dif_map[idif][ichip]) {
             throw std::runtime_error("[wgTopology] There is something wrong with the number of"
                                      " channels detection : iDAC = " + std::to_string(iiDAC) +
                                      ", threshold = " + std::to_string(ith) +
                                      ", idif = " + std::to_string(idif) +
-                                     ", ichip = " + ichip);
+                                     ", ichip = " + std::to_string(ichip) +
+                                     " : topology n_chans = " + std::to_string(this->dif_map[idif][ichip]) +
+                                     " : folder n_chans = " + std::to_string(n_chans_t[iiDAC][ith][idif][ichip]));
           }
         }
       }
