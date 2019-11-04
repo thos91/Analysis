@@ -36,7 +36,7 @@ void ModeSelect(const int mode, std::bitset<ANAHIST_NFLAGS>& flag){
 }
 
 //******************************************************************
-int wgAnaHist(const char * x_input_file,
+int wgAnaHist(const char * x_input_hist_file,
               const char * x_pyrame_config_file,
               const char * x_output_xml_dir,
               const char * x_output_img_dir,
@@ -44,7 +44,7 @@ int wgAnaHist(const char * x_input_file,
               unsigned long flags_ulong,
               unsigned idif) {
 
-  std::string input_file(x_input_file);
+  std::string input_hist_file(x_input_hist_file);
   std::string pyrame_config_file(x_pyrame_config_file);
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
@@ -64,8 +64,8 @@ int wgAnaHist(const char * x_input_file,
 
   // =========== Arguments sanity check =========== //
 
-  if(input_file.empty() || !check_exist::root_file(input_file)) {
-    Log.eWrite("[wgAnaHist] Input file not found : " + input_file);
+  if(input_hist_file.empty() || !check_exist::root_file(input_hist_file)) {
+    Log.eWrite("[wgAnaHist] Input file not found : " + input_hist_file);
     return ERR_EMPTY_INPUT_FILE;
   }
   if ( flags[SELECT_CONFIG] && ( pyrame_config_file.empty() || !check_exist::xml_file(pyrame_config_file)) ) {
@@ -77,7 +77,7 @@ int wgAnaHist(const char * x_input_file,
     return ERR_WRONG_DIF_VALUE;
   }
 
-  Log.Write("[wgAnaHist] *****  READING FILE     : " + input_file         + "  *****");
+  Log.Write("[wgAnaHist] *****  READING FILE     : " + input_hist_file    + "  *****");
   Log.Write("[wgAnaHist] *****  OUTPUT DIRECTORY : " + output_xml_dir     + "  *****");
   Log.Write("[wgAnaHist] *****  CONFIG FILE      : " + pyrame_config_file + "  *****");
   
@@ -131,7 +131,7 @@ int wgAnaHist(const char * x_input_file,
   // ======================================================== //
 
   try {
-    wgFit Fit(input_file, output_img_dir);
+    wgFit Fit(input_hist_file, output_img_dir);
 
     bool first_time = true;
     int start_time = 0;
