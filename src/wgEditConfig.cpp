@@ -377,10 +377,10 @@ int wgEditConfig::Get_1bitparam(int subadd){
 }
 
 //*********************************************************************************
-void wgEditConfig::Change_trigth_and_adj(std::vector<unsigned> threshold) {
-  unsigned mean_threshold = std::accumulate(threshold.begin(), threshold.end(), 0.0) / threshold.size();
-  this->Change_trigth(mean_threshold);
+void wgEditConfig::Change_trigth_and_adj(std::vector<unsigned>& threshold) {
+  unsigned min_threshold = *std::min_element(std::begin(threshold), std::end(threshold));
+  this->Change_trigth(min_threshold);
   for (unsigned ichan = 0; ichan < threshold.size(); ++ichan) {
-    this->Change_trigadj(ichan, threshold.at(ichan) - mean_threshold);
+    this->Change_trigadj(ichan, threshold.at(ichan) - min_threshold);
   }
 }

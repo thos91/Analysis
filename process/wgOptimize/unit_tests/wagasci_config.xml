@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<ecal name="ecal">
+  <domain name="localhost">
+    <param name="domain_ip">127.0.0.1</param>
+    <varmod name="varmod"/>
+    <acqpc name="pcacq_1">
+      <param name="acqpc_media">wagasci</param>
+      <param name="acqpc_replay">0</param>
+      <param name="acqpc_datadir">/tmp/calicoes/raw_data</param>
+      <param name="acqpc_convert_script">/opt/pyrame/mv.py</param>
+      <param name="online_monitor">0</param>
+      <gdcc name="gdcc_1_1">
+        <param name="gdcc_trans_delay">0</param>
+        <param name="gdcc_reset_channel">undef</param>
+        <param name="gdcc_mac_addr">00:0A:35:01:FE:06</param>
+        <param name="gdcc_pc_dev">em2</param>
+        <param name="dif_alim">CC</param>
+        <param name="dif_cnh">0</param>
+        <param name="dif_dcc_nibble">0</param>
+        <dif name="dif_1_1_1">
+          <param name="dif_gdcc_port">1</param>
+          <param name="dif_nb_asu">2</param>
+          <asu name="asu_1_1_1_1">
+            <param name="asu_version">eval_spiroc2d</param>
+            <param name="asu_nb_spiroc2d">1</param>
+            <param name="spiroc2d_file">/home/wagasci-ana/Code/Analysis/process/wgOptimize/unit_tests/wagasci_bitstream_dif0_chip00.txt</param>
+            <param name="spiroc2d_allow_trig_chans">0-31</param>
+            <param name="spiroc2d_disallow_trig_chans">32-35</param>
+            <param name="spiroc2d_enable_preamp_chans">0-31</param>
+            <param name="spiroc2d_disable_preamp_chans">32-35</param>
+          </asu>
+          <asu name="asu_1_1_1_2">
+            <param name="asu_version">eval_spiroc2d</param>
+            <param name="asu_nb_spiroc2d">1</param>
+            <param name="spiroc2d_file">/home/wagasci-ana/Code/Analysis/process/wgOptimize/unit_tests/wagasci_bitstream_dif0_chip01.txt</param>
+            <param name="spiroc2d_allow_trig_chans">0-31</param>
+            <param name="spiroc2d_disallow_trig_chans">32-35</param>
+            <param name="spiroc2d_enable_preamp_chans">0-31</param>
+            <param name="spiroc2d_disable_preamp_chans">32-35</param>
+          </asu>
+        </dif>
+      </gdcc>
+    </acqpc>
+    <rundb name="rundb"/>
+    <storage name="storage">
+      <param name="storage_use_rundb">1</param>
+      <param name="storage_brg_name">unit_tests</param>
+      <param name="storage_brg_mp">file:///</param>
+      <param name="storage_brg_path">home/wagasci-ana/Code/Analysis/process/wgOptimize/unit_tests</param>
+      <param name="storage_mode">remove</param>
+      <param name="storage_producers_count">${count(acqpc)}</param>
+      <param name="storage_stats_names">nb_data_pkts,nb_lost_pkts,bytes_on_dsk,nb_spills,cur_spill,nb_evts,nb_hits</param>
+    </storage>
+  </domain>
+</ecal>

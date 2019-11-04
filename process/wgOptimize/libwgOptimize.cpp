@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 
 // boost includes
+#include <boost/filesystem.hpp>
 #include <boost/make_unique.hpp>
 
 // user includes
@@ -19,6 +20,7 @@
 #include "wgTopology.hpp"
 #include "wgLogger.hpp"
 #include "wgFitConst.hpp"
+#include "wgEnvironment.hpp"
 #include "wgOptimize.hpp"
 
 using namespace wagasci_tools;
@@ -26,7 +28,7 @@ using namespace wagasci_tools;
 int wgOptimize(const char * x_threshold_card,
                const char * x_gain_card,
                const char * x_topology_source,
-               const char * x_wagasci_bitstream_dir,
+               const char * x_bitstream_dir,
                const unsigned mode,
                const unsigned pe,
                const unsigned inputDAC) {
@@ -42,9 +44,9 @@ int wgOptimize(const char * x_threshold_card,
   std::string topology_source("");
   if (x_topology_source != NULL)
     topology_source = x_topology_source;
-  std::string wagasci_bitstream_dir("");
-  if (x_wagasci_bitstream_dir != NULL)
-    wagasci_bitstream_dir = x_wagasci_bitstream_dir;
+  std::string bitstream_dir("");
+  if (x_bitstream_dir != NULL)
+    bitstream_dir = x_bitstream_dir;
 
   // ================ Sanity check on the arguments ================= //
 
@@ -83,11 +85,11 @@ int wgOptimize(const char * x_threshold_card,
   } catch (...) {
     try {
       topol.reset(new Topology(topology_source, TopologySourceType::xml_file));
-    } catch (...) {
+    } catch (const std::exception& except) {
       Log.eWrite("Topology string (" + topology_source + ") is not a valid"
-                 "JSON string or a path to a Pyrame XML config file");
+                 "JSON string or a path to a Pyrame XML config file : " + except.what());
+      return ERR_TOPOLOGY;
     }
-    return ERR_TOPOLOGY;
   }
   
   // ================ Read the threshold card ================= //
@@ -97,7 +99,6 @@ int wgOptimize(const char * x_threshold_card,
   u3vector intercept_iDAC_th(topol->n_difs);
 
   try {
-    std::string threshold("threshold_" + std::to_string(pe));
     wgEditXML Edit;
     Edit.Open(threshold_card);
     for (const auto& dif : topol->dif_map) {
@@ -111,17 +112,17 @@ int wgOptimize(const char * x_threshold_card,
           // Get the optimal threshold for pe photo-electron equivalent
           switch (mode) {
             case OP_THRESHOLD_MODE:
-              optimized_threshold[idif][ichip][ichan] =
-                  Edit.OPT_GetValue(threshold, idif, ichip, ichan, inputDAC);
+              optimized_threshold[idif][ichip].push_back(Edit.OPT_GetValue(
+                  "threshold_" + std::to_string(pe), idif, ichip, ichan, inputDAC));
             case OP_INPUTDAC_MODE:
               // s_th is the slope of the linear fit of the inputDAC (x) vs optimal
               // threshold for the given p.e. equivalend (y)
               // i_th is the intercept of the linear fit of the inputDAC (x) vs
               // optimal threshold for the given p.e. equivalend (y)
-              slope_iDAC_th    [idif][ichip].push_back(
-                  Edit.OPT_GetChanValue("slope_" + threshold, idif, ichip, ichan));
-              intercept_iDAC_th[idif][ichip].push_back(
-                  Edit.OPT_GetChanValue("intercept_" + threshold, idif, ichip, ichan));
+              slope_iDAC_th[idif][ichip].push_back(Edit.OPT_GetChanValue(
+                  "slope_threshold" + std::to_string(pe), idif, ichip, ichan));
+              intercept_iDAC_th[idif][ichip].push_back(Edit.OPT_GetChanValue(
+                  "intercept_threshold" + std::to_string(pe), idif, ichip, ichan));
           }
         }
       }
@@ -183,28 +184,43 @@ int wgOptimize(const char * x_threshold_card,
       for (auto const & chip : dif.second) {
         unsigned ichip = chip.first;
 
-        std::string bitstream_file(wagasci_bitstream_dir +
-                                   "/wagasci_bitstream_dif" + std::to_string(idif) +
-                                   "_chip" + std::to_string(ichip) + ".txt");
+        std::stringstream ss;
+        ss << bitstream_dir << "/wagasci_bitstream_dif" << idif << "_chip" <<
+            std::setw(2) << std::setfill('0') << ichip << ".txt";
+        std::string bitstream_file(ss.str());
 
-          if( !check_exist::txt_file(bitstream_file) ) {
-            Log.eWrite("[wgOptimize] bitstream file doesn't exist : " + bitstream_file);
+        if (!check_exist::txt_file(bitstream_file)) {
+          Log.Write("[wgOptimize] bitstream file doesn't exist : " + bitstream_file);
+          wgEnvironment env;
+          if (!check_exist::txt_file(env.CONF_DIRECTORY + "/wagasci_bitstream_template.txt")) {
+            Log.eWrite("[wgOptimize] template bitstream file doesn't exist");
             return ERR_BITSTREAM_FILE_NOT_FOUND;
           }
-          wgEditConfig edit_config(bitstream_file, false);
-          if (mode == OP_THRESHOLD_MODE) {
-          edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]);
-          } else if (mode == OP_INPUTDAC_MODE) {
-            for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-              unsigned optimized_input_dac =
-                  (WG_NOMINAL_GAIN - intercept_iDAC_gain[idif][ichip][ichan]) /
-                  slope_iDAC_gain[idif][ichip][ichan];
-              edit_config.Change_inputDAC(ichan, optimized_input_dac);
-              optimized_threshold[idif][ichip][ichan] =
-                  intercept_iDAC_th[idif][ichip][ichan] +
-                  slope_iDAC_th[idif][ichip][ichan] * optimized_input_dac;
-            } // chan
-            edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]); 
+          try {
+          boost::filesystem::copy_file(
+              env.CONF_DIRECTORY + "/wagasci_bitstream_template.txt",
+              bitstream_file, boost::filesystem::copy_option::overwrite_if_exists);
+          } catch (const boost::filesystem::filesystem_error &exception) {
+            Log.eWrite("[wgOptimize] Failed to copy template bitstream file : " +
+                       std::string(exception.what()));
+            return ERR_BITSTREAM_FILE_NOT_FOUND;
+          }
+        }
+
+        wgEditConfig edit_config(bitstream_file, false);
+
+        edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]);
+        
+        if (mode == OP_INPUTDAC_MODE) {
+          for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
+            unsigned optimized_input_dac =
+                (WG_NOMINAL_GAIN - intercept_iDAC_gain[idif][ichip][ichan]) /
+                slope_iDAC_gain[idif][ichip][ichan];
+            edit_config.Change_inputDAC(ichan, optimized_input_dac);
+            optimized_threshold[idif][ichip][ichan] =
+                intercept_iDAC_th[idif][ichip][ichan] +
+                slope_iDAC_th[idif][ichip][ichan] * optimized_input_dac;
+          } // chan
         }
         edit_config.Write(bitstream_file);
         edit_config.Clear();
