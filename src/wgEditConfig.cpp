@@ -381,6 +381,7 @@ void wgEditConfig::Change_trigth_and_adj(std::vector<unsigned>& threshold) {
   unsigned min_threshold = *std::min_element(std::begin(threshold), std::end(threshold));
   this->Change_trigth(min_threshold);
   for (unsigned ichan = 0; ichan < threshold.size(); ++ichan) {
-    this->Change_trigadj(ichan, threshold.at(ichan) - min_threshold);
+    unsigned threshold_adj = std::min(threshold.at(ichan) - min_threshold, MAX_VALUE_4BITS);      
+    this->Change_trigadj(ichan, threshold_adj);
   }
 }
