@@ -42,18 +42,11 @@ void wgFit::SetOutputImgDir(const std::string& x_output_img_dir) {
 }
 
 //**********************************************************************
-void wgFit::noise_rate(TH1I * bcid_hit, double (&x)[2]) {
+void wgFit::noise_rate(TH1I * bcid_hit, double (&x)[2], unsigned spill_count) {
   // Find the right-most bin that is non-zero.
   Int_t last_bin = bcid_hit->FindLastBinAbove(0,1);
   if (last_bin <= 0) {
-    x[0] = x[1] = NAN;
-    return;
-  }
-
-  // Number of recorded spills
-  Int_t spill_count = wgFit::histos.spill_count;
-  if (spill_count <= 0) {
-    x[0] = x[1] = NAN;
+    x[0] = x[1] = std::nan("noise");
     return;
   }
 
@@ -75,14 +68,21 @@ void wgFit::noise_rate(TH1I * bcid_hit, double (&x)[2]) {
 void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
   TH1I * bcid_hit = wgFit::histos.Get_bcid_hit(ichip, ichan);
   if (bcid_hit == NULL) {
-    x[0] = x[1] = NAN;
+    x[0] = x[1] = std::nan("");
     throw wgElementNotFound("BCID histogram not found : chip = " +
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
   }
-  bcid_hit->SetDirectory(0); 
+  bcid_hit->SetDirectory(0);
 
-  this->noise_rate(bcid_hit, x);
+  // Number of recorded spills
+  unsigned spill_count = wgFit::histos.spill_count;
+  if (spill_count <= 0) {
+    x[0] = x[1] = std::nan("noise");
+    return;
+  }
+
+  this->noise_rate(bcid_hit, x, spill_count);
 
   if ( print_flag ) {
     TString image;
@@ -135,7 +135,7 @@ void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol,
                        double (&x)[3], bool print_flag) {
   TH1I * charge_hit_HG = wgFit::histos.Get_charge_hit_HG(ichip, ichan, icol);
   if (charge_hit_HG == NULL) {
-    x[0] = x[1] = x[2] = NAN;
+    x[0] = x[1] = x[2] = std::nan("charge");
     throw wgElementNotFound("charge_hit_HG histogram not found : chip = " +
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
@@ -158,7 +158,7 @@ void wgFit::charge_hit_LG(unsigned ichip, unsigned ichan, unsigned icol,
                        double (&x)[3], bool print_flag) {
   TH1I * charge_hit_LG = wgFit::histos.Get_charge_hit_LG(ichip, ichan, icol);
   if (charge_hit_LG == NULL) {
-    x[0] = x[1] = x[2] = NAN;
+    x[0] = x[1] = x[2] = std::nan("charge");
     throw wgElementNotFound("charge_hit_LG histogram not found : chip = " +
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
@@ -200,7 +200,7 @@ void wgFit::charge_nohit(unsigned ichip, unsigned ichan, unsigned icol,
 }
 
 //**********************************************************************
-Double_t wgFit::TwinPeaks(Double_t *x, Double_t *par) {
+Double_t wgFit::twin_peaks(Double_t *x, Double_t *par) {
    Double_t result = 0;
    for (Int_t p = 0; p < 2; ++p) {
       Double_t norm  = par[3 * p];
@@ -211,13 +211,13 @@ Double_t wgFit::TwinPeaks(Double_t *x, Double_t *par) {
    return result;
 }
 
-bool wgFit::SortPeaks(std::pair<Double_t, Double_t> peak1,
+bool wgFit::sort_peaks(std::pair<Double_t, Double_t> peak1,
                        std::pair<Double_t, Double_t> peak2) {
    return peak1.first > peak2.first;
 }
 
 //**********************************************************************
-void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
+void wgFit::gain(TH1I * charge_hit, double (&gain)[2]) {
   TSpectrum *fingers_plot = new TSpectrum(4); // Maximum number of peaks is 4
   Int_t n_peaks = fingers_plot->Search(charge_hit, 2, "nobackground", 0.05);
   if (n_peaks < 2) {
@@ -234,7 +234,7 @@ void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
     Double_t yp = charge_hit->GetBinContent(bin);
     peaks.push_back(std::pair<Double_t, Double_t>(xp, yp));
   }
-  std::sort(peaks.begin(), peaks.end(), SortPeaks);
+  std::sort(peaks.begin(), peaks.end(), sort_peaks);
 
   // Select the highest and second highest peaks (if it is not to
   // close to the highest one)
@@ -259,7 +259,7 @@ void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
   }
 
   // Fit
-  TF1 *fit = new TF1("twin_peaks", TwinPeaks, WG_BEGIN_CHARGE_NOHIT,
+  TF1 *fit = new TF1("twin_peaks", twin_peaks, WG_BEGIN_CHARGE_NOHIT,
                      WG_END_CHARGE_HIT_HG, 6);
   fit->SetParameters(par);
   charge_hit->Fit("twin_peaks", "QLN0");
@@ -273,9 +273,9 @@ void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
 }
 
 //**********************************************************************
-void wgFit::Gain(unsigned ichip, unsigned ichan, unsigned icol,
+void wgFit::gain(unsigned ichip, unsigned ichan, unsigned icol,
                  double (&gain)[2], bool print_flag) {
-  TH1I * charge_hit_HG = wgFit::Histos.Get_charge_hit_HG(ichip, ichan, icol);
+  TH1I * charge_hit_HG = wgFit::histos.Get_charge_hit_HG(ichip, ichan, icol);
   if (charge_hit_HG == NULL) {
     gain[0] = gain[1] = std::nan("gain");
     throw wgElementNotFound("charge_hit_HG histogram not found : chip = " +
@@ -284,7 +284,7 @@ void wgFit::Gain(unsigned ichip, unsigned ichan, unsigned icol,
   }
   charge_hit_HG->SetDirectory(0);
 
-  wgFit::Gain(charge_hit_HG, gain);
+  wgFit::gain(charge_hit_HG, gain);
   if (std::isnan(gain[0])) return;
   
   if( print_flag && (!m_output_img_dir.empty()) ) {
@@ -293,7 +293,7 @@ void wgFit::Gain(unsigned ichip, unsigned ichan, unsigned icol,
                m_output_img_dir.c_str(), ichip, ichan, icol);
     charge_hit_HG->GetXaxis()->SetRange(WG_BEGIN_CHARGE_NOHIT,
                                         WG_END_CHARGE_HIT_HG);
-    wgFit::Histos.Print_charge_hit_HG(image, charge_hit_HG);
+    wgFit::histos.Print_charge_hit_HG(image, charge_hit_HG);
   }
   delete charge_hit_HG;
 }
