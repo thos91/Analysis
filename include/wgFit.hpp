@@ -17,9 +17,6 @@ private:
 public:
   wgGetHist Histos;
 
-public:
-  wgGetHist histos;
-
   enum gain_select {
     low_gain,
     high_gain,

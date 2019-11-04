@@ -66,7 +66,7 @@ void wgFit::noise_rate(TH1I * bcid_hit, double (&x)[2], unsigned spill_count) {
 
 //**********************************************************************
 void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag) {
-  TH1I * bcid_hit = wgFit::histos.Get_bcid_hit(ichip, ichan);
+  TH1I * bcid_hit = wgFit::Histos.Get_bcid_hit(ichip, ichan);
   if (bcid_hit == NULL) {
     x[0] = x[1] = std::nan("");
     throw wgElementNotFound("BCID histogram not found : chip = " +
@@ -76,7 +76,7 @@ void wgFit::noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool prin
   bcid_hit->SetDirectory(0);
 
   // Number of recorded spills
-  unsigned spill_count = wgFit::histos.spill_count;
+  unsigned spill_count = wgFit::Histos.spill_count;
   if (spill_count <= 0) {
     x[0] = x[1] = std::nan("noise");
     return;
@@ -133,7 +133,7 @@ void wgFit::charge_hit(TH1I * charge_hit, double (&x)[3], wgFit::gain_select gs)
 //**********************************************************************
 void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol,
                        double (&x)[3], bool print_flag) {
-  TH1I * charge_hit_HG = wgFit::histos.Get_charge_hit_HG(ichip, ichan, icol);
+  TH1I * charge_hit_HG = wgFit::Histos.Get_charge_hit_HG(ichip, ichan, icol);
   if (charge_hit_HG == NULL) {
     x[0] = x[1] = x[2] = std::nan("charge");
     throw wgElementNotFound("charge_hit_HG histogram not found : chip = " +
@@ -148,7 +148,7 @@ void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol,
     TString image;
     image.Form("%s/chip%u/chan%u/charge_hit_HG%u_%u_%u.png",
                m_output_img_dir.c_str(), ichip, ichan, ichip, ichan, icol);
-    wgFit::Histos.Print_charge_hit_LG(image, charge_hit_LG);
+    wgFit::Histos.Print_charge_hit_HG(image, charge_hit_HG);
   }
   delete charge_hit_HG;
 }
@@ -156,7 +156,7 @@ void wgFit::charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol,
 //**********************************************************************
 void wgFit::charge_hit_LG(unsigned ichip, unsigned ichan, unsigned icol,
                        double (&x)[3], bool print_flag) {
-  TH1I * charge_hit_LG = wgFit::histos.Get_charge_hit_LG(ichip, ichan, icol);
+  TH1I * charge_hit_LG = wgFit::Histos.Get_charge_hit_LG(ichip, ichan, icol);
   if (charge_hit_LG == NULL) {
     x[0] = x[1] = x[2] = std::nan("charge");
     throw wgElementNotFound("charge_hit_LG histogram not found : chip = " +
@@ -171,7 +171,7 @@ void wgFit::charge_hit_LG(unsigned ichip, unsigned ichan, unsigned icol,
     TString image;
     image.Form("%s/chip%u/chan%u/charge_hit_LG%u_%u_%u.png",
                m_output_img_dir.c_str(), ichip, ichan, ichip, ichan, icol);
-    wgFit::histos.Print_charge_hit_LG(image, charge_hit_LG);
+    wgFit::Histos.Print_charge_hit_LG(image, charge_hit_LG);
   }
   delete charge_hit_LG;
 }
@@ -275,7 +275,7 @@ void wgFit::gain(TH1I * charge_hit, double (&gain)[2]) {
 //**********************************************************************
 void wgFit::gain(unsigned ichip, unsigned ichan, unsigned icol,
                  double (&gain)[2], bool print_flag) {
-  TH1I * charge_hit_HG = wgFit::histos.Get_charge_hit_HG(ichip, ichan, icol);
+  TH1I * charge_hit_HG = wgFit::Histos.Get_charge_hit_HG(ichip, ichan, icol);
   if (charge_hit_HG == NULL) {
     gain[0] = gain[1] = std::nan("gain");
     throw wgElementNotFound("charge_hit_HG histogram not found : chip = " +
@@ -293,7 +293,7 @@ void wgFit::gain(unsigned ichip, unsigned ichan, unsigned icol,
                m_output_img_dir.c_str(), ichip, ichan, icol);
     charge_hit_HG->GetXaxis()->SetRange(WG_BEGIN_CHARGE_NOHIT,
                                         WG_END_CHARGE_HIT_HG);
-    wgFit::histos.Print_charge_hit_HG(image, charge_hit_HG);
+    wgFit::Histos.Print_charge_hit_HG(image, charge_hit_HG);
   }
   delete charge_hit_HG;
 }
