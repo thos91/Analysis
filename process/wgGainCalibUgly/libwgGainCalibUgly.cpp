@@ -22,13 +22,14 @@
 #include "wgFileSystemTools.hpp"
 #include "wgEditXML.hpp"
 #include "wgLogger.hpp"
-#include "wgGainCalib.hpp"
+#include "wgFit.hpp"
+#include "wgGainCalibUgly.hpp"
 
 using namespace wagasci_tools;
 
 #define N_IDAC 3
 
-namespace gain_calib {
+namespace gain_calib_ugly {
 //           DIF         ASU         channel     column     inputDAC   pe
 typedef std::vector<std::vector<std::vector<std::array<std::array<std::array<unsigned, NUM_PE>, N_IDAC>, MEMDEPTH>>>> ChargeVector;
 typedef std::vector<std::vector<std::vector<std::array<std::array<unsigned, N_IDAC>, MEMDEPTH>>>> GainVector;
@@ -37,20 +38,26 @@ typedef std::vector<std::vector<std::vector<std::array<double, MEMDEPTH>>>> Line
 typedef std::vector<std::string> DirList;
 }
 //******************************************************************
-int wgGainCalib(const char * x_input_run_dir,
-                const char * x_output_xml_dir,
-                const char * x_output_img_dir) {
+int wgGainCalibUgly(const char * x_hist_dir,
+                    const char * x_xml_config_file,  
+                    const char * x_output_xml_dir,
+                    const char * x_output_img_dir) {
   
   /////////////////////////////////////////////////////////////////////////////
   //                          Check arguments sanity                         //
   /////////////////////////////////////////////////////////////////////////////
   
-  std::string input_run_dir (x_input_run_dir);
+  std::string hist_dir (x_hist_dir);
+  std::string xml_config_file (x_hist_dir);
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   
-  if (input_run_dir.empty() || !check_exist::directory(input_run_dir)) {
-    Log.eWrite("[wgGainCalib] input directory doesn't exist");
+  if (hist_dir.empty() || !check_exist::directory(hist_dir)) {
+    Log.eWrite("[wgGainCalibUgly] input directory doesn't exist");
+    return ERR_EMPTY_INPUT_FILE;
+  }
+    if (xml_config_file.empty() || !check_exist::xml_file(xml_config_file)) {
+    Log.eWrite("[wgGainCalibUgly] Pyrame XML configuration file doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
   if (output_xml_dir.empty()) {
@@ -62,9 +69,10 @@ int wgGainCalib(const char * x_input_run_dir,
     output_xml_dir = env.IMGDATA_DIRECTORY;
   }
 
-  Log.Write(" *****  READING DIRECTORY      : " + input_run_dir);
-  Log.Write(" *****  OUTPUT XML DIRECTORY   : " + output_xml_dir);
-  Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + output_img_dir);
+  Log.Write(" *****  READING DIRECTORY       : " + hist_dir);
+  Log.Write(" *****  READING PYRAME XML FILE : " + xml_config_file);
+  Log.Write(" *****  OUTPUT XML DIRECTORY    : " + output_xml_dir);
+  Log.Write(" *****  OUTPUT IMAGE DIRECTORY  : " + output_img_dir);
   
   /////////////////////////////////////////////////////////////////////////////
   //                               Get topology                              //
@@ -72,10 +80,10 @@ int wgGainCalib(const char * x_input_run_dir,
 
   std::unique_ptr<Topology> topol;
   try {
-    topol = boost::make_unique<Topology>(input_run_dir, TopologySourceType::gain_tree);
+    topol = boost::make_unique<Topology>(xml_config_file, TopologySourceType::xml_file);
   } catch (const std::exception& except) {
-    Log.eWrite("Failed to get topology from folder tree (" +
-               input_run_dir + ")" + except.what());
+    Log.eWrite("Failed to get topology from Pyrame XML file (" +
+               xml_config_file + ")" + except.what());
     return ERR_TOPOLOGY;
   }
 
@@ -83,13 +91,12 @@ int wgGainCalib(const char * x_input_run_dir,
   //                             Allocate memory                             //
   /////////////////////////////////////////////////////////////////////////////
   
-
-  gain_calib::ChargeVector    charge_hit(topol->n_difs);
-  gain_calib::ChargeVector    sigma_hit (topol->n_difs);
-  gain_calib::GainVector      gain      (topol->n_difs);
-  gain_calib::GainVector      sigma_gain(topol->n_difs);
-  gain_calib::LinearFitVector slope     (topol->n_difs);
-  gain_calib::LinearFitVector intercept (topol->n_difs);
+  gain_calib_ugly::ChargeVector    charge_hit(topol->n_difs);
+  gain_calib_ugly::ChargeVector    sigma_hit (topol->n_difs);
+  gain_calib_ugly::GainVector      gain      (topol->n_difs);
+  gain_calib_ugly::GainVector      sigma_gain(topol->n_difs);
+  gain_calib_ugly::LinearFitVector slope     (topol->n_difs);
+  gain_calib_ugly::LinearFitVector intercept (topol->n_difs);
 
   for (auto const& dif: topol->dif_map) {
     unsigned idif = dif.first;
@@ -113,13 +120,28 @@ int wgGainCalib(const char * x_input_run_dir,
   }
 
   /////////////////////////////////////////////////////////////////////////////
+  //                              Fit histograms                             //
+  /////////////////////////////////////////////////////////////////////////////
+
+  gain_calib::DirList dif_list = list::list_files(hist_dir, true, ".root");
+  try {
+    wgFit Fit(input_file, output_img_dir);
+
+    for (auto const &chip : topol->dif_map[idif]) {
+      unsigned ichip = chip.first;
+      unsigned n_chans = chip.second;
+    }
+  }
+
+  
+  /////////////////////////////////////////////////////////////////////////////
   //                        Create output directories                        //
   /////////////////////////////////////////////////////////////////////////////
 
   // ============ Create output_xml_dir ============ //
   try { make::directory(output_xml_dir); }
   catch (const wgInvalidFile& e) {
-    Log.eWrite("[wgGainCalib] " + std::string(e.what()));
+    Log.eWrite("[wgGainCalibUgly] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
   }
 
@@ -131,77 +153,8 @@ int wgGainCalib(const char * x_input_run_dir,
       try { make::directory(output_img_dir + "/dif" + std::to_string(idif) +
                             "/chip" + std::to_string(ichip)); }
       catch (const wgInvalidFile& e) {
-        Log.eWrite("[wgGainCalib] " + std::string(e.what()));
+        Log.eWrite("[wgGainCalibUgly] " + std::string(e.what()));
         return ERR_FAILED_CREATE_DIRECTORY;
-      }
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////////////
-  //                       Read Summary_chipX.xml files                      //
-  /////////////////////////////////////////////////////////////////////////////
-
-  // input DAC
-  gain_calib::DirList idac_dir_list = list::list_directories(input_run_dir, true);
-  std::vector<unsigned> v_idac;
-  for (auto const& idac_directory : idac_dir_list) {
-
-    unsigned i_idac = string::extract_integer(get_stats::basename(idac_directory));
-    if (i_idac > MAX_VALUE_8BITS) continue;
-    else v_idac.push_back(i_idac);
-
-    // PEU
-    gain_calib::DirList pe_dir_list = list::list_directories(idac_directory, true);
-    for (auto const& pe_directory : list::list_directories(input_run_dir, true)) {
-      unsigned pe_level_from_dir = string::extract_integer(get_stats::basename(pe_directory));
-      unsigned ipe;
-      if      (pe_level_from_dir == 1) ipe = ONE_PE;
-      else if (pe_level_from_dir == 2) ipe = TWO_PE;
-      else continue;
-      // DIF
-      for (auto const& dif: topol->dif_map) {
-        unsigned idif = dif.first;
-        std::string idif_directory(pe_directory + "/wgAnaHistSummary/Xml/dif" + std::to_string(idif));
-        // Chip
-        for (auto const& chip: dif.second) {
-          unsigned ichip = chip.first;
-        
-          // ************* Open XML file ************* //
-          
-          std::string xmlfile(idif_directory + "/Summary_chip" + std::to_string(ichip) + ".xml");
-          wgEditXML Edit;
-          try { Edit.Open(xmlfile); }
-          catch (const std::exception& e) {
-            Log.eWrite("[wgGainCalib] " + std::string(e.what()));
-            return ERR_FAILED_OPEN_XML_FILE;
-          }
-
-          // ************* Read XML file ************* //
-          
-          for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-
-#ifdef DEBUG_WG_GAIN_CALIB
-            unsigned pe_level_from_xml;
-            try { pe_level_from_xml = Edit.SUMMARY_GetChFitValue(std::string("pe_level"), ichan); }
-            catch (const std::exception & e) {
-              Log.eWrite("failed to read photo electrons equivalent threshold from XML file");
-              return ERR_FAILED_OPEN_XML_FILE;
-            }
-            if ( pe_level_from_dir != pe_level_from_xml ) {
-              Log.eWrite("The PEU values read from XML file and from folder name are different");
-            }
-#endif // DEBUG_WG_GAIN_CALIB
-
-            for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-              // charge_HG peak (npe p.e. peak for high gain preamp)
-              charge_hit[idif][ichip][ichan][icol][i_idac][ipe] =
-                  Edit.SUMMARY_GetChFitValue("charge_hit_" + std::to_string(icol), ichan);
-              sigma_hit [idif][ichip][ichan][icol][i_idac][ipe] =
-                  Edit.SUMMARY_GetChFitValue("sigma_hit_"  + std::to_string(icol), ichan);
-            }
-          }
-          Edit.Close();
-        }
       }
     }
   }
