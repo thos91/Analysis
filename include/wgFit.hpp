@@ -7,6 +7,8 @@
 // user includes
 #include "wgGetHist.hpp"
 
+
+
 class wgFit
 {
 private:
@@ -17,10 +19,13 @@ private:
 public:
   wgGetHist Histos;
 
+public:
+  wgGetHist histos;
+
   enum gain_select {
-    LowGain,
-    HighGain,
-    Pedestal
+    low_gain,
+    high_gain,
+    pedestal
   };
   
   // Just call the GetHist constructor. Exceptions may be thrown.
@@ -31,8 +36,8 @@ public:
   // dark noise rate mean value is saved in x[0] and its variance in x[1].  If
   // the mode is PRINT_HIST_MODE, an image of the fitted histogram is saved in
   // the default WAGASCI_IMGDATADIR directory.
-  static void NoiseRate(TH1I * bcid_hit, double (&x)[2], unsigned spill_count);
-  void NoiseRate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag = false);
+  static void noise_rate(TH1I * bcid_hit, double (&x)[2]);
+  void noise_rate(unsigned ichip, unsigned ichan, double (&x)[2], bool print_flag = false);
 
   // Calculate the charge (ADC count) peak value for chip "ichip",
   // channel "ichan" and column "icol" from the charge_hit_HG histogram.
@@ -45,22 +50,12 @@ public:
   // value is store in the x[3] element. If the mode is
   // PRINT_HIST_MODE, an image of the fitted histogram is saved in the
   // default WAGASCI_IMGDATADIR directory.
-  static void ChargeHit(TH1I * charge_hit, double (&x)[3], gain_select gs = HighGain);
-  void ChargeHitHG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
+  static void charge_hit(TH1I * charge_hit, double (&x)[3], gain_select gs = high_gain);
+  void charge_hit_HG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
-  // Fit a charge ADC fingers plot with two gaussians. One gaussian
-  // fits the highest peak and the other one fits the peak just to the
-  // right. A peak whose height is less than 5% the height of the
-  // highest peak is ignored. The gain variable is an array whose
-  // first element is the gain (calculated as the difference between
-  // the peaks) and the sencod element is the error on it.  In case
-  // the fitting is not successful the gain variable is set to NAN.
-  static void Gain(TH1I * charge_hit, double (&gain)[2]);
-  void Gain(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[2], bool print_flag);
-      
   // Same as above but uses the charge_hit_LG histogram (only the hits from the
   // low gain preamp are considered)
-  void ChargeHitLG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
+  void charge_hit_LG(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);
 
   // Same as above but uses the charge_nohit histogram
   void ChargeNohit(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[3], bool print_flag = false);

@@ -255,7 +255,7 @@ int wgAnaHist(const char * x_input_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeHitLG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
+              Fit.charge_hit_LG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
