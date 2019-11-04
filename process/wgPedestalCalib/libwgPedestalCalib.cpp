@@ -10,6 +10,7 @@
 #include <boost/make_unique.hpp>
 
 // ROOT includes
+#include <TStyle.h>
 #include <TCanvas.h>
 #include <TH1D.h>
 #include <TH2D.h>
@@ -203,6 +204,8 @@ int wgPedestalCalib(const char * x_input_run_dir,
   //                                   GAIN                                  //
   /////////////////////////////////////////////////////////////////////////////
 
+  gStyle->SetImageScaling(3.);
+  
   TCanvas *c1 = new TCanvas("gain_canvas", "Pedestal Calibration Canvas", 1280, 720);
   c1->Divide(n_difs, 2);
   
