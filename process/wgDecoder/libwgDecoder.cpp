@@ -87,7 +87,8 @@ int wgDecoder(const char * x_input_raw_file,
   // present in the input folder and was created together with the .raw file
   std::string pyrame_log_file  = get_stats::basename(input_raw_file);
   size_t pos  = pyrame_log_file.rfind("_ecal_dif_") ;
-  pyrame_log_file = get_stats::dirname(input_raw_file) + pyrame_log_file.substr(0, pos) + ".log";
+  pyrame_log_file = get_stats::dirname(input_raw_file) + "/" +
+                    pyrame_log_file.substr(0, pos) + ".log";
 
   // ============ Create output_dir ============ //
   
