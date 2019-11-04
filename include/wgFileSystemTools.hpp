@@ -34,6 +34,10 @@ std::string dirname(const std::string& str);
 // name_before_last_under_bar("/path/to/my_file.txt") -> "my"
 std::string name_before_last_under_bar(const std::string& str);
 
+// extract the name after the last underscore
+// name_after_last_under_bar("/path/to/my_file.txt") -> "file"
+std::string name_after_last_under_bar(const std::string& str);
+
 } // get_stats
 
 ///////////////////////////////////////////////////////////////////////////////

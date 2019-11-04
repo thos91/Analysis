@@ -42,23 +42,34 @@ std::string dirname(const std::string& path) {
   return filesys::path(path).remove_filename().string();
 }
 
-std::string name_before_last_under_bar(const std::string& str)
-{
+std::string name_before_last_under_bar(const std::string& str) {
   std::string fn;
   std::string::size_type fpos;
-  if((fpos = str.find_last_of("/")) != std::string::npos){
-    fn = str.substr(fpos+1);
-  }else{
+  if ((fpos = str.find_last_of("/")) != std::string::npos)
+    fn = str.substr(fpos + 1);
+  else
     fn = str;
-  }
-  if((fpos = fn.find_last_of(".")) != std::string::npos){
-    fn = fn.substr(0,fpos);
-  }
-  if((fpos = fn.find_last_of("_")) != std::string::npos){
-    fn = fn.substr(0,fpos);
-  }
+  if ((fpos = fn.find_last_of(".")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  if ((fpos = fn.find_last_of("_")) != std::string::npos)
+    fn = fn.substr(0, fpos);
   return fn;
 }
+
+std::string name_after_last_under_bar(const std::string& str) {
+  std::string fn;
+  std::string::size_type fpos;
+  if ((fpos = str.find_last_of("/")) != std::string::npos)
+    fn = str.substr(fpos + 1);
+  else
+    fn = str;
+  if ((fpos = fn.find_last_of(".")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  if ((fpos = fn.find_last_of("_")) != std::string::npos)
+    fn = fn.substr(fpos, std::string::npos);
+  return fn;
+}
+
 
 }
 
