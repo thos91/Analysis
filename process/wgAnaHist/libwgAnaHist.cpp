@@ -193,8 +193,8 @@ int wgAnaHist(const char * x_input_hist_file,
         // ******************* FILL THE XML FILES ********************//
         try {
           if (first_time) {
-            start_time = Fit.Histos.Get_start_time();
-            stop_time  = Fit.Histos.Get_stop_time();
+            start_time = Fit.histos_.Get_start_time();
+            stop_time  = Fit.histos_.Get_stop_time();
             first_time = false;
           }
           xml.SetConfigValue(std::string("start_time"), start_time);
@@ -255,7 +255,7 @@ int wgAnaHist(const char * x_input_hist_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.charge_hit_LG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
+              Fit.ChargeHitLG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
