@@ -283,9 +283,18 @@ public:
   //                    gain calibration XML files                         //
   //=======================================================================//
   
-  void GainCalib_Make(const std::string& filename, const Topology& topol);
-  void GainCalib_SetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol, unsigned value, bool create_new);
-  double GainCalib_GetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol);
+  void GainCalib_Make(const std::string& filename,
+                      const Topology& topol);
+  void GainCalib_SetValue(const std::string& name,
+                          const unsigned value,
+                          const unsigned idif,
+                          const unsigned ichip,
+                          const unsigned ichan,
+                          const bool create_new = false);
+  double GainCalib_GetValue(const std::string& name,
+                            const unsigned idif,
+                            const unsigned ichip,
+                            const unsigned ichan);
   
   //=======================================================================//
   //                   Pedestal calibration XML files                      //

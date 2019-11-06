@@ -9,8 +9,9 @@
 // boost includes
 #include <boost/filesystem.hpp>
 
-// system C includes
-//#include <bits/stdc++.h>
+// ROOT includes
+#include "TROOT.h"
+#include "TError.h"
 
 // user includes
 #include "wgConst.hpp"
@@ -80,6 +81,9 @@ int wgAnaHist(const char * x_input_hist_file,
   Log.Write("[wgAnaHist] *****  READING FILE     : " + input_hist_file    + "  *****");
   Log.Write("[wgAnaHist] *****  OUTPUT DIRECTORY : " + output_xml_dir     + "  *****");
   Log.Write("[wgAnaHist] *****  CONFIG FILE      : " + pyrame_config_file + "  *****");
+
+  gErrorIgnoreLevel = kError;
+  gROOT->SetBatch(kTRUE);
   
   // =========== Topology =========== //
 

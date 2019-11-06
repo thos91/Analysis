@@ -22,6 +22,10 @@ namespace get_stats {
 // extension("/path/to/file.txt") -> ".txt"
 std::string extension(const std::string& str);
 
+// extract the file or directory name
+// filename("/path/to/file.txt") -> "file.txt"
+std::string filename(const std::string& str);
+
 // extract the top-level file or directory name without extension
 // basename("/path/to/file.txt") -> "file"
 std::string basename(const std::string& str);
@@ -91,8 +95,13 @@ namespace string {
 // returns UINT_MAX
 unsigned extract_integer(const std::string& str);
 
+// extract the DIF ID from a filename or path. The DIF ID must come
+// after the "ecal_dif_" string. If not found UINT_MAX is returned
+unsigned extract_dif_id(const std::string& str);
+
 // _try to find in the haystack the needle - ignore case
-bool find_string_ic(const std::string & str_haystack, const std::string & str_needle);
+bool find_string_ic(const std::string & str_haystack,
+                    const std::string & str_needle);
 
 // _helper function that takes a string and returns the maximum depth
 // nested parenthesis

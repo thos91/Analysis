@@ -55,8 +55,9 @@ public:
   // first element is the gain (calculated as the difference between
   // the peaks) and the sencod element is the error on it.  In case
   // the fitting is not successful the gain variable is set to NAN.
-  static void Gain(TH1I * charge_hit, double (&gain)[2]);
-  void Gain(unsigned ichip, unsigned ichan, unsigned icol, double (&x)[2], bool print_flag);
+  static void Gain(TH1I * charge_hit, double (&gain)[2], unsigned n_peaks = 2, bool nofit = false);
+  void Gain(unsigned ichip, unsigned ichan, unsigned icol,
+            double (&x)[2], unsigned n_peaks = 2, bool print_flag = false, bool nofit = false);
       
   // Same as above but uses the charge_hit_LG histogram (only the hits from the
   // low gain preamp are considered)

@@ -34,6 +34,11 @@ std::string extension(const std::string& path) {
   return filesys::path(path).extension().string();
 }
 
+std::string filename(const std::string& path) {
+  return filesys::path(path).filename().string();
+}
+
+
 std::string basename(const std::string& path) {
   return filesys::path(path).stem().string();
 }
@@ -240,6 +245,13 @@ unsigned extract_integer(const std::string& str) {
     return std::stoi(str.substr(n, m != std::string::npos ? m-n : m));
   }
   return UINT_MAX;
+}
+
+unsigned extract_dif_id(const std::string& path) {
+  std::string filename = get_stats::filename(path);
+  std::size_t pos = filename.find("ecal_dif_");
+  if (pos == std::string::npos) return UINT_MAX;
+  return extract_integer(filename.substr(pos));
 }
 
 //**********************************************************************

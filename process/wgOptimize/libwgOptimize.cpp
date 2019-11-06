@@ -153,17 +153,10 @@ int wgOptimize(const char * x_threshold_card,
         for (auto const& chip: dif.second) {
           unsigned ichip = chip.first;
           for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-            double average_slope = 0, average_intercept = 0;
-            for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-              average_slope += Edit.GainCalib_GetValue(
-                  "slope_gain", idif, ichip, ichan, icol);
-              average_intercept += Edit.GainCalib_GetValue(
-                  "intercept_gain", idif, ichip, ichan, icol);
-            }
-            average_slope /= MEMDEPTH;
-            average_intercept /= MEMDEPTH;
-            slope_iDAC_gain    [idif][ichip][ichan] = average_slope;
-            intercept_iDAC_gain[idif][ichip][ichan] = average_intercept;
+            slope_iDAC_gain[idif][ichip][ichan] =
+                Edit.GainCalib_GetValue("slope_gain", idif, ichip, ichan);
+            intercept_iDAC_gain[idif][ichip][ichan] =
+                Edit.GainCalib_GetValue("intercept_gain", idif, ichip, ichan);
           }
         }
       }

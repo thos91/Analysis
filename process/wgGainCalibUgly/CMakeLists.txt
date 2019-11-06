@@ -42,6 +42,7 @@ target_link_libraries(lib${process}
  ${ROOT_LIBRARIES}            # ROOT libraries
  ${Boost_FILESYSTEM_LIBRARY}  # boost filesystem libraries
  ${Boost_SYSTEM_LIBRARY}      # boost system libraries
+ ${CMAKE_THREAD_LIBS_INIT}
  libwagasci                   # WAGASCI dynamic library
  )
 

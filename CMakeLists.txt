@@ -60,6 +60,9 @@ else ()
 endif ()
 find_package(nlohmann_json REQUIRED)
 
+# multithread
+find_package (Threads)
+
 # build libwagasci.a
 add_subdirectory(src)
 

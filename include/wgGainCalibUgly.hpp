@@ -8,10 +8,11 @@
 extern "C" {
 #endif
 
-  int wgGainCalibUgly(const char * x_hist_file,
-                      const char * x_xml_config_file,  
+  int wgGainCalibUgly(const char * x_input_run_dir,
+                      const char * x_xml_config_file,
                       const char * x_output_xml_dir,
-                      const char * x_output_img_dir);
+                      const char * x_output_img_dir,
+                      const bool ignore_wagasci );
   
 #ifdef __cplusplus
 }

@@ -217,9 +217,9 @@ bool wgFit::SortPeaks(std::pair<Double_t, Double_t> peak1,
 }
 
 //**********************************************************************
-void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
-  TSpectrum *fingers_plot = new TSpectrum(4); // Maximum number of peaks is 4
-  Int_t n_peaks = fingers_plot->Search(charge_hit, 2, "nobackground", 0.05);
+void wgFit::Gain(TH1I * charge_hit, double (&gain)[2], unsigned max_nb_peaks, bool nofit) {
+  TSpectrum *fingers_plot = new TSpectrum(max_nb_peaks);
+  Int_t n_peaks = fingers_plot->Search(charge_hit, 2, "nobackground,nodraw,goff", 0.05);
   if (n_peaks < 2) {
     gain[0] = gain[1] = std::nan("gain");
     return;
@@ -259,23 +259,29 @@ void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
   }
 
   // Fit
-  TF1 *fit = new TF1("twin_peaks", wgFit::TwinPeaks, WG_BEGIN_CHARGE_NOHIT,
-                     WG_END_CHARGE_HIT_HG, 6);
-  fit->SetParameters(par);
-  charge_hit->Fit("twin_peaks", "QLN0");
+  if (!nofit) {
+    TF1 *fit = new TF1("twin_peaks", wgFit::TwinPeaks, WG_BEGIN_CHARGE_NOHIT,
+                       WG_END_CHARGE_HIT_HG, 6);
+    fit->SetParameters(par);
+    charge_hit->Fit("twin_peaks", "QLN0");
 
-  gain[0] = TMath::Abs(par[0] - par[3]);
-  // error on gain
-  gain[1] = TMath::Sqrt(TMath::Power(par[2], 2) + TMath::Power(par[5], 2));
+    gain[0] = TMath::Abs(par[0] - par[3]);
+    // error on gain
+    gain[1] = TMath::Sqrt(TMath::Power(par[2], 2) + TMath::Power(par[5], 2));
 
-  delete fit;
+    delete fit;
+  } else {
+    gain[0] = TMath::Abs(par[0] - par[3]);
+    gain[1] = 10;
+  }
   delete fingers_plot;
 }
 
 //**********************************************************************
 void wgFit::Gain(unsigned ichip, unsigned ichan, unsigned icol,
-                 double (&gain)[2], bool print_flag) {
+                 double (&gain)[2], unsigned n_peaks, bool print_flag, bool nofit) {
   TH1I * charge_hit_HG = wgFit::histos_.Get_charge_hit_HG(ichip, ichan, icol);
+
   if (charge_hit_HG == NULL) {
     gain[0] = gain[1] = std::nan("gain");
     throw wgElementNotFound("charge_hit_HG histogram not found : chip = " +
@@ -284,10 +290,11 @@ void wgFit::Gain(unsigned ichip, unsigned ichan, unsigned icol,
   }
   charge_hit_HG->SetDirectory(0);
 
-  wgFit::Gain(charge_hit_HG, gain);
+  wgFit::Gain(charge_hit_HG, gain, n_peaks, nofit);
+
   if (std::isnan(gain[0])) return;
   
-  if( print_flag && (!m_output_img_dir.empty()) ) {
+  if (print_flag && (!m_output_img_dir.empty())) {
     TString image;
     image.Form("%s/gain%d_%d_%d.png",
                m_output_img_dir.c_str(), ichip, ichan, icol);
