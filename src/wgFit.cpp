@@ -236,7 +236,7 @@ void wgFit::Gain(TH1I * charge_hit, double (&gain)[2]) {
   }
   std::sort(peaks.begin(), peaks.end(), wgFit::SortPeaks);
 
-  // Select the highest and second highest peaks (if it is not to
+  // Select the highest and second highest peaks (if it is not too
   // close to the highest one)
   par[0] = peaks[0].first;
   par[1] = peaks[0].second;

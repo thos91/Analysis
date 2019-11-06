@@ -74,7 +74,7 @@ int wgGainCalib(const char * x_input_run_dir,
   try {
     topol = boost::make_unique<Topology>(input_run_dir, TopologySourceType::gain_tree);
   } catch (const std::exception& except) {
-    Log.eWrite("Failed to get topology from folder tree (" +
+    Log.eWrite("Failed to get topology from the gain folder tree (" +
                input_run_dir + ")" + except.what());
     return ERR_TOPOLOGY;
   }
