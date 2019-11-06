@@ -218,28 +218,36 @@ bool wgEditXML::GetConfig(const std::string& configxml,
 }
 
 //**********************************************************************
-void wgEditXML::GetLog(const std::string& filename, std::vector<std::string>& v){
+void wgEditXML::GetLog(const std::string& filename, std::vector<std::string>& values){
   std::string target("");
-  v.clear();
-  v.resize(4);
+  values.clear();
+  values.resize(4);
   XMLDocument *xml = new XMLDocument();
   xml->LoadFile(filename.c_str()); 
   XMLElement* log = xml->FirstChildElement("log");
+  if (log == NULL) {
+    for (auto& value : values) value = "0";
+    return;
+  }
   XMLElement* acq  = log->FirstChildElement("acq");
+  if (acq == NULL) {
+    for (auto& value : values) value = "0";
+    return;
+  }
   for (XMLElement* param = acq->FirstChildElement("param");
        param != NULL;
        param = param->NextSiblingElement("param")) {
     target = param->Attribute("name");
     if (target == "start_time") {
-      v[0] = param->GetText();
+      values[0] = param->GetText();
     } else if (target == "stop_time") {
-      v[1] = param->GetText();
+      values[1] = param->GetText();
     }
     else if (target == "nb_data_pkts") { 
-      v[2] = param->GetText();
+      values[2] = param->GetText();
     }
     else if (target == "nb_lost_pkts") {
-      v[3] = param->GetText();
+      values[3] = param->GetText();
     }
   }
   delete xml;
