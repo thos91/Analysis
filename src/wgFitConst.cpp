@@ -19,7 +19,7 @@ const double WG_LOWER_LIMIT_3PE = 50;     // 50 Hz
 const double WG_UPPER_LIMIT_3PE = 400;    // 400 Hz
 
 // nominal value for the MPPC gain
-const double WG_NOMINAL_GAIN = 40;
+const double WG_NOMINAL_GAIN = 60;
 
 // time interval in seconds of 1 BCID count
 const double TIME_BCID = 580e-9;
