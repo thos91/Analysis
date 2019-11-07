@@ -4,6 +4,9 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <bitset>
+#include <map>
+#include <unordered_map>
 
 // boost includes
 #include <boost/filesystem.hpp>
@@ -36,45 +39,37 @@ const unsigned MIN_GAIN = 10;
 const unsigned MAX_SIGMA = MAX_GAIN;
 const unsigned MIN_SIGMA = 2;
 
-//           ASU          CHIP    CHANNEL
+//           CHIP         CHANNEL
 typedef std::vector <std::vector <double>> ChargeVector;
 //               iDAC           PEU              DIF
 typedef std::map<unsigned, std::array <std::map <unsigned, ChargeVector>, NUM_PE>> Charge;
-//               DIF            ASU          CHIP    CHANNEL
+//               DIF            CHIP         CHANNEL
+typedef std::map<unsigned, std::vector <std::bitset <NCHANNELS>>> BadChannels;
+//               DIF            CHIP         CHANNEL
 typedef std::map<unsigned, std::vector <std::vector <double>>> LinearFit;
 
 typedef std::vector<std::string> DirList;
-}
 
-bool check_unphysical_gain(double gain) {
-  return (gain > gain_calib::MAX_GAIN || gain < gain_calib::MIN_GAIN) ? false : true;
-}
+} // gain_calib
 
-bool check_unphysical_sigma(double sigma) {
-    return (sigma > gain_calib::MAX_SIGMA || sigma < gain_calib::MIN_SIGMA) ? false : true;
-}
+// routines to check if the gain and its variance are physical or not
+// If the mean argument is given the gain or sigma are assigned it.
+// They return true if the value is not physical (> MAX_GAIN <
+// MIN_GAIN) in the case of the gain or (> MAX_SIGMA < MIN_SIGMA) in
+// the case of the variance
+bool is_unphysical_gain(double gain);
+bool is_unphysical_sigma(double sigma);
+bool is_unphysical_gain(double &gain, const double mean);
+bool is_unphysical_sigma(double &sigma, const double mean);
 
-bool check_unphysical_gain(double &gain, const double &mean = -1) {
-  if (gain > gain_calib::MAX_GAIN) {
-    gain = mean == -1 ? gain_calib::MAX_GAIN : mean;
-    return false;
-  } else if (gain < gain_calib::MIN_GAIN) {
-    gain = mean == -1 ? gain_calib::MIN_GAIN : mean;
-    return false;
-  }
-  return true;
-}
-
-bool check_unphysical_sigma(double &sigma, const double &mean = -1) {
-  if (sigma > gain_calib::MAX_SIGMA) {
-    sigma = mean == -1 ? gain_calib::MAX_SIGMA : mean;
-    return false;
-  } else if (sigma < gain_calib::MIN_SIGMA) {
-    sigma = mean == -1 ? gain_calib::MIN_SIGMA : mean;
-    return false;
-  }
-  return true;
-}
+// Print the bad_channels map to a CVS file. The file format is as
+// follows:
+//
+// "DIF"  "CHIP" "CHANNEL" "ADC 1PEU for each iDAC" "ADC 2PEU for each iDAC"
+void print_bad_channels(gain_calib::BadChannels bad_channels,
+                        gain_calib::Charge charge,
+                        std::vector<unsigned> v_idac,
+                        const std::string &cvs_file_path);
 
 //******************************************************************
 int wgGainCalib(const char * x_input_run_dir,
@@ -155,7 +150,8 @@ int wgGainCalib(const char * x_input_run_dir,
   gain_calib::Charge    sigma_hit;
   gain_calib::LinearFit slope;
   gain_calib::LinearFit intercept;
-
+  gain_calib::BadChannels bad_channels;
+  
   for (auto const& idac : v_idac) {
     for (unsigned ipeu = 0; ipeu < NUM_PE; ++ipeu) {
       for (auto const& dif: topol->dif_map) {
@@ -178,6 +174,7 @@ int wgGainCalib(const char * x_input_run_dir,
     unsigned n_chips = dif.second.size();
     slope       [dif_id].resize(n_chips);
     intercept   [dif_id].resize(n_chips);
+    bad_channels[dif_id].resize(n_chips);
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
       unsigned n_chans = topol->dif_map[dif_id][ichip];
@@ -237,8 +234,8 @@ int wgGainCalib(const char * x_input_run_dir,
           
           std::string xmlfile(dif_id_directory + "/Summary_chip" +
                               std::to_string(ichip) + ".xml");
-          wgEditXML Edit;
-          try { Edit.Open(xmlfile); }
+          wgEditXML xml;
+          try { xml.Open(xmlfile); }
           catch (const std::exception& e) {
             Log.eWrite("[wgGainCalib] " + std::string(e.what()));
             return ERR_FAILED_OPEN_XML_FILE;
@@ -251,7 +248,7 @@ int wgGainCalib(const char * x_input_run_dir,
 #ifdef DEBUG_WG_GAIN_CALIB
             unsigned pe_level_from_xml;
             try {
-              pe_level_from_xml = Edit.SUMMARY_GetChFitValue(std::string("pe_level"),
+              pe_level_from_xml = xml.SUMMARY_GetChFitValue(std::string("pe_level"),
                                                              ichan);
             } catch (const std::exception & e) {
               Log.eWrite("failed to read photo electrons equivalent "
@@ -267,11 +264,11 @@ int wgGainCalib(const char * x_input_run_dir,
             // TODO: Only considering the 0 column for the time being
             
             charge_hit[idac][ipe][dif_id][ichip][ichan] =
-                Edit.SUMMARY_GetChFitValue("charge_hit_0", ichan);
+                xml.SUMMARY_GetChFitValue("charge_hit_0", ichan);
             sigma_hit [idac][ipe][dif_id][ichip][ichan] =
-                Edit.SUMMARY_GetChFitValue("sigma_hit_0", ichan);
+                xml.SUMMARY_GetChFitValue("sigma_hit_0", ichan);
           }
-          Edit.Close();
+          xml.Close();
         }
       }
     }
@@ -297,25 +294,29 @@ int wgGainCalib(const char * x_input_run_dir,
       unsigned n_chans = chip.second;
       auto canvas = new TCanvas("canvas", "inputDAC vs gain", 1280, 720);
       auto multi_graph = new TMultiGraph();
+      multi_graph->SetMinimum(gain_calib::MIN_GAIN);
+      multi_graph->SetMaximum(gain_calib::MAX_GAIN);
       std::array<TGraphErrors *, MEMDEPTH> graphs;
+
+      // Check for non physical (bad) channels ////////////////////////////////
       
-      // CHANNEL
-      std::vector<bool> bad_channel(n_chans, false);
-      for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
-        for (auto const& idac : v_idac) {
+      for (auto const& idac : v_idac) {
+        for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
           double charge_2pe = charge_hit[idac][TWO_PE][dif_id][ichip][ichan];
           double charge_1pe = charge_hit[idac][ONE_PE][dif_id][ichip][ichan];
           double sigma_2pe = sigma_hit  [idac][TWO_PE][dif_id][ichip][ichan];
           double sigma_1pe = sigma_hit  [idac][ONE_PE][dif_id][ichip][ichan];
-          bad_channel[ichan] = check_unphysical_gain(charge_2pe - charge_1pe);
-          bad_channel[ichan] = check_unphysical_sigma(
+          bad_channels[dif_id][ichip][ichan] =
+              is_unphysical_gain(charge_2pe - charge_1pe);
+          bad_channels[dif_id][ichip][ichan] = is_unphysical_sigma(
               std::sqrt(std::pow(sigma_1pe, 2) + std::pow(sigma_2pe, 2)));
         }
       }
 
       // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-        if (!bad_channel[ichan]) continue;
+        if (bad_channels[dif_id][ichip][ichan]) continue;
+        
         // IDAC
         TVectorD root_gain(v_idac.size());
         TVectorD root_gain_err(v_idac.size());
@@ -357,7 +358,6 @@ int wgGainCalib(const char * x_input_run_dir,
       TString title;
       title.Form("chip%d;inputDAC;gain", ichip);
       multi_graph->SetTitle(title);
-      multi_graph->GetYaxis()->SetLimits(0, 150);
       multi_graph->Draw("ap");
       canvas->Update();
       canvas->Modified();
@@ -375,37 +375,97 @@ int wgGainCalib(const char * x_input_run_dir,
   //                              gain_card.xml                              //
   /////////////////////////////////////////////////////////////////////////////
 
-  wgEditXML Edit;
+  wgEditXML xml;
 
-  Edit.GainCalib_Make(output_xml_dir + "/gain_card.xml", *topol);
-  Edit.Open(output_xml_dir + "/gain_card.xml");
+  xml.GainCalib_Make(output_xml_dir + "/gain_card.xml", *topol);
+  xml.Open(output_xml_dir + "/gain_card.xml");
 
+  // DIF
   for (auto const& dif: topol->dif_map) {
     unsigned dif_id = dif.first;
+    // CHIP
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
       double slope_mean = wagasci_tools::numeric::mean(slope[dif_id][ichip]);
-      double slope_std_dev = wagasci_tools::numeric::standard_deviation(slope[dif_id][ichip]);
       double intercept_mean = wagasci_tools::numeric::mean(intercept[dif_id][ichip]);
+      // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-        if (std::fabs(slope[dif_id][ichip][ichan] - slope_mean) > 3 * slope_std_dev) {
+        if (bad_channels[dif_id][ichip][ichan]) {
           slope[dif_id][ichip][ichan] = slope_mean;
           intercept[dif_id][ichip][ichan] = intercept_mean;
         }
-      }
-      for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-        Edit.GainCalib_SetValue(std::string("slope_gain"),
-                                slope[dif_id][ichip][ichan],
-                                dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
-        Edit.GainCalib_SetValue(std::string("intercept_gain"),
-                                intercept[dif_id][ichip][ichan],
-                                dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
+        xml.GainCalib_SetValue(std::string("slope_gain"),
+                               slope[dif_id][ichip][ichan],
+                               dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
+        xml.GainCalib_SetValue(std::string("intercept_gain"),
+                               intercept[dif_id][ichip][ichan],
+                               dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
       }
     }
   }
 
-  Edit.Write();
-  Edit.Close();
+  xml.Write();
+  xml.Close();
+
+  print_bad_channels(bad_channels, charge_hit, v_idac, output_xml_dir + "/Bad channels.cvs");
 
   return WG_SUCCESS;
+}
+
+bool is_unphysical_gain(double gain) {
+  return (gain > gain_calib::MAX_GAIN ||
+          gain < gain_calib::MIN_GAIN) ? true : false;
+}
+
+bool is_unphysical_sigma(double sigma) {
+  return (sigma > gain_calib::MAX_SIGMA ||
+          sigma < gain_calib::MIN_SIGMA) ? true : false;
+}
+
+bool is_unphysical_gain(double &gain, const double mean) {
+  if (gain > gain_calib::MAX_GAIN ||
+      gain < gain_calib::MIN_GAIN) {
+    gain = mean;
+    return true;
+  }
+  return false;
+}
+
+bool is_unphysical_sigma(double &sigma, const double mean) {
+  if (sigma > gain_calib::MAX_SIGMA ||
+      sigma < gain_calib::MIN_SIGMA) {
+    sigma = mean;
+    return true;
+  }
+  return false;
+}
+
+void print_bad_channels(gain_calib::BadChannels bad_channels,
+                        gain_calib::Charge charge,
+                        std::vector<unsigned> v_idac,
+                        const std::string &cvs_file_path) {
+  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
+  cvs_file << "# DIF |\tCHIP |\tCHANNEL |";
+  for (auto const& idac : v_idac) {
+    cvs_file << "ADC 1PEU iDAC " << idac <<'\t';
+  }
+
+"ADC 121 for each iDAC |\tADC 2PEU for each iDAC\n";
+  for (auto const& dif : bad_channels) {
+    unsigned dif_id = dif.first;
+    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
+      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+        if (dif.second[ichip][ichan] == true &&
+            ichan <= charge[v_idac[0]][ONE_PE][dif_id][ichip].size()) {
+          cvs_file << dif_id << '\t' << ichip << '\t' << ichan << '\t';
+          for (auto const& idac : v_idac)
+            cvs_file << charge[idac][ONE_PE][dif_id][ichip][ichan] << '\t';
+          for (auto const& idac : v_idac)
+            cvs_file << charge[idac][TWO_PE][dif_id][ichip][ichan] << '\t';
+          cvs_file << '\n';
+        }
+      }
+    }
+  }
+  cvs_file.close();
 }
