@@ -790,15 +790,15 @@ void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
 
     // pereshold
     for (auto & pe_directory : pe_dir_list) {
-      unsigned photo_equivalent_unit;
-      if ((photo_equivalent_unit = string::extract_integer(get_stats::basename(pe_directory))) == UINT_MAX)
+      unsigned peu;
+      if ((peu = string::extract_integer(get_stats::basename(pe_directory))) == UINT_MAX)
         continue;
 
       // DIF
       pe_directory += "/wgAnaHistSummary/Xml";
       std::vector<std::string> dif_dir_list = list::list_directories(pe_directory, true);
       if ( dif_dir_list.size() == 0 )
-        throw std::invalid_argument("[wgTopology] empty photo_equivalent_unit directory : " + pe_directory);
+        throw std::invalid_argument("[wgTopology] empty PEU directory : " + pe_directory);
       for (auto const & idif_directory : dif_dir_list) {
         unsigned idif;
         if ((idif =string::extract_integer(get_stats::basename(idif_directory))) == UINT_MAX)
@@ -818,14 +818,14 @@ void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
           catch (const std::exception& e) {
             throw wgInvalidFile("[wgTopology] : " + std::string(e.what()));
           }
-          this->dif_map[idif][ichip] = n_chans_t[iDAC][photo_equivalent_unit][idif][ichip] =
+          this->dif_map[idif][ichip] = n_chans_t[iDAC][peu][idif][ichip] =
                                        Edit.SUMMARY_GetGlobalConfigValue("n_chans");
           this->m_string_dif_map[std::to_string(idif)][std::to_string(ichip)] =
               std::to_string(this->dif_map[idif][ichip]);
           Edit.Close();
         }
       }  // end loop for dif
-    }  // end loop for photo_equivalent_unit
+    }  // end loop for peu
   }  // end loop for inputDAC
 
   for (auto const& iDAC : n_chans_t) {
@@ -838,7 +838,7 @@ void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
         if (n_chans_t[iiDAC][ipe].size() != this->dif_map.size()) {
           throw std::runtime_error("[wgTopology] There is something wrong with the number of "
                                    "DIFs detection : iDAC = " + std::to_string(iiDAC) +
-                                   ", photo_equivalent_unit = " + std::to_string(ipe) +
+                                   ", peu = " + std::to_string(ipe) +
                                    ", idif = " + idif);
         }
         for (auto const& chip : dif.second) {
@@ -846,13 +846,13 @@ void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
           if (n_chans_t[iiDAC][ipe][idif].size() != this->dif_map[idif].size() ) {
             throw std::runtime_error("[wgTopology] There is something wrong with the number of "
                                      "chips detection : iDAC = " + std::to_string(iiDAC) +
-                                     ", photo_equivalent_unit = " + std::to_string(ipe) +
+                                     ", peu = " + std::to_string(ipe) +
                                      ", idif = " + idif + ", ichip = " + ichip);
           }
           if (n_chans_t[iiDAC][ipe][idif][ichip] != this->dif_map[idif][ichip]) {
             throw std::runtime_error("[wgTopology] There is something wrong with the number of "
                                      "channels detection : iDAC = " + std::to_string(iiDAC) +
-                                     ", photo_equivalent_unit = " + std::to_string(ipe) +
+                                     ", peu = " + std::to_string(ipe) +
                                      ", idif = " + idif + ", ichip = " + ichip);
           }
         }
