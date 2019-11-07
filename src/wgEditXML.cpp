@@ -882,7 +882,7 @@ void wgEditXML::GainCalib_Make(const std::string& filename,
 
 //**********************************************************************
 void wgEditXML::GainCalib_SetValue(const std::string& name,
-                                   const unsigned value,
+                                   const double value,
                                    const unsigned idif,
                                    const unsigned ichip,
                                    const unsigned ichan,
@@ -896,7 +896,7 @@ void wgEditXML::GainCalib_SetValue(const std::string& name,
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
   XMLElement* chan = chip->FirstChildElement(str);
   XMLElement* target = chan->FirstChildElement(name.c_str());
-  snprintf(str, XML_ELEMENT_STRING_LENGTH, "%d", value);
+  snprintf(str, XML_ELEMENT_STRING_LENGTH, "%f", value);
   if (target) {
     target->SetText(str);
   } else if (create_new == true) {

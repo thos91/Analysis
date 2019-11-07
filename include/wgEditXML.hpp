@@ -286,7 +286,7 @@ public:
   void GainCalib_Make(const std::string& filename,
                       const Topology& topol);
   void GainCalib_SetValue(const std::string& name,
-                          const unsigned value,
+                          const double value,
                           const unsigned idif,
                           const unsigned ichip,
                           const unsigned ichan,
