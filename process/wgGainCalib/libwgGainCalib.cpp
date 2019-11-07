@@ -4,7 +4,6 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
-#include <thread>
 
 // boost includes
 #include <boost/filesystem.hpp>
@@ -22,7 +21,7 @@
 // user includes
 #include "wgConst.hpp"
 #include "wgErrorCodes.hpp"
-#include "wgEnableThreadSafety.hpp"
+#include "wgNumericTools.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgEditXML.hpp"
 #include "wgLogger.hpp"
@@ -30,21 +29,51 @@
 
 using namespace wagasci_tools;
 
-#define N_IDAC 3
-
 namespace gain_calib {
+
+const unsigned MAX_GAIN = 150;
+const unsigned MIN_GAIN = 10;
+const unsigned MAX_SIGMA = MAX_GAIN;
+const unsigned MIN_SIGMA = 2;
+
 //           ASU          CHIP    CHANNEL
-typedef std::vector <std::vector <double>> GainVector;
+typedef std::vector <std::vector <double>> ChargeVector;
 //               iDAC           PEU              DIF
-typedef std::map<unsigned, std::array <std::map <unsigned, GainVector>, NUM_PE>> Charge;
-//          iDAC                    DIF
-typedef std::map<unsigned, std::map<unsigned, GainVector>> Gain;
+typedef std::map<unsigned, std::array <std::map <unsigned, ChargeVector>, NUM_PE>> Charge;
 //               DIF            ASU          CHIP    CHANNEL
 typedef std::map<unsigned, std::vector <std::vector <double>>> LinearFit;
 
 typedef std::vector<std::string> DirList;
+}
 
-std::vector<std::thread> THREADS;
+bool check_unphysical_gain(double gain) {
+  return (gain > gain_calib::MAX_GAIN || gain < gain_calib::MIN_GAIN) ? false : true;
+}
+
+bool check_unphysical_sigma(double sigma) {
+    return (sigma > gain_calib::MAX_SIGMA || sigma < gain_calib::MIN_SIGMA) ? false : true;
+}
+
+bool check_unphysical_gain(double &gain, const double &mean = -1) {
+  if (gain > gain_calib::MAX_GAIN) {
+    gain = mean == -1 ? gain_calib::MAX_GAIN : mean;
+    return false;
+  } else if (gain < gain_calib::MIN_GAIN) {
+    gain = mean == -1 ? gain_calib::MIN_GAIN : mean;
+    return false;
+  }
+  return true;
+}
+
+bool check_unphysical_sigma(double &sigma, const double &mean = -1) {
+  if (sigma > gain_calib::MAX_SIGMA) {
+    sigma = mean == -1 ? gain_calib::MAX_SIGMA : mean;
+    return false;
+  } else if (sigma < gain_calib::MIN_SIGMA) {
+    sigma = mean == -1 ? gain_calib::MIN_SIGMA : mean;
+    return false;
+  }
+  return true;
 }
 
 //******************************************************************
@@ -79,8 +108,6 @@ int wgGainCalib(const char * x_input_run_dir,
   Log.Write(" *****  OUTPUT IMAGE DIRECTORY : " + output_img_dir);
 
   gErrorIgnoreLevel = kError;
-  wgEnableThreadSafety();
-  TH1::AddDirectory(false);
   gROOT->SetBatch(kTRUE);
   
   /////////////////////////////////////////////////////////////////////////////
@@ -97,16 +124,17 @@ int wgGainCalib(const char * x_input_run_dir,
   }
 
   if (ignore_wallmrd) {
-    topol->dif_map.erase(0);
-    topol->dif_map.erase(1);
-    topol->dif_map.erase(2);
-    topol->dif_map.erase(3);
+    topol->dif_map.erase(0); // WallMRD north top
+    topol->dif_map.erase(1); // WallMRD north bottom
+    topol->dif_map.erase(2); // WallMRD south top
+    topol->dif_map.erase(3); // WallMRD south bottom
     topol->n_difs -= 4;
   }
 
   /////////////////////////////////////////////////////////////////////////////
   //                        List the input DAC values                        //
   /////////////////////////////////////////////////////////////////////////////
+  
   gain_calib::DirList idac_dir_list = list::list_directories(input_run_dir, true);
   std::vector<unsigned> v_idac;
   for (auto const& idac_directory : idac_dir_list) {
@@ -114,16 +142,17 @@ int wgGainCalib(const char * x_input_run_dir,
     if (idac > MAX_VALUE_8BITS) continue;
     else v_idac.push_back(idac);
   }
+  if (v_idac.size() <= 0) {
+    Log.eWrite("No iDAC folder found in the gain folder tree : " + input_run_dir);
+    return ERR_INPUT_FILE_NOT_FOUND;
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   //                             Allocate memory                             //
   /////////////////////////////////////////////////////////////////////////////
-  
 
   gain_calib::Charge    charge_hit;
   gain_calib::Charge    sigma_hit;
-  gain_calib::Gain      gain;
-  gain_calib::Gain      sigma_gain;
   gain_calib::LinearFit slope;
   gain_calib::LinearFit intercept;
 
@@ -133,28 +162,13 @@ int wgGainCalib(const char * x_input_run_dir,
         unsigned dif_id = dif.first;
         unsigned n_chips = dif.second.size();
         charge_hit[idac][ipeu][dif_id].resize(n_chips);
-        sigma_hit [dif_id][ipeu][dif_id].resize(n_chips);
+        sigma_hit [idac][ipeu][dif_id].resize(n_chips);
         for (auto const& chip: dif.second) {
           unsigned ichip = chip.first;
           unsigned n_chans = topol->dif_map[dif_id][ichip];
           charge_hit[idac][ipeu][dif_id][ichip].resize(n_chans);
           sigma_hit [idac][ipeu][dif_id][ichip].resize(n_chans);
         }
-      }
-    }
-  }
-
-  for (auto const& idac : v_idac) {
-    for (auto const& dif: topol->dif_map) {
-      unsigned dif_id = dif.first;
-      unsigned n_chips = dif.second.size();
-      gain        [idac][dif_id].resize(n_chips);
-      sigma_gain  [idac][dif_id].resize(n_chips);
-      for (auto const& chip: dif.second) {
-        unsigned ichip = chip.first;
-        unsigned n_chans = topol->dif_map[dif_id][ichip];
-        gain        [idac][dif_id][ichip].resize(n_chans);
-        sigma_gain  [idac][dif_id][ichip].resize(n_chans);
       }
     }
   }
@@ -186,14 +200,10 @@ int wgGainCalib(const char * x_input_run_dir,
   // ============ Create output_img_dir ============ //
   for (auto const& dif: topol->dif_map) {
     unsigned dif_id = dif.first;
-    for (auto const& chip: dif.second) {
-      unsigned ichip = chip.first;
-      try { make::directory(output_img_dir + "/dif" + std::to_string(dif_id) +
-                            "/chip" + std::to_string(ichip)); }
-      catch (const wgInvalidFile& e) {
-        Log.eWrite("[wgGainCalib] " + std::string(e.what()));
-        return ERR_FAILED_CREATE_DIRECTORY;
-      }
+    try { make::directory(output_img_dir + "/dif" + std::to_string(dif_id)); }
+    catch (const wgInvalidFile& e) {
+      Log.eWrite("[wgGainCalib] " + std::string(e.what()));
+      return ERR_FAILED_CREATE_DIRECTORY;
     }
   }
 
@@ -207,17 +217,18 @@ int wgGainCalib(const char * x_input_run_dir,
     if (idac > MAX_VALUE_8BITS) continue;
     // PEU
     gain_calib::DirList pe_dir_list = list::list_directories(idac_directory, true);
-    for (auto const& pe_directory : list::list_directories(input_run_dir, true)) {
-      unsigned pe_level_from_dir = string::extract_integer(get_stats::basename(pe_directory));
-      unsigned ipe;
+    for (auto const& pe_directory : pe_dir_list) {
+      unsigned pe_level_from_dir =
+          string::extract_integer(get_stats::basename(pe_directory));
+      unsigned ipe = -1;
       if      (pe_level_from_dir == 1) ipe = ONE_PE;
       else if (pe_level_from_dir == 2) ipe = TWO_PE;
       else continue;
       // DIF
       for (auto const& dif: topol->dif_map) {
         unsigned dif_id = dif.first;
-        std::string dif_id_directory(pe_directory + "/wgAnaHistSummary/Xml/dif" +
-                                   std::to_string(dif_id));
+        std::string dif_id_directory(pe_directory + "/wgAnaHistSummary/Xml/dif_" +
+                                     std::to_string(dif_id));
         // Chip
         for (auto const& chip: dif.second) {
           unsigned ichip = chip.first;
@@ -240,9 +251,11 @@ int wgGainCalib(const char * x_input_run_dir,
 #ifdef DEBUG_WG_GAIN_CALIB
             unsigned pe_level_from_xml;
             try {
-              pe_level_from_xml = Edit.SUMMARY_GetChFitValue(std::string("pe_level"), ichan);
+              pe_level_from_xml = Edit.SUMMARY_GetChFitValue(std::string("pe_level"),
+                                                             ichan);
             } catch (const std::exception & e) {
-              Log.eWrite("failed to read photo electrons equivalent threshold from XML file");
+              Log.eWrite("failed to read photo electrons equivalent "
+                         "threshold from XML file");
               return ERR_FAILED_OPEN_XML_FILE;
             }
             if ( pe_level_from_dir != pe_level_from_xml ) {
@@ -251,17 +264,12 @@ int wgGainCalib(const char * x_input_run_dir,
             }
 #endif // DEBUG_WG_GAIN_CALIB
 
-            double charge_mean = 0, sigma_mean = 0;
-            for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-              // charge_HG peak (npe p.e. peak for high gain preamp)
-              charge_mean +=
-                  Edit.SUMMARY_GetChFitValue("charge_hit_" + std::to_string(icol), ichan);
-              sigma_mean +=
-                  TMath::Power(Edit.SUMMARY_GetChFitValue("sigma_hit_" + std::to_string(icol),
-                                                          ichan), 2);
-            }
-            charge_hit[idac][ipe][dif_id][ichip][ichan] = charge_mean / (double) MEMDEPTH;
-            sigma_hit [idac][ipe][dif_id][ichip][ichan] = TMath::Sqrt(sigma_mean);
+            // TODO: Only considering the 0 column for the time being
+            
+            charge_hit[idac][ipe][dif_id][ichip][ichan] =
+                Edit.SUMMARY_GetChFitValue("charge_hit_0", ichan);
+            sigma_hit [idac][ipe][dif_id][ichip][ichan] =
+                Edit.SUMMARY_GetChFitValue("sigma_hit_0", ichan);
           }
           Edit.Close();
         }
@@ -276,8 +284,8 @@ int wgGainCalib(const char * x_input_run_dir,
   std::sort(v_idac.begin(), v_idac.end());
   std::vector<double> double_idac(v_idac.begin(), v_idac.end());
   TVectorD root_idac(double_idac.size(), double_idac.data());
-  std::vector<double> v_idac_err(v_idac.size(), 1);
-  TVectorD root_idac_err(v_idac.size(), v_idac_err.data());
+  std::vector<double> double_idac_err(v_idac.size(), 1);
+  TVectorD root_idac_err(v_idac.size(), double_idac_err.data());
 
   // DIF
   for (auto const& dif: topol->dif_map) {
@@ -286,24 +294,40 @@ int wgGainCalib(const char * x_input_run_dir,
     // CHIP
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
+      unsigned n_chans = chip.second;
       auto canvas = new TCanvas("canvas", "inputDAC vs gain", 1280, 720);
       auto multi_graph = new TMultiGraph();
       std::array<TGraphErrors *, MEMDEPTH> graphs;
       
       // CHANNEL
+      std::vector<bool> bad_channel(n_chans, false);
+      for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
+        for (auto const& idac : v_idac) {
+          double charge_2pe = charge_hit[idac][TWO_PE][dif_id][ichip][ichan];
+          double charge_1pe = charge_hit[idac][ONE_PE][dif_id][ichip][ichan];
+          double sigma_2pe = sigma_hit  [idac][TWO_PE][dif_id][ichip][ichan];
+          double sigma_1pe = sigma_hit  [idac][ONE_PE][dif_id][ichip][ichan];
+          bad_channel[ichan] = check_unphysical_gain(charge_2pe - charge_1pe);
+          bad_channel[ichan] = check_unphysical_sigma(
+              std::sqrt(std::pow(sigma_1pe, 2) + std::pow(sigma_2pe, 2)));
+        }
+      }
+
+      // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
+        if (!bad_channel[ichan]) continue;
+        // IDAC
         TVectorD root_gain(v_idac.size());
         TVectorD root_gain_err(v_idac.size());
         for (std::size_t i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
-          gain[v_idac[i_idac]][dif_id][ichip][ichan] =
-              charge_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan] -
-              charge_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
-          sigma_gain[v_idac[i_idac]][dif_id][ichip][ichan]=
-              std::sqrt(std::pow(sigma_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan], 2) +
-                        std::pow(sigma_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan], 2));
-          root_gain    (i_idac) = gain      [v_idac[i_idac]][dif_id][ichip][ichan];
-          root_gain_err(i_idac) = sigma_gain[v_idac[i_idac]][dif_id][ichip][ichan];
+          double charge_2pe = charge_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+          double charge_1pe = charge_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+          double sigma_2pe = sigma_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+          double sigma_1pe = sigma_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+          root_gain    (i_idac) = charge_2pe - charge_1pe;
+          root_gain_err(i_idac) = std::sqrt(std::pow(sigma_1pe, 2) + std::pow(sigma_2pe, 2));
         }
+        
         graphs[ichan] = new TGraphErrors(root_idac, root_gain, root_idac_err, root_gain_err);
         if (graphs[ichan] == nullptr) {
           std::stringstream ss;
@@ -329,9 +353,11 @@ int wgGainCalib(const char * x_input_run_dir,
           
         multi_graph->Add(graphs[ichan]);
       }
+      
       TString title;
       title.Form("chip%d;inputDAC;gain", ichip);
       multi_graph->SetTitle(title);
+      multi_graph->GetYaxis()->SetLimits(0, 150);
       multi_graph->Draw("ap");
       canvas->Update();
       canvas->Modified();
@@ -339,7 +365,7 @@ int wgGainCalib(const char * x_input_run_dir,
       image.Form("%s/dif%d/inputDAC_vs_gain_chip%d.png",
                  output_img_dir.c_str(), dif_id, ichip);
       canvas->Print(image);
-      for (auto graph : graphs) delete graph;
+      //for (auto graph : graphs) delete graph;
       delete multi_graph;
       delete canvas;
     }
@@ -358,15 +384,22 @@ int wgGainCalib(const char * x_input_run_dir,
     unsigned dif_id = dif.first;
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
+      double slope_mean = wagasci_tools::numeric::mean(slope[dif_id][ichip]);
+      double slope_std_dev = wagasci_tools::numeric::standard_deviation(slope[dif_id][ichip]);
+      double intercept_mean = wagasci_tools::numeric::mean(intercept[dif_id][ichip]);
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-        for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-          Edit.GainCalib_SetValue(std::string("slope_gain"),
-                                  slope[dif_id][ichip][ichan],
-                                  dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
-          Edit.GainCalib_SetValue(std::string("intercept_gain"),
-                                  intercept[dif_id][ichip][ichan],
-                                  dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
+        if (std::fabs(slope[dif_id][ichip][ichan] - slope_mean) > 3 * slope_std_dev) {
+          slope[dif_id][ichip][ichan] = slope_mean;
+          intercept[dif_id][ichip][ichan] = intercept_mean;
         }
+      }
+      for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
+        Edit.GainCalib_SetValue(std::string("slope_gain"),
+                                slope[dif_id][ichip][ichan],
+                                dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
+        Edit.GainCalib_SetValue(std::string("intercept_gain"),
+                                intercept[dif_id][ichip][ichan],
+                                dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
       }
     }
   }
