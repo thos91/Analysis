@@ -30,46 +30,7 @@
 #include "wgLogger.hpp"
 #include "wgGainCalib.hpp"
 
-using namespace wagasci_tools;
-
-namespace gain_calib {
-
-const unsigned MAX_GAIN = 150;
-const unsigned MIN_GAIN = 10;
-const unsigned MAX_SIGMA = MAX_GAIN;
-const unsigned MIN_SIGMA = 2;
-
-//           CHIP         CHANNEL
-typedef std::vector <std::vector <double>> ChargeVector;
-//               iDAC           PEU              DIF
-typedef std::map<unsigned, std::array <std::map <unsigned, ChargeVector>, NUM_PE>> Charge;
-//               DIF            CHIP         CHANNEL
-typedef std::map<unsigned, std::vector <std::bitset <NCHANNELS>>> BadChannels;
-//               DIF            CHIP         CHANNEL
-typedef std::map<unsigned, std::vector <std::vector <double>>> LinearFit;
-
-typedef std::vector<std::string> DirList;
-
-} // gain_calib
-
-// routines to check if the gain and its variance are physical or not
-// If the mean argument is given the gain or sigma are assigned it.
-// They return true if the value is not physical (> MAX_GAIN <
-// MIN_GAIN) in the case of the gain or (> MAX_SIGMA < MIN_SIGMA) in
-// the case of the variance
-bool is_unphysical_gain(double gain);
-bool is_unphysical_sigma(double sigma);
-bool is_unphysical_gain(double &gain, const double mean);
-bool is_unphysical_sigma(double &sigma, const double mean);
-
-// Print the bad_channels map to a CVS file. The file format is as
-// follows:
-//
-// "DIF"  "CHIP" "CHANNEL" "ADC 1PEU for each iDAC" "ADC 2PEU for each iDAC"
-void print_bad_channels(gain_calib::BadChannels bad_channels,
-                        gain_calib::Charge charge,
-                        std::vector<unsigned> v_idac,
-                        const std::string &cvs_file_path);
+namespace wg = wagasci_tools;
 
 //******************************************************************
 int wgGainCalib(const char * x_input_run_dir,
@@ -85,7 +46,7 @@ int wgGainCalib(const char * x_input_run_dir,
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   
-  if (input_run_dir.empty() || !check_exist::directory(input_run_dir)) {
+  if (input_run_dir.empty() || !wg::check_exist::directory(input_run_dir)) {
     Log.eWrite("[wgGainCalib] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
@@ -111,7 +72,8 @@ int wgGainCalib(const char * x_input_run_dir,
 
   std::unique_ptr<Topology> topol;
   try {
-    topol = boost::make_unique<Topology>(input_run_dir, TopologySourceType::gain_tree);
+    topol = boost::make_unique<Topology>(input_run_dir,
+                                         TopologySourceType::gain_tree);
   } catch (const std::exception& except) {
     Log.eWrite("Failed to get topology from the gain folder tree (" +
                input_run_dir + ")" + except.what());
@@ -130,10 +92,12 @@ int wgGainCalib(const char * x_input_run_dir,
   //                        List the input DAC values                        //
   /////////////////////////////////////////////////////////////////////////////
   
-  gain_calib::DirList idac_dir_list = list::list_directories(input_run_dir, true);
+  gain_calib::DirList idac_dir_list = wg::list::list_directories(input_run_dir,
+                                                                 true);
   std::vector<unsigned> v_idac;
   for (auto const& idac_directory : idac_dir_list) {
-    unsigned idac = string::extract_integer(get_stats::basename(idac_directory));
+    unsigned idac =
+        wg::string::extract_integer(wg::get_stats::basename(idac_directory));
     if (idac > MAX_VALUE_8BITS) continue;
     else v_idac.push_back(idac);
   }
@@ -188,7 +152,7 @@ int wgGainCalib(const char * x_input_run_dir,
   /////////////////////////////////////////////////////////////////////////////
 
   // ============ Create output_xml_dir ============ //
-  try { make::directory(output_xml_dir); }
+  try { wg::make::directory(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgGainCalib] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
@@ -197,7 +161,7 @@ int wgGainCalib(const char * x_input_run_dir,
   // ============ Create output_img_dir ============ //
   for (auto const& dif: topol->dif_map) {
     unsigned dif_id = dif.first;
-    try { make::directory(output_img_dir + "/dif" + std::to_string(dif_id)); }
+    try { wg::make::directory(output_img_dir + "/dif" + std::to_string(dif_id)); }
     catch (const wgInvalidFile& e) {
       Log.eWrite("[wgGainCalib] " + std::string(e.what()));
       return ERR_FAILED_CREATE_DIRECTORY;
@@ -209,14 +173,15 @@ int wgGainCalib(const char * x_input_run_dir,
   /////////////////////////////////////////////////////////////////////////////
 
   // input DAC
-  for (auto const& idac_directory : idac_dir_list) {
-    unsigned idac = string::extract_integer(get_stats::basename(idac_directory));
+  for (auto const& idac_dir : idac_dir_list) {
+    unsigned idac =
+        wg::string::extract_integer(wg::get_stats::basename(idac_dir));
     if (idac > MAX_VALUE_8BITS) continue;
     // PEU
-    gain_calib::DirList pe_dir_list = list::list_directories(idac_directory, true);
-    for (auto const& pe_directory : pe_dir_list) {
+    gain_calib::DirList pe_dir_list = wg::list::list_directories(idac_dir, true);
+    for (auto const& peu_dir : pe_dir_list) {
       unsigned pe_level_from_dir =
-          string::extract_integer(get_stats::basename(pe_directory));
+          wg::string::extract_integer(wg::get_stats::basename(peu_dir));
       unsigned ipe = -1;
       if      (pe_level_from_dir == 1) ipe = ONE_PE;
       else if (pe_level_from_dir == 2) ipe = TWO_PE;
@@ -224,7 +189,7 @@ int wgGainCalib(const char * x_input_run_dir,
       // DIF
       for (auto const& dif: topol->dif_map) {
         unsigned dif_id = dif.first;
-        std::string dif_id_directory(pe_directory + "/wgAnaHistSummary/Xml/dif_" +
+        std::string dif_id_directory(peu_dir + "/wgAnaHistSummary/Xml/dif_" +
                                      std::to_string(dif_id));
         // Chip
         for (auto const& chip: dif.second) {
@@ -248,14 +213,14 @@ int wgGainCalib(const char * x_input_run_dir,
 #ifdef DEBUG_WG_GAIN_CALIB
             unsigned pe_level_from_xml;
             try {
-              pe_level_from_xml = xml.SUMMARY_GetChFitValue(std::string("pe_level"),
-                                                             ichan);
+              pe_level_from_xml =
+                  xml.SUMMARY_GetChFitValue(std::string("pe_level"), ichan);
             } catch (const std::exception & e) {
               Log.eWrite("failed to read photo electrons equivalent "
                          "threshold from XML file");
               return ERR_FAILED_OPEN_XML_FILE;
             }
-            if ( pe_level_from_dir != pe_level_from_xml ) {
+            if (pe_level_from_dir != pe_level_from_xml) {
               Log.eWrite("The PEU values read from XML file and "
                          "from folder name are different");
             }
@@ -307,8 +272,8 @@ int wgGainCalib(const char * x_input_run_dir,
           double sigma_2pe = sigma_hit  [idac][TWO_PE][dif_id][ichip][ichan];
           double sigma_1pe = sigma_hit  [idac][ONE_PE][dif_id][ichip][ichan];
           bad_channels[dif_id][ichip][ichan] =
-              is_unphysical_gain(charge_2pe - charge_1pe);
-          bad_channels[dif_id][ichip][ichan] = is_unphysical_sigma(
+              wg::numeric::is_unphysical_gain(charge_2pe - charge_1pe);
+          bad_channels[dif_id][ichip][ichan] = wg::numeric::is_unphysical_sigma(
               std::sqrt(std::pow(sigma_1pe, 2) + std::pow(sigma_2pe, 2)));
         }
       }
@@ -321,15 +286,21 @@ int wgGainCalib(const char * x_input_run_dir,
         TVectorD root_gain(v_idac.size());
         TVectorD root_gain_err(v_idac.size());
         for (std::size_t i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
-          double charge_2pe = charge_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
-          double charge_1pe = charge_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
-          double sigma_2pe = sigma_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
-          double sigma_1pe = sigma_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+          double charge_2pe =
+              charge_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+          double charge_1pe =
+              charge_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+          double sigma_2pe =
+              sigma_hit[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+          double sigma_1pe =
+              sigma_hit[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
           root_gain    (i_idac) = charge_2pe - charge_1pe;
-          root_gain_err(i_idac) = std::sqrt(std::pow(sigma_1pe, 2) + std::pow(sigma_2pe, 2));
+          root_gain_err(i_idac) = std::sqrt(std::pow(sigma_1pe, 2) +
+                                            std::pow(sigma_2pe, 2));
         }
         
-        graphs[ichan] = new TGraphErrors(root_idac, root_gain, root_idac_err, root_gain_err);
+        graphs[ichan] = new TGraphErrors(root_idac, root_gain,
+                                         root_idac_err, root_gain_err);
         if (graphs[ichan] == nullptr) {
           std::stringstream ss;
           ss << "Failed to create TGraphErrors for dif " << dif_id <<
@@ -386,8 +357,8 @@ int wgGainCalib(const char * x_input_run_dir,
     // CHIP
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
-      double slope_mean = wagasci_tools::numeric::mean(slope[dif_id][ichip]);
-      double intercept_mean = wagasci_tools::numeric::mean(intercept[dif_id][ichip]);
+      double slope_mean = wg::numeric::mean(slope[dif_id][ichip]);
+      double intercept_mean = wg::numeric::mean(intercept[dif_id][ichip]);
       // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
         if (bad_channels[dif_id][ichip][ichan]) {
@@ -407,65 +378,8 @@ int wgGainCalib(const char * x_input_run_dir,
   xml.Write();
   xml.Close();
 
-  print_bad_channels(bad_channels, charge_hit, v_idac, output_xml_dir + "/Bad channels.cvs");
+  wg::make::bad_channels_file(bad_channels, charge_hit, v_idac,
+                              output_xml_dir + "/bad_channels.cvs");
 
   return WG_SUCCESS;
-}
-
-bool is_unphysical_gain(double gain) {
-  return (gain > gain_calib::MAX_GAIN ||
-          gain < gain_calib::MIN_GAIN) ? true : false;
-}
-
-bool is_unphysical_sigma(double sigma) {
-  return (sigma > gain_calib::MAX_SIGMA ||
-          sigma < gain_calib::MIN_SIGMA) ? true : false;
-}
-
-bool is_unphysical_gain(double &gain, const double mean) {
-  if (gain > gain_calib::MAX_GAIN ||
-      gain < gain_calib::MIN_GAIN) {
-    gain = mean;
-    return true;
-  }
-  return false;
-}
-
-bool is_unphysical_sigma(double &sigma, const double mean) {
-  if (sigma > gain_calib::MAX_SIGMA ||
-      sigma < gain_calib::MIN_SIGMA) {
-    sigma = mean;
-    return true;
-  }
-  return false;
-}
-
-void print_bad_channels(gain_calib::BadChannels bad_channels,
-                        gain_calib::Charge charge,
-                        std::vector<unsigned> v_idac,
-                        const std::string &cvs_file_path) {
-  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
-  cvs_file << "# DIF |\tCHIP |\tCHANNEL |";
-  for (auto const& idac : v_idac) {
-    cvs_file << "ADC 1PEU iDAC " << idac <<'\t';
-  }
-
-"ADC 121 for each iDAC |\tADC 2PEU for each iDAC\n";
-  for (auto const& dif : bad_channels) {
-    unsigned dif_id = dif.first;
-    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
-      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
-        if (dif.second[ichip][ichan] == true &&
-            ichan <= charge[v_idac[0]][ONE_PE][dif_id][ichip].size()) {
-          cvs_file << dif_id << '\t' << ichip << '\t' << ichan << '\t';
-          for (auto const& idac : v_idac)
-            cvs_file << charge[idac][ONE_PE][dif_id][ichip][ichan] << '\t';
-          for (auto const& idac : v_idac)
-            cvs_file << charge[idac][TWO_PE][dif_id][ichip][ichan] << '\t';
-          cvs_file << '\n';
-        }
-      }
-    }
-  }
-  cvs_file.close();
 }
