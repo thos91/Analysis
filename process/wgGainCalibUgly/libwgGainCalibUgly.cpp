@@ -32,29 +32,20 @@
 #include "wgEnableThreadSafety.hpp"
 #include "wgGainCalibUgly.hpp"
 
-using namespace wagasci_tools;
+namespace wg = wagasci_tools;
+namespace gc = gain_calib; 
 
-namespace gain_calib_ugly {
-
-const unsigned PEU_LEVEL = 1;
-
-//           ASU          CHIP    CHANNEL
-typedef std::vector <std::vector <double>> GainVector;
-//               iDAC               DIF
-typedef std::map<unsigned, std::map<unsigned, GainVector>> Gain;
-//               DIF            ASU          CHIP    CHANNEL
-typedef std::map<unsigned, std::vector <std::vector <double>>> LinearFit;
-
-typedef std::vector<std::string> DirList;
-
+namespace gain_calib {
+namespace ugly {
 std::vector<std::thread> THREADS;
+}
 }
 
 //******************************************************************
-void wgGainCalibUglyWorker(gain_calib_ugly::GainVector &gain,
-                           gain_calib_ugly::GainVector &sigma_gain,
-                           std::string hist_file,
-                           std::map<unsigned, unsigned> chip_map);
+void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
+                           gc::ugly::GainVector &sigma_gain,
+                           const std::string& hist_file,
+                           const std::map<unsigned, unsigned>& chip_map);
 
 //******************************************************************
 int wgGainCalibUgly(const char * x_input_run_dir,
@@ -72,11 +63,11 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   
-  if (input_run_dir.empty() || !check_exist::directory(input_run_dir)) {
+  if (input_run_dir.empty() || !wg::check_exist::directory(input_run_dir)) {
     Log.eWrite("[wgGainCalibUgly] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
-  if (xml_config_file.empty() || !check_exist::xml_file(xml_config_file)) {
+  if (xml_config_file.empty() || !wg::check_exist::xml_file(xml_config_file)) {
     Log.eWrite("[wgGainCalibUgly] Pyrame XML configuration file doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
   }
@@ -96,7 +87,7 @@ int wgGainCalibUgly(const char * x_input_run_dir,
 
   gErrorIgnoreLevel = kError;
   wgEnableThreadSafety();
-  TH1::AddDirectory(false);
+  // TH1::AddDirectory(false);
   gROOT->SetBatch(kTRUE);
  
   /////////////////////////////////////////////////////////////////////////////
@@ -123,11 +114,10 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   /////////////////////////////////////////////////////////////////////////////
   //                        List the input DAC values                        //
   /////////////////////////////////////////////////////////////////////////////
-  gain_calib_ugly::DirList idac_dir_list = list::list_directories(input_run_dir,
-                                                                  true);
+  gc::DirList idac_dir_list = wg::list::list_directories(input_run_dir, true);
   std::vector<unsigned> v_idac;
-  for (auto const& idac_directory : idac_dir_list) {
-    unsigned idac = string::extract_integer(get_stats::basename(idac_directory));
+  for (auto const& idac_dir : idac_dir_list) {
+    unsigned idac = wg::string::extract_integer(wg::get_stats::basename(idac_dir));
     if (idac > MAX_VALUE_8BITS) continue;
     else v_idac.push_back(idac);
   }
@@ -140,39 +130,41 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   //                             Allocate memory                             //
   /////////////////////////////////////////////////////////////////////////////
 
-  gain_calib_ugly::THREADS.reserve(topol->n_difs * v_idac.size());
+  gc::ugly::THREADS.reserve(topol->n_difs * v_idac.size());
   Log.Write("number of threads " + std::to_string(topol->n_difs * v_idac.size()));
   
-  gain_calib_ugly::Gain      gain;
-  gain_calib_ugly::Gain      sigma_gain;
-  gain_calib_ugly::LinearFit slope;
-  gain_calib_ugly::LinearFit intercept;
-
+  gc::ugly::Gain gain;
+  gc::ugly::Gain sigma_gain;
+  gc::LinearFit slope;
+  gc::LinearFit intercept;
+  gain_calib::BadChannels bad_channels;
+  
   for (auto const& idac : v_idac) {
     for (auto const& dif: topol->dif_map) {
-      unsigned idif = dif.first;
+      unsigned dif_id = dif.first;
       unsigned n_chips = dif.second.size();
-      gain        [idac][idif].resize(n_chips);
-      sigma_gain  [idac][idif].resize(n_chips);
+      gain        [idac][dif_id].resize(n_chips);
+      sigma_gain  [idac][dif_id].resize(n_chips);
       for (auto const& chip: dif.second) {
         unsigned ichip = chip.first;
-        unsigned n_chans = topol->dif_map[idif][ichip];
-        gain        [idac][idif][ichip].resize(n_chans);
-        sigma_gain  [idac][idif][ichip].resize(n_chans);
+        unsigned n_chans = topol->dif_map[dif_id][ichip];
+        gain        [idac][dif_id][ichip].resize(n_chans);
+        sigma_gain  [idac][dif_id][ichip].resize(n_chans);
       }
     }
   }
   
   for (auto const& dif: topol->dif_map) {
-    unsigned idif = dif.first;
+    unsigned dif_id = dif.first;
     unsigned n_chips = dif.second.size();
-    slope       [idif].resize(n_chips);
-    intercept   [idif].resize(n_chips);
+    slope       [dif_id].resize(n_chips);
+    intercept   [dif_id].resize(n_chips);
+    bad_channels[dif_id].resize(n_chips);
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
-      unsigned n_chans = topol->dif_map[idif][ichip];
-      slope       [idif][ichip].resize(n_chans);
-      intercept   [idif][ichip].resize(n_chans);
+      unsigned n_chans = topol->dif_map[dif_id][ichip];
+      slope       [dif_id][ichip].resize(n_chans);
+      intercept   [dif_id][ichip].resize(n_chans);
     }
   }
 
@@ -181,7 +173,7 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   /////////////////////////////////////////////////////////////////////////////
 
   // ============ Create output_xml_dir ============ //
-  try { make::directory(output_xml_dir); }
+  try { wg::make::directory(output_xml_dir); }
   catch (const wgInvalidFile& e) {
     Log.eWrite("[wgGainCalibUgly] " + std::string(e.what()));
     return ERR_FAILED_CREATE_DIRECTORY;
@@ -189,8 +181,8 @@ int wgGainCalibUgly(const char * x_input_run_dir,
 
   // ============ Create output_img_dir ============ //
   for (auto const& dif: topol->dif_map) {
-    unsigned idif = dif.first;
-    try { make::directory(output_img_dir + "/dif" + std::to_string(idif)); }
+    unsigned dif_id = dif.first;
+    try { wg::make::directory(output_img_dir + "/dif" + std::to_string(dif_id)); }
     catch (const wgInvalidFile& e) {
       Log.eWrite("[wgGainCalibUgly] " + std::string(e.what()));
       return ERR_FAILED_CREATE_DIRECTORY;
@@ -203,33 +195,32 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   
   // input DAC
   for (auto const& idac_dir : idac_dir_list) {
-    unsigned idac = string::extract_integer(get_stats::basename(idac_dir));
+    unsigned idac = wg::string::extract_integer(wg::get_stats::basename(idac_dir));
     if (idac > MAX_VALUE_8BITS) continue;
 
     // PEU (fixed to 2)
-    gain_calib_ugly::DirList peu_dir_list = list::list_directories(idac_dir, true);
+    gc::DirList peu_dir_list = wg::list::list_directories(idac_dir, true);
     for (auto const& peu_dir : peu_dir_list) {
-      unsigned peu_level = string::extract_integer(get_stats::filename(peu_dir));
-      if (peu_level != gain_calib_ugly::PEU_LEVEL) continue;
+      unsigned peu_level = wg::string::extract_integer(wg::get_stats::filename(peu_dir));
+      if (peu_level != gc::ugly::PEU_LEVEL) continue;
 
       // DIF
       std::string hist_directory(peu_dir + "/wgMakeHist");
-      gain_calib_ugly::DirList hist_files = list::list_files(hist_directory,
-                                                             true, ".root");
+      gc::DirList hist_files = wg::list::list_files(hist_directory, true, ".root");
       if (hist_files.empty()) return ERR_FAILED_GET_FILE_LIST;
 
       for (const auto& hist_file : hist_files) {
-        unsigned dif_id = string::extract_dif_id(hist_file);
+        unsigned dif_id = wg::string::extract_dif_id(hist_file);
         if (ignore_wagasci && dif_id >= 4) continue;
 
-        gain_calib_ugly::THREADS.emplace_back(std::thread {wgGainCalibUglyWorker,
+        gc::ugly::THREADS.emplace_back(std::thread {wgGainCalibUglyWorker,
                 std::ref(gain[idac][dif_id]), std::ref(sigma_gain[idac][dif_id]),
                 hist_file, topol->dif_map[dif_id]});
       }
     }
   }
 
-  for(auto&& thread : gain_calib_ugly::THREADS) {
+  for (auto&& thread : gc::ugly::THREADS) {
     thread.join();
   }
 
@@ -256,15 +247,27 @@ int wgGainCalibUgly(const char * x_input_run_dir,
       auto multi_graph = new TMultiGraph();
       std::vector<TGraphErrors *> graphs(n_chans);
 
+      // Check for non physical (bad) channels ////////////////////////////////
+      
+      for (auto const& idac : v_idac) {
+        for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
+          bad_channels[dif_id][ichip][ichan] =
+              wg::numeric::is_unphysical_gain(gain[idac][dif_id][ichip][ichan]);
+          bad_channels[dif_id][ichip][ichan] = wg::numeric::is_unphysical_sigma(
+              sigma_gain[idac][dif_id][ichip][ichan]);
+        }
+      }
+
       // CHANNEL
       for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
+        if (bad_channels[dif_id][ichip][ichan]) continue;
+
+        // IDAC
         TVectorD root_gain(v_idac.size());
         TVectorD root_gain_err(v_idac.size());
         for (std::size_t i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
-          double not_nan_gain = gain[v_idac[i_idac]][dif_id][ichip][ichan];
-          double not_nan_sigma = sigma_gain[v_idac[i_idac]][dif_id][ichip][ichan];
-          root_gain    (i_idac) = std::isnan(not_nan_gain) ? 0 : not_nan_gain;
-          root_gain_err(i_idac) = std::isnan(not_nan_sigma) ? 0 : not_nan_sigma; 
+          root_gain    (i_idac) = gain[v_idac[i_idac]][dif_id][ichip][ichan];
+          root_gain_err(i_idac) = sigma_gain[v_idac[i_idac]][dif_id][ichip][ichan];
         }
         graphs[ichan] = new TGraphErrors(root_idac, root_gain,
                                          root_idac_err, root_gain_err);
@@ -300,10 +303,9 @@ int wgGainCalibUgly(const char * x_input_run_dir,
       canvas->Update();
       canvas->Modified();
       TString image;
-      image.Form("%s/dif%d/inputDAC_vs_gain_chip%d.png",
+      image.Form("%s/dif%d/inputDAC_vs_gain_ugly_chip%d.png",
                  output_img_dir.c_str(), dif_id, ichip);
       canvas->Print(image);
-      for (auto graph : graphs) delete graph;
       delete multi_graph;
       delete canvas;
     }
@@ -313,42 +315,53 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   //                              gain_card.xml                              //
   /////////////////////////////////////////////////////////////////////////////
 
-  wgEditXML Edit;
-  // true : no need for columns
-  Edit.GainCalib_Make(output_xml_dir + "/gain_card.xml", *topol);
-  Edit.Open(output_xml_dir + "/gain_card.xml");
+  wgEditXML xml;
 
+  xml.GainCalib_Make(output_xml_dir + "/gain_card.xml", *topol);
+  xml.Open(output_xml_dir + "/gain_card.xml");
+
+  // DIF
   for (auto const& dif: topol->dif_map) {
     unsigned dif_id = dif.first;
+    // CHIP
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
+      double slope_mean = wg::numeric::mean(slope[dif_id][ichip]);
+      double intercept_mean = wg::numeric::mean(intercept[dif_id][ichip]);
+      // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-        Edit.GainCalib_SetValue(std::string("slope_gain"),
-                                slope[dif_id][ichip][ichan],
-                                dif_id, ichip, ichan);
-        Edit.GainCalib_SetValue(std::string("intercept_gain"),
-                                intercept[dif_id][ichip][ichan],
-                                dif_id, ichip, ichan);
+        if (bad_channels[dif_id][ichip][ichan]) {
+          slope[dif_id][ichip][ichan] = slope_mean;
+          intercept[dif_id][ichip][ichan] = intercept_mean;
+        }
+        xml.GainCalib_SetValue(std::string("slope_gain"),
+                               slope[dif_id][ichip][ichan],
+                               dif_id, ichip, ichan);
+        xml.GainCalib_SetValue(std::string("intercept_gain"),
+                               intercept[dif_id][ichip][ichan],
+                               dif_id, ichip, ichan);
       }
     }
   }
 
-  Edit.Write();
-  Edit.Close();
+  xml.Write();
+  xml.Close();
+
+  wg::make::bad_channels_file(bad_channels, gain, v_idac,
+                              output_xml_dir + "/bad_channels.cvs");
 
   return WG_SUCCESS;
 }
 
-void wgGainCalibUglyWorker(gain_calib_ugly::GainVector &gain,
-                           gain_calib_ugly::GainVector &sigma_gain,
-                           std::string hist_file,
-                           std::map<unsigned, unsigned> chip_map) {
+void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
+                           gc::ugly::GainVector &sigma_gain,
+                           const std::string& hist_file,
+                           const std::map<unsigned, unsigned>& chip_map) {
   if (gain.empty() || sigma_gain.empty()) return;
   
   std::unique_ptr<wgFit> fit;
-  try {
-    fit =  boost::make_unique<wgFit>(hist_file);
-  } catch (const std::exception& except) {
+  try { fit = boost::make_unique<wgFit>(hist_file); }
+  catch (const std::exception& except) {
     Log.eWrite("Failed to open the hist.root file (" +
                hist_file + ") : " + except.what());
     gain.clear();
@@ -363,49 +376,25 @@ void wgGainCalibUglyWorker(gain_calib_ugly::GainVector &gain,
           
     // CHANNEL
     for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
-      // COLUMN
-
-      // Sometimes the peak searching algorithm is failing
-      // because of a doubly split peak or some other strange
-      // misbehavior of a particular column. Then the gain
-      // (calculated as adiacent peaks substraction) can take
-      // strange non physical values. So we take the mean and
-      // variance of the gain for each column and remove the
-      // gains lying more than 2 standard deviations from the
-      // average.
-      std::array<double, MEMDEPTH> gain_col, sigma_col;
-      for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-        double gain_fit[2];
+      double gain_fit[2];
 #ifdef ROOT_HAS_NOT_MINUIT2
-        MUTEX.lock();
+      MUTEX.lock();
 #endif
-        // 2 : look for only 2 peaks
-        // false : do not plot anything
-        // true : do not fit
-        try {
-          fit->Gain(ichip, ichan, icol, gain_fit, 2, false, true);
-        } catch (const wgElementNotFound &except) {
-          gain_col[icol] = std::nan("wgElementNotFound");
-          sigma_col[icol] = std::nan("wgElementNotFound");
-        }
+      // FIXME: CONSIDER THE OTHER COLUMNS TOO
+      // 2 : look for only 2 peaks
+      // false : do not plot anything
+      // true : do not fit
+      try {
+        fit->Gain(ichip, ichan, 0, gain_fit, 2, false, true);
+      } catch (const wgElementNotFound &except) {
+        gain[ichip][ichan] = std::nan("wgElementNotFound");
+        sigma_gain[ichip][ichan] = std::nan("wgElementNotFound");
+      }
 #ifdef ROOT_HAS_NOT_MINUIT2
-        MUTEX.unlock();
+      MUTEX.unlock();
 #endif
-        gain_col[icol] = gain_fit[0];
-        sigma_col[icol] = gain_fit[1];
-      }
-      double mean = wagasci_tools::numeric::mean(gain_col);
-      double std_dev = wagasci_tools::numeric::standard_deviation(gain_col);
-      std::vector<double> gain_col_purged, sigma_col_purged;
-      for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-        if (TMath::Abs(gain_col[icol] - mean) <= 2 * std_dev) {
-          gain_col_purged.push_back(gain_col[icol]);
-        }
-      }
-      gain[ichip][ichan] = wagasci_tools::numeric::mean(gain_col_purged);
-      sigma_gain[ichip][ichan] = std_dev;
-      //  std::cout << "mean " << mean << " std_dev " << std_dev << "\n";
-      //   std::cout << "gain " << gain[ichip][ichan] << "\n";
+      gain[ichip][ichan] = gain_fit[0];
+      sigma_gain[ichip][ichan]= gain_fit[1];
     }
   }
 }

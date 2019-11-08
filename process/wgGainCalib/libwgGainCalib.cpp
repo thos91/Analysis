@@ -308,6 +308,7 @@ int wgGainCalib(const char * x_input_run_dir,
           Log.eWrite(ss.str());
           return ERR_WRONG_CHANNEL_VALUE;
         }
+        
 #ifdef ROOT_HAS_NOT_MINUIT2
         MUTEX.lock();
 #endif
@@ -336,7 +337,6 @@ int wgGainCalib(const char * x_input_run_dir,
       image.Form("%s/dif%d/inputDAC_vs_gain_chip%d.png",
                  output_img_dir.c_str(), dif_id, ichip);
       canvas->Print(image);
-      //for (auto graph : graphs) delete graph;
       delete multi_graph;
       delete canvas;
     }
