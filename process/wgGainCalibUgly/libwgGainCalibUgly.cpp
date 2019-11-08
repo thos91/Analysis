@@ -123,12 +123,17 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   /////////////////////////////////////////////////////////////////////////////
   //                        List the input DAC values                        //
   /////////////////////////////////////////////////////////////////////////////
-  gain_calib_ugly::DirList idac_dir_list = list::list_directories(input_run_dir, true);
+  gain_calib_ugly::DirList idac_dir_list = list::list_directories(input_run_dir,
+                                                                  true);
   std::vector<unsigned> v_idac;
   for (auto const& idac_directory : idac_dir_list) {
     unsigned idac = string::extract_integer(get_stats::basename(idac_directory));
     if (idac > MAX_VALUE_8BITS) continue;
     else v_idac.push_back(idac);
+  }
+  if (v_idac.size() <= 0) {
+    Log.eWrite("No iDAC folder found in the gain folder tree : " + input_run_dir);
+    return ERR_INPUT_FILE_NOT_FOUND;
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -170,41 +175,6 @@ int wgGainCalibUgly(const char * x_input_run_dir,
       intercept   [idif][ichip].resize(n_chans);
     }
   }
-  
-  /////////////////////////////////////////////////////////////////////////////
-  //                              Fit histograms                             //
-  /////////////////////////////////////////////////////////////////////////////
-  
-  // input DAC
-  for (auto const& idac_directory : idac_dir_list) {
-    unsigned idac = string::extract_integer(get_stats::basename(idac_directory));
-    if (idac > MAX_VALUE_8BITS) continue;
-
-    // PEU (fixed to 2)
-    gain_calib_ugly::DirList pe_dir_list = list::list_directories(idac_directory, true);
-    for (auto const& pe_directory : pe_dir_list) {
-      unsigned pe_level = string::extract_integer(get_stats::filename(pe_directory));
-      if (pe_level != gain_calib_ugly::PEU_LEVEL) continue;
-
-      // DIF
-      std::string hist_directory(pe_directory + "/wgMakeHist");
-      gain_calib_ugly::DirList hist_files = list::list_files(hist_directory, true, ".root");
-      if (hist_files.empty()) return ERR_FAILED_GET_FILE_LIST;
-
-      for (const auto& hist_file : hist_files) {
-        unsigned dif_id = string::extract_dif_id(hist_file);
-        if (ignore_wagasci && dif_id >= 4) continue;
-
-        gain_calib_ugly::THREADS.emplace_back(std::thread {wgGainCalibUglyWorker,
-                std::ref(gain[idac][dif_id]), std::ref(sigma_gain[idac][dif_id]),
-                hist_file, topol->dif_map[dif_id]});
-      }
-    }
-  }
-
-  for(auto&& thread : gain_calib_ugly::THREADS) {
-    thread.join();
-  }
 
   /////////////////////////////////////////////////////////////////////////////
   //                        Create output directories                        //
@@ -225,6 +195,42 @@ int wgGainCalibUgly(const char * x_input_run_dir,
       Log.eWrite("[wgGainCalibUgly] " + std::string(e.what()));
       return ERR_FAILED_CREATE_DIRECTORY;
     }
+  }
+  
+  /////////////////////////////////////////////////////////////////////////////
+  //                              Fit histograms                             //
+  /////////////////////////////////////////////////////////////////////////////
+  
+  // input DAC
+  for (auto const& idac_dir : idac_dir_list) {
+    unsigned idac = string::extract_integer(get_stats::basename(idac_dir));
+    if (idac > MAX_VALUE_8BITS) continue;
+
+    // PEU (fixed to 2)
+    gain_calib_ugly::DirList peu_dir_list = list::list_directories(idac_dir, true);
+    for (auto const& peu_dir : peu_dir_list) {
+      unsigned peu_level = string::extract_integer(get_stats::filename(peu_dir));
+      if (peu_level != gain_calib_ugly::PEU_LEVEL) continue;
+
+      // DIF
+      std::string hist_directory(peu_dir + "/wgMakeHist");
+      gain_calib_ugly::DirList hist_files = list::list_files(hist_directory,
+                                                             true, ".root");
+      if (hist_files.empty()) return ERR_FAILED_GET_FILE_LIST;
+
+      for (const auto& hist_file : hist_files) {
+        unsigned dif_id = string::extract_dif_id(hist_file);
+        if (ignore_wagasci && dif_id >= 4) continue;
+
+        gain_calib_ugly::THREADS.emplace_back(std::thread {wgGainCalibUglyWorker,
+                std::ref(gain[idac][dif_id]), std::ref(sigma_gain[idac][dif_id]),
+                hist_file, topol->dif_map[dif_id]});
+      }
+    }
+  }
+
+  for(auto&& thread : gain_calib_ugly::THREADS) {
+    thread.join();
   }
 
   /////////////////////////////////////////////////////////////////////////////
