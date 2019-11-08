@@ -4,24 +4,15 @@
 // system includes
 #include <vector>
 #include <array>
-#include <numeric>
-#include <cmath>
-#include <algorithm>
-
-// ROOT includes
-#include "TMath.h"
+#include <cstddef>
 
 namespace wagasci_tools {
 
 namespace numeric {
 
-double mean(std::vector<double> vec) {
-    vec.erase(std::remove_if(std::begin(vec),  std::end(vec),
-      [](const double& value) { return std::isnan(value); }),
-            std::end(vec));
-    if (vec.empty()) return std::nan("zero size");
-  return std::accumulate(vec.begin(), vec.end(), 0) / vec.size();
-}
+// calculate the not weighted mean of a std::array or std::vector
+// It is just a wrapper around std::accumulate
+double mean(std::vector<double> vec);
 
 template<std::size_t SIZE>
 double mean(std::array<double, SIZE> arr)  {
@@ -30,20 +21,26 @@ double mean(std::array<double, SIZE> arr)  {
   return mean(vec);
 }
 
-double standard_deviation(std::vector<double> vec) {
-      vec.erase(std::remove_if(std::begin(vec),  std::end(vec),
-      [](const double& value) { return std::isnan(value); }),
-            std::end(vec));
-      if (vec.empty()) return std::nan("zero size");
-  return TMath::StdDev(vec.begin(), vec.end());
-}
+// calculate the non weighted standard deviation of a std::array or std::vector
+// It is just a wrapper around ROOT TMath::StdDev
+double standard_deviation(std::vector<double> vec);
 
 template<std::size_t SIZE>
 double standard_deviation(std::array<double, SIZE> arr) {
   if (SIZE == 0) return std::nan("zero size");
   std::vector<double> vec(arr.begin(), arr.end());
-   return standard_deviation(vec);
+  return standard_deviation(vec);
 }
+  
+// routines to check if the gain and its variance are physical or not
+// If the mean argument is given the gain or sigma are assigned it.
+// They return true if the value is not physical (> MAX_GAIN <
+// MIN_GAIN) in the case of the gain or (> MAX_SIGMA < MIN_SIGMA) in
+// the case of the variance
+bool is_unphysical_gain(double gain);
+bool is_unphysical_sigma(double sigma);
+bool is_unphysical_gain(double &gain, const double mean);
+bool is_unphysical_sigma(double &sigma, const double mean);
 
 } // numeric
 
