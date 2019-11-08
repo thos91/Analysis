@@ -232,7 +232,50 @@ void directory(const std::string& str) {
   }
 }
 
+void bad_channels_file(gain_calib::BadChannels bad_channels,
+                       gain_calib::Charge charge,
+                       std::vector<unsigned> v_idac,
+                       const std::string &cvs_file_path) {
+  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
+
+  cvs_file << "# DIF\t| CHIP\t| CHAN\t| ";
+  cvs_file << "ADC 1PEU ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << "ADC 2PEU ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << '\n';
+    
+  for (auto const& dif : bad_channels) {
+    unsigned dif_id = dif.first;
+    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
+      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+        if (dif.second[ichip][ichan] == true &&
+            ichan <= charge[v_idac[0]][ONE_PE][dif_id][ichip].size()) {
+          cvs_file << "  " << dif_id << "\t| " <<
+              ichip << "\t| " << ichan << "\t| ";
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << charge[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else cvs_file << "\t\t| ";
+          }
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << charge[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else if (i_idac == v_idac.size() - 1) cvs_file << '\n';
+            else cvs_file << "\t\t| ";
+          }         
+        }
+      }
+    }
+  }
+  cvs_file.close();
 }
+
+} // make
 
 namespace string {
 
@@ -296,7 +339,7 @@ int max_depth(std::string str)
   return max; 
 }
 
-}
+} // string
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                check_exist                                //

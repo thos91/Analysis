@@ -8,7 +8,11 @@
 #include <fstream>
 #include <vector>
 
+// ROOT includes
 #include "TString.h"
+
+// user includes
+#include "wgGainCalib.hpp"
 
 namespace wagasci_tools {
 
@@ -83,6 +87,14 @@ namespace make {
 // _create the directory whose absolute path is "str"
 void directory(const std::string& str);
 
+// Print the bad_channels map to a CVS file. The file format is as
+// follows:
+//
+// "DIF"  "CHIP" "CHANNEL" "ADC 1PEU for each iDAC" "ADC 2PEU for each iDAC"
+void bad_channels_file(gain_calib::BadChannels bad_channels,
+                       gain_calib::Charge charge,
+                       std::vector<unsigned> v_idac,
+                       const std::string &cvs_file_path);
 } // make
 
 ///////////////////////////////////////////////////////////////////////////////
