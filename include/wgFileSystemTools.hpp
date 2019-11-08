@@ -13,6 +13,7 @@
 
 // user includes
 #include "wgGainCalib.hpp"
+#include "wgGainCalibUgly.hpp"
 
 namespace wagasci_tools {
 
@@ -91,10 +92,16 @@ void directory(const std::string& str);
 // follows:
 //
 // "DIF"  "CHIP" "CHANNEL" "ADC 1PEU for each iDAC" "ADC 2PEU for each iDAC"
-void bad_channels_file(gain_calib::BadChannels bad_channels,
-                       gain_calib::Charge charge,
-                       std::vector<unsigned> v_idac,
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::Charge& charge,
+                       const std::vector<unsigned>& v_idac,
                        const std::string &cvs_file_path);
+// "DIF"  "CHIP" "CHANNEL" "FAIN for each iDAC"
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::ugly::Gain& gain,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path);
+
 } // make
 
 ///////////////////////////////////////////////////////////////////////////////
