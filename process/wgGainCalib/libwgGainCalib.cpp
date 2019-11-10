@@ -36,7 +36,8 @@ namespace wg = wagasci_tools;
 int wgGainCalib(const char * x_input_run_dir,
                 const char * x_output_xml_dir,
                 const char * x_output_img_dir,
-                const bool ignore_wallmrd) {
+                const bool only_wallmrd,
+                const bool only_wagasci) {
   
   /////////////////////////////////////////////////////////////////////////////
   //                          Check arguments sanity                         //
@@ -45,7 +46,12 @@ int wgGainCalib(const char * x_input_run_dir,
   std::string input_run_dir (x_input_run_dir);
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
-  
+
+  if (only_wagasci & only_wallmrd) {
+    Log.eWrite("[wgGainCalib] the only-wagasci and only-wallmrd flags "
+               "are mutually exclusive");
+    return ERR_WRONG_MODE;
+  }
   if (input_run_dir.empty() || !wg::check_exist::directory(input_run_dir)) {
     Log.eWrite("[wgGainCalib] input directory doesn't exist");
     return ERR_EMPTY_INPUT_FILE;
@@ -80,11 +86,17 @@ int wgGainCalib(const char * x_input_run_dir,
     return ERR_TOPOLOGY;
   }
 
-  if (ignore_wallmrd) {
+  if (only_wallmrd) {
     topol->dif_map.erase(0); // WallMRD north top
     topol->dif_map.erase(1); // WallMRD north bottom
     topol->dif_map.erase(2); // WallMRD south top
     topol->dif_map.erase(3); // WallMRD south bottom
+    topol->n_difs -= 4;
+  } else if (only_wagasci) {
+    topol->dif_map.erase(4); // WAGASCI upstream top
+    topol->dif_map.erase(5); // WAGASCI upstream side
+    topol->dif_map.erase(6); // WAGASCI downstream top
+    topol->dif_map.erase(7); // WAGASCI downstream side
     topol->n_difs -= 4;
   }
 
@@ -177,6 +189,7 @@ int wgGainCalib(const char * x_input_run_dir,
     unsigned idac =
         wg::string::extract_integer(wg::get_stats::basename(idac_dir));
     if (idac > MAX_VALUE_8BITS) continue;
+    
     // PEU
     gain_calib::DirList pe_dir_list = wg::list::list_directories(idac_dir, true);
     for (auto const& peu_dir : pe_dir_list) {
@@ -186,11 +199,15 @@ int wgGainCalib(const char * x_input_run_dir,
       if      (pe_level_from_dir == 1) ipe = ONE_PE;
       else if (pe_level_from_dir == 2) ipe = TWO_PE;
       else continue;
+
       // DIF
       for (auto const& dif: topol->dif_map) {
         unsigned dif_id = dif.first;
+        if (only_wagasci && dif_id < 4) continue;
+        if (only_wallmrd && dif_id >= 4) continue;
         std::string dif_id_directory(peu_dir + "/wgAnaHistSummary/Xml/dif_" +
                                      std::to_string(dif_id));
+        
         // Chip
         for (auto const& chip: dif.second) {
           unsigned ichip = chip.first;

@@ -16,7 +16,8 @@ extern "C" {
   int wgGainCalib(const char * x_inputDir,
                   const char * x_outputXMLDir,
                   const char * x_outputIMGDir,
-                  const bool ignore_wallmrd);
+                  const bool only_wallmrd,
+                  const bool only_wagasci);
   
 #ifdef __cplusplus
 }
