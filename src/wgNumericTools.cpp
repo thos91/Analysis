@@ -34,17 +34,20 @@ double standard_deviation(std::vector<double> vec) {
 
 bool is_unphysical_gain(double gain) {
   return (gain > gain_calib::MAX_GAIN ||
-          gain < gain_calib::MIN_GAIN) ? true : false;
+          gain < gain_calib::MIN_GAIN ||
+          std::isnan(gain)) ? true : false;
 }
 
 bool is_unphysical_sigma(double sigma) {
   return (sigma > gain_calib::MAX_SIGMA ||
-          sigma < gain_calib::MIN_SIGMA) ? true : false;
+          sigma < gain_calib::MIN_SIGMA ||
+          std::isnan(sigma)) ? true : false;
 }
 
 bool is_unphysical_gain(double &gain, const double mean) {
   if (gain > gain_calib::MAX_GAIN ||
-      gain < gain_calib::MIN_GAIN) {
+      gain < gain_calib::MIN_GAIN ||
+      std::isnan(gain)) {
     gain = mean;
     return true;
   }
@@ -53,7 +56,8 @@ bool is_unphysical_gain(double &gain, const double mean) {
 
 bool is_unphysical_sigma(double &sigma, const double mean) {
   if (sigma > gain_calib::MAX_SIGMA ||
-      sigma < gain_calib::MIN_SIGMA) {
+      sigma < gain_calib::MIN_SIGMA ||
+      std::isnan(sigma)) {
     sigma = mean;
     return true;
   }
