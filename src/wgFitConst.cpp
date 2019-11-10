@@ -10,6 +10,11 @@ const int WG_END_CHARGE_HIT_HG = 750;
 const int WG_BEGIN_CHARGE_HIT_LG = 0; // TODO: 
 const int WG_END_CHARGE_HIT_LG = 0; // TODO: 
 
+// average values of the peak for each peu
+const int WG_PEAK_CHARGE_0PE = 500;
+const int WG_PEAK_CHARGE_1PE = 600;
+const int WG_PEAK_CHARGE_2PE = 700;
+
 // limits for the dark noise rate
 const double WG_LOWER_LIMIT_1PE = 20000;  // 20 kHz
 const double WG_UPPER_LIMIT_1PE = 160000; // 160 kHz
