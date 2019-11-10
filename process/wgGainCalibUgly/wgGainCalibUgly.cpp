@@ -21,7 +21,8 @@ void print_help(const char * program_name) {
       "  -x (char*) : input Pyrame XML configuration file (mandatory)\n"
       "  -o (char*) : output directory (default: same as input directory)\n"
       "  -i (char*) : output image directory (default: image directory)\n"
-      "  -w         : if set only the WallMRD DIF numbers will be analyzed\n";
+      "  -w         : only WAGASCI modules (default false)\n"
+      "  -s         : only WallMRD modules (default false)\n";
   exit(0);
 }
 
@@ -31,9 +32,10 @@ int main(int argc, char** argv){
   std::string xml_config_file("");
   std::string output_xml_dir("");
   std::string output_img_dir("");
-  bool ignore_wagasci = false;
+  bool only_wallmrd = false;
+  bool only_wagasci = false;
 
-  while ((opt = getopt(argc,argv, "f:x:o:i:wh")) != -1 ) {
+  while ((opt = getopt(argc, argv, "f:x:o:i:wrh")) != -1 ) {
     switch (opt) {
       case 'f':
         input_dir = optarg;
@@ -48,7 +50,10 @@ int main(int argc, char** argv){
         output_img_dir = optarg; 
         break;
       case 'w':
-        ignore_wagasci = true;
+        only_wagasci = true; 
+        break;
+      case 'r':
+        only_wallmrd = true; 
         break;
       case 'h':
         print_help(argv[0]);
@@ -63,8 +68,9 @@ int main(int argc, char** argv){
                                 xml_config_file.c_str(),
                                 output_xml_dir.c_str(),
                                 output_img_dir.c_str(),
-                                ignore_wagasci)) != WG_SUCCESS ) {
+                                only_wallmrd,
+                                only_wagasci)) != WG_SUCCESS ) {
     Log.eWrite("[wgGainCalibUgly] error " + std::to_string(result));
-    exit(1);
   }
+  exit(result);
 }

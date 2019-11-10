@@ -16,7 +16,8 @@ extern "C" {
                       const char * x_xml_config_file,
                       const char * x_output_xml_dir,
                       const char * x_output_img_dir,
-                      const bool ignore_wagasci );
+                      const bool only_wallmrd,
+                      const bool only_wagasci);
   
 #ifdef __cplusplus
 }
