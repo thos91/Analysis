@@ -31,7 +31,7 @@ int wgOptimize(const char * x_threshold_card,
                const char * x_bitstream_dir,
                const unsigned mode,
                const unsigned pe,
-               const unsigned inputDAC) {
+               const unsigned input_dac) {
 
   // ================ Argument parsing ================= //
   
@@ -113,11 +113,11 @@ int wgOptimize(const char * x_threshold_card,
           switch (mode) {
             case OP_THRESHOLD_MODE:
               optimized_threshold[idif][ichip].push_back(Edit.OPT_GetValue(
-                  "threshold_" + std::to_string(pe), idif, ichip, ichan, inputDAC));
+                  "threshold_" + std::to_string(pe), idif, ichip, ichan, input_dac));
             case OP_INPUTDAC_MODE:
-              // s_th is the slope of the linear fit of the inputDAC (x) vs optimal
+              // s_th is the slope of the linear fit of the input_dac (x) vs optimal
               // threshold for the given p.e. equivalend (y)
-              // i_th is the intercept of the linear fit of the inputDAC (x) vs
+              // i_th is the intercept of the linear fit of the input_dac (x) vs
               // optimal threshold for the given p.e. equivalend (y)
               slope_iDAC_th[idif][ichip].push_back(Edit.OPT_GetChanValue(
                   "slope_threshold" + std::to_string(pe), idif, ichip, ichan));
@@ -141,7 +141,7 @@ int wgOptimize(const char * x_threshold_card,
   d3vector intercept_iDAC_gain(topol->n_difs);
 
   if (mode == OP_INPUTDAC_MODE) {
-    // Get the slope and intercept of the inputDAC(x) vs Gain(y) graph from the
+    // Get the slope and intercept of the input_dac(x) vs Gain(y) graph from the
     // gain_card.xml file
     try {
       wgEditXML Edit;
@@ -201,10 +201,12 @@ int wgOptimize(const char * x_threshold_card,
         }
 
         wgEditConfig edit_config(bitstream_file, false);
-
+        
         edit_config.Change_trigth_and_adj(optimized_threshold[idif][ichip]);
         
-        if (mode == OP_INPUTDAC_MODE) {
+        if (mode == OP_THRESHOLD_MODE) {  
+          edit_config.Change_inputDAC(NCHANNELS, input_dac);
+        } else {
           for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
             unsigned optimized_input_dac =
                 (WG_NOMINAL_GAIN - intercept_iDAC_gain[idif][ichip][ichan]) /

@@ -183,7 +183,7 @@ void endblock(void *workspace, struct block *block) {
 
   Double_t time = duration<double>(system_clock::now().time_since_epoch()).count();
   
-  double fit_gain[2] = {};
+  std::array<double, 2> fit_gain{};
   for (auto const& h_chip_charge : ws->h_charge) {
     for (auto const& h_chan_charge : h_chip_charge) {
       if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_ARE) {
