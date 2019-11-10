@@ -867,3 +867,27 @@ void Topology::GetTopologyFromGainTree(std::string input_run_dir) {
     }
   }
 }
+
+bool Topology::IsWallMRDChannelEnabled(unsigned dif, unsigned chip, unsigned channel) {
+  if (dif < 4) {
+    if (channel == 16 || channel > 30) return false;
+    if (chip == 1) {
+      switch (channel) {
+        // case range is not a C++11 feature by a language extension supported at
+        // least by GCC and Clang
+        case 16 ... 21:
+          return false;
+          break;
+        case 24 ... 25:
+          return false;
+          break;
+        case 28 ... NCHANNELS:
+          return false;
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  return true;
+}

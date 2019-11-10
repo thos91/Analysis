@@ -236,6 +236,10 @@ class Topology {
   void PrintMapDif();
   // Print the TopologyMapGdcc map member to cout
   void PrintMapGdcc();
+
+  // Return true if the channel is connected to an MPPC (only WallMRD)
+  static bool IsWallMRDChannelEnabled(unsigned dif, unsigned chip,
+                                      unsigned channel);
 };
 
 #endif
