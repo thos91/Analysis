@@ -27,41 +27,19 @@
 using namespace wagasci_tools;
 
 //******************************************************************
-void ModeSelect(const int mode, std::bitset<ANAHIST_NFLAGS>& flag){
-  if (mode == 1 || mode >= 10)               flag[SELECT_DARK_NOISE] = true;
-  if (mode == 2 || mode >= 10)               flag[SELECT_PEDESTAL]   = true;
-  if (mode == 3 || mode == 10 || mode >= 20) flag[SELECT_CHARGE_LG]  = true;
-  if (mode == 4 || mode == 11 || mode >= 20) flag[SELECT_CHARGE_HG]  = true;
-  if (mode < 0  || mode > 20)
-    throw std::invalid_argument("Mode " + std::to_string(mode) + " not recognized"); 
-}
-
-//******************************************************************
 int wgAnaHist(const char * x_input_hist_file,
               const char * x_pyrame_config_file,
               const char * x_output_xml_dir,
               const char * x_output_img_dir,
-              int mode,
-              unsigned long flags_ulong,
-              unsigned idif) {
+              const unsigned long ul_flags,
+              unsigned dif_id) {
 
+  std::bitset<anahist::NFLAGS> flags(ul_flags);
   std::string input_hist_file(x_input_hist_file);
   std::string pyrame_config_file(x_pyrame_config_file);
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   wgEditXML xml;
-  
-
-  // =========== FLAGS decoding =========== //
-
-  std::bitset<ANAHIST_NFLAGS> flags(flags_ulong);
-  
-  // Set the correct flags according to the mode
-  try { ModeSelect(mode, flags); }
-  catch (const std::exception& e) {
-    Log.eWrite("[wgAnaHist] Failed to " + std::string(e.what()));
-    exit(1);
-  }
 
   // =========== Arguments sanity check =========== //
 
@@ -69,12 +47,14 @@ int wgAnaHist(const char * x_input_hist_file,
     Log.eWrite("[wgAnaHist] Input file not found : " + input_hist_file);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if ( flags[SELECT_CONFIG] && ( pyrame_config_file.empty() || !check_exist::xml_file(pyrame_config_file)) ) {
-    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : " + pyrame_config_file);
+  if ( flags[anahist::SELECT_CONFIG] && ( pyrame_config_file.empty() ||
+                                          !check_exist::xml_file(pyrame_config_file)) ) {
+    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : "
+               + pyrame_config_file);
     exit(1);
   }
-  if (idif > NDIFS) {
-    Log.eWrite("[wgAnaHist] wrong DIF number : " + std::to_string(idif) );
+  if (dif_id > NDIFS) {
+    Log.eWrite("[wgAnaHist] wrong DIF number : " + std::to_string(dif_id) );
     return ERR_WRONG_DIF_VALUE;
   }
 
@@ -96,12 +76,12 @@ int wgAnaHist(const char * x_input_hist_file,
     return ERR_TOPOLOGY;
   }
 
-  if (flags[SELECT_COMPATIBILITY])
-    idif = std::next(topol->dif_map.begin(), idif)->first;
-  unsigned n_chips = topol->dif_map[idif].size();
+  if (flags[anahist::SELECT_COMPATIBILITY])
+    dif_id = std::next(topol->dif_map.begin(), dif_id)->first;
+  unsigned n_chips = topol->dif_map[dif_id].size();
 
-  if ( n_chips == 0 || n_chips > NCHIPS ) {
-    Log.eWrite("[wgAnaHist] wrong number of chips : " + std::to_string(n_chips) );
+  if (n_chips == 0 || n_chips > NCHIPS) {
+    Log.eWrite("[wgAnaHist] wrong number of chips : " + std::to_string(n_chips));
     return ERR_WRONG_CHIP_VALUE;
   }
 
@@ -114,11 +94,13 @@ int wgAnaHist(const char * x_input_hist_file,
     return ERR_FAILED_CREATE_DIRECTORY;
   }
   // ======= Create output_img_dir ======= //
-  if (flags[SELECT_PRINT]) {
+  if (flags[anahist::SELECT_PRINT]) {
     for ( unsigned ichip = 0; ichip < n_chips; ichip++ ) {
-      unsigned n_chans = topol->dif_map[idif][ichip];
+      unsigned n_chans = topol->dif_map[dif_id][ichip];
       for ( unsigned ichan = 0; ichan < n_chans; ichan++ ) {
-        std::string output_img_chip_chan_dir(output_img_dir + "/chip" + std::to_string(ichip) + "/chan" + std::to_string(ichan));
+        std::string output_img_chip_chan_dir(output_img_dir +
+                                             "/chip" + std::to_string(ichip) +
+                                             "/chan" + std::to_string(ichan));
         try { make::directory(output_img_chip_chan_dir); }
         catch (const wgInvalidFile& e) {
           Log.eWrite("[wgAnaHist] " + std::string(e.what()));
@@ -145,12 +127,13 @@ int wgAnaHist(const char * x_input_hist_file,
     //                               Chip loop                               //
     ///////////////////////////////////////////////////////////////////////////
 
-    for (auto const &chip : topol->dif_map[idif]) {
+    for (auto const &chip : topol->dif_map[dif_id]) {
       unsigned ichip = chip.first;
       unsigned n_chans = chip.second;
 
       // ============ Create output_xml_chip_dir ============ //
-      std::string output_xml_chip_dir(output_xml_dir + "/chip" + std::to_string(ichip));
+      std::string output_xml_chip_dir(output_xml_dir +
+                                      "/chip" + std::to_string(ichip));
       try { make::directory(output_xml_chip_dir); }
       catch (const wgInvalidFile& e) {
         Log.eWrite("[wgAnaHist] " + std::string(e.what()));
@@ -165,14 +148,17 @@ int wgAnaHist(const char * x_input_hist_file,
       std::vector<std::vector<int>> config; // n_chans * 5 parameters
 
       Log.Write("[wgAnaHist] Analyzing chip " + std::to_string(ichip));
-      // Read the SPIROC2D configuration parameters from the pyrame_config_file (the xml
-      // configuration file used during acquisition) into the "config" vector.
-      if( flags[SELECT_CONFIG] ) {
-        unsigned gdcc = topol->GetGdccDifPair(idif).first;
-        unsigned dif = topol->GetGdccDifPair(idif).second;
-        if (!xml.GetConfig(pyrame_config_file, gdcc, dif, ichip + 1, n_chans, config)) {
-          Log.eWrite("[wgAnaHist] DIF " + std::to_string(idif) + ", chip " +
-                     std::to_string(ichip) + " : failed to get bitstream parameters");
+      // Read the SPIROC2D configuration parameters from the pyrame_config_file
+      // (the xml configuration file used during acquisition) into the "config"
+      // vector.
+      if( flags[anahist::SELECT_CONFIG] ) {
+        unsigned gdcc = topol->GetGdccDifPair(dif_id).first;
+        unsigned dif = topol->GetGdccDifPair(dif_id).second;
+        if (!xml.GetConfig(pyrame_config_file, gdcc, dif, ichip + 1,
+                           n_chans, config)) {
+          Log.eWrite("[wgAnaHist] DIF " + std::to_string(dif_id) + ", chip " +
+                     std::to_string(ichip) + " : failed to get bitstream "
+                     "parameters");
           return ERR_FAILED_GET_BISTREAM;
         }
       }
@@ -183,33 +169,36 @@ int wgAnaHist(const char * x_input_hist_file,
       
       for(unsigned ichan = 0; ichan < n_chans; ichan++) {
         // Open the outputxmlfile as an XML file
-        std::string outputxmlfile(output_xml_chip_dir + "/chan" + std::to_string(ichan) + ".xml");
+        std::string outputxmlfile(output_xml_chip_dir +
+                                  "/chan" + std::to_string(ichan) + ".xml");
         try {
-          if( !check_exist::xml_file(outputxmlfile) || flags[SELECT_OVERWRITE] )
-            xml.Make(outputxmlfile, idif, ichip, ichan);
+          if( !check_exist::xml_file(outputxmlfile) ||
+              flags[anahist::SELECT_OVERWRITE] )
+            xml.Make(outputxmlfile, dif_id, ichip, ichan);
           xml.Open(outputxmlfile);
         }
         catch (const std::exception& e) {
-          Log.eWrite("[wgAnaHist] Failed to open XML file : " + std::string(e.what()));
+          Log.eWrite("[wgAnaHist] Failed to open XML file : " +
+                     std::string(e.what()));
           return ERR_FAILED_OPEN_XML_FILE;
         }
 	  
         // ******************* FILL THE XML FILES ********************//
         try {
           if (first_time) {
-            start_time = Fit.histos_.Get_start_time();
-            stop_time  = Fit.histos_.Get_stop_time();
+            start_time = Fit.GetStartTime();
+            stop_time  = Fit.GetStopTime();
             first_time = false;
           }
           xml.SetConfigValue(std::string("start_time"), start_time);
           xml.SetConfigValue(std::string("stop_time"),  stop_time);
-          xml.SetConfigValue(std::string("difid"),      idif);
+          xml.SetConfigValue(std::string("difid"),      dif_id);
           xml.SetConfigValue(std::string("chipid"),     ichip);
           xml.SetConfigValue(std::string("chanid"),     ichan);
 
-          //************ SELECT_CONFIG ************//
+          //************ anahist::SELECT_CONFIG ************//
 
-          if ( flags[SELECT_CONFIG] ) {
+          if ( flags[anahist::SELECT_CONFIG] ) {
             // Write the parameters values contained in the config vector into the
             // outputxmlfile
             xml.SetConfigValue(std::string("trigth"),   config[ichan][GLOBAL_THRESHOLD_INDEX], CREATE_NEW_MODE);
@@ -219,69 +208,80 @@ int wgAnaHist(const char * x_input_hist_file,
             xml.SetConfigValue(std::string("trig_adj"), config[ichan][ADJ_THRESHOLD_INDEX],    CREATE_NEW_MODE);
           }
 
-          //************* SELECT_DARK_NOISE *************//
+          //************* anahist::SELECT_DARK_NOISE *************//
 
-          if ( flags[SELECT_DARK_NOISE] ) {  //for bcid
+          if ( flags[anahist::SELECT_DARK_NOISE] ) {  //for bcid
             double fit_bcid[2] = {0, 0};
-            // calculate the dark noise rate for chip "ichip" and channel "ichan" and
-            // save the mean and standard deviation in fit_bcid[0] and fit_bcid[1]
-            // respectively.
-            Fit.NoiseRate(ichip, ichan, fit_bcid, flags[SELECT_PRINT]);
-            // Save the noise rate and its standard deviation in the outputxmlfile xml
-            // file
-            xml.SetChValue(std::string("noise_rate"), fit_bcid[0], CREATE_NEW_MODE); // mean
-            xml.SetChValue(std::string("sigma_rate"), fit_bcid[1], CREATE_NEW_MODE); // standard deviation
+            // calculate the dark noise rate for chip "ichip" and channel
+            // "ichan" and save the mean and standard deviation in fit_bcid[0]
+            // and fit_bcid[1] respectively.
+            Fit.NoiseRate(fit_bcid, dif_id, ichip, ichan, flags[anahist::SELECT_PRINT]);
+            // Save the noise rate and its standard deviation in the
+            // outputxmlfile xml file
+            xml.SetChValue(std::string("noise_rate"), fit_bcid[0],
+                           CREATE_NEW_MODE); // mean
+            xml.SetChValue(std::string("sigma_rate"), fit_bcid[1],
+                           CREATE_NEW_MODE); // standard deviation
           }
 
-          //************* SELECT_PEDESTAL *************//
+          //************* anahist::SELECT_PEDESTAL *************//
 
-          if ( flags[SELECT_PEDESTAL] ) {
+          if ( flags[anahist::SELECT_PEDESTAL] ) {
             double fit_charge_nohit[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
               // Calculate the pedestal value and its sigma
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeNohit(ichip, ichan, icol, fit_charge_nohit, flags[SELECT_PRINT]);
+              Fit.ChargeNohit(fit_charge_nohit, dif_id, ichip, ichan, icol,
+                              flags[anahist::SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
-              xml.SetColValue(std::string("charge_nohit"), icol, fit_charge_nohit[0], CREATE_NEW_MODE);
-              xml.SetColValue(std::string("sigma_nohit"),  icol, fit_charge_nohit[1], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("charge_nohit"), icol,
+                              fit_charge_nohit[0], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("sigma_nohit"),  icol,
+                              fit_charge_nohit[1], CREATE_NEW_MODE);
             } 
           }
 
-          //************* SELECT_CHARGE_LG *************//
+          //************* anahist::SELECT_CHARGE_LG *************//
 
-          if ( flags[SELECT_CHARGE_LG] ) {
+          if ( flags[anahist::SELECT_CHARGE_LG] ) {
             double fit_charge[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeHitLG(ichip, ichan, icol, fit_charge, flags[SELECT_PRINT]);
+              Fit.ChargeHitLG(fit_charge, dif_id, ichip, ichan, icol,
+                              flags[anahist::SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
-              xml.SetColValue(std::string("charge_hit_LG"), icol, fit_charge[0], CREATE_NEW_MODE);
-              xml.SetColValue(std::string("sigma_hit_LG") , icol, fit_charge[1], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("charge_hit_LG"), icol,
+                              fit_charge[0], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("sigma_hit_LG") , icol,
+                              fit_charge[1], CREATE_NEW_MODE);
             }
           }
 
-          //************* SELECT_CHARGE_HG *************//
+          //************* anahist::SELECT_CHARGE_HG *************//
 
-          if ( flags[SELECT_CHARGE_HG] ) {
+          if ( flags[anahist::SELECT_CHARGE_HG] ) {
             double fit_charge_HG[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeHitHG(ichip, ichan, icol, fit_charge_HG, flags[SELECT_PRINT]);
+              Fit.ChargeHitHG(fit_charge_HG, dif_id, ichip, ichan, icol,
+                              flags[anahist::SELECT_PRINT]);
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
-              xml.SetColValue(std::string("charge_hit_HG"), icol, fit_charge_HG[0], CREATE_NEW_MODE);
-              xml.SetColValue(std::string("sigma_hit_HG"),  icol, fit_charge_HG[1], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("charge_hit_HG"), icol,
+                              fit_charge_HG[0], CREATE_NEW_MODE);
+              xml.SetColValue(std::string("sigma_hit_HG"),  icol,
+                              fit_charge_HG[1], CREATE_NEW_MODE);
             }
           }
 
@@ -290,7 +290,8 @@ int wgAnaHist(const char * x_input_hist_file,
         }
         catch (const std::exception& e) {
           Log.eWrite("[wgAnaHist] chip " + std::to_string(ichip) +
-                     ", chan " + std::to_string(ichan) + " : " + std::string(e.what()));
+                     ", chan " + std::to_string(ichan) + " : " +
+                     std::string(e.what()));
           return ERR_FAILED_WRITE;
         } // try (write to xml files)
       } // ichan

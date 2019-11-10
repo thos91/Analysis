@@ -18,8 +18,9 @@ using namespace wagasci_tools;
 // print_help
 // prints an help message with all the arguments taken by the program
 void print_help(const char * program_name) {
-  std::cout << program_name << "is used to analyze the histograms created by the \n"
-      "wgAnaHist program. The result of the analysis is stored in the outputdir.\n"
+  std::cout << program_name << "is used to analyze the histograms\n"
+      "created by the wgAnaHist program. The result of the analysis\n"
+      "is stored in the outputdir.\n"
       "usage example: " << program_name << " -f inputfile.root -r -m 10 -d 1\n"
       "  -h        : print this help\n"
       "  -f (char*): input histograms file (_hist.root file)\n"
@@ -42,6 +43,20 @@ void print_help(const char * program_name) {
   exit(0);
 }
 
+namespace anahist {
+
+void select_mode(const int mode, std::bitset<anahist::NFLAGS>& flag){
+  if (mode == 1 || mode >= 10)               flag[SELECT_DARK_NOISE] = true;
+  if (mode == 2 || mode >= 10)               flag[SELECT_PEDESTAL]   = true;
+  if (mode == 3 || mode == 10 || mode >= 20) flag[SELECT_CHARGE_LG]  = true;
+  if (mode == 4 || mode == 11 || mode >= 20) flag[SELECT_CHARGE_HG]  = true;
+  if (mode < 0  || mode > 20)
+    throw std::invalid_argument("Mode " + std::to_string(mode) +
+                                " not recognized"); 
+}
+
+}
+
 //***************************** MAIN *************************************
 
 int main(int argc, char** argv){
@@ -50,7 +65,7 @@ int main(int argc, char** argv){
   unsigned dif = 0;
   std::string inputFileName("");
   std::string configFileName("");
-  std::bitset<ANAHIST_NFLAGS> flags;
+  std::bitset<anahist::NFLAGS> flags;
 
   // Get the output directories from
   wgEnvironment env;
@@ -70,7 +85,7 @@ int main(int argc, char** argv){
         break;
       case 'p':
         configFileName = optarg;
-        flags[SELECT_CONFIG] = true;
+        flags[anahist::SELECT_CONFIG] = true;
         break;
       case 'o':
         outputXMLDir = optarg;
@@ -79,13 +94,13 @@ int main(int argc, char** argv){
         outputIMGDir = optarg;
         break;
       case 'q':
-        flags[SELECT_COMPATIBILITY] = true;
+        flags[anahist::SELECT_COMPATIBILITY] = true;
         break;
       case 's':
-        flags[SELECT_PRINT] = true;
+        flags[anahist::SELECT_PRINT] = true;
         break;
       case 'r':
-        flags[SELECT_OVERWRITE] = true;
+        flags[anahist::SELECT_OVERWRITE] = true;
         break;
       case 'h':
         print_help(argv[0]);
@@ -96,16 +111,25 @@ int main(int argc, char** argv){
     }
   }
 
+  // =========== FLAGS decoding =========== //
+  
+  // Set the correct flags according to the mode
+  try { anahist::select_mode(mode, flags); }
+  catch (const std::exception& e) {
+    Log.eWrite("[wgAnaHist] Failed to " + std::string(e.what()));
+    exit(1);
+  }
+
   int result;
-  if ( (result = wgAnaHist(inputFileName.c_str(),
+  if ((result = wgAnaHist(inputFileName.c_str(),
                            configFileName.c_str(),
                            outputXMLDir.c_str(),
                            outputIMGDir.c_str(),
-                           mode,
                            flags.to_ulong(),
                            dif)) != WG_SUCCESS ) {
-    Log.eWrite("[wgAnaHist] wgAnaHist returned error " + std::to_string(result));
-    exit(1);
+    Log.eWrite("[wgAnaHist] wgAnaHist returned error " +
+               std::to_string(result));
+    exit(result);
   }
 
   exit(0);
