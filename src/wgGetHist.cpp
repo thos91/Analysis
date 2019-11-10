@@ -33,9 +33,11 @@ wgGetHist::~wgGetHist(){
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_charge_hit_HG(unsigned i, unsigned j, unsigned k){
+TH1I * wgGetHist::Get_charge_hit_HG(unsigned dif, unsigned chip,
+                                    unsigned chan, unsigned col){
   TString charge_hit_HG;
-  charge_hit_HG.Form("charge_hit_HG_chip%u_ch%u_col%u", i, j, k);
+  charge_hit_HG.Form("charge_hit_HG_dif%u_chip%u_ch%u_col%u",
+                     dif, chip, chan, col);
   if (m_hist_file->GetListOfKeys()->Contains(charge_hit_HG))
     return (TH1I*) m_hist_file->Get(charge_hit_HG);
   else
@@ -43,9 +45,11 @@ TH1I * wgGetHist::Get_charge_hit_HG(unsigned i, unsigned j, unsigned k){
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_charge_hit_LG(unsigned i, unsigned j, unsigned k) {
+TH1I * wgGetHist::Get_charge_hit_LG(unsigned dif, unsigned chip,
+                                    unsigned chan, unsigned col) {
   TString charge_hit_LG;
-  charge_hit_LG.Form("charge_hit_LG_chip%u_ch%u_col%u", i, j, k);
+  charge_hit_LG.Form("charge_hit_LG_dif%u_chip%u_ch%u_col%u",
+                     dif, chip, chan, col);
   if (m_hist_file->GetListOfKeys()->Contains(charge_hit_LG))
     return (TH1I*) m_hist_file->Get(charge_hit_LG);
   else
@@ -53,9 +57,11 @@ TH1I * wgGetHist::Get_charge_hit_LG(unsigned i, unsigned j, unsigned k) {
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_charge_nohit(unsigned i, unsigned j, unsigned k) {
+TH1I * wgGetHist::Get_charge_nohit(unsigned dif, unsigned chip,
+                                   unsigned chan, unsigned col) {
   TString charge_nohit;
-  charge_nohit.Form("charge_nohit_chip%u_ch%u_col%u", i, j, k);
+  charge_nohit.Form("charge_nohit_dif%u_chip%u_ch%u_col%u",
+                    dif, chip, chan, col);
   if (m_hist_file->GetListOfKeys()->Contains(charge_nohit))
     return (TH1I*) m_hist_file->Get(charge_nohit);
   else
@@ -63,9 +69,11 @@ TH1I * wgGetHist::Get_charge_nohit(unsigned i, unsigned j, unsigned k) {
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_time_hit(unsigned i, unsigned j, unsigned k) {
+TH1I * wgGetHist::Get_time_hit(unsigned dif, unsigned chip,
+                               unsigned chan, unsigned col) {
   TString time_hit;
-  time_hit.Form("time_hit_chip%u_ch%u_col%u", i, j, k);
+  time_hit.Form("time_hit_dif%u_chip%u_ch%u_col%u",
+                dif, chip, chan, col);
   if (m_hist_file->GetListOfKeys()->Contains(time_hit))
     return (TH1I*) m_hist_file->Get(time_hit);
   else
@@ -73,9 +81,11 @@ TH1I * wgGetHist::Get_time_hit(unsigned i, unsigned j, unsigned k) {
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_time_nohit(unsigned i, unsigned j, unsigned k) {
+TH1I * wgGetHist::Get_time_nohit(unsigned dif, unsigned chip,
+                                 unsigned chan, unsigned col) {
   TString time_nohit;
-  time_nohit.Form("time_nohit_chip%u_ch%u_col%u", i, j, k);
+  time_nohit.Form("time_nohit_dif%u_chip%u_ch%u_col%u",
+                  dif, chip, chan, col);
   if (m_hist_file->GetListOfKeys()->Contains(time_nohit))
     return (TH1I*) m_hist_file->Get(time_nohit);
   else
@@ -83,9 +93,9 @@ TH1I * wgGetHist::Get_time_nohit(unsigned i, unsigned j, unsigned k) {
 }
 
 //************************************************************************
-TH1I * wgGetHist::Get_bcid_hit(unsigned i, unsigned j) {
+TH1I * wgGetHist::Get_bcid_hit(unsigned dif, unsigned chip, unsigned chan) {
   TString bcid_hit;
-  bcid_hit.Form("bcid_hit_chip%u_ch%u", i, j);
+  bcid_hit.Form("bcid_hit_dif%u_chip%u_ch%u", dif, chip, chan);
   if (m_hist_file->GetListOfKeys()->Contains(bcid_hit))
     return (TH1I*) m_hist_file->Get(bcid_hit);
   else
@@ -104,7 +114,7 @@ void wgGetHist::Get_spill_count() {
 }
 
 //************************************************************************
-int wgGetHist::Get_start_time() {
+int wgGetHist::GetStartTime() {
   if (m_hist_file->GetListOfKeys()->Contains("start_time")) {
     TParameter<int> * p_start_time;
     m_hist_file->GetObject("start_time", p_start_time);
@@ -114,7 +124,7 @@ int wgGetHist::Get_start_time() {
 }
 
 //************************************************************************
-int wgGetHist::Get_stop_time() {
+int wgGetHist::GetStopTime() {
   if (m_hist_file->GetListOfKeys()->Contains("stop_time")) {
     TParameter<int> * p_stop_time;
     m_hist_file->GetObject("stop_time", p_stop_time);
@@ -126,8 +136,8 @@ int wgGetHist::Get_stop_time() {
 //************************************************************************
 TCanvas * wgGetHist::Make_Canvas(const char * name, bool y_logscale) {
   TCanvas * canvas = new TCanvas(name, name);
-  canvas->SetCanvasSize(1024,768);
-  if(y_logscale) canvas->SetLogy();
+  canvas->SetCanvasSize(1024, 768);
+  if (y_logscale) canvas->SetLogy();
   return canvas;
 }
 
