@@ -31,7 +31,7 @@ const unsigned MAX_SIGMA = MAX_GAIN;
 const unsigned MIN_SIGMA = 2;
 
 //           CHIP         CHANNEL
-typedef std::vector <std::vector <double>> ChargeVector;
+typedef std::vector <std::vector <int>> ChargeVector;
 //               iDAC           PEU              DIF
 typedef std::map<unsigned, std::array <std::map <unsigned, ChargeVector>, NUM_PE>> Charge;
 //               DIF            CHIP         CHANNEL

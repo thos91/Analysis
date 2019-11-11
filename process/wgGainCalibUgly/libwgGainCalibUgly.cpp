@@ -282,11 +282,12 @@ int wgGainCalibUgly(const char * x_input_run_dir,
       unsigned ichip = chip.first;
       unsigned n_chans = chip.second;
       
-      auto canvas = new TCanvas("canvas", "inputDAC vs gain", 1280, 720);
-      auto multi_graph = new TMultiGraph();
+      std::unique_ptr<TCanvas> canvas(new TCanvas("canvas", "inputDAC vs gain",
+                                                  1280, 720));
+      std::unique_ptr<TMultiGraph> multi_graph(new TMultiGraph());
       multi_graph->SetMinimum(gain_calib::MIN_GAIN);
       multi_graph->SetMaximum(gain_calib::MAX_GAIN);
-      std::vector<TGraphErrors *> graphs(n_chans);
+      std::vector<std::unique_ptr<TGraphErrors>> graphs(n_chans);
 
       // Check for non physical (bad) channels ////////////////////////////////
       
@@ -317,8 +318,11 @@ int wgGainCalibUgly(const char * x_input_run_dir,
           root_gain    (i_idac) = gain[v_idac[i_idac]][dif_id][ichip][ichan];
           root_gain_err(i_idac) = sigma_gain[v_idac[i_idac]][dif_id][ichip][ichan];
         }
-        graphs[ichan] = new TGraphErrors(root_idac, root_gain,
-                                         root_idac_err, root_gain_err);
+
+        std::unique_ptr<TGraphErrors> graph(
+            new TGraphErrors(root_idac, root_gain, root_idac_err, root_gain_err));
+        graphs[ichan] = std::move(graph);
+        
         if (graphs[ichan] == nullptr) {
           std::stringstream ss;
           ss << "Failed to create TGraphErrors for dif " << dif_id <<
@@ -337,12 +341,12 @@ int wgGainCalibUgly(const char * x_input_run_dir,
         graphs[ichan]->SetMarkerColor(632);
         graphs[ichan]->SetMarkerSize(1);
         graphs[ichan]->SetMarkerStyle(8);
-        TF1 * linear_fit  = graphs[ichan]->GetFunction("pol1");
+        auto linear_fit  = graphs[ichan]->GetFunction("pol1");
         linear_fit->SetLineColor(kGreen);
         intercept[dif_id][ichip][ichan] = linear_fit->GetParameter(0);
         slope    [dif_id][ichip][ichan] = linear_fit->GetParameter(1);
           
-        multi_graph->Add(graphs[ichan]);
+        multi_graph->Add(graphs[ichan].get());
       }
       TString title;
       title.Form("chip%d;inputDAC;gain", ichip);
@@ -354,14 +358,12 @@ int wgGainCalibUgly(const char * x_input_run_dir,
       image.Form("%s/dif%d/inputDAC_vs_gain_ugly_chip%d.png",
                  output_img_dir.c_str(), dif_id, ichip);
       canvas->Print(image);
-      delete multi_graph;
-      delete canvas;
     }
   }
   
-  TCanvas *c2 = new TCanvas();
+  std::unique_ptr<TCanvas> canvas_gain(new TCanvas());
   h_gain->Draw();
-  c2->Print((output_img_dir + "gain.png").c_str());
+  canvas_gain->Print((output_img_dir + "gain.png").c_str());
   
   /////////////////////////////////////////////////////////////////////////////
   //                              gain_card.xml                              //
@@ -369,8 +371,8 @@ int wgGainCalibUgly(const char * x_input_run_dir,
 
   wgEditXML xml;
 
-  xml.GainCalib_Make(output_xml_dir + "/gain_card.xml", *topol);
-  xml.Open(output_xml_dir + "/gain_card.xml");
+  xml.GainCalib_Make(output_xml_dir + "/gain_card_ugly.xml", *topol);
+  xml.Open(output_xml_dir + "/gain_card_ugly.xml");
 
   // DIF
   for (auto const& dif: topol->dif_map) {
@@ -402,7 +404,7 @@ int wgGainCalibUgly(const char * x_input_run_dir,
   xml.Close();
 
   wg::make::bad_channels_file(bad_channels, gain, v_idac,
-                              output_xml_dir + "/bad_channels.cvs");
+                              output_xml_dir + "/bad_channels_ugly.cvs");
 
   return WG_SUCCESS;
 }

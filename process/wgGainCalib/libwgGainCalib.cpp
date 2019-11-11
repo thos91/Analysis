@@ -86,13 +86,13 @@ int wgGainCalib(const char * x_input_run_dir,
     return ERR_TOPOLOGY;
   }
 
-  if (only_wallmrd) {
+  if (only_wagasci) {
     topol->dif_map.erase(0); // WallMRD north top
     topol->dif_map.erase(1); // WallMRD north bottom
     topol->dif_map.erase(2); // WallMRD south top
     topol->dif_map.erase(3); // WallMRD south bottom
     topol->n_difs -= 4;
-  } else if (only_wagasci) {
+  } else if (only_wallmrd) {
     topol->dif_map.erase(4); // WAGASCI upstream top
     topol->dif_map.erase(5); // WAGASCI upstream side
     topol->dif_map.erase(6); // WAGASCI downstream top
@@ -243,12 +243,28 @@ int wgGainCalib(const char * x_input_run_dir,
             }
 #endif // DEBUG_WG_GAIN_CALIB
 
-            // TODO: Only considering the 0 column for the time being
+            // Among the first 5 columns, choose the column with the highest
+            // charge. If the threshold calibration is not perfect, sometimes
+            // lower PEU peaks crawl back in the histograms. If nothing is found
+            // in the first 5 columns, use the next 5.
+            int max_charge = 0;
+            unsigned max_col = 5;
+            while (max_charge == 0 && max_col < 15) {
+              for (unsigned icol = 0; icol < max_col; ++icol) {
+                int tmp = xml.SUMMARY_GetChFitValue(
+                    "charge_hit_" + std::to_string(icol), ichan);
+                if (!isnan(tmp) && tmp > max_charge) {
+                  max_charge = tmp;
+                  max_col = icol;
+                }
+              }
+              if (max_charge == 0) max_col += 5;
+            }
+            if (max_charge == 0) max_charge = -1;
             
-            charge_hit[idac][ipe][dif_id][ichip][ichan] =
-                xml.SUMMARY_GetChFitValue("charge_hit_0", ichan);
-            sigma_hit [idac][ipe][dif_id][ichip][ichan] =
-                xml.SUMMARY_GetChFitValue("sigma_hit_0", ichan);
+            charge_hit[idac][ipe][dif_id][ichip][ichan] = max_charge;
+            sigma_hit [idac][ipe][dif_id][ichip][ichan] = xml.SUMMARY_GetChFitValue(
+                "sigma_hit_" + std::to_string(max_col), ichan);
           }
           xml.Close();
         }
@@ -274,30 +290,36 @@ int wgGainCalib(const char * x_input_run_dir,
     for (auto const& chip: dif.second) {
       unsigned ichip = chip.first;
       unsigned n_chans = chip.second;
-      auto canvas = new TCanvas("canvas", "inputDAC vs gain", 1280, 720);
-      auto multi_graph = new TMultiGraph();
+      
+      std::unique_ptr<TCanvas> canvas(new TCanvas("canvas", "inputDAC vs gain",
+                                                  1280, 720));
+      std::unique_ptr<TMultiGraph> multi_graph(new TMultiGraph());
       multi_graph->SetMinimum(gain_calib::MIN_GAIN);
       multi_graph->SetMaximum(gain_calib::MAX_GAIN);
-      std::array<TGraphErrors *, MEMDEPTH> graphs;
+      std::vector<std::unique_ptr<TGraphErrors>> graphs(n_chans);
 
       // Check for non physical (bad) channels ////////////////////////////////
       
       for (auto const& idac : v_idac) {
         for (unsigned ichan = 0; ichan < n_chans; ++ichan) {
+          if (!Topology::IsWallMRDChannelEnabled(dif_id, ichip, ichan))
+            continue;
           double charge_2pe = charge_hit[idac][TWO_PE][dif_id][ichip][ichan];
           double charge_1pe = charge_hit[idac][ONE_PE][dif_id][ichip][ichan];
           double sigma_2pe = sigma_hit  [idac][TWO_PE][dif_id][ichip][ichan];
           double sigma_1pe = sigma_hit  [idac][ONE_PE][dif_id][ichip][ichan];
           bad_channels[dif_id][ichip][ichan] =
-              wg::numeric::is_unphysical_gain(charge_2pe - charge_1pe);
-          bad_channels[dif_id][ichip][ichan] = wg::numeric::is_unphysical_sigma(
-              std::sqrt(std::pow(sigma_1pe, 2) + std::pow(sigma_2pe, 2)));
+              wg::numeric::is_unphysical_gain(charge_1pe, charge_2pe);
+          bad_channels[dif_id][ichip][ichan] =
+              wg::numeric::is_unphysical_sigma(sigma_1pe, sigma_2pe);
         }
       }
 
       // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
-        if (bad_channels[dif_id][ichip][ichan]) continue;
+        if (bad_channels[dif_id][ichip][ichan] ||
+            !Topology::IsWallMRDChannelEnabled(dif_id, ichip, ichan))
+          continue;
         
         // IDAC
         TVectorD root_gain(v_idac.size());
@@ -315,9 +337,11 @@ int wgGainCalib(const char * x_input_run_dir,
           root_gain_err(i_idac) = std::sqrt(std::pow(sigma_1pe, 2) +
                                             std::pow(sigma_2pe, 2));
         }
+
+        std::unique_ptr<TGraphErrors> graph(
+            new TGraphErrors(root_idac, root_gain, root_idac_err, root_gain_err));
+        graphs[ichan] = std::move(graph);
         
-        graphs[ichan] = new TGraphErrors(root_idac, root_gain,
-                                         root_idac_err, root_gain_err);
         if (graphs[ichan] == nullptr) {
           std::stringstream ss;
           ss << "Failed to create TGraphErrors for dif " << dif_id <<
@@ -336,12 +360,12 @@ int wgGainCalib(const char * x_input_run_dir,
         graphs[ichan]->SetMarkerColor(632);
         graphs[ichan]->SetMarkerSize(1);
         graphs[ichan]->SetMarkerStyle(8);
-        TF1 * linear_fit  = graphs[ichan]->GetFunction("pol1");
+        auto linear_fit = graphs[ichan]->GetFunction("pol1");
         linear_fit->SetLineColor(kGreen);
         intercept[dif_id][ichip][ichan] = linear_fit->GetParameter(0);
         slope    [dif_id][ichip][ichan] = linear_fit->GetParameter(1);
           
-        multi_graph->Add(graphs[ichan]);
+        multi_graph->Add(graphs[ichan].get());
       }
       
       TString title;
@@ -354,8 +378,6 @@ int wgGainCalib(const char * x_input_run_dir,
       image.Form("%s/dif%d/inputDAC_vs_gain_chip%d.png",
                  output_img_dir.c_str(), dif_id, ichip);
       canvas->Print(image);
-      delete multi_graph;
-      delete canvas;
     }
   }
 
@@ -378,16 +400,18 @@ int wgGainCalib(const char * x_input_run_dir,
       double intercept_mean = wg::numeric::mean(intercept[dif_id][ichip]);
       // CHANNEL
       for (unsigned ichan = 0; ichan < chip.second; ++ichan) {
+        if (!Topology::IsWallMRDChannelEnabled(dif_id, ichip, ichan))
+          continue;
         if (bad_channels[dif_id][ichip][ichan]) {
           slope[dif_id][ichip][ichan] = slope_mean;
           intercept[dif_id][ichip][ichan] = intercept_mean;
         }
         xml.GainCalib_SetValue(std::string("slope_gain"),
                                slope[dif_id][ichip][ichan],
-                               dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
+                               dif_id, ichip, ichan);
         xml.GainCalib_SetValue(std::string("intercept_gain"),
                                intercept[dif_id][ichip][ichan],
-                               dif_id, ichip, ichan, NO_CREATE_NEW_MODE);
+                               dif_id, ichip, ichan);
       }
     }
   }
@@ -397,6 +421,6 @@ int wgGainCalib(const char * x_input_run_dir,
 
   wg::make::bad_channels_file(bad_channels, charge_hit, v_idac,
                               output_xml_dir + "/bad_channels.cvs");
-
+  
   return WG_SUCCESS;
 }
