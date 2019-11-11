@@ -1,4 +1,5 @@
-set(process wgDecoder)
+set(raw_emulator wgRawEmulator)
+set(decoder wgDecoder)
 
 ################ Compiler flags ################
 
@@ -29,30 +30,21 @@ include_directories("${ROOT_INCLUDE_DIRS}")
 
 #####################################################################
 #                                                                   #
-#                            Library                                #
+#                              Library                              #
 #                                                                   #
 #####################################################################
 
-##### wgDecoder
+##### wgRawEmulator
 
-# Compile them as a static library .a
-add_library(lib${process} SHARED lib${process}.cpp lib${process}Seeker.cpp
-  lib${process}Reader.cpp lib${process}Utils.cpp )
-set_target_properties(lib${process} PROPERTIES OUTPUT_NAME "${process}")
-
-# Link with ...
-target_link_libraries(lib${process}
- ${ROOT_LIBRARIES}            # ROOT libraries
- ${Boost_FILESYSTEM_LIBRARY}  # boost filesystem libraries
- ${Boost_SYSTEM_LIBRARY}      # boost system libraries
- libwagasci                   # WAGASCI dynamic library
- )
+add_library(lib${raw_emulator} SHARED lib${raw_emulator}.cpp)
+set_target_properties(lib${raw_emulator} PROPERTIES OUTPUT_NAME "${raw_emulator}")
 
 # make the library discoverable from all the programs
-target_include_directories(lib${process} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(lib${raw_emulator} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # install the static library in the lib folder
-install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+install(TARGETS lib${raw_emulator} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+
 
 #####################################################################
 #                                                                   #
@@ -60,15 +52,15 @@ install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 #                                                                   #
 #####################################################################
 
-##### wgDecoder
+##### wgRawEmulator
 
-add_executable(${process} ${process}.cpp)
+add_executable(${raw_emulator} ${raw_emulator}.cpp)
 
 # Link with ...
-target_link_libraries(${process} lib${process})
+target_link_libraries(${raw_emulator} lib${decoder} lib${raw_emulator})
 
 # install the executable in the bin folder
-install(TARGETS ${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
+install(TARGETS ${raw_emulator} DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 
 ##### Unit tests
 

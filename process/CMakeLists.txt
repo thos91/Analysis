@@ -1,4 +1,5 @@
 add_subdirectory(wgDecoder)
+#add_subdirectory(wgRawEmulator)
 add_subdirectory(wgMakeHist)
 add_subdirectory(wgAnaHist)
 add_subdirectory(wgAnaHistSummary)

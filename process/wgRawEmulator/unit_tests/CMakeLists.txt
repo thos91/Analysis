@@ -1,4 +1,4 @@
-set(test1 test_decoder_utils)
+set(test1 test_raw_data)
 
 ################ Compiler flags ################
 
@@ -33,7 +33,7 @@ include_directories("${ROOT_INCLUDE_DIRS}")
 #                                                                   #
 #####################################################################
 
-##### test_chip_number
+##### test_raw_data
 
 add_executable(${test1} ${test1}.cpp)
 
