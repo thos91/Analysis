@@ -211,7 +211,7 @@ void wgFit::ChargeHitHG(double (&x)[3],unsigned dif_id, unsigned ichip,
     }
 
   try { wgFit::Charge(charge_hit_HG.at(0), x, wgFit::GainSelect::HighGain); }
-  catch (const std::exception) {
+  catch (const std::exception&) {
     delete_pointers(charge_hit_HG);
     throw;
   }
@@ -423,7 +423,7 @@ void wgFit::Gain(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
     }
 
   try { wgFit::Gain(charge_hit_HG.at(0), gain, n_peaks, do_not_fit); }
-  catch (const std::exception) {
+  catch (const std::exception&) {
     delete_pointers(charge_hit_HG);
     throw;
   }

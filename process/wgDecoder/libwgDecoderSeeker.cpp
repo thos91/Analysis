@@ -318,7 +318,7 @@ bool SectionSeeker::SeekSpillTrailer(std::istream& is) {
   std::streampos stop_read;
   try {
   stop_read = wg_utils::ReadChunk(is, raw_data);
-  } catch (const wgEOF) {
+  } catch (const wgEOF&) {
     is.clear();
     is.seekg(0, is.end);
     stop_read = is.tellg();
@@ -344,7 +344,7 @@ bool SectionSeeker::SeekSpillTrailer(std::istream& is) {
     try {
       is.seekg(start_read);
       wg_utils::ReadChunk(is, raw_data_emergency);
-    } catch (const wgEOF) {
+    } catch (const wgEOF&) {
       is.clear();
       is.seekg(0, is.end);
     }
