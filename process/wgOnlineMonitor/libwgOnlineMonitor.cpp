@@ -44,14 +44,14 @@ void newblock(void *workspace, struct block *block)
 {
   //struct om_ws *ws = (struct om_ws *) workspace;
 
-  int spill_number = std::stoi(get_block_field(block, "spill_number"));
-  int spill_flag   = std::stoi(get_block_field(block, "spill_flag"));
-  int spill_count  = std::stoi(get_block_field(block, "spill_count"));
+//   int spill_number = std::stoi(get_block_field(block, "spill_number"));
+//   int spill_flag   = std::stoi(get_block_field(block, "spill_flag"));
+//   int spill_count  = std::stoi(get_block_field(block, "spill_count"));
 
-#ifdef DEBUG_WG_ONLINE_MONITOR
-  std::cout << "\nNew block\nID: " << block->id << " | Spill number: " << spill_number <<
-      " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;
-#endif
+// #ifdef DEBUG_WG_ONLINE_MONITOR
+//   std::cout << "\nNew block\nID: " << block->id << " | Spill number: " << spill_number <<
+//       " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;
+// #endif
 } //newblock
 
 // ==================================================================
