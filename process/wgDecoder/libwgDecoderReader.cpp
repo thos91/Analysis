@@ -18,7 +18,7 @@ namespace wg_utils = wagasci_decoder_utils;
 //                             SectionReader class                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-SectionReader::SectionReader(const RawDataConfig& config, TTree* tree, Raw_t& rd) :
+SectionReader::SectionReader(const RawDataConfig& config, TTree* tree, Raw_t& rd):
     m_config(config), m_tree(tree), m_rd(rd) {
     if (m_config.has_spill_number) {
     m_num_marker_types = NUM_SECTION_TYPES - 1;
@@ -220,8 +220,6 @@ void SectionReader::ReadRawData(std::istream& is, const SectionSeeker::Section& 
       m_rd.get().debug_chip[section.ichip][DEBUG_WRONG_BCID]++;
   }
 
-  // std::cout << "chip counter " << section.ichip  << " | nb col " << n_columns << "\n";
-  
   for (unsigned icol = 0; icol < n_columns; ++icol) {
 
     for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {

@@ -37,7 +37,8 @@ SectionSeeker::SectionSeeker(const RawDataConfig &config) : m_config(config) {
 //                               GetNextSection                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
+SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is,
+                                                      unsigned& recursive_counter) {
   bool found = true;
   unsigned last_section_type = m_current_section.type;
   m_last_ichip = m_current_ichip;
@@ -49,11 +50,20 @@ SectionSeeker::Section SectionSeeker::SeekNextSection(std::istream& is) {
 
   if (!found) {
     std::bitset<BITS_PER_LINE> raw_data_line;
+    if (++recursive_counter >= MAX_RAWDATA_LENGTH) {
+      recursive_counter = 0;
+      wg_utils::ThrowOneByte(is);
+      std::cout << "Had to remove one byte at position " << is.tellg()  <<
+          " to restore balance in the force\n";
+    }
     wg_utils::ReadLine(is, raw_data_line);
+    // Uncomment the following lines if you want to debug
     //std::stringstream res;
-    //res << std::setfill('0') << std::setw(4) << std::hex << std::uppercase << raw_data_line.to_ulong();
-    //Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " + to_string(is.tellg()) + ". Skipping it.");
-    return this->SeekNextSection(is);
+    //res << std::setfill('0') << std::setw(4) << std::hex << std::uppercase <<
+    //raw_data_line.to_ulong();
+    //Log.eWrite("[wgDecoder] Line \"" + res.str() + "\" not recognized at byte " +
+    //to_string(is.tellg()) + ". Skipping it.");
+    return this->SeekNextSection(is, recursive_counter);
   }
 
   // In any case the chip counter cannot get bigger than the number of chips
@@ -409,15 +419,21 @@ bool SectionSeeker::SeekRawData(std::istream& is) {
   }
 
   unsigned n_raw_data = 0;
+  
   do {
     wg_utils::ReadLine(is, raw_data_line);
     ++n_raw_data;
   }
-  while (raw_data_line != CHIP_TRAILER_MARKER);
+  while (raw_data_line != CHIP_TRAILER_MARKER && n_raw_data < MAX_RAWDATA_LENGTH);
   // rewind only the last line
   is.seekg(- BYTES_PER_LINE, std::ios::cur);
   --n_raw_data;
 
+  if (n_raw_data >= MAX_RAWDATA_LENGTH) {
+    is.seekg(start_read);
+    return false;
+  }
+  
   if ((n_raw_data - m_config.n_chip_id) % ONE_COLUMN_LENGTH == 0) {
     m_current_section.start = start_read;
     m_current_section.stop = is.tellg();
