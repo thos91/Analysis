@@ -44,25 +44,20 @@ bool is_unphysical_sigma(double sigma) {
           std::isnan(sigma)) ? true : false;
 }
 
-bool is_unphysical_gain(double &gain, const double mean) {
-  if (gain > gain_calib::MAX_GAIN ||
-      gain < gain_calib::MIN_GAIN ||
-      std::isnan(gain)) {
-    gain = mean;
-    return true;
-  }
-  return false;
+bool is_unphysical_gain(double charge_1pe, double charge_2pe) {
+  double gain = (charge_1pe <= 0 || charge_2pe <= 0) ? nan("") :
+                charge_2pe - charge_1pe;
+  return is_unphysical_gain(gain);
 }
 
-bool is_unphysical_sigma(double &sigma, const double mean) {
-  if (sigma > gain_calib::MAX_SIGMA ||
-      sigma < gain_calib::MIN_SIGMA ||
-      std::isnan(sigma)) {
-    sigma = mean;
-    return true;
-  }
-  return false;
+bool is_unphysical_sigma(double sigma_1pe, double sigma_2pe) {
+    double sigma = (sigma_1pe <= 0 || sigma_2pe <= 0) ? nan("") :
+                   std::sqrt(std::pow(sigma_1pe, 2) +
+                             std::pow(sigma_2pe, 2));
+    return is_unphysical_sigma(sigma);
 }
+
+
 
 } // numeric
 

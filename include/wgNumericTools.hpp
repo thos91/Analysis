@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <cstddef>
+#include <cmath>
 
 namespace wagasci_tools {
 
@@ -38,9 +39,9 @@ double standard_deviation(std::array<double, SIZE> arr) {
 // MIN_GAIN) in the case of the gain or (> MAX_SIGMA < MIN_SIGMA) in
 // the case of the variance
 bool is_unphysical_gain(double gain);
+bool is_unphysical_sigma(double sigma_1pe, double sigma_2pe);
+bool is_unphysical_gain(double charge_1pe, double charge_2pe);
 bool is_unphysical_sigma(double sigma);
-bool is_unphysical_gain(double &gain, const double mean);
-bool is_unphysical_sigma(double &sigma, const double mean);
 
 } // numeric
 
