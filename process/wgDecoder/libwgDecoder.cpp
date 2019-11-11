@@ -40,6 +40,9 @@ int wgDecoder(const char * x_input_raw_file,
               unsigned dif,
               unsigned n_chips) {
 
+  // If you think that the default stack size is not enough uncomment the next line
+  // wagasci_decoder_utils::increase_stack_size();
+  
   std::string input_raw_file(x_input_raw_file);
   std::string calibration_dir(x_calibration_dir);
   std::string output_dir(x_output_dir);
@@ -66,8 +69,9 @@ int wgDecoder(const char * x_input_raw_file,
   // ======== dif ========= //
 
   if (dif > NDIFS) {
-    Log.eWrite("[wgDecoder] The DIF number must be {0-" + std::to_string(NDIFS - 1) + "}");
-    exit(1);
+    Log.eWrite("[wgDecoder] The DIF number must be {0-" +
+               std::to_string(NDIFS - 1) + "}");
+    return ERR_WRONG_DIF_VALUE;
   }
   
   // ======== n_chips ========= //
@@ -78,7 +82,7 @@ int wgDecoder(const char * x_input_raw_file,
   if (n_chips == 0 || n_chips > NCHIPS) {
     Log.eWrite("[wgDecoder] The number of chips per DIF must be {1-"
                + std::to_string(NCHIPS) + "}");
-    exit(1);
+    return ERR_WRONG_CHIP_VALUE;
   }
 
   // ============ pyrame_log_file ============ //
@@ -114,13 +118,15 @@ int wgDecoder(const char * x_input_raw_file,
       try {
         dif = stoi(input_raw_file_name.substr(pos + 8, pos + 9));
       } catch (const std::invalid_argument& e) {
-        Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + std::string(e.what()));
+        Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : "
+                   + std::string(e.what()));
       }
     } else if ((pos = input_raw_file_name.find("dif_")) != std::string::npos) {
       try {
         dif = stoi(input_raw_file_name.substr(pos + 4, pos + 5));
       } catch (const std::invalid_argument& e) {
-        Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : " + std::string(e.what()));
+        Log.eWrite("[wgDecoder] failed to read the DIF number from the file name : "
+                   + std::string(e.what()));
       }
     } else {
       Log.eWrite("[wgDecoder] Error: DIF ID number not given nor found");
@@ -262,20 +268,28 @@ int wgDecoder(const char * x_input_raw_file,
   // ===================================================================== //
 
   if( check_exist::log_file(pyrame_log_file) ) {
-    // Will be filled with  v[0]: start_time, v[1]: stop_time, v[2]: nb_data_pkts, v[3]: nb_lost_pkts
+    // Will be filled with  v[0]: start_time,   v[1]: stop_time,
+    //                      v[2]: nb_data_pkts, v[3]: nb_lost_pkts
     std::vector<std::string> v_log;
     wgEditXML edit;
     edit.GetLog(pyrame_log_file, v_log);
     // Start time of the acquisition that produced the .raw file
-    tree->GetUserInfo()->Add(new TParameter<Int_t>("start_time", datetime::datetime_to_seconds(v_log[0])));
+    tree->GetUserInfo()->Add(new TParameter<Int_t>(
+        "start_time", datetime::datetime_to_seconds(v_log[0])));
     // Stop time of the acquisition that produced the .raw file
-    tree->GetUserInfo()->Add(new TParameter<Int_t>("stop_time", datetime::datetime_to_seconds(v_log[1])));
-    // Number of data packets acquired as reported by Pyrame in the acquisition log file
-    tree->GetUserInfo()->Add(new TParameter<Int_t>("nb_data_pkts", std::stoi(v_log[2])));
-    // Number of lost packets acquired as reported by Pyrame in the acquisition log file
-    tree->GetUserInfo()->Add(new TParameter<Int_t>("nb_lost_pkts", std::stoi(v_log[3])));
+    tree->GetUserInfo()->Add(new TParameter<Int_t>(
+        "stop_time", datetime::datetime_to_seconds(v_log[1])));
+    // Number of data packets acquired as reported by Pyrame in the acquisition
+    // log file
+    tree->GetUserInfo()->Add(new TParameter<Int_t>(
+        "nb_data_pkts", std::stoi(v_log[2])));
+    // Number of lost packets acquired as reported by Pyrame in the acquisition
+    // log file
+    tree->GetUserInfo()->Add(new TParameter<Int_t>(
+        "nb_lost_pkts", std::stoi(v_log[3])));
   }
-  else Log.eWrite("[wgDecoder]  Pyrame log file : " + pyrame_log_file + " doesn't exist!");
+  else Log.eWrite("[wgDecoder]  Pyrame log file : " + pyrame_log_file +
+                  " doesn't exist!");
 
   // ===================================================================== //
   //                Allocate the RawDataConfig class object                //
@@ -301,7 +315,8 @@ int wgDecoder(const char * x_input_raw_file,
   std::ifstream ifs;
   ifs.open(input_raw_file.c_str(), std::ios_base::in | std::ios_base::binary);
   if (!ifs.is_open()) {
-    Log.eWrite("[wgDecoder] Failed to open raw file: " + std::string(strerror(errno)));
+    Log.eWrite("[wgDecoder] Failed to open raw file: " +
+               std::string(strerror(errno)));
     return ERR_FAILED_OPEN_RAW_FILE;
   }
 
@@ -312,11 +327,13 @@ int wgDecoder(const char * x_input_raw_file,
     SectionReader reader(config, tree, rd);
     int last_spill_count = -1;
     unsigned last_section_type = 0;
+    unsigned recursive_counter = 0;
     while (true) {
 
       // ============ Seek and read next section ============ //
       
-      SectionSeeker::Section current_section = seeker.SeekNextSection(ifs);
+      SectionSeeker::Section current_section =
+          seeker.SeekNextSection(ifs, recursive_counter);
       reader.ReadNextSection(ifs, current_section);
 
       // ============ If the raw data was correctly read  ============ //
@@ -340,14 +357,16 @@ int wgDecoder(const char * x_input_raw_file,
       
       if (current_section.type == SectionSeeker::SectionType::SpillTrailer &&
           (n_good_spills + n_bad_spills) % 1000 == 0)
-        Log.Write("[wgDecoder] Decoded " + std::to_string(n_good_spills + n_bad_spills) + " spills");
+        Log.Write("[wgDecoder] Decoded " + std::to_string(n_good_spills +
+                                                          n_bad_spills) + " spills");
       
       last_section_type = current_section.type;
     }
   } catch (const wgEOF& e) {
     result = WG_SUCCESS;
   } catch (const std::exception& e) {
-    Log.eWrite("[wgDecoder] Error while reading raw data : " + std::string(e.what()));
+    Log.eWrite("[wgDecoder] Error while reading raw data : " +
+               std::string(e.what()));
     result = ERR_WG_DECODER;
   }
 
@@ -360,8 +379,10 @@ int wgDecoder(const char * x_input_raw_file,
   output_file->Close();
   delete output_file;
 
-  Log.Write("[wgDecoder] *****  GOOD spills : " + std::to_string(n_good_spills) + " spills *****");
-  Log.Write("[wgDecoder] *****  BAD  spills : " + std::to_string(n_bad_spills) + " spills *****");
+  Log.Write("[wgDecoder] *****  GOOD spills : " + std::to_string(n_good_spills) +
+            " spills *****");
+  Log.Write("[wgDecoder] *****  BAD  spills : " + std::to_string(n_bad_spills) +
+            " spills *****");
   
   return result;
 }

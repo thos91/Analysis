@@ -35,6 +35,12 @@ const unsigned SPILL_HEADER_LENGTH   = 6;
 const unsigned SPILL_TRAILER_LENGTH  = 7;
 const unsigned PHANTOM_MENACE_LENGTH = 3;
 const unsigned SPILL_NUMBER_LENGTH   = 3;
+const unsigned HEADERS_TRAILERS_TOTAL_LENGTH = CHIP_HEADER_LENGTH +
+                                               CHIP_TRAILER_LENGTH +
+                                               SPILL_HEADER_LENGTH +
+                                               SPILL_TRAILER_LENGTH +
+                                               PHANTOM_MENACE_LENGTH +
+                                               SPILL_NUMBER_LENGTH;
 
 // One column length in 16 bits lines (but the BCID)
 // 1 BCID              +
@@ -42,6 +48,8 @@ const unsigned SPILL_NUMBER_LENGTH   = 3;
 // n_channels charges
 const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
 const unsigned MAX_EVENT = UINT_MAX;
+const unsigned MAX_RAWDATA_LENGTH = 2 * (NCHIPS * MEMDEPTH * ONE_COLUMN_LENGTH +
+                                         HEADERS_TRAILERS_TOTAL_LENGTH);
 
 // Debug macros to fill the debug_spill and debug_chip histograms
 // spill

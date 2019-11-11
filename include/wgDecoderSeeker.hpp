@@ -131,7 +131,7 @@ class SectionSeeker {
   // to locate the start of the next section and don't rely on the
   // stream position.
   
-  Section SeekNextSection(std::istream& is);
+  Section SeekNextSection(std::istream& is, unsigned &recursive_counter);
 
  private:
 
