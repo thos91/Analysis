@@ -72,4 +72,4 @@ install(TARGETS ${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/bin")
 
 ##### Unit tests
 
-add_subdirectory(unit_tests)
+# add_subdirectory(unit_tests)
