@@ -42,7 +42,7 @@ wgFit::wgFit(const std::string& x_inputfile,
 }
 
 //**********************************************************************
-WgxFit::wgFit(const std::string& x_inputfile) :
+wgFit::wgFit(const std::string& x_inputfile) :
     histos_(x_inputfile) {
   wgEnvironment env;
   wgFit::SetOutputImgDir(env.IMGDATA_DIRECTORY);
@@ -61,7 +61,7 @@ void wgFit::NoiseRate(TH1I * bcid_hit, double (&x)[2], unsigned spill_count) {
   // Find the right-most bin that is non-zero.
   Int_t last_bin = bcid_hit->FindLastBinAbove(0,1);
   if (last_bin <= 0) {
-    x[0] = x[1] = std::nan("noise");
+    x[0] = x[1] = -1;
     return;
   }
 
@@ -84,7 +84,7 @@ void wgFit::NoiseRate(double (&x)[2], unsigned dif_id, unsigned ichip,
                       unsigned ichan, bool print_flag) {
   TH1I * bcid_hit = wgFit::histos_.Get_bcid_hit(dif_id,ichip, ichan);
   if (bcid_hit == NULL) {
-    x[0] = x[1] = std::nan("");
+    x[0] = x[1] = -1;
     throw wgElementNotFound("BCID histogram not found : chip = " +
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
@@ -94,7 +94,7 @@ void wgFit::NoiseRate(double (&x)[2], unsigned dif_id, unsigned ichip,
   // Number of recorded spills
   unsigned spill_count = wgFit::histos_.spill_count;
   if (spill_count <= 0) {
-    x[0] = x[1] = std::nan("noise");
+    x[0] = x[1] = -1;
     return;
   }
 
@@ -111,14 +111,18 @@ void wgFit::NoiseRate(double (&x)[2], unsigned dif_id, unsigned ichip,
 
 void wgFit::Charge(TH1I * charge, double (&x)[3], wgFit::GainSelect gs) {
 
+  ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
+  // If the fit fails too many times try to set a smaller tolerance
+  // ROOT::Math::MinimizerOptions::SetDefaultTolerance(1.E-6);
+  
   static int fail_counter = 0;
   
-  if (charge->GetEntries() <= 0) {
-    x[0] = x[1] = x[2] = std::nan("empty_hist");
+  if (charge->GetEntries() <= WG_MIN_ENTRIES_FOR_FIT) {
+    x[0] = x[1] = x[2] = -1;
     return;
   }
 
-  unsigned begin, end;
+  Int_t begin, end;
   switch (gs) {
     case wgFit::GainSelect::HighGain:
       begin = WG_BEGIN_CHARGE_HIT_HG;
@@ -140,30 +144,33 @@ void wgFit::Charge(TH1I * charge, double (&x)[3], wgFit::GainSelect gs) {
 
   charge->GetXaxis()->SetRange(begin, end);
   Double_t par[3];
-  par[0] = charge->GetMaximumBin();
-  par[1] = charge->GetBinContent(charge->GetMaximumBin());
-  par[2] = 10;
+  par[0] = charge->GetBinContent(charge->GetMaximumBin());
+  par[1] = charge->GetMaximumBin();
+  par[2] = 5;
 
-  std::unique_ptr<TF1> gaussian(new TF1("gaussian", "gaus", begin, end, 3));
+  std::unique_ptr<TF1> gaussian(new TF1("gaussian", "gaus(0)", begin, end));
   gaussian->SetParameters(par);
   gaussian->SetParNames("mean", "normalization", "sigma");
-  gaussian->SetParLimits(0, begin, end);
-  gaussian->SetParLimits(1, par[1] / 2., par[1] * 2.);
-  gaussian->SetParLimits(2, 0, end - begin);
+  gaussian->SetParLimits(0, 0.5 * par[0], 2 * par[0]);
+  gaussian->SetParLimits(1, par[1] - 0.5 * WG_NOMINAL_GAIN,
+                         par[1] + 0.5 * WG_NOMINAL_GAIN);
+  gaussian->SetParLimits(2, 0, 0.5 * WG_NOMINAL_GAIN);
   
   // "B" : Use user defined boundaries
-  // "W" : Set all weights to 1 for non empty bins; ignore error bars
   // "Q": quiet mode (minimum printing)
   // "N" : Do not store the graphics function, do not draw
   // "0" : Do not plot the result of the fit.
-  int fit_status = charge->Fit(gaussian.get(), "BWQN0", "N0", begin, end);
+  int fit_status = charge->Fit(gaussian.get(), "BQN0", "N0", begin, end);
 
   if (fit_status != 0) {
-    x[0] = x[1] = x[2] = std::nan("fit_failed");
+    x[0] = par[1];     // mean_fit
+    x[1] = 2 * par[2]; // sigma_fit
+    x[2] = -1;         // peak_fit
     std::stringstream ss;
     ss << "Fail counter " << ++fail_counter << " : " <<
-        "charge fit failed : (" << fit_status << ") " <<
-        fit_status_str_.at(fit_status);
+        "charge fit failed : (" << fit_status << ") ";
+    if (fit_status_str_.count(fit_status))
+      ss << fit_status_str_.at(fit_status);
     throw wgFitFailed(ss.str());
   }
   
@@ -185,7 +192,7 @@ void wgFit::ChargeHitHG(double (&x)[3],unsigned dif_id, unsigned ichip,
                                                              ichan, 0));
 
   if (charge_hit_HG.at(0) == nullptr) {
-    x[0] = x[1] = x[2] = std::nan("charge_hit_hg");
+    x[0] = x[1] = x[2] = -1;
     std::stringstream ss;
     ss << "charge_hit_HG histogram not found : dif = " << dif_id <<
         "chip = " << ichip << ", chan = " << ichan << ", col = " << icol;
@@ -225,7 +232,7 @@ void wgFit::ChargeHitLG(double (&x)[3], unsigned dif_id, unsigned ichip,
   TH1I * charge_hit_LG = wgFit::histos_.Get_charge_hit_LG(dif_id, ichip,
                                                           ichan, icol);
   if (charge_hit_LG == NULL) {
-    x[0] = x[1] = x[2] = std::nan("charge");
+    x[0] = x[1] = x[2] = -1;
     throw wgElementNotFound("charge_hit_LG histogram not found : chip = " +
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
@@ -249,7 +256,7 @@ void wgFit::ChargeNohit(double (&x)[3], unsigned dif_id, unsigned ichip,
   TH1I * charge_nohit = wgFit::histos_.Get_charge_nohit(dif_id, ichip,
                                                         ichan, icol);
   if (charge_nohit == NULL) {
-    x[0] = x[1] = x[2] = std::nan("charge");
+    x[0] = x[1] = x[2] = -1;
     throw wgElementNotFound("charge_nohit histogram not found : chip = " +
                             std::to_string(ichip) + ", chan = " +
                             std::to_string(ichan));
@@ -297,7 +304,7 @@ void wgFit::Gain(TH1I * charge_hit, std::array<double, 2>& gain,
   Int_t n_peaks = fingers_plot->Search(charge_hit, 2,
                                        "nobackground,nodraw,goff", 0.05);
   if (n_peaks < 2) {
-    gain[0] = gain[1] = std::nan("too_few_peaks");
+    gain[0] = gain[1] = -1;
     throw wgFitFailed("Less than 2 peaks found (" +
                       std::to_string(n_peaks) + ")");
   }
@@ -314,14 +321,14 @@ void wgFit::Gain(TH1I * charge_hit, std::array<double, 2>& gain,
   std::sort(peaks.begin(), peaks.end(), wgFit::SortPeaks);
 
   if (peaks[0].first < WG_BEGIN_CHARGE_NOHIT) {
-    gain[0] = gain[1] = std::nan("bad_peaks_position");
+    gain[0] = gain[1] = -1;
     std::stringstream ss;
     ss << "left peak (" << peaks[0].first <<
         ") is less than " << WG_BEGIN_CHARGE_NOHIT;
     throw wgFitFailed(ss.str());
   }
   if (peaks[1].first > WG_END_CHARGE_HIT_HG) {
-    gain[0] = gain[1] = std::nan("bad_peaks_position");
+    gain[0] = gain[1] = -1;
     std::stringstream ss;
     ss << "right peak (" << peaks[1].first <<
         ") is greater than " << WG_END_CHARGE_HIT_HG;
@@ -361,19 +368,17 @@ void wgFit::Gain(TH1I * charge_hit, std::array<double, 2>& gain,
     }
 
     // "B" : Use user defined boundaries
-    // "W" : Set all weights to 1 for non empty bins; ignore error bars
     // "Q": quiet mode (minimum printing)
     // "N" : Do not store the graphics function, do not draw
     // "0" : Do not plot the result of the fit.
-    // "P" : drawing option
-    int fit_status = charge_hit->Fit("twin_peaks", "BWQN0", "N0",
+    int fit_status = charge_hit->Fit("twin_peaks", "BQN0", "N0",
                                      WG_BEGIN_CHARGE_NOHIT, WG_END_CHARGE_HIT_HG);
     if (fit_status != 0) {
-      gain[0] = gain[1] = std::nan("fit_failed");
+      gain[0] = gain[1] = -1;
       std::stringstream ss;
-      ss << "Fail counter " << ++fail_counter << " : " <<
-          "gain fit failed : (" << fit_status << ") " <<
-          fit_status_str_.at(fit_status);
+      ss << "fail counter " << ++fail_counter << " : (" << fit_status << ") ";
+      if (fit_status_str_.count(fit_status))
+        ss << fit_status_str_.at(fit_status);
       throw wgFitFailed(ss.str());
     }
     fit->GetParameters(par);
@@ -399,7 +404,7 @@ void wgFit::Gain(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
                                                              ichan, 0));
 
   if (charge_hit_HG.at(0) == nullptr) {
-    gain[0] = gain[1] = std::nan("gain");
+    gain[0] = gain[1] = -1;
     std::stringstream ss;
     ss << "charge_hit_HG histogram not found : dif = " << dif_id <<
         "chip = " << ichip << ", chan = " << ichan << ", col = " << icol;

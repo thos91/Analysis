@@ -1,5 +1,8 @@
 #include "wgFitConst.hpp"
 
+// minimum number of entries to fit a histogram
+const int WG_MIN_ENTRIES_FOR_FIT = 100;
+
 // fit range for the charge_nohit histogram
 const int WG_BEGIN_CHARGE_NOHIT = 300;
 const int WG_END_CHARGE_NOHIT = 700;

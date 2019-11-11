@@ -1,6 +1,9 @@
 #ifndef WGFITCONST_H_INCLUDE
 #define WGFITCONST_H_INCLUDE
 
+// minimum number of entries to fit a histogram
+extern const int WG_MIN_ENTRIES_FOR_FIT;
+
 // fit range for the charge_nohit histogram
 extern const int WG_BEGIN_CHARGE_NOHIT;
 extern const int WG_END_CHARGE_NOHIT;
