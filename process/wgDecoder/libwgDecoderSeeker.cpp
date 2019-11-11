@@ -3,6 +3,7 @@
 #include <istream>
 #include <functional>
 #include <iomanip>
+#include <array>
 
 // system C includes
 #include <csignal>
