@@ -487,16 +487,6 @@ void wgEditXML::SUMMARY_Make(const std::string& filename, const unsigned n_chans
       charge_hit_error[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(charge_hit_error[ichan][icol]);
     }
-    for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "diff_%d", icol );
-      diff[ichan][icol] = xml->NewElement(str);
-      fit[ichan]->InsertEndChild(diff[ichan][icol]);
-    }
-    for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_diff_%d", icol );
-      diff_error[ichan][icol] = xml->NewElement(str);
-      fit[ichan]->InsertEndChild(diff_error[ichan][icol]);
-    }
   }
   xml->SaveFile(filename.c_str());
   delete xml;
