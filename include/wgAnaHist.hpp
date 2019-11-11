@@ -11,6 +11,8 @@
 // user includes
 #include "wgConst.hpp"
 
+// all doubles are cast to int when saving to XML files
+// the unphysical values are stored as -1
 
 namespace anahist {
 

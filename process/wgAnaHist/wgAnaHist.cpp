@@ -117,7 +117,7 @@ int main(int argc, char** argv){
   try { anahist::select_mode(mode, flags); }
   catch (const std::exception& e) {
     Log.eWrite("[wgAnaHist] Failed to " + std::string(e.what()));
-    exit(1);
+    exit(ERR_WRONG_MODE);
   }
 
   int result;
@@ -129,8 +129,7 @@ int main(int argc, char** argv){
                            dif)) != WG_SUCCESS ) {
     Log.eWrite("[wgAnaHist] wgAnaHist returned error " +
                std::to_string(result));
-    exit(result);
   }
 
-  exit(0);
+  exit(result);
 }

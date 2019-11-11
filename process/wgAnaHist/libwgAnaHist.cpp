@@ -26,9 +26,12 @@
 
 using namespace wagasci_tools;
 
+// all doubles are cast to int when saving to XML files
+// the unphysical values are stored as -1
+
 //******************************************************************
 int wgAnaHist(const char * x_input_hist_file,
-              const char * x_pyrame_config_file,
+              const char * x_xml_config_file,
               const char * x_output_xml_dir,
               const char * x_output_img_dir,
               const unsigned long ul_flags,
@@ -36,7 +39,7 @@ int wgAnaHist(const char * x_input_hist_file,
 
   std::bitset<anahist::NFLAGS> flags(ul_flags);
   std::string input_hist_file(x_input_hist_file);
-  std::string pyrame_config_file(x_pyrame_config_file);
+  std::string xml_config_file(x_xml_config_file);
   std::string output_xml_dir(x_output_xml_dir);
   std::string output_img_dir(x_output_img_dir);
   wgEditXML xml;
@@ -47,11 +50,11 @@ int wgAnaHist(const char * x_input_hist_file,
     Log.eWrite("[wgAnaHist] Input file not found : " + input_hist_file);
     return ERR_EMPTY_INPUT_FILE;
   }
-  if ( flags[anahist::SELECT_CONFIG] && ( pyrame_config_file.empty() ||
-                                          !check_exist::xml_file(pyrame_config_file)) ) {
-    Log.eWrite("[wgAnaHist] Pyrame xml configuration file doesn't exist : "
-               + pyrame_config_file);
-    exit(1);
+  if (flags[anahist::SELECT_CONFIG] &&
+      (xml_config_file.empty() || !check_exist::xml_file(xml_config_file))) {
+    Log.eWrite("[wgAnaHist] Xml xml configuration file doesn't exist : "
+               + xml_config_file);
+    return ERR_CONFIG_XML_FILE_NOT_FOUND;
   }
   if (dif_id > NDIFS) {
     Log.eWrite("[wgAnaHist] wrong DIF number : " + std::to_string(dif_id) );
@@ -60,7 +63,7 @@ int wgAnaHist(const char * x_input_hist_file,
 
   Log.Write("[wgAnaHist] *****  READING FILE     : " + input_hist_file    + "  *****");
   Log.Write("[wgAnaHist] *****  OUTPUT DIRECTORY : " + output_xml_dir     + "  *****");
-  Log.Write("[wgAnaHist] *****  CONFIG FILE      : " + pyrame_config_file + "  *****");
+  Log.Write("[wgAnaHist] *****  CONFIG FILE      : " + xml_config_file + "  *****");
 
   gErrorIgnoreLevel = kError;
   gROOT->SetBatch(kTRUE);
@@ -69,7 +72,7 @@ int wgAnaHist(const char * x_input_hist_file,
 
   Topology * topol;
   try {
-    topol = new Topology(pyrame_config_file);
+    topol = new Topology(xml_config_file);
   }
   catch (const std::exception& e) {
     Log.eWrite("[wgAnaHist] " + std::string(e.what()));
@@ -148,13 +151,13 @@ int wgAnaHist(const char * x_input_hist_file,
       std::vector<std::vector<int>> config; // n_chans * 5 parameters
 
       Log.Write("[wgAnaHist] Analyzing chip " + std::to_string(ichip));
-      // Read the SPIROC2D configuration parameters from the pyrame_config_file
+      // Read the SPIROC2D configuration parameters from the xml_config_file
       // (the xml configuration file used during acquisition) into the "config"
       // vector.
       if( flags[anahist::SELECT_CONFIG] ) {
         unsigned gdcc = topol->GetGdccDifPair(dif_id).first;
         unsigned dif = topol->GetGdccDifPair(dif_id).second;
-        if (!xml.GetConfig(pyrame_config_file, gdcc, dif, ichip + 1,
+        if (!xml.GetConfig(xml_config_file, gdcc, dif, ichip + 1,
                            n_chans, config)) {
           Log.eWrite("[wgAnaHist] DIF " + std::to_string(dif_id) + ", chip " +
                      std::to_string(ichip) + " : failed to get bitstream "
@@ -208,6 +211,7 @@ int wgAnaHist(const char * x_input_hist_file,
             xml.SetConfigValue(std::string("trig_adj"), config[ichan][ADJ_THRESHOLD_INDEX],    CREATE_NEW_MODE);
           }
 
+          
           //************* anahist::SELECT_DARK_NOISE *************//
 
           if ( flags[anahist::SELECT_DARK_NOISE] ) {  //for bcid
@@ -215,7 +219,8 @@ int wgAnaHist(const char * x_input_hist_file,
             // calculate the dark noise rate for chip "ichip" and channel
             // "ichan" and save the mean and standard deviation in fit_bcid[0]
             // and fit_bcid[1] respectively.
-            Fit.NoiseRate(fit_bcid, dif_id, ichip, ichan, flags[anahist::SELECT_PRINT]);
+            Fit.NoiseRate(fit_bcid, dif_id, ichip, ichan,
+                          flags[anahist::SELECT_PRINT]);
             // Save the noise rate and its standard deviation in the
             // outputxmlfile xml file
             xml.SetChValue(std::string("noise_rate"), fit_bcid[0],
@@ -223,9 +228,9 @@ int wgAnaHist(const char * x_input_hist_file,
             xml.SetChValue(std::string("sigma_rate"), fit_bcid[1],
                            CREATE_NEW_MODE); // standard deviation
           }
-
+          
           //************* anahist::SELECT_PEDESTAL *************//
-
+          
           if ( flags[anahist::SELECT_PEDESTAL] ) {
             double fit_charge_nohit[3] = {0, 0, 0};
             for(unsigned icol = 0; icol < MEMDEPTH; icol++) {
@@ -233,8 +238,22 @@ int wgAnaHist(const char * x_input_hist_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeNohit(fit_charge_nohit, dif_id, ichip, ichan, icol,
-                              flags[anahist::SELECT_PRINT]);
+              try {
+                Fit.ChargeNohit(fit_charge_nohit, dif_id, ichip, ichan, icol,
+                                flags[anahist::SELECT_PRINT]);
+              } catch (const wgElementNotFound &except) {
+                std::stringstream ss;
+                ss << "Histogram charge_nohit not found for "
+                    "dif " << dif_id << " chip " << ichip
+                   << " chan " << ichan << " : " << except.what();
+                Log.eWrite(ss.str());
+              } catch (const wgFitFailed &except) {
+                std::stringstream ss;
+                ss << "charge_nohit fit failed for "
+                    "dif " << dif_id << " chip " << ichip
+                   << " chan " << ichan << " : " << except.what();
+                Log.eWrite(ss.str());
+              }
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
@@ -253,8 +272,22 @@ int wgAnaHist(const char * x_input_hist_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeHitLG(fit_charge, dif_id, ichip, ichan, icol,
-                              flags[anahist::SELECT_PRINT]);
+              try {
+                Fit.ChargeHitLG(fit_charge, dif_id, ichip, ichan, icol,
+                                flags[anahist::SELECT_PRINT]);
+              } catch (const wgElementNotFound &except) {
+                std::stringstream ss;
+                ss << "Histogram charge_hit_LG not found for "
+                    "dif " << dif_id << " chip " << ichip
+                   << " chan " << ichan << " : " << except.what();
+                Log.eWrite(ss.str());
+              } catch (const wgFitFailed &except) {
+                std::stringstream ss;
+                ss << "charge_hit_LG fir failed for "
+                    "dif " << dif_id << " chip " << ichip
+                   << " chan " << ichan << " : " << except.what();
+                Log.eWrite(ss.str());
+              }
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
@@ -273,8 +306,22 @@ int wgAnaHist(const char * x_input_hist_file,
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.lock();
 #endif
-              Fit.ChargeHitHG(fit_charge_HG, dif_id, ichip, ichan, icol,
-                              flags[anahist::SELECT_PRINT]);
+              try {
+                Fit.ChargeHitHG(fit_charge_HG, dif_id, ichip, ichan, icol,
+                                flags[anahist::SELECT_PRINT]);
+              } catch (const wgElementNotFound &except) {
+                std::stringstream ss;
+                ss << "Histogram charge_hit_HG not found for "
+                    "dif " << dif_id << " chip " << ichip
+                   << " chan " << ichan << " : " << except.what();
+                Log.eWrite(ss.str());
+              } catch (const wgFitFailed &except) {
+                std::stringstream ss;
+                ss << "charge_hit_HG fir failed for "
+                    "dif " << dif_id << " chip " << ichip
+                   << " chan " << ichan << " : " << except.what();
+                Log.eWrite(ss.str());
+              }
 #ifdef ROOT_HAS_NOT_MINUIT2
               MUTEX.unlock();
 #endif
