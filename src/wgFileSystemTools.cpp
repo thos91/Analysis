@@ -101,7 +101,7 @@ std::vector<std::string> list_directories(const std::string& input_dir, bool wit
         if (filesys::is_directory(entry)) {
           directory_list.push_back(entry.path().string());
           if (with_integer &&
-              string::extract_integer(entry.path().stem().string()) == UINT_MAX) {
+              string::extract_integer(entry.path().stem().string()) == -1) {
             directory_list.pop_back();
           }
         }
@@ -132,7 +132,7 @@ unsigned how_many_directories(const std::string& input_dir, bool with_integer) {
         if (filesys::is_directory(entry)) {
           ++counter;
           if (with_integer &&
-              string::extract_integer(entry.path().stem().string()) == UINT_MAX) {
+              string::extract_integer(entry.path().stem().string()) == -1) {
             --counter;
           }
         }
@@ -161,7 +161,7 @@ std::vector<std::string> list_files(const std::string& input_dir, bool with_inte
         if (filesys::is_regular_file(entry.path())) {
           file_list.push_back(entry.path().string());
           if (with_integer &&
-              string::extract_integer(file_list.back()) == UINT_MAX)
+              string::extract_integer(file_list.back()) == -1)
             file_list.pop_back();
           if (!extension.empty() && (!entry.path().has_extension() ||
                                      entry.path().extension().string() != extension))
@@ -199,7 +199,7 @@ unsigned how_many_files(const std::string& input_dir, bool with_integer,
         if (filesys::is_regular_file(entry.path())) {
           ++counter;
           if (with_integer &&
-              string::extract_integer(entry.path().string()) == UINT_MAX)
+              string::extract_integer(entry.path().string()) == -1)
             --counter;
           if (!extension.empty() && (!entry.path().has_extension() ||
                                      entry.path().extension().string() != extension))
@@ -316,20 +316,20 @@ void bad_channels_file(const gain_calib::BadChannels& bad_channels,
 namespace string {
 
 //**********************************************************************
-unsigned extract_integer(const std::string& str) { 
+int extract_integer(const std::string& str) { 
   std::size_t const n = str.find_first_of("0123456789");
   if (n != std::string::npos)
   {
     std::size_t const m = str.find_first_not_of("0123456789", n);
     return std::stoi(str.substr(n, m != std::string::npos ? m-n : m));
   }
-  return UINT_MAX;
+  return -1;
 }
 
-unsigned extract_dif_id(const std::string& path) {
+int extract_dif_id(const std::string& path) {
   std::string filename = get_stats::filename(path);
   std::size_t pos = filename.find("ecal_dif_");
-  if (pos == std::string::npos) return UINT_MAX;
+  if (pos == std::string::npos) return -1;
   return extract_integer(filename.substr(pos));
 }
 

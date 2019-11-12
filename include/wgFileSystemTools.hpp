@@ -111,12 +111,12 @@ void bad_channels_file(const gain_calib::BadChannels& bad_channels,
 namespace string {
 
 // extract the first unsigned integer from a std::string. If not found
-// returns UINT_MAX
-unsigned extract_integer(const std::string& str);
+// returns -1
+int extract_integer(const std::string& str);
 
 // extract the DIF ID from a filename or path. The DIF ID must come
-// after the "ecal_dif_" string. If not found UINT_MAX is returned
-unsigned extract_dif_id(const std::string& str);
+// after the "ecal_dif_" string. If not found -1 is returned
+int extract_dif_id(const std::string& str);
 
 // _try to find in the haystack the needle - ignore case
 bool find_string_ic(const std::string & str_haystack,

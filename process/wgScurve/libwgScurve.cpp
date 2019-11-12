@@ -239,9 +239,9 @@ int wgScurve(const char* x_input_dir,
 
               unsigned noiserate = Edit.SUMMARY_GetChFitValue("noise_rate", chan_counter);
               unsigned noiseratesigma = Edit.SUMMARY_GetChFitValue("sigma_rate", chan_counter);
-              if(noiserate == UINT_MAX || noiserate < 0 || std::isnan(noiserate)){
-                noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
-                noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = UINT_MAX;
+              if(noiserate == -1 || noiserate < 0 || std::isnan(noiserate)){
+                noise[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = -1;
+                noise_sigma[dif_counter][chip_counter][chan_counter][iDAC_counter][threshold_counter] = -1;
               }else{
 #ifdef LOG_SCURVE
                 /* Log-scaled version of Scurve */
@@ -337,16 +337,16 @@ int wgScurve(const char* x_input_dir,
                                   "/Channel" + std::to_string(ichan);
           make::directory(image_dir);
           // If the channel does not contain the meaningful data but UNIT_MAX, skip the loop.
-          if (noise[idif][ichip][ichan][0][0] == UINT_MAX) {
+          if (noise[idif][ichip][ichan][0][0] == -1) {
             for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
-              pe1[idif][ichip][ichan][i_iDAC] = UINT_MAX;
-              pe2[idif][ichip][ichan][i_iDAC] = UINT_MAX;
-              pe3[idif][ichip][ichan][i_iDAC] = UINT_MAX;
+              pe1[idif][ichip][ichan][i_iDAC] = -1;
+              pe2[idif][ichip][ichan][i_iDAC] = -1;
+              pe3[idif][ichip][ichan][i_iDAC] = -1;
             }
-            slope1    [idif][ichip][ichan] = UINT_MAX;
-            intercept1[idif][ichip][ichan] = UINT_MAX;
-            slope2    [idif][ichip][ichan] = UINT_MAX;
-            intercept2[idif][ichip][ichan] = UINT_MAX;
+            slope1    [idif][ichip][ichan] = -1;
+            intercept1[idif][ichip][ichan] = -1;
+            slope2    [idif][ichip][ichan] = -1;
+            intercept2[idif][ichip][ichan] = -1;
             continue;
           }
 
@@ -790,16 +790,16 @@ int wgScurve(const char* x_input_dir,
 
           for (unsigned i_iDAC = 0; i_iDAC < n_inputDAC; ++i_iDAC) {
             size_t bestFit_t = bestFit[idif][ichip][ichan][i_iDAC];
-            if( pe1[idif][ichip][ichan][i_iDAC] == UINT_MAX ||
-                pe2[idif][ichip][ichan][i_iDAC] == UINT_MAX ||
-                pe3[idif][ichip][ichan][i_iDAC] == UINT_MAX ){
+            if( pe1[idif][ichip][ichan][i_iDAC] == -1 ||
+                pe2[idif][ichip][ichan][i_iDAC] == -1 ||
+                pe3[idif][ichip][ichan][i_iDAC] == -1 ){
               fout << dif_counter_to_id[idif] << "    " << ichip << "    " << ichan << "    " << inputDAC[i_iDAC] << "   !!! channel broken !!!" << std::endl;
               Edit.OPT_SetValue(std::string("threshold_1"), dif_counter_to_id[idif], ichip, ichan,
-                                inputDAC[i_iDAC], UINT_MAX, NO_CREATE_NEW_MODE);
+                                inputDAC[i_iDAC], -1, NO_CREATE_NEW_MODE);
               Edit.OPT_SetValue(std::string("threshold_2"), dif_counter_to_id[idif], ichip, ichan,
-                                inputDAC[i_iDAC], UINT_MAX, NO_CREATE_NEW_MODE);
+                                inputDAC[i_iDAC], -1, NO_CREATE_NEW_MODE);
               Edit.OPT_SetValue(std::string("threshold_3"), dif_counter_to_id[idif], ichip, ichan,
-                                inputDAC[i_iDAC], UINT_MAX, NO_CREATE_NEW_MODE);
+                                inputDAC[i_iDAC], -1, NO_CREATE_NEW_MODE);
             }else if( std::abs(pe1[idif][ichip][ichan][i_iDAC] - mean1PE[i_iDAC][bestFit_t]) > 2*sigma1PE[i_iDAC][bestFit_t] ||
                       std::abs(pe2[idif][ichip][ichan][i_iDAC] - mean2PE[i_iDAC][bestFit_t]) > 2*sigma2PE[i_iDAC][bestFit_t] ||
                       std::abs(pe3[idif][ichip][ichan][i_iDAC] - mean3PE[i_iDAC][bestFit_t]) > 2*sigma3PE[i_iDAC][bestFit_t] ){
