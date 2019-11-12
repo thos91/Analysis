@@ -3,6 +3,11 @@
 
 // system includes
 #include <bitset>
+#include <vector>
+#include <array>
+
+// ROOT includes
+#include "TH1I.h"
 
 // user includes
 #include "wgConst.hpp"
@@ -14,6 +19,11 @@ enum WG_MAKEHIST_MODE {
   SELECT_TIME,
   N_MODES
 };
+//           CHIP        CHAN        COL
+typedef std::vector<std::vector<std::array<TH1I*, MEMDEPTH>>> ChipChanColHist;
+//           CHIP        CHAN   
+typedef std::vector<std::vector<TH1I*>> ChipChanHist;
+}
 
 // Set the flags according to the mode
 void ModeSelect(int mode, std::bitset<N_MODES>& flag);

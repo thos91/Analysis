@@ -75,17 +75,16 @@ int main(int argc, char** argv) {
   if (batch == true) Log.WhereToLog = LOGFILE;
   
   int retcode;
-  if ( (retcode = wgDecoder(inputFile.c_str(),
-                            calibDir.c_str(),
-                            outputDir.c_str(),
-                            overwrite,
-                            compatibility_mode,
-                            dif,
-                            n_chips)) != WG_SUCCESS ) {
-    Log.eWrite("[wgDecoder] Decoder failed with code " + std::to_string(retcode));
-    exit(1);
+  if ((retcode = wgDecoder(inputFile.c_str(),
+                           calibDir.c_str(),
+                           outputDir.c_str(),
+                           overwrite,
+                           compatibility_mode,
+                           dif,
+                           n_chips)) != WG_SUCCESS ) {
+    Log.eWrite("[wgDecoder] Decoder failed with code " +
+               std::to_string(retcode));
   }
-    
-  exit(0);
+  exit(retcode);
 }
 
