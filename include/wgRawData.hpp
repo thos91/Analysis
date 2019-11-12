@@ -60,7 +60,7 @@ public:
 
   // CONSTRUCTORS
   Raw_t();
-  Raw_t(std::size_t n_chips);
+  explicit Raw_t(std::size_t n_chips);
   Raw_t(std::size_t n_chips, std::size_t n_chans);
 
   // CLEAR CONTENT OF OBJECT
