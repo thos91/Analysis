@@ -55,15 +55,18 @@ int wgOptimize(const char * x_threshold_card,
     return ERR_WRONG_MODE;
   }
   if ( pe != 1 && pe != 2 ) {
-    Log.eWrite("Photo-electrons (" + std::to_string(pe) + ") must be in {1,2}");
+    Log.eWrite("Photo-electrons (" + std::to_string(pe) +
+               ") must be in {1,2}");
     return ERR_WRONG_PE_VALUE;
   }
   if ( threshold_card.empty() || !check_exist::xml_file(threshold_card) ) {
     Log.eWrite("[wgOptimize] Threshold card not found");
     return ERR_THRESHOLD_CARD_NOT_FOUND;
   }
-  if ( (mode == OP_INPUTDAC_MODE) && (gain_card.empty() || !check_exist::xml_file(gain_card)) ) {
-    Log.eWrite("[wgOptimize] A valid calibration card is needed in OP_INPUTDAC_MODE");
+  if ( (mode == OP_INPUTDAC_MODE) &&
+       (gain_card.empty() || !check_exist::xml_file(gain_card)) ) {
+    Log.eWrite("[wgOptimize] A valid calibration card is needed in "
+               "OP_INPUTDAC_MODE");
     return ERR_GAIN_CARD_NOT_FOUND;
   }
   if ( pe != 1 && pe != 2 ) {
@@ -87,7 +90,8 @@ int wgOptimize(const char * x_threshold_card,
       topol.reset(new Topology(topology_source, TopologySourceType::xml_file));
     } catch (const std::exception& except) {
       Log.eWrite("Topology string (" + topology_source + ") is not a valid"
-                 "JSON string or a path to a Pyrame XML config file : " + except.what());
+                 "JSON string or a path to a Pyrame XML config file : "
+                 + except.what());
       return ERR_TOPOLOGY;
     }
   }
@@ -185,7 +189,8 @@ int wgOptimize(const char * x_threshold_card,
         if (!check_exist::txt_file(bitstream_file)) {
           Log.Write("[wgOptimize] bitstream file doesn't exist : " + bitstream_file);
           wgEnvironment env;
-          if (!check_exist::txt_file(env.CONF_DIRECTORY + "/wagasci_bitstream_template.txt")) {
+          if (!check_exist::txt_file(env.CONF_DIRECTORY +
+                                     "/wagasci_bitstream_template.txt")) {
             Log.eWrite("[wgOptimize] template bitstream file doesn't exist");
             return ERR_BITSTREAM_FILE_NOT_FOUND;
           }
