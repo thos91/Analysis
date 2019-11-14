@@ -48,8 +48,8 @@ const unsigned HEADERS_TRAILERS_TOTAL_LENGTH = CHIP_HEADER_LENGTH +
 // n_channels charges
 const unsigned ONE_COLUMN_LENGTH = 1 + 2 * NCHANNELS;
 const unsigned MAX_EVENT = UINT_MAX;
-const unsigned MAX_RAWDATA_LENGTH = 2 * (NCHIPS * MEMDEPTH * ONE_COLUMN_LENGTH +
-                                         HEADERS_TRAILERS_TOTAL_LENGTH);
+const unsigned MAX_RAWDATA_LENGTH = 100 * (NCHIPS * MEMDEPTH * ONE_COLUMN_LENGTH +
+                                           HEADERS_TRAILERS_TOTAL_LENGTH);
 
 // Debug macros to fill the debug_spill and debug_chip histograms
 // spill
