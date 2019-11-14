@@ -53,6 +53,18 @@ install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
 #####################################################################
 #                                                                   #
+#                         ImageMagick                               #
+#                                                                   #
+#####################################################################
+
+IF ( ImageMagick_FOUND )
+  SET( HAVE_IMAGEMAGICK "YES" )
+  INCLUDE_DIRECTORIES( ${ImageMagick_INCLUDE_DIRS} )
+  TARGET_LINK_LIBRARIES( lib${process} ${ImageMagick_LIBRARIES} )
+ENDIF()
+
+#####################################################################
+#                                                                   #
 #                          Executable                               #
 #                                                                   #
 #####################################################################

@@ -61,7 +61,10 @@ endif ()
 find_package(nlohmann_json REQUIRED)
 
 # multithread
-find_package (Threads)
+find_package(Threads REQUIRED)
+
+# ImageMagick
+find_package(ImageMagick COMPONENTS Magick++)
 
 # build libwagasci.a
 add_subdirectory(src)

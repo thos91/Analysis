@@ -12,8 +12,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/make_unique.hpp>
 
+#ifdef HAVE_IMAGEMAGICK
 // Magick include
-// #include <Magick++.h>
+#include <Magick++.h>
+#endif
 
 // ROOT includes
 #include "TSystem.h"
@@ -310,8 +312,9 @@ int wgAnaHistSummary(const char * x_input_dir,
       Double_t width = 1280;
       Double_t heigth = 720;
       
+#ifdef HAVE_IMAGEMAGICK
       std::unordered_map<std::string, std::list<Magick::Image>> images;
-      
+#endif
       for(unsigned ichip = 0; ichip < n_chips; ichip++) {
       
         if (flags[anahist::SELECT_DARK_NOISE]) {  
@@ -330,9 +333,11 @@ int wgAnaHistSummary(const char * x_input_dir,
           name.Form("%s/Summary_Noise_chip%d.png",
                     output_img_dir.c_str(), ichip);
           canvas->Print(name);
+#ifdef HAVE_IMAGEMAGICK
           Magick::Image noise_image;
           noise_image.read(name.Data());
           image_list["noise"].push_back(noise_image);
+#endif
         }
 
         if (flags[anahist::SELECT_CHARGE_HG]) {
@@ -364,9 +369,11 @@ int wgAnaHistSummary(const char * x_input_dir,
           name.Form("%s/Summary_Charge_Hit_chip%d.png",
                     output_img_dir.c_str(), ichip);
           canvas->Print(name);
+#ifdef HAVE_IMAGEMAGICK
           Magick::Image charge_image;
           charge_image.read(name.Data());
           image_list["charge"].push_back(charge_image);
+#endif
         }
 
         if (flags[anahist::SELECT_PEDESTAL]) {
@@ -395,13 +402,16 @@ int wgAnaHistSummary(const char * x_input_dir,
           name.Form("%s/Summary_Charge_Nohit_chip%d.png",
                     output_img_dir.c_str(), ichip);
           canvas->Print(name);
+#ifdef HAVE_IMAGEMAGICK
           Magick::Image pedestal_image;
           pedestal_image.read(name.Data());
           image_list["pedestal"].push_back(pedestal_image);
+#endif
         }
       } // chips
 
-      for (auto const &image_list : images)
+#ifdef HAVE_IMAGEMAGICK
+      for (auto const &image_list : images) {
         Magick::Color color("rgba(0,0,0,0)");
         Magick::Montage montage_settings;
         montage_settings.geometry("4096x2160-0-0");
@@ -417,12 +427,8 @@ int wgAnaHistSummary(const char * x_input_dir,
 
         Magick::writeImages(montage_list.begin(), montage_list.end(),
                             output_img_dir + "/charge_summary.png");
-
-
       }
-      // if (flags[anahist::SELECT_DARK_NOISE]) {  
-
-      // } 
+#endif
     } // SELECT_PRINT
   } // try
   catch (const std::exception& e) {

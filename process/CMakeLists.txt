@@ -1,5 +1,7 @@
 add_subdirectory(wgDecoder)
-#add_subdirectory(wgRawEmulator)
+# Sometimes the compile of wgRawEmulator fails for MacOS. No other
+# component depends on it so it does not need to be compiled.
+# add_subdirectory(wgRawEmulator)
 add_subdirectory(wgMakeHist)
 add_subdirectory(wgAnaHist)
 add_subdirectory(wgAnaHistSummary)
