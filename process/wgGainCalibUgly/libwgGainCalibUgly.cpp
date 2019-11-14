@@ -1,3 +1,10 @@
+//#define ENABLE_MULTITHREADING
+
+#ifdef ENABLE_MULTITHREADING
+#include <thread>
+#include "wgEnableThreadSafety.hpp"
+#endif
+
 // system C++ includes
 #include <string>
 #include <fstream>
@@ -5,7 +12,6 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
-#include <thread>
 #include <cmath>
 
 // boost includes
@@ -23,25 +29,26 @@
 
 // user includes
 #include "wgConst.hpp"
+#include "wgFitConst.hpp"
 #include "wgErrorCodes.hpp"
 #include "wgNumericTools.hpp"
 #include "wgFileSystemTools.hpp"
 #include "wgEditXML.hpp"
 #include "wgLogger.hpp"
 #include "wgFit.hpp"
-#include "wgEnableThreadSafety.hpp"
 #include "wgGainCalibUgly.hpp"
 
 namespace wg = wagasci_tools;
 namespace gc = gain_calib; 
 
+
+#ifdef ENABLE_MULTITHREADING
 namespace gain_calib {
 namespace ugly {
 std::vector<std::thread> THREADS;
 }
 }
-
-//#define ENABLE_MULTITHREADING
+#endif
 
 //******************************************************************
 void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
@@ -49,7 +56,8 @@ void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
                            const std::string& hist_file,
                            const std::string& output_img_dir,
                            TopologyMapDif& dif_map,
-                           const unsigned dif_id);
+                           const unsigned dif_id,
+                           const unsigned input_DAC);
 
 //******************************************************************
 int wgGainCalibUgly(const char * x_input_run_dir,
@@ -245,11 +253,11 @@ int wgGainCalibUgly(const char * x_input_run_dir,
         gc::ugly::THREADS.emplace_back(std::thread{wgGainCalibUglyWorker,
                 std::ref(gain[idac][dif_id]), std::ref(sigma_gain[idac][dif_id]),
                 hist_file, output_img_dir + "/dif" + std::to_string(dif_id),
-                std::ref(topol->dif_map), dif_id});
+                std::ref(topol->dif_map), dif_id, idac});
 #else
         wgGainCalibUglyWorker(gain[idac][dif_id], sigma_gain[idac][dif_id],
                               hist_file, output_img_dir + "/dif" +
-                              std::to_string(dif_id), topol->dif_map, dif_id);
+                              std::to_string(dif_id), topol->dif_map, dif_id, idac);
 #endif
       }
     }
@@ -414,8 +422,13 @@ void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
                            const std::string& hist_file,
                            const std::string& output_img_dir,
                            TopologyMapDif& dif_map,
-                           const unsigned dif_id) {
-
+                           const unsigned dif_id,
+                           const unsigned input_dac) {
+  
+  double nominal_gain = input_dac * WG_TARGET_GAIN_SLOPE + WG_TARGET_GAIN_INTERCEPT;
+  double gain_upper_bound = 1.5 * nominal_gain;
+  double gain_lower_bound = 0.5 * nominal_gain;
+  
   if (gain.empty() || sigma_gain.empty()) {
     std::stringstream ss;
     ss << "Empty vectors for dif " << dif_id;
@@ -443,18 +456,49 @@ void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
       if (!Topology::IsWallMRDChannelEnabled(dif_id, ichip, ichan))
         continue;
       
-      std::array<double, 2> gain_fit{};
+      std::array<double, 2> gain_fit1{};
+      std::array<double, 2> gain_fit2{};
+
 #ifdef ROOT_HAS_NOT_MINUIT2
       MUTEX.lock();
 #endif
       try {
-        unsigned n_peaks = 2;
         bool print_flag = false;
-        bool nofit = false;
         int merge_columns = -1; // merge all columns
-        if (dif_id < 4) merge_columns = 0; // use only first column for WallMRD
-        fit->Gain(gain_fit, dif_id, ichip, ichan, merge_columns,
-                  n_peaks, print_flag, nofit);
+
+        ///////////////////////////////////////////////////////////////////////
+        //                       Fit gain with method 1                      //
+        ///////////////////////////////////////////////////////////////////////
+
+        gain_fit1[0] = nominal_gain;
+        fit->Gain1(gain_fit1, dif_id, ichip, ichan, merge_columns, print_flag);
+        
+        if (gain_fit1[0] < gain_lower_bound || gain_fit1[0] > gain_upper_bound) {
+
+          /////////////////////////////////////////////////////////////////////
+          //                      Fit gain with method 2                     //
+          /////////////////////////////////////////////////////////////////////
+
+          unsigned n_peaks = 2;
+          fit->Gain2(gain_fit2, dif_id, ichip, ichan, merge_columns,
+                     n_peaks, print_flag);
+          
+          if (gain_fit2[0] > gain_lower_bound && gain_fit2[0] < gain_upper_bound) {
+            gain_fit1[0] = gain_fit2[0];
+            gain_fit1[1] = gain_fit2[1];
+          } else {
+
+            ///////////////////////////////////////////////////////////////////
+            //               If both fail choose the least evil              //
+            ///////////////////////////////////////////////////////////////////
+            
+            if (std::fabs(gain_fit2[0] - nominal_gain) <
+                std::fabs(gain_fit1[0] - nominal_gain)) {
+              gain_fit1[0] = gain_fit2[0];
+              gain_fit1[1] = gain_fit2[1];
+            }
+          }
+        }
       } catch (const wgElementNotFound &except) {
         std::stringstream ss;
         ss << "Histogram not found for dif " << dif_id << " chip " << ichip
@@ -476,8 +520,8 @@ void wgGainCalibUglyWorker(gc::ugly::GainVector &gain,
 #ifdef ROOT_HAS_NOT_MINUIT2
       MUTEX.unlock();
 #endif
-      gain[ichip][ichan] = gain_fit[0];
-      sigma_gain[ichip][ichan]= gain_fit[1];
+      gain[ichip][ichan] = gain_fit1[0];
+      sigma_gain[ichip][ichan]= gain_fit1[1];
     }
   }
 }
