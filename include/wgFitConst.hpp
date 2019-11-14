@@ -28,7 +28,9 @@ extern const double WG_LOWER_LIMIT_3PE;
 extern const double WG_UPPER_LIMIT_3PE;
 
 // nominal value for the MPPC gain
-extern const double WG_NOMINAL_GAIN;
+extern const double WG_TARGET_GAIN;
+extern const double WG_TARGET_GAIN_SLOPE;
+extern const double WG_TARGET_GAIN_INTERCEPT;
 
 // time interval in seconds of 1 BCID count
 extern const double TIME_BCID;
