@@ -34,8 +34,8 @@ if ( CMAKE_COMPILER_IS_GNUCC )
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
 endif ( CMAKE_COMPILER_IS_GNUCC )
 
-# boost system and filesystem are required
-find_package(Boost COMPONENTS system filesystem REQUIRED)
+# boost program_options, system and filesystem are required
+find_package(Boost COMPONENTS program_options system filesystem REQUIRED)
 
 # ROOT
 find_package(ROOT CONFIG REQUIRED)
@@ -59,6 +59,12 @@ else ()
   set(nlohmann_json_DIR "/usr/lib/cmake")
 endif ()
 find_package(nlohmann_json REQUIRED)
+
+# multithread
+find_package(Threads REQUIRED)
+
+# ImageMagick
+find_package(ImageMagick COMPONENTS Magick++)
 
 # build libwagasci.a
 add_subdirectory(src)

@@ -39,23 +39,21 @@ public:
   // wgGetHist::Get methods 
   // They just read an histogram into the correspondent member. If the histogram
   // could not be found they return false, otherwise they return true.
-  TH1I * Get_charge_hit_HG(unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_charge_hit_LG(unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_charge_nohit (unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_charge_hit   (unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_time_hit     (unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_time_nohit   (unsigned int i, unsigned int j, unsigned int k);
-  TH1I * Get_bcid_hit     (unsigned int i, unsigned int j);
-  TH1I * Get_pe_hit       (unsigned int i, unsigned int j);
-
+  TH1I * Get_charge_hit_HG(unsigned dif, unsigned chip, unsigned chan, unsigned col);
+  TH1I * Get_charge_hit_LG(unsigned dif, unsigned chip, unsigned chan, unsigned col);
+  TH1I * Get_charge_nohit (unsigned dif, unsigned chip, unsigned chan, unsigned col);
+  TH1I * Get_pe_hit       (unsigned dif, unsigned chip, unsigned chan, unsigned col);
+  TH1I * Get_time_hit     (unsigned dif, unsigned chip, unsigned chan, unsigned col);
+  TH1I * Get_time_nohit   (unsigned dif, unsigned chip, unsigned chan, unsigned col);
+  TH1I * Get_bcid_hit     (unsigned dif, unsigned chip, unsigned chan);
+  
   // Return the value of the start_time or stop_time. These values are read from
   // the corresponding histograms. If the histograms could not be found they
   // return a negative value.
-  int  Get_start_time();
-  int  Get_stop_time();
+  int GetStartTime();
+  int GetStopTime();
 
   // Print the histograms
-  void Print_charge       (const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);
   void Print_charge_hit_HG(const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);
   void Print_charge_hit_LG(const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);
   void Print_charge_nohit (const TString& h_name, TH1I * h, const char* option="", bool y_logscale = false);

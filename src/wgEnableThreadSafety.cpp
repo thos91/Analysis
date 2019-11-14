@@ -1,11 +1,17 @@
+// system includes
+#include <mutex>
+
 // ROOT includes
 #include "TROOT.h"
 #include "TPluginManager.h"
 #include "TMinuitMinimizer.h"
 
 // user includes
+#include "wgConst.hpp"
 #include "wgLogger.hpp"
 #include "wgEnableThreadSafety.hpp"
+
+std::mutex MUTEX;
 
 void wgEnableThreadSafety() {
   ROOT::EnableThreadSafety();
@@ -14,11 +20,4 @@ void wgEnableThreadSafety() {
     Log.eWrite("We need Minuit2 for parallel fitting!");
   } else 
     ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
-}
-
-RootSideEffectGuard::RootSideEffectGuard(): m_directory(gDirectory) {
-  gDirectory = 0;
-}
-RootSideEffectGuard::~RootSideEffectGuard() {
-  gDirectory = m_directory;
 }

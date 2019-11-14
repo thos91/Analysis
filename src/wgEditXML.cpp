@@ -23,7 +23,7 @@ void wgEditXML::Write(){
 //**********************************************************************
 void wgEditXML::Open(const std::string& filename){
   
-  if(!wagasci_tools::check_exist::XmlFile(filename))
+  if(!wagasci_tools::check_exist::xml_file(filename))
     throw wgInvalidFile("[" + filename +"][wgEditXML::Open] error in opening XML file");
   wgEditXML::filename=filename; 
   wgEditXML::xml = new XMLDocument();
@@ -117,32 +117,70 @@ bool wgEditXML::GetConfig(const std::string& configxml,
                           const unsigned n_chans,
                           i2vector& v) {
   try {
-    bool found=false;
+    bool found = false;
     std::string bitstream("");
     
-    if(!wagasci_tools::check_exist::XmlFile(configxml))
+    if(!wagasci_tools::check_exist::xml_file(configxml))
       throw wgInvalidFile(configxml + " wasn't found or is not valid");
     if(ichip > NCHIPS)
       throw std::invalid_argument("ichip is greater than " + std::to_string(NCHIPS));
 
     XMLDocument configfile;
+    Topology topology(configxml);
     configfile.LoadFile(configxml.c_str()); 
     XMLElement* ecal = configfile.FirstChildElement("ecal");
     XMLElement* domain = ecal->FirstChildElement("domain");
     XMLElement* acqpc = domain->FirstChildElement("acqpc");
     // GDCCs loop
-    for(XMLElement* gdcc = acqpc->FirstChildElement("gdcc"); gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
-      if( std::string(gdcc->Attribute("name")) == "gdcc_0_" + std::to_string(igdcc) ) {
+    unsigned gdcc_counter = 0;
+    for (XMLElement* gdcc = acqpc->FirstChildElement("gdcc");
+         gdcc != NULL; gdcc = gdcc->NextSiblingElement("gdcc")) {
+      ++gdcc_counter;
+      std::string mac;
+      bool found_mac = false;
+      for (XMLElement* param = gdcc->FirstChildElement("param");
+           param != NULL; param = param->NextSiblingElement("param")) {
+        if (std::string(param->Attribute("name")) == "gdcc_mac_addr") {
+          mac = param->GetText();
+          found_mac = true;
+          break;
+        }
+      }
+      if (!found_mac)
+        throw wgElementNotFound("[GetConfig] GDCC mac not found");
+      else if (igdcc == topology.GetGdccID(mac)) {
         // DIFs loop
-        for(XMLElement* dif = gdcc->FirstChildElement("dif"); dif != NULL; dif = dif->NextSiblingElement("dif")) {
-          if( std::string(dif->Attribute("name")) == "dif_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) ) {
+        unsigned dif_counter = 0;
+        for (XMLElement* dif = gdcc->FirstChildElement("dif");
+             dif != NULL; dif = dif->NextSiblingElement("dif")) {
+          ++dif_counter;
+          unsigned port_nb;
+          bool found_port = false;
+          for (XMLElement* param = dif->FirstChildElement("param");
+               param != NULL; param = param->NextSiblingElement("param")) {
+            if (std::string(param->Attribute("name")) == "dif_gdcc_port") {
+              port_nb = std::stoi(param->GetText());
+              found_port = true;
+              break;
+            }
+          }
+          if (!found_port)
+            throw wgElementNotFound("[GetConfig] GDCC port not found");
+          else if (idif == port_nb) {
             // ASUs loop
-            for(XMLElement* asu = dif->FirstChildElement("asu"); asu != NULL; asu = asu->NextSiblingElement("asu")) {
-              if( std::string(asu->Attribute("name")) == "asu_0_" + std::to_string(igdcc) + "_" + std::to_string(idif) + "_" + std::to_string(ichip) ) {
+            for (XMLElement* asu = dif->FirstChildElement("asu");
+                 asu != NULL; asu = asu->NextSiblingElement("asu")) {
+              if (std::string(asu->Attribute("name")) == "asu_1_" +
+                  std::to_string(gdcc_counter) + "_" +
+                  std::to_string(dif_counter) + "_" +
+                  std::to_string(ichip)) {
                 XMLElement* spiroc2d = asu->FirstChildElement("spiroc2d");
+                if (spiroc2d == NULL)
+                  throw wgElementNotFound("[GetConfig] no spiroc2d element. Probably wrong xml file.");
                 // loop to find the spiroc2d_bitstream parameter
-                for(XMLElement* param = spiroc2d->FirstChildElement("param"); param != NULL; param = param->NextSiblingElement("param")) {
-                  if( std::string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
+                for (XMLElement* param = spiroc2d->FirstChildElement("param");
+                     param != NULL; param = param->NextSiblingElement("param")) {
+                  if (std::string(param->Attribute("name")) == "spiroc2d_bitstream" ) {
                     bitstream = param->GetText();
                     found=true;
                     break;
@@ -150,13 +188,13 @@ bool wgEditXML::GetConfig(const std::string& configxml,
                 }
               }
               // If the bitstream was found exit the ASU loop
-              else if (found) break;
+              if (found) break;
             }
           }
         }
       }
     }
-    if (found == false) return false;
+    if (!found) return false;
 
     wgEditConfig EditCon(bitstream, true);
     v.clear();
@@ -170,35 +208,46 @@ bool wgEditXML::GetConfig(const std::string& configxml,
     }
   }
   catch (const std::exception& e) {
-    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream (DIF = " + std::to_string(idif) + ", chip = " + std::to_string(ichip) + " : " + std::string(e.what()));
+    Log.eWrite("[" + configxml + "][GetConfig] failed to get spiroc2d_bitstream "
+               "(DIF = " + std::to_string(idif) +
+               ", chip = " + std::to_string(ichip) +
+               " : " + std::string(e.what()));
     return false;
   }
   return true;
 }
 
 //**********************************************************************
-void wgEditXML::GetLog(const std::string& filename, std::vector<std::string>& v){
+void wgEditXML::GetLog(const std::string& filename, std::vector<std::string>& values){
   std::string target("");
-  v.clear();
-  v.resize(4);
+  values.clear();
+  values.resize(4);
   XMLDocument *xml = new XMLDocument();
   xml->LoadFile(filename.c_str()); 
   XMLElement* log = xml->FirstChildElement("log");
+  if (log == NULL) {
+    for (auto& value : values) value = "0";
+    return;
+  }
   XMLElement* acq  = log->FirstChildElement("acq");
+  if (acq == NULL) {
+    for (auto& value : values) value = "0";
+    return;
+  }
   for (XMLElement* param = acq->FirstChildElement("param");
        param != NULL;
        param = param->NextSiblingElement("param")) {
     target = param->Attribute("name");
     if (target == "start_time") {
-      v[0] = param->GetText();
+      values[0] = param->GetText();
     } else if (target == "stop_time") {
-      v[1] = param->GetText();
+      values[1] = param->GetText();
     }
     else if (target == "nb_data_pkts") { 
-      v[2] = param->GetText();
+      values[2] = param->GetText();
     }
     else if (target == "nb_lost_pkts") {
-      v[3] = param->GetText();
+      values[3] = param->GetText();
     }
   }
   delete xml;
@@ -438,16 +487,6 @@ void wgEditXML::SUMMARY_Make(const std::string& filename, const unsigned n_chans
       charge_hit_error[ichan][icol] = xml->NewElement(str);
       fit[ichan]->InsertEndChild(charge_hit_error[ichan][icol]);
     }
-    for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "diff_%d", icol );
-      diff[ichan][icol] = xml->NewElement(str);
-      fit[ichan]->InsertEndChild(diff[ichan][icol]);
-    }
-    for(unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-      snprintf( str, XML_ELEMENT_STRING_LENGTH, "sigma_diff_%d", icol );
-      diff_error[ichan][icol] = xml->NewElement(str);
-      fit[ichan]->InsertEndChild(diff_error[ichan][icol]);
-    }
   }
   xml->SaveFile(filename.c_str());
   delete xml;
@@ -628,9 +667,7 @@ void wgEditXML::SUMMARY_GetPedFitValue(int value[MEMDEPTH], const int ich){
 //**********************************************************************
 void wgEditXML::OPT_Make(const std::string& filename, 
                          u1vector inputDACs,
-                         unsigned n_difs,
-                         u1vector n_chips,
-                         u2vector n_chans) {
+                         TopologyMapDif dif_map) {
 
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
@@ -641,8 +678,8 @@ void wgEditXML::OPT_Make(const std::string& filename,
   XMLElement* dif;
   XMLElement* chip;
   XMLElement* chan;
-  XMLElement* slope_threshold[2];
-  XMLElement* intercept_threshold[2];
+  XMLElement* slope_threshold[3];
+  XMLElement* intercept_threshold[3];
   XMLElement* inputDAC;
   XMLElement* threshold;
   //XMLElement* noise[13];
@@ -651,21 +688,21 @@ void wgEditXML::OPT_Make(const std::string& filename,
   data = xml->NewElement("data");
   xml->InsertEndChild(data);
 
-  for(unsigned idif = 0; idif < n_difs; ++idif) {
+  for (const auto &idif : dif_map) {
     // ***** data > dif ***** //
-    snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif.first);
     dif = xml->NewElement(str);
     data->InsertEndChild(dif);
-    for(unsigned ichip = 0; ichip < n_chips[idif]; ++ichip) {
+    for (const auto &ichip : idif.second) {
       // ***** data > dif > chip ***** //
-      snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip);
+      snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip.first);
       chip = xml->NewElement(str);
       dif->InsertEndChild(chip);
-      for(unsigned ichan = 0; ichan < n_chans[idif][ichip]; ++ichan) {
+      for (unsigned ichan = 0; ichan < ichip.second; ++ichan) {
         // ***** data > dif > chip > channel ***** //
         snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
         chan = xml->NewElement(str);    
-        dif->InsertEndChild(chan);
+        chip->InsertEndChild(chan);
         slope_threshold[0] = xml->NewElement("slope_threshold1");
         chan->InsertEndChild(slope_threshold[0]);
         intercept_threshold[0] = xml->NewElement("intercept_threshold1");
@@ -674,12 +711,16 @@ void wgEditXML::OPT_Make(const std::string& filename,
         chan->InsertEndChild(slope_threshold[1]);
         intercept_threshold[1] = xml->NewElement("intercept_threshold2");
         chan->InsertEndChild(intercept_threshold[1]);
-        for(unsigned iDAC = 0; iDAC < inputDACs.size(); ++iDAC) {
+        slope_threshold[2] = xml->NewElement("slope_threshold3");
+        chan->InsertEndChild(slope_threshold[2]);
+        intercept_threshold[2] = xml->NewElement("intercept_threshold3");
+        chan->InsertEndChild(intercept_threshold[2]);
+        for (unsigned iDAC = 0; iDAC < inputDACs.size(); ++iDAC) {
           // ***** data > dif > chip > channel > inputDAC ***** //
           snprintf(str, XML_ELEMENT_STRING_LENGTH, "inputDAC_%d", inputDACs[iDAC]);
           inputDAC = xml->NewElement(str);
-          chip->InsertEndChild(inputDAC);
-          for(unsigned pe = 1; pe <= 2; ++pe) {
+          chan->InsertEndChild(inputDAC);
+          for (unsigned pe = 1; pe <= 3; ++pe) {
             snprintf(str, XML_ELEMENT_STRING_LENGTH, "threshold_%d", pe);
             threshold = xml->NewElement(str);
             inputDAC->InsertEndChild(threshold);
@@ -725,7 +766,7 @@ void wgEditXML::OPT_SetValue(const std::string& name,
 }
 
 //**********************************************************************
-double wgEditXML::OPT_GetValue(const std::string& name,unsigned idif, unsigned ichip, unsigned ichan, unsigned iDAC) {
+double wgEditXML::OPT_GetValue(const std::string& name,unsigned idif, unsigned ichip, unsigned ichan, unsigned iDAC, unsigned peu) {
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
@@ -736,10 +777,19 @@ double wgEditXML::OPT_GetValue(const std::string& name,unsigned idif, unsigned i
   XMLElement* chan = chip->FirstChildElement(str);
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "inputDAC_%d", iDAC);
   XMLElement* inputDAC = chan->FirstChildElement(str);
+  if (!inputDAC) {
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "slope_threshold%d", peu);
+    XMLElement* slope_threshold = chan->FirstChildElement(str);
+    double slope = std::stod(slope_threshold->GetText());
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "intercept_threshold%d", peu);
+    XMLElement* intercept_threshold = chan->FirstChildElement(str);
+    double intercept = std::stod(intercept_threshold->GetText());
+    return iDAC * slope + intercept;
+  }
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
   if (target) {
     std::string value = target->GetText();
-    return stoi(value);
+    return std::stod(value);
   } else {
     throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1;
@@ -791,21 +841,13 @@ double wgEditXML::OPT_GetChanValue(const std::string& name,unsigned idif, unsign
 }
 
 //**********************************************************************
-void wgEditXML::GainCalib_Make(const std::string& filename, const Topology& topol) {
+void wgEditXML::GainCalib_Make(const std::string& filename,
+                               const Topology& topol) {
   xml = new XMLDocument();
   XMLDeclaration* decl = xml->NewDeclaration();
   xml->InsertEndChild(decl);
 
-  XMLElement* data; 
-  XMLElement* dif;
-  XMLElement* chip;
-  XMLElement* chan;
-  XMLElement* col;
-  XMLElement* slope;
-  XMLElement* intercept;
-
-  // **********************//
-  data = xml->NewElement("data");
+  XMLElement* data = xml->NewElement("data");
   xml->InsertEndChild(data);
   char str[XML_ELEMENT_STRING_LENGTH];
   
@@ -813,29 +855,23 @@ void wgEditXML::GainCalib_Make(const std::string& filename, const Topology& topo
     unsigned idif = dif_map.first;
     // ***** data > dif ***** //
     snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
-    dif = xml->NewElement(str);
+    XMLElement* dif = xml->NewElement(str);
     data->InsertEndChild(dif);
     // ***** data > dif > chip ***** //
     for (auto const& chip_map: dif_map.second) {
       unsigned ichip = chip_map.first;
       snprintf(str, XML_ELEMENT_STRING_LENGTH, "chip_%d", ichip);
-      chip = xml->NewElement(str);    
+      XMLElement* chip = xml->NewElement(str);    
       dif->InsertEndChild(chip);
       // ***** data > dif > chip > chan ***** //
       for (unsigned ichan = 0; ichan < chip_map.second; ++ichan) {
         snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
-        chan = xml->NewElement(str);
+        XMLElement* chan = xml->NewElement(str);
         chip->InsertEndChild(chan);
-        // ***** data > dif > chip > chan > col ***** //
-        for (unsigned icol = 0; icol < MEMDEPTH; ++icol) {
-          snprintf(str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol);
-          col = xml->NewElement(str);
-          chan->InsertEndChild(col);
-          slope = xml->NewElement("slope_gain");
-          col->InsertEndChild(slope);
-          intercept = xml->NewElement("intercept_gain");
-          col->InsertEndChild(intercept);
-        }
+        XMLElement* slope = xml->NewElement("slope_gain");
+        chan->InsertEndChild(slope);
+        XMLElement* intercept = xml->NewElement("intercept_gain");
+        chan->InsertEndChild(intercept);
       }
     }
   }
@@ -844,7 +880,12 @@ void wgEditXML::GainCalib_Make(const std::string& filename, const Topology& topo
 }
 
 //**********************************************************************
-void wgEditXML::GainCalib_SetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol, unsigned value, bool create_new) {
+void wgEditXML::GainCalib_SetValue(const std::string& name,
+                                   const double value,
+                                   const unsigned idif,
+                                   const unsigned ichip,
+                                   const unsigned ichan,
+                                   const bool create_new) {
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
@@ -853,24 +894,24 @@ void wgEditXML::GainCalib_SetValue(const std::string& name, unsigned idif, unsig
   XMLElement* chip = dif->FirstChildElement(str);
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
   XMLElement* chan = chip->FirstChildElement(str);
-  snprintf(str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol);
-  XMLElement* col = chan->FirstChildElement(str);
-  
-  XMLElement* target = col->FirstChildElement(name.c_str());
-  snprintf(str, XML_ELEMENT_STRING_LENGTH, "%d", value);
+  XMLElement* target = chan->FirstChildElement(name.c_str());
+  snprintf(str, XML_ELEMENT_STRING_LENGTH, "%f", value);
   if (target) {
     target->SetText(str);
   } else if (create_new == true) {
     XMLElement* newElement = xml->NewElement(name.c_str());
     newElement->SetText(str);
-    col->InsertEndChild(newElement);
+    chan->InsertEndChild(newElement);
   } else {
     throw wgElementNotFound("Element " + name + " doesn't exist");
   }
 }
 
 //**********************************************************************
-double wgEditXML::GainCalib_GetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol) {
+double wgEditXML::GainCalib_GetValue(const std::string& name,
+                                     const unsigned idif,
+                                     const unsigned ichip,
+                                     const unsigned ichan) {
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
@@ -879,9 +920,8 @@ double wgEditXML::GainCalib_GetValue(const std::string& name, unsigned idif, uns
   XMLElement* chip = dif->FirstChildElement(str);
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "chan_%d", ichan);
   XMLElement* chan = chip->FirstChildElement(str);
-  snprintf(str, XML_ELEMENT_STRING_LENGTH, "col_%d", icol);
-  XMLElement* col = chan->FirstChildElement(str);
-  XMLElement* target = col->FirstChildElement(name.c_str());
+  XMLElement* target = chan->FirstChildElement(name.c_str());
+  target = chan->FirstChildElement(name.c_str());
   if (target) {
     std::string value = target->GetText();
     return stod(value);

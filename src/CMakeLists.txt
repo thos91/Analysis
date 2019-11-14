@@ -32,6 +32,7 @@ if ( APPLE )
     Boost::system
     Boost::filesystem
     nlohmann_json
+    Spectrum
     )
 else()
   target_link_libraries(libwagasci
@@ -39,6 +40,7 @@ else()
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     nlohmann_json
+    Spectrum
     )
 endif()
 

@@ -23,6 +23,10 @@ std::streampos ReadLine(std::istream& is, std::bitset<BITS_PER_LINE>& raw_data);
 // raw_data. Return the stream position of the last line.
 std::streampos ReadChunk(std::istream& is, std::vector<std::bitset<BITS_PER_LINE>>& raw_data);
 
+// Throw one byte away from the istream *is*. Sometimes the byte offset may
+// become wrong and we need it to restore balance in the force.
+void ThrowOneByte(std::istream& is);
+
 // Find if element is present in vector_of_elements. If at least one
 // occurrence is found return true and the position of the first
 // occurence as a std::pair.
@@ -45,6 +49,8 @@ bool HasSpillNumber  (std::string & input_raw_file);
 // in each spill
 unsigned GetNumChips (std::string & input_raw_file);
 
+// increase the stack size to 64MB
+void increase_stack_size();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

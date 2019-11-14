@@ -243,9 +243,7 @@ public:
   
   void OPT_Make(const std::string& filename, 
                 u1vector inputDACs,
-                unsigned n_difs,
-                u1vector n_chips,
-                u2vector n_chans);
+                TopologyMapDif dif_map);
 
   // wgEditXML::OPT_SetValue
   // data -> dif_%d -> chip_%d -> chan_%d -> inputDAC_%d
@@ -263,7 +261,8 @@ public:
                       unsigned idif,
                       unsigned ichip,
                       unsigned ichan,
-                      unsigned iDAC);
+                      unsigned iDAC,
+                      unsigned peu = 1);
 
   // wgEditXML::OPT_SetChanValue
   // data -> dif_%d -> chip_%d -> chan_%d 
@@ -285,9 +284,18 @@ public:
   //                    gain calibration XML files                         //
   //=======================================================================//
   
-  void GainCalib_Make(const std::string& filename, const Topology& topol);
-  void GainCalib_SetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol, unsigned value, bool create_new);
-  double GainCalib_GetValue(const std::string& name, unsigned idif, unsigned ichip, unsigned ichan, unsigned icol);
+  void GainCalib_Make(const std::string& filename,
+                      const Topology& topol);
+  void GainCalib_SetValue(const std::string& name,
+                          const double value,
+                          const unsigned idif,
+                          const unsigned ichip,
+                          const unsigned ichan,
+                          const bool create_new = false);
+  double GainCalib_GetValue(const std::string& name,
+                            const unsigned idif,
+                            const unsigned ichip,
+                            const unsigned ichan);
   
   //=======================================================================//
   //                   Pedestal calibration XML files                      //

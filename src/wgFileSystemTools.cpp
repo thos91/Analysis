@@ -20,188 +20,338 @@
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
+#include "wgGainCalib.hpp"
+#include "wgGainCalibUgly.hpp"
 #include "wgLogger.hpp"
 
 namespace filesys = boost::filesystem;
 
 namespace wagasci_tools {
 
-std::string GetExtension(const std::string& str)
-{
-  std::string ext;
-  size_t pos1 = str.rfind('.');
-  if(pos1 !=std::string::npos){
-    ext = str.substr(pos1+1, str.size()-pos1);
-    std::string::iterator itr = ext.begin();
-    while(itr != ext.end()){
-      *itr=tolower(*itr);
-      itr++;  
+BOOST_STATIC_ASSERT(BOOST_VERSION >= 106200);
+
+namespace get_stats {
+
+std::string extension(const std::string& path) {
+  return filesys::path(path).extension().string();
+}
+
+std::string filename(const std::string& path) {
+  return filesys::path(path).filename().string();
+}
+
+
+std::string basename(const std::string& path) {
+  return filesys::path(path).stem().string();
+}
+
+std::string dirname(const std::string& path) {
+  return filesys::path(path).remove_filename().string();
+}
+
+std::string name_before_last_under_bar(const std::string& str) {
+  std::string fn;
+  std::string::size_type fpos;
+  if ((fpos = str.find_last_of("/")) != std::string::npos)
+    fn = str.substr(fpos + 1);
+  else
+    fn = str;
+  if ((fpos = fn.find_last_of(".")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  if ((fpos = fn.find_last_of("_")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  return fn;
+}
+
+std::string name_after_last_under_bar(const std::string& str) {
+  std::string fn;
+  std::string::size_type fpos;
+  if ((fpos = str.find_last_of("/")) != std::string::npos)
+    fn = str.substr(fpos + 1);
+  else
+    fn = str;
+  if ((fpos = fn.find_last_of(".")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  if ((fpos = fn.find_last_of("_")) != std::string::npos)
+    fn = fn.substr(fpos, std::string::npos);
+  return fn;
+}
+
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                    list                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+namespace list {
+
+//******************************************************************
+bool sort_by_integer(std::string file1, std::string file2) {
+  return string::extract_integer(get_stats::basename(file1)) <
+    string::extract_integer(get_stats::basename(file2));
+}
+
+std::vector<std::string> list_directories(const std::string& input_dir, bool with_integer) {
+  std::vector<std::string> directory_list;
+
+  if (filesys::exists(input_dir)) {
+    if (filesys::is_directory(input_dir)) {
+      for (const filesys::directory_entry& entry : filesys::directory_iterator(input_dir)) {
+        if (filesys::is_directory(entry)) {
+          directory_list.push_back(entry.path().string());
+          if (with_integer &&
+              string::extract_integer(entry.path().stem().string()) == -1) {
+            directory_list.pop_back();
+          }
+        }
+      }
+    } else {
+      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
     }
-    itr = ext.end()-1;
-    while(itr != ext.begin()){
-      if(*itr == 0 || *itr == 32){
-        ext.erase(itr--);
-      }else{
-        itr--;
+  } else {
+    throw wgInvalidFile(input_dir + " does not exist");
+  }
+
+  if (directory_list.size() == 0)
+    throw wgInvalidFile("Nothing meaningful found in " + input_dir);
+
+  if (with_integer)
+    std::sort(directory_list.begin(), directory_list.end(), sort_by_integer);
+
+  return directory_list;
+}
+
+//******************************************************************
+unsigned how_many_directories(const std::string& input_dir, bool with_integer) {
+  unsigned counter = 0;
+  
+  if (filesys::exists(input_dir)) {
+    if (filesys::is_directory(input_dir)) {
+      for (const filesys::directory_entry& entry : filesys::directory_iterator(input_dir)) {
+        if (filesys::is_directory(entry)) {
+          ++counter;
+          if (with_integer &&
+              string::extract_integer(entry.path().stem().string()) == -1) {
+            --counter;
+          }
+        }
+      }
+    } else {
+      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
+    }
+  } else {
+    throw wgInvalidFile(input_dir + " does not exist");
+  }
+
+  return counter;
+} 
+
+//******************************************************************
+std::vector<std::string> list_files(const std::string& input_dir, bool with_integer,
+                                    const std::string& x_extension) {
+  std::vector<std::string> file_list;
+  std::string extension(x_extension);
+  if (!extension.empty() && extension[0] != '.')
+    extension.insert(0, ".");
+
+  if (filesys::exists(input_dir)) {
+    if (filesys::is_directory(input_dir)) {
+      for (const filesys::directory_entry& entry : filesys::directory_iterator(input_dir)) {
+        if (filesys::is_regular_file(entry.path())) {
+          file_list.push_back(entry.path().string());
+          if (with_integer &&
+              string::extract_integer(file_list.back()) == -1)
+            file_list.pop_back();
+          if (!extension.empty() && (!entry.path().has_extension() ||
+                                     entry.path().extension().string() != extension))
+            file_list.pop_back();  
+        }
+      }
+    } else {
+      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
+    }
+  } else {
+    throw wgInvalidFile(input_dir + " does not exist");
+  }
+
+  if (file_list.size() == 0)
+    throw wgInvalidFile("Nothing meaningful found in " + input_dir);
+
+  if (with_integer)
+    std::sort(file_list.begin(), file_list.end(), sort_by_integer);
+
+  return file_list;   
+}
+
+//******************************************************************
+unsigned how_many_files(const std::string& input_dir, bool with_integer,
+                        const std::string& x_extension) {
+  unsigned counter = 0;
+  
+  std::string extension(x_extension);
+  if (!extension.empty() && extension[0] != '.')
+    extension.insert(0, ".");
+
+  if (filesys::exists(input_dir)) {
+    if (filesys::is_directory(input_dir)) {
+      for (const filesys::directory_entry& entry : filesys::directory_iterator(input_dir)) {
+        if (filesys::is_regular_file(entry.path())) {
+          ++counter;
+          if (with_integer &&
+              string::extract_integer(entry.path().string()) == -1)
+            --counter;
+          if (!extension.empty() && (!entry.path().has_extension() ||
+                                     entry.path().extension().string() != extension))
+            --counter;
+        }
+      }
+    } else {
+      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
+    }
+  } else {
+    throw wgInvalidFile(input_dir + " does not exist");
+  }
+  
+  return counter;
+}
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//                                    make                                   //
+///////////////////////////////////////////////////////////////////////////////
+
+namespace make {
+
+//******************************************************************
+void directory(const std::string& str) {
+  if( !check_exist::directory(str) ) {
+    filesys::path dir(str);
+    if( !filesys::create_directories(dir) ) {
+      throw wgInvalidFile("_failed to create directory " + str);
+    }
+  }
+}
+
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::Charge& charge,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path) {
+  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
+
+  cvs_file << "# DIF\t| CHIP\t| CHAN\t| ";
+  cvs_file << "ADC 1PEU ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << "ADC 2PEU ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << '\n';
+    
+  for (auto const& dif : bad_channels) {
+    unsigned dif_id = dif.first;
+    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
+      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+        if (dif.second[ichip][ichan] == true &&
+            ichan <= charge[v_idac[0]][ONE_PE][dif_id][ichip].size()) {
+          cvs_file << "  " << dif_id << "\t| " <<
+              ichip << "\t| " << ichan << "\t| ";
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << charge[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else cvs_file << "\t\t| ";
+          }
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << charge[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else if (i_idac == v_idac.size() - 1) cvs_file << '\n';
+            else cvs_file << "\t\t| ";
+          }
+        }
       }
     }
   }
-  return ext;
+  cvs_file.close();
 }
 
-std::string GetName(const std::string& str)
-{
-  std::string fn;
-  std::string tmp = str;
-  std::string::size_type fpos;
-  if( (fpos = tmp.find_last_of("/")) == tmp.size()-1){
-    tmp = tmp.substr(0,tmp.size()-1);
-  }
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::ugly::Gain& gain,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path) {
+  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
 
-  if((fpos = tmp.find_last_of("/")) != std::string::npos){
-    fn = tmp.substr(fpos+1);
-  }else{
-    fn = tmp;
+  cvs_file << "# DIF\t| CHIP\t| CHAN\t| ";
+  cvs_file << "GAIN ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
   }
-  if((fpos = fn.find_last_of(".")) != std::string::npos){
-    if(fpos>1){
-      fn = fn.substr(0,fpos);
-    }
-  }
-  return fn;
-}
-
-std::string GetPath(const std::string& str)
-{
-  size_t pos1;
-  pos1 = str.rfind("/");
-  if(pos1 != std::string::npos){
-    return str.substr(0,pos1+1);
-  }
-  return "";
-}
-
-std::string GetNameBeforeLastUnderBar(const std::string& str)
-{
-  std::string fn;
-  std::string::size_type fpos;
-  if((fpos = str.find_last_of("/")) != std::string::npos){
-    fn = str.substr(fpos+1);
-  }else{
-    fn = str;
-  }
-  if((fpos = fn.find_last_of(".")) != std::string::npos){
-    fn = fn.substr(0,fpos);
-  }
-  if((fpos = fn.find_last_of("_")) != std::string::npos){
-    fn = fn.substr(0,fpos);
-  }
-  return fn;
-}
-
-//******************************************************************
-std::vector<std::string> ListFilesWithExtension(const std::string& input_dir, const std::string& extension) {
-  std::vector<std::string> file_list;
-
-  if (boost::filesystem::exists(input_dir)) {
-    if (boost::filesystem::is_directory(input_dir)) {
-      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(input_dir))
-        if (GetExtension(entry.path().string()) == extension || extension.empty()) {
-          file_list.push_back(entry.path().string());
+  cvs_file << '\n';
+    
+  for (auto const& dif : bad_channels) {
+    unsigned dif_id = dif.first;
+    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
+      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+        if (dif.second[ichip][ichan] == true &&
+            ichan <= gain[v_idac[0]][dif_id][ichip].size()) {
+          cvs_file << "  " << dif_id << "\t| " <<
+              ichip << "\t| " << ichan << "\t| ";
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << gain[v_idac[i_idac]][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else if (i_idac == v_idac.size() - 1) cvs_file << '\n';
+            else cvs_file << "\t\t| ";
+          }
         }
-    } else {
-      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
-    }
-  } else {
-    throw wgInvalidFile(input_dir + " does not exist");
-  }
-  return file_list;   
-}
-  
-//******************************************************************
-std::vector<std::string> ListDirectories(const std::string& input_dir) {
-  std::vector<std::string> directory_list;
-
-  if (boost::filesystem::exists(input_dir)) {
-    if (boost::filesystem::is_directory(input_dir)) {
-      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(input_dir))
-        if (boost::filesystem::is_directory(entry))
-          directory_list.push_back(entry.path().string());
-    } else {
-      throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
-    }
-  } else {
-    throw wgInvalidFile(input_dir + " does not exist");
-  }
-  return directory_list;
-}
-  
-//******************************************************************
-unsigned HowManyFilesWithExtension(const std::string& input_dir, const std::string& extension) {
-  unsigned counter = 0;
-
-  if (boost::filesystem::exists(input_dir)) {
-    if (boost::filesystem::is_directory(input_dir)) {
-      for (const boost::filesystem::directory_entry& entry : boost::filesystem::directory_iterator(input_dir))
-        if (GetExtension(entry.path().string()) == extension || extension.empty())
-          counter++;
-    }
-    else throw wgInvalidFile(input_dir + " exists, but is not a regular directory");
-  }
-  else throw wgInvalidFile(input_dir + " does not exist");
-
-  return counter;
-}
-
-//******************************************************************
-unsigned HowManyDirectories(const std::string& input_dir) {
-  boost::filesystem::path the_path(input_dir);
-  unsigned counter = std::count_if( boost::filesystem::directory_iterator(the_path),
-                                    boost::filesystem::directory_iterator(),
-                                    static_cast<bool(*)(const boost::filesystem::path&)>(boost::filesystem::is_directory) );
-  return counter;
-} 
-  
-//******************************************************************
-void MakeDir(const std::string& str) {
-  if( !check_exist::Dir(str) ) {
-    boost::filesystem::path dir(str);
-    if( !boost::filesystem::create_directories(dir) ) {
-      throw wgInvalidFile("Failed to create directory " + str);
+      }
     }
   }
+  cvs_file.close();
 }
+
+} // make
+
+namespace string {
 
 //**********************************************************************
-unsigned extractIntegerFromString(const std::string& str) { 
+int extract_integer(const std::string& str) { 
   std::size_t const n = str.find_first_of("0123456789");
   if (n != std::string::npos)
   {
     std::size_t const m = str.find_first_not_of("0123456789", n);
-    return stoi(str.substr(n, m != std::string::npos ? m-n : m));
+    return std::stoi(str.substr(n, m != std::string::npos ? m-n : m));
   }
-  return UINT_MAX;
+  return -1;
+}
+
+int extract_dif_id(const std::string& path) {
+  std::string filename = get_stats::filename(path);
+  std::size_t pos = filename.find("ecal_dif_");
+  if (pos == std::string::npos) return -1;
+  return extract_integer(filename.substr(pos));
 }
 
 //**********************************************************************
-bool findStringIC(const std::string & strHaystack, const std::string & strNeedle)
+bool find_string_ic(const std::string & str_haystack, const std::string & str_needle)
 {
   auto it = std::search(
-    strHaystack.begin(), strHaystack.end(),
-    strNeedle.begin(),   strNeedle.end(),
-    [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); }
-  );
-  return (it != strHaystack.end() );
+      str_haystack.begin(), str_haystack.end(),
+      str_needle.begin(),   str_needle.end(),
+      [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); }
+                        );
+  return (it != str_haystack.end() );
 }
 
 //**********************************************************************
-int maxDepth(std::string str)
+int max_depth(std::string str)
 { 
   int current_max = 0; // current count 
   int max = 0;    // overall maximum count 
   int n = str.length(); 
   
-  // Traverse the input string 
+  // _traverse the input string 
   for (int i = 0; i< n; i++) { 
     if (str[i] == '{')  { 
       current_max++; 
@@ -225,88 +375,96 @@ int maxDepth(std::string str)
   return max; 
 }
 
+} // string
+
+///////////////////////////////////////////////////////////////////////////////
+//                                check_exist                                //
+///////////////////////////////////////////////////////////////////////////////
+
 namespace check_exist {
 
 //**********************************************************************
-bool GenericFile(const std::string& filename, const std::string & ext)
+bool generic_file(const std::string& filename, const std::string & ext)
 {
   try {
-    // Check for correct extension
-    if(GetExtension(filename) != ext)
-      throw wgInvalidFile(filename + " has not ." + ext + " extension");
-    // Create a Path object from given path string
-    filesys::path pathObj(filename);
-    // Check if path exists and is of a regular file
-    if (filesys::exists(pathObj) && filesys::is_regular_file(pathObj))
+    std::string extension(ext);
+    if (!extension.empty() && extension[0] != '.')
+      extension.insert(0, ".");
+    // check for correct extension
+    if(get_stats::extension(filename) != extension)
+      throw wgInvalidFile(filename + " has not ." + extension + " extension");
+    // create a path object from given path string
+    filesys::path path_obj(filename);
+    // check if path exists and is of a regular file
+    if (filesys::exists(path_obj) && filesys::is_regular_file(path_obj))
       return true;
   }
   catch(const std::exception& e) {
-    Log.Write("[wgErrorCode][" + ext +"File] " + std::string(e.what()));
+    Log.Write("[wgFileSystemTools]" + std::string(e.what()));
     return false;
   }
   return false;
 }
 
-bool RootFile(const TString& filename) {
-  return RootFile(std::string(filename.Data()));
+bool root_file(const TString& filename) {
+  return root_file(std::string(filename.Data()));
 }
 
-bool RootFile(const std::string& filename)
-{
+bool root_file(const std::string& filename) {
   try {
-    if (GenericFile(filename, std::string("root")) == false)
+    if (generic_file(filename, std::string(".root")) == false)
       return false;
-    // Check if the ROOT file is zombie
+    // check if the ROOT file is zombie
     TFile file(filename.c_str());
     if (file.IsZombie())
       throw wgInvalidFile(filename + " is zombie");
-    // Check if the ROOT file was successfully recovered
+    // check if the ROOT file was successfully recovered
     if (file.TestBit(TFile::kRecovered))
-      Log.Write("[wgErrorCode][RootFile] " + filename + " was successfully recovered");
-    // If everything is fine return true
+      Log.Write("[wg_error_code][_root_file] " + filename + " was successfully recovered");
+    // if everything is fine return true
     return true;
   }
   catch(const std::exception& e) {
-    Log.Write("[wgErrorCode][RootFile] " + std::string(e.what()));
+    Log.Write("[wg_error_code][_root_file] " + std::string(e.what()));
     return false;
   }
 }
 
-bool RawFile(const std::string& filename)
+bool raw_file(const std::string& filename)
 {
-  return GenericFile(filename, std::string("raw"));
+  return generic_file(filename, std::string(".raw"));
 }
 
-bool TxtFile(const std::string& filename)
+bool txt_file(const std::string& filename)
 {
-  return GenericFile(filename, std::string("txt"));
+  return generic_file(filename, std::string(".txt"));
 }
 
-bool CsvFile(const std::string& filename)
+bool csv_file(const std::string& filename)
 {
-  return GenericFile(filename, std::string("csv"));
+  return generic_file(filename, std::string(".csv"));
 }
 
-bool XmlFile(const std::string& filename)
+bool xml_file(const std::string& filename)
 {
-  return GenericFile(filename, std::string("xml"));
+  return generic_file(filename, std::string(".xml"));
 }
 
-bool LogFile(const std::string& filename)
+bool log_file(const std::string& filename)
 {
-  return GenericFile(filename, std::string("log"));
+  return generic_file(filename, std::string(".log"));
 }
 
-bool Dir(const std::string& filePath)
+bool directory(const std::string& file_path)
 {
   try {
-    // Create a Path object from given path string
-    filesys::path pathObj(filePath);
-    // Check if path exists and is of a directory file
-    if (filesys::exists(pathObj) && filesys::is_directory(pathObj))
+    // create a path object from given path string
+    filesys::path path_obj(file_path);
+    // _check if path exists and is of a directory file
+    if (filesys::exists(path_obj) && filesys::is_directory(path_obj))
       return true;
   }
-  catch (filesys::filesystem_error & e) {
+  catch (filesys::filesystem_error &e) {
     Log.eWrite(e.what());
   }
   return false;
@@ -314,9 +472,13 @@ bool Dir(const std::string& filePath)
 
 }  // check_exist
 
+///////////////////////////////////////////////////////////////////////////////
+//                                  datetime                                 //
+///////////////////////////////////////////////////////////////////////////////
+
 namespace datetime {
 
-int DatetimeToSeconds(const std::string & datetime) {
+int datetime_to_seconds(const std::string & datetime) {
   std::tm t = {};
   std::istringstream ss(datetime);
   if (ss >> std::get_time(&t, "%Y/%m/%d %H:%M:%S"))
