@@ -21,12 +21,17 @@ void print_help(std::string program_name) {
       "         value. The inputDAC optimized value is defined as the value\n"
       "         of the the inputDAC so that the MPPC gain is as close as\n"
       "         possible to 40 ADC counts. The threshold_card.xml AND\n"
-      "         gain_card.xml card files are needed.\n\n"
+      "         gain_card.xml card files are needed.\n"
+      "(mode 2 and 3) Set only the default values for WallMRDs (threshold = "
+            <<  WALL_MRD_THRESHOLD << ", input DAC = " << WALL_MRD_INPUTDAC
+            << ")\n"
       "Usage: " << program_name << " [OPTIONS]\n"
       "  -h         : print this help message\n"
       "  -m (int)   : mode selection (default 0)\n"
       "     0       :   optimized threshold\n"
       "     1       :   optimized threshold + inputDAC\n"
+      "     2       :   optimized threshold + default values for WallMRD\n"
+      "     3       :   optimized threshold + inputDAC + default values for WallMRD\n"
       "  -t (char*) : threshold card to read (mandatory)\n"
       "             :   default : \"/opt/calicoes/config/threshold_card.xml\"\n"
       "  -f (char*) : gain calibration card to read (mandatory only in mode 1)\n"
@@ -51,7 +56,6 @@ int main(int argc, char** argv) {
   unsigned mode       = 0;
   unsigned inputDAC   = 241;
   unsigned peu        = 2;
-  
 
   while((opt = getopt(argc, argv, "hm:t:f:u:s:p:i:")) != -1 ){
     switch(opt){
@@ -84,16 +88,40 @@ int main(int argc, char** argv) {
         exit(0);
     }   
   }
-  int result;
-  if ( (result = wgOptimize(threshold_card.c_str(),
-                            gain_card.c_str(),
-                            topology_source.c_str(),
-                            wagasci_bitstream_dir.c_str(),
-                            mode,
-                            peu,
-                            inputDAC)) != WG_SUCCESS ) {
-    Log.eWrite("[wgOptimize] wgOptimize returned error " + std::to_string(result));
-    exit(result);
+
+  std::bitset<optimize::NUM_OPTIMIZE_MODES> flags;
+
+  switch (mode) {
+    case 0:
+      flags[optimize::OP_THRESHOLD_MODE] = true;
+      break;
+    case 1:
+      flags[optimize::OP_INPUTDAC_MODE] = true;
+      break;
+    case 2:
+      flags[optimize::OP_THRESHOLD_MODE] = true;
+      flags[optimize::OP_WALL_MRD] = true;
+      break;
+    case 3:
+      flags[optimize::OP_THRESHOLD_MODE] = true;
+      flags[optimize::OP_WALL_MRD] = true;
+      break;
+    default:
+      Log.eWrite("[wgOptimize] wrong mode.");
+      exit(ERR_WRONG_MODE);
+      break;                                           
   }
-  exit(WG_SUCCESS);
+  
+  int result;
+  if ((result = wgOptimize(threshold_card.c_str(),
+                           gain_card.c_str(),
+                           topology_source.c_str(),
+                           wagasci_bitstream_dir.c_str(),
+                           flags.to_ulong(),
+                           peu,
+                           inputDAC)) != WG_SUCCESS) {
+    Log.eWrite("[wgOptimize] wgOptimize returned error " +
+               std::to_string(result));
+  }
+  exit(result);
 }
