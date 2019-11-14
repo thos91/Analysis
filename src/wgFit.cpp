@@ -109,7 +109,8 @@ void wgFit::NoiseRate(double (&x)[2], unsigned dif_id, unsigned ichip,
   delete bcid_hit;
 }
 
-void wgFit::Charge(TH1I * charge, double (&x)[3], wgFit::GainSelect gs) {
+void wgFit::Charge(TH1I * charge, double (&x)[3], wgFit::GainSelect gs,
+                   Int_t custom_begin, Int_t custom_end) {
 
   ROOT::Math::MinimizerOptions::SetDefaultStrategy(0);
   // If the fit fails too many times try to set a smaller tolerance
@@ -141,6 +142,8 @@ void wgFit::Charge(TH1I * charge, double (&x)[3], wgFit::GainSelect gs) {
       end = MAX_VALUE_12BITS;
       break;
   }
+  // bypass begin and set custom_begin if any
+  if (custom_begin != -1) begin = custom_begin;
 
   charge->GetXaxis()->SetRange(begin, end);
   Double_t par[3];
@@ -152,9 +155,9 @@ void wgFit::Charge(TH1I * charge, double (&x)[3], wgFit::GainSelect gs) {
   gaussian->SetParameters(par);
   gaussian->SetParNames("mean", "normalization", "sigma");
   gaussian->SetParLimits(0, 0.5 * par[0], 2 * par[0]);
-  gaussian->SetParLimits(1, par[1] - 0.5 * WG_NOMINAL_GAIN,
-                         par[1] + 0.5 * WG_NOMINAL_GAIN);
-  gaussian->SetParLimits(2, 0, 0.5 * WG_NOMINAL_GAIN);
+  gaussian->SetParLimits(1, par[1] - 0.5 * WG_TARGET_GAIN,
+                         par[1] + 0.5 * WG_TARGET_GAIN);
+  gaussian->SetParLimits(2, 0, 0.5 * WG_TARGET_GAIN);
   
   // "B" : Use user defined boundaries
   // "Q": quiet mode (minimum printing)
@@ -390,9 +393,99 @@ void wgFit::Gain(TH1I * charge_hit, std::array<double, 2>& gain,
 }
 
 //**********************************************************************
-void wgFit::Gain(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
-                 unsigned ichan, int icol, unsigned n_peaks,
-                 bool print_flag, bool do_not_fit) {
+void wgFit::Gain1(std::array<double, 2>& gain, unsigned dif_id,
+                  unsigned ichip, unsigned ichan, int icol, bool print_flag) {
+  
+  std::vector<TH1I *> charge_hit_HG;
+  std::vector<TH1I *> charge_nohit;
+  
+  if (icol >= 0) {
+    charge_hit_HG.push_back(wgFit::histos_.Get_charge_hit_HG(dif_id, ichip,
+                                                             ichan, icol));
+    charge_nohit.push_back(wgFit::histos_.Get_charge_nohit(dif_id, ichip,
+                                                           ichan, icol));
+  } else {
+    charge_hit_HG.push_back(wgFit::histos_.Get_charge_hit_HG(dif_id, ichip,
+                                                             ichan, 0));
+    charge_nohit.push_back(wgFit::histos_.Get_charge_nohit(dif_id, ichip,
+                                                           ichan, 0));
+  }
+  
+  if (charge_hit_HG.at(0) == nullptr || charge_nohit.at(0) == nullptr) {
+    gain[0] = gain[1] = -1;
+    std::stringstream ss;
+    ss << "charge_hit_HG or charge_nohit histograms not found : dif = "
+       << dif_id << "chip = " << ichip << ", chan = " << ichan <<
+        ", col = " << icol;
+    throw wgElementNotFound(ss.str());
+  }
+  charge_hit_HG.at(0)->SetDirectory(0);
+  charge_nohit.at(0)->SetDirectory(0);
+  
+  if (icol < 0)
+    for (unsigned i = 1; i < MEMDEPTH; ++i) {
+      // The tenth column is to be avoided because the charge_nohit
+      // histogram shows always a peak around 1PEU
+      if (i != 10) {
+        charge_hit_HG.push_back(
+            wgFit::histos_.Get_charge_hit_HG(dif_id, ichip, ichan, i));
+        charge_nohit.push_back(
+            wgFit::histos_.Get_charge_nohit(dif_id, ichip, ichan, i));
+        if (charge_hit_HG.back() != nullptr) {
+          charge_hit_HG.back()->SetDirectory(0);
+          charge_hit_HG.at(0)->Add(charge_hit_HG.back());
+        }
+        if (charge_nohit.back() != nullptr) {
+          charge_nohit.back()->SetDirectory(0);
+          charge_nohit.at(0)->Add(charge_nohit.back());
+        }
+      }
+    }
+
+  double pedestal[3], one_pe[3];
+  try { wgFit::Charge(charge_nohit.at(0), pedestal, GainSelect::Pedestal); }
+  catch (const std::exception&) {
+    delete_pointers(charge_hit_HG);
+    delete_pointers(charge_nohit);
+    throw;
+  }
+
+  if (gain[0] <= 0) gain[0] = WG_TARGET_GAIN;
+  
+  unsigned iterations = 0;
+  do {
+    try {
+      wgFit::Charge(charge_hit_HG.at(0), one_pe, GainSelect::HighGain,
+                    pedestal[0] + iterations * pedestal[1]);
+    } catch (const std::exception&) {
+      delete_pointers(charge_hit_HG);
+      delete_pointers(charge_nohit);
+      throw;
+    }
+  } while (std::fabs(one_pe[0] - pedestal[0]) < 15 &&
+           std::fabs(one_pe[0] - pedestal[0]) > 2 * gain[0] &&
+           iterations++ < 3);
+    
+  gain[0] = one_pe[0] - pedestal[0];
+  gain[1] = std::sqrt(std::pow(one_pe[1], 2) + std::pow(pedestal[1], 2));
+
+  if (print_flag && (!output_img_dir_.empty())) {
+    icol = (icol < 0) ? 0 : icol;
+    TString image;
+    image.Form("%s/gain_%d_%d_%d.png",
+               output_img_dir_.c_str(), ichip, ichan, icol);
+    charge_hit_HG.at(0)->GetXaxis()->SetRange(WG_BEGIN_CHARGE_NOHIT,
+                                              WG_END_CHARGE_HIT_HG);
+    wgFit::histos_.Print_charge_hit_HG(image, charge_hit_HG.at(0));
+  }
+  
+  delete_pointers(charge_hit_HG);
+}
+
+//**********************************************************************
+void wgFit::Gain2(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
+                  unsigned ichan, int icol, unsigned n_peaks,
+                  bool print_flag, bool do_not_fit) {
   
   std::vector<TH1I *> charge_hit_HG;
   
@@ -416,9 +509,9 @@ void wgFit::Gain(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
     for (unsigned i = 1; i < MEMDEPTH; ++i) {
       charge_hit_HG.push_back(wgFit::histos_.Get_charge_hit_HG(dif_id, ichip,
                                                                ichan, i));
-      if (charge_hit_HG.at(i) != nullptr) {
-        charge_hit_HG.at(i)->SetDirectory(0);
-        charge_hit_HG.at(0)->Add(charge_hit_HG.at(i));
+      if (charge_hit_HG.back() != nullptr) {
+        charge_hit_HG.back()->SetDirectory(0);
+        charge_hit_HG.at(0)->Add(charge_hit_HG.back());
       }
     }
 
@@ -440,3 +533,4 @@ void wgFit::Gain(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
   
   delete_pointers(charge_hit_HG);
 }
+

@@ -70,7 +70,8 @@ public:
 
   // Method that does the actual fit.
   static void Charge(TH1I * charge, double (&x)[3],
-                     GainSelect gs = GainSelect::HighGain);
+                     GainSelect gs = GainSelect::HighGain,
+                     Int_t custom_begin = -1, Int_t custom_end = -1);
 
   // fit the charge_hit_HG histogram
   void ChargeHitHG(double (&x)[3], unsigned dif_id, unsigned ichip,
@@ -102,9 +103,13 @@ public:
   // directory set in the constructor or by the SetOutputImgDir method. If the
   // do_not_fit flag is set to true, the fitting is not done (the peaks are
   // searched only through the TSpectrum class).
-  void Gain(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
-            unsigned ichan, int icol = -1, unsigned n_peaks = 2,
-            bool print_flag = false, bool do_not_fit = false);
+  void Gain2(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
+             unsigned ichan, int icol = -1, unsigned n_peaks = 2,
+             bool print_flag = false, bool do_not_fit = false);
+  // Alternative method that subtracts the charge_nohit histogram to
+  // the charge_hit_HG histogram before doing the fit
+  void Gain1(std::array<double, 2>& gain, unsigned dif_id, unsigned ichip,
+             unsigned ichan, int icol = -1, bool print_flag = false);
   
   // Copy the passed string into the outputIMGDir private member 
   void SetOutputImgDir(const std::string& output_image_dir);
