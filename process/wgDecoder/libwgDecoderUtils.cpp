@@ -31,15 +31,15 @@ void ThrowOneByte(std::istream& is) {
 std::streampos ReadLine(std::istream& is,
                         std::bitset<BITS_PER_LINE>& raw_data) {
   if (!is.read((char*) &raw_data, BYTES_PER_LINE)) {
+    if (is.eof()) throw wgEOF("EOF reached");
     if (is.fail()) {
-      Log.eWrite("[wgDecoder] read failed");
+      Log.eWrite("[wgDecoder] read failed (if the end of file is reached this is normal)");
     }
     if (is.bad()) {
       Log.eWrite("[wgDecoder] input stream is corrupted");
       throw wgEOF("[wgDecoder] input stream is corrupted");
     }
   }
-  if (is.eof()) throw wgEOF("EOF reached");
   if (is.tellg() == -1) {
     Log.eWrite("[wgDecoder] Read position failed");
     throw wgEOF("[wgDecoder] Read position failed");
