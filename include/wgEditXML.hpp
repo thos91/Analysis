@@ -261,7 +261,8 @@ public:
                       unsigned idif,
                       unsigned ichip,
                       unsigned ichan,
-                      unsigned iDAC);
+                      unsigned iDAC,
+                      unsigned peu = 1);
 
   // wgEditXML::OPT_SetChanValue
   // data -> dif_%d -> chip_%d -> chan_%d 

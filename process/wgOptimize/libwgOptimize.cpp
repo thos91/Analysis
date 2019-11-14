@@ -117,7 +117,7 @@ int wgOptimize(const char * x_threshold_card,
           switch (mode) {
             case OP_THRESHOLD_MODE:
               optimized_threshold[idif][ichip].push_back(Edit.OPT_GetValue(
-                  "threshold_" + std::to_string(pe), idif, ichip, ichan, input_dac));
+                  "threshold_" + std::to_string(pe), idif, ichip, ichan, input_dac, pe));
             case OP_INPUTDAC_MODE:
               // s_th is the slope of the linear fit of the input_dac (x) vs optimal
               // threshold for the given p.e. equivalend (y)

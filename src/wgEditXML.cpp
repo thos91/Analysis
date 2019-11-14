@@ -766,7 +766,7 @@ void wgEditXML::OPT_SetValue(const std::string& name,
 }
 
 //**********************************************************************
-double wgEditXML::OPT_GetValue(const std::string& name,unsigned idif, unsigned ichip, unsigned ichan, unsigned iDAC) {
+double wgEditXML::OPT_GetValue(const std::string& name,unsigned idif, unsigned ichip, unsigned ichan, unsigned iDAC, unsigned peu) {
   char str[XML_ELEMENT_STRING_LENGTH];
   XMLElement* data = xml->FirstChildElement("data");
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "dif_%d", idif);
@@ -777,10 +777,19 @@ double wgEditXML::OPT_GetValue(const std::string& name,unsigned idif, unsigned i
   XMLElement* chan = chip->FirstChildElement(str);
   snprintf(str, XML_ELEMENT_STRING_LENGTH, "inputDAC_%d", iDAC);
   XMLElement* inputDAC = chan->FirstChildElement(str);
+  if (!inputDAC) {
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "slope_threshold%d", peu);
+    XMLElement* slope_threshold = chan->FirstChildElement(str);
+    double slope = std::stod(slope_threshold->GetText());
+    snprintf(str, XML_ELEMENT_STRING_LENGTH, "intercept_threshold%d", peu);
+    XMLElement* intercept_threshold = chan->FirstChildElement(str);
+    double intercept = std::stod(intercept_threshold->GetText());
+    return iDAC * slope + intercept;
+  }
   XMLElement* target = inputDAC->FirstChildElement(name.c_str());
   if (target) {
     std::string value = target->GetText();
-    return stoi(value);
+    return std::stod(value);
   } else {
     throw wgElementNotFound("Element " + name + " doesn't exist");
     return -1;
