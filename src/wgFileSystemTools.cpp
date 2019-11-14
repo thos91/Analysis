@@ -20,6 +20,8 @@
 #include "wgExceptions.hpp"
 #include "wgConst.hpp"
 #include "wgFileSystemTools.hpp"
+#include "wgGainCalib.hpp"
+#include "wgGainCalibUgly.hpp"
 #include "wgLogger.hpp"
 
 namespace filesys = boost::filesystem;
@@ -34,6 +36,11 @@ std::string extension(const std::string& path) {
   return filesys::path(path).extension().string();
 }
 
+std::string filename(const std::string& path) {
+  return filesys::path(path).filename().string();
+}
+
+
 std::string basename(const std::string& path) {
   return filesys::path(path).stem().string();
 }
@@ -42,23 +49,34 @@ std::string dirname(const std::string& path) {
   return filesys::path(path).remove_filename().string();
 }
 
-std::string name_before_last_under_bar(const std::string& str)
-{
+std::string name_before_last_under_bar(const std::string& str) {
   std::string fn;
   std::string::size_type fpos;
-  if((fpos = str.find_last_of("/")) != std::string::npos){
-    fn = str.substr(fpos+1);
-  }else{
+  if ((fpos = str.find_last_of("/")) != std::string::npos)
+    fn = str.substr(fpos + 1);
+  else
     fn = str;
-  }
-  if((fpos = fn.find_last_of(".")) != std::string::npos){
-    fn = fn.substr(0,fpos);
-  }
-  if((fpos = fn.find_last_of("_")) != std::string::npos){
-    fn = fn.substr(0,fpos);
-  }
+  if ((fpos = fn.find_last_of(".")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  if ((fpos = fn.find_last_of("_")) != std::string::npos)
+    fn = fn.substr(0, fpos);
   return fn;
 }
+
+std::string name_after_last_under_bar(const std::string& str) {
+  std::string fn;
+  std::string::size_type fpos;
+  if ((fpos = str.find_last_of("/")) != std::string::npos)
+    fn = str.substr(fpos + 1);
+  else
+    fn = str;
+  if ((fpos = fn.find_last_of(".")) != std::string::npos)
+    fn = fn.substr(0, fpos);
+  if ((fpos = fn.find_last_of("_")) != std::string::npos)
+    fn = fn.substr(fpos, std::string::npos);
+  return fn;
+}
+
 
 }
 
@@ -83,7 +101,7 @@ std::vector<std::string> list_directories(const std::string& input_dir, bool wit
         if (filesys::is_directory(entry)) {
           directory_list.push_back(entry.path().string());
           if (with_integer &&
-              string::extract_integer(entry.path().stem().string()) == UINT_MAX) {
+              string::extract_integer(entry.path().stem().string()) == -1) {
             directory_list.pop_back();
           }
         }
@@ -114,7 +132,7 @@ unsigned how_many_directories(const std::string& input_dir, bool with_integer) {
         if (filesys::is_directory(entry)) {
           ++counter;
           if (with_integer &&
-              string::extract_integer(entry.path().stem().string()) == UINT_MAX) {
+              string::extract_integer(entry.path().stem().string()) == -1) {
             --counter;
           }
         }
@@ -143,7 +161,7 @@ std::vector<std::string> list_files(const std::string& input_dir, bool with_inte
         if (filesys::is_regular_file(entry.path())) {
           file_list.push_back(entry.path().string());
           if (with_integer &&
-              string::extract_integer(file_list.back()) == UINT_MAX)
+              string::extract_integer(file_list.back()) == -1)
             file_list.pop_back();
           if (!extension.empty() && (!entry.path().has_extension() ||
                                      entry.path().extension().string() != extension))
@@ -181,7 +199,7 @@ unsigned how_many_files(const std::string& input_dir, bool with_integer,
         if (filesys::is_regular_file(entry.path())) {
           ++counter;
           if (with_integer &&
-              string::extract_integer(entry.path().string()) == UINT_MAX)
+              string::extract_integer(entry.path().string()) == -1)
             --counter;
           if (!extension.empty() && (!entry.path().has_extension() ||
                                      entry.path().extension().string() != extension))
@@ -216,19 +234,103 @@ void directory(const std::string& str) {
   }
 }
 
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::Charge& charge,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path) {
+  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
+
+  cvs_file << "# DIF\t| CHIP\t| CHAN\t| ";
+  cvs_file << "ADC 1PEU ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << "ADC 2PEU ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << '\n';
+    
+  for (auto const& dif : bad_channels) {
+    unsigned dif_id = dif.first;
+    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
+      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+        if (dif.second[ichip][ichan] == true &&
+            ichan <= charge[v_idac[0]][ONE_PE][dif_id][ichip].size()) {
+          cvs_file << "  " << dif_id << "\t| " <<
+              ichip << "\t| " << ichan << "\t| ";
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << charge[v_idac[i_idac]][ONE_PE][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else cvs_file << "\t\t| ";
+          }
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << charge[v_idac[i_idac]][TWO_PE][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else if (i_idac == v_idac.size() - 1) cvs_file << '\n';
+            else cvs_file << "\t\t| ";
+          }
+        }
+      }
+    }
+  }
+  cvs_file.close();
 }
+
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::ugly::Gain& gain,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path) {
+  std::ofstream cvs_file(cvs_file_path, std::ios::out | std::ios::app);
+
+  cvs_file << "# DIF\t| CHIP\t| CHAN\t| ";
+  cvs_file << "GAIN ";
+  for (auto const& idac : v_idac) {
+    cvs_file << "iDAC " << idac <<"\t| ";
+  }
+  cvs_file << '\n';
+    
+  for (auto const& dif : bad_channels) {
+    unsigned dif_id = dif.first;
+    for (unsigned ichip = 0; ichip < dif.second.size(); ++ichip) {
+      for (unsigned ichan = 0; ichan < NCHANNELS; ++ichan) {
+        if (dif.second[ichip][ichan] == true &&
+            ichan <= gain[v_idac[0]][dif_id][ichip].size()) {
+          cvs_file << "  " << dif_id << "\t| " <<
+              ichip << "\t| " << ichan << "\t| ";
+          for (unsigned i_idac = 0; i_idac < v_idac.size(); ++i_idac) {
+            cvs_file << gain[v_idac[i_idac]][dif_id][ichip][ichan];
+            if (i_idac == 0) cvs_file << "\t\t\t| ";
+            else if (i_idac == v_idac.size() - 1) cvs_file << '\n';
+            else cvs_file << "\t\t| ";
+          }
+        }
+      }
+    }
+  }
+  cvs_file.close();
+}
+
+} // make
 
 namespace string {
 
 //**********************************************************************
-unsigned extract_integer(const std::string& str) { 
+int extract_integer(const std::string& str) { 
   std::size_t const n = str.find_first_of("0123456789");
   if (n != std::string::npos)
   {
     std::size_t const m = str.find_first_not_of("0123456789", n);
     return std::stoi(str.substr(n, m != std::string::npos ? m-n : m));
   }
-  return UINT_MAX;
+  return -1;
+}
+
+int extract_dif_id(const std::string& path) {
+  std::string filename = get_stats::filename(path);
+  std::size_t pos = filename.find("ecal_dif_");
+  if (pos == std::string::npos) return -1;
+  return extract_integer(filename.substr(pos));
 }
 
 //**********************************************************************
@@ -273,7 +375,7 @@ int max_depth(std::string str)
   return max; 
 }
 
-}
+} // string
 
 ///////////////////////////////////////////////////////////////////////////////
 //                                check_exist                                //

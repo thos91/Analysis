@@ -44,14 +44,14 @@ void newblock(void *workspace, struct block *block)
 {
   //struct om_ws *ws = (struct om_ws *) workspace;
 
-  int spill_number = std::stoi(get_block_field(block, "spill_number"));
-  int spill_flag   = std::stoi(get_block_field(block, "spill_flag"));
-  int spill_count  = std::stoi(get_block_field(block, "spill_count"));
+//   int spill_number = std::stoi(get_block_field(block, "spill_number"));
+//   int spill_flag   = std::stoi(get_block_field(block, "spill_flag"));
+//   int spill_count  = std::stoi(get_block_field(block, "spill_count"));
 
-#ifdef DEBUG_WG_ONLINE_MONITOR
-  std::cout << "\nNew block\nID: " << block->id << " | Spill number: " << spill_number <<
-      " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;
-#endif
+// #ifdef DEBUG_WG_ONLINE_MONITOR
+//   std::cout << "\nNew block\nID: " << block->id << " | Spill number: " << spill_number <<
+//       " | Spill flag: " << spill_flag << " | Spill count: " << spill_count << std::endl;
+// #endif
 } //newblock
 
 // ==================================================================
@@ -183,7 +183,7 @@ void endblock(void *workspace, struct block *block) {
 
   Double_t time = duration<double>(system_clock::now().time_since_epoch()).count();
   
-  double fit_gain[2] = {};
+  std::array<double, 2> fit_gain{};
   for (auto const& h_chip_charge : ws->h_charge) {
     for (auto const& h_chan_charge : h_chip_charge) {
       if (h_chan_charge->GetEntries() >= FIT_WHEN_CHARGE_ENTRIES_ARE) {

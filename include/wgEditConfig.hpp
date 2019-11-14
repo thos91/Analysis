@@ -91,7 +91,7 @@ public:
 
   // wgEditConfig::Change_trigth_and_adj
   // Change both the global and adjustable threshold for all the channels
-  void Change_trigth_and_adj(std::vector<unsigned> threshold);
+  void Change_trigth_and_adj(std::vector<unsigned>& threshold);
 
   // wgEditConfig::Change_gainth
   void Change_gainth(unsigned value);

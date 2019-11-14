@@ -1,6 +1,9 @@
 #ifndef WGFITCONST_H_INCLUDE
 #define WGFITCONST_H_INCLUDE
 
+// minimum number of entries to fit a histogram
+extern const int WG_MIN_ENTRIES_FOR_FIT;
+
 // fit range for the charge_nohit histogram
 extern const int WG_BEGIN_CHARGE_NOHIT;
 extern const int WG_END_CHARGE_NOHIT;
@@ -11,6 +14,11 @@ extern const int WG_END_CHARGE_HIT_HG;
 extern const int WG_BEGIN_CHARGE_HIT_LG;
 extern const int WG_END_CHARGE_HIT_LG;
 
+// average values of the peak for each peu
+extern const int WG_PEAK_CHARGE_0PE;
+extern const int WG_PEAK_CHARGE_1PE;
+extern const int WG_PEAK_CHARGE_2PE;
+
 // limits for the dark noise rate
 extern const double WG_LOWER_LIMIT_1PE;
 extern const double WG_UPPER_LIMIT_1PE;
@@ -20,7 +28,9 @@ extern const double WG_LOWER_LIMIT_3PE;
 extern const double WG_UPPER_LIMIT_3PE;
 
 // nominal value for the MPPC gain
-extern const double WG_NOMINAL_GAIN;
+extern const double WG_TARGET_GAIN;
+extern const double WG_TARGET_GAIN_SLOPE;
+extern const double WG_TARGET_GAIN_INTERCEPT;
 
 // time interval in seconds of 1 BCID count
 extern const double TIME_BCID;

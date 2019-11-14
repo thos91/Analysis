@@ -8,7 +8,12 @@
 #include <fstream>
 #include <vector>
 
+// ROOT includes
 #include "TString.h"
+
+// user includes
+#include "wgGainCalib.hpp"
+#include "wgGainCalibUgly.hpp"
 
 namespace wagasci_tools {
 
@@ -22,6 +27,10 @@ namespace get_stats {
 // extension("/path/to/file.txt") -> ".txt"
 std::string extension(const std::string& str);
 
+// extract the file or directory name
+// filename("/path/to/file.txt") -> "file.txt"
+std::string filename(const std::string& str);
+
 // extract the top-level file or directory name without extension
 // basename("/path/to/file.txt") -> "file"
 std::string basename(const std::string& str);
@@ -33,6 +42,10 @@ std::string dirname(const std::string& str);
 // extract the name before the last underscore
 // name_before_last_under_bar("/path/to/my_file.txt") -> "my"
 std::string name_before_last_under_bar(const std::string& str);
+
+// extract the name after the last underscore
+// name_after_last_under_bar("/path/to/my_file.txt") -> "file"
+std::string name_after_last_under_bar(const std::string& str);
 
 } // get_stats
 
@@ -75,6 +88,20 @@ namespace make {
 // _create the directory whose absolute path is "str"
 void directory(const std::string& str);
 
+// Print the bad_channels map to a CVS file. The file format is as
+// follows:
+//
+// "DIF"  "CHIP" "CHANNEL" "ADC 1PEU for each iDAC" "ADC 2PEU for each iDAC"
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::Charge& charge,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path);
+// "DIF"  "CHIP" "CHANNEL" "FAIN for each iDAC"
+void bad_channels_file(const gain_calib::BadChannels& bad_channels,
+                       gain_calib::ugly::Gain& gain,
+                       const std::vector<unsigned>& v_idac,
+                       const std::string &cvs_file_path);
+
 } // make
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,11 +111,16 @@ void directory(const std::string& str);
 namespace string {
 
 // extract the first unsigned integer from a std::string. If not found
-// returns UINT_MAX
-unsigned extract_integer(const std::string& str);
+// returns -1
+int extract_integer(const std::string& str);
+
+// extract the DIF ID from a filename or path. The DIF ID must come
+// after the "ecal_dif_" string. If not found -1 is returned
+int extract_dif_id(const std::string& str);
 
 // _try to find in the haystack the needle - ignore case
-bool find_string_ic(const std::string & str_haystack, const std::string & str_needle);
+bool find_string_ic(const std::string & str_haystack,
+                    const std::string & str_needle);
 
 // _helper function that takes a string and returns the maximum depth
 // nested parenthesis

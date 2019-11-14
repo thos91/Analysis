@@ -1,4 +1,4 @@
-set(process wgAnaHistSummary)
+set(process wgGainCalibUgly)
 
 ################ Compiler flags ################
 
@@ -25,7 +25,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../../include")
 
 # ROOT include directory
-include_directories("${ROOT_INCLUDE_DIRS}")
+include_directories(${ROOT_INCLUDE_DIRS})
 
 #####################################################################
 #                                                                   #
@@ -42,6 +42,7 @@ target_link_libraries(lib${process}
  ${ROOT_LIBRARIES}            # ROOT libraries
  ${Boost_FILESYSTEM_LIBRARY}  # boost filesystem libraries
  ${Boost_SYSTEM_LIBRARY}      # boost system libraries
+ ${CMAKE_THREAD_LIBS_INIT}
  libwagasci                   # WAGASCI dynamic library
  )
 
@@ -50,18 +51,6 @@ target_include_directories(lib${process} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # install the static library in the lib folder
 install(TARGETS lib${process} DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
-
-#####################################################################
-#                                                                   #
-#                         ImageMagick                               #
-#                                                                   #
-#####################################################################
-
-IF ( ImageMagick_FOUND )
-  SET( HAVE_IMAGEMAGICK "YES" )
-  INCLUDE_DIRECTORIES( ${ImageMagick_INCLUDE_DIRS} )
-  TARGET_LINK_LIBRARIES( lib${process} ${ImageMagick_LIBRARIES} )
-ENDIF()
 
 #####################################################################
 #                                                                   #

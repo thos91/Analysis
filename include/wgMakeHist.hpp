@@ -7,16 +7,18 @@
 // user includes
 #include "wgConst.hpp"
 
-enum WG_MAKEHIST_MODE {
-  SELECT_DARK_NOISE = 0,
-  SELECT_CHARGE,
-  SELECT_PEDESTAL,
-  SELECT_TIME,
-  N_MODES
+namespace makehist {
+enum WG_MAKEHIST_FLAGS {
+  SELECT_DARK_NOISE = 0, // 6
+  SELECT_CHARGE_HG  = 1, // 5
+  SELECT_CHARGE_LG  = 2, // 4
+  SELECT_PEU        = 3, // 3
+  SELECT_PEDESTAL   = 4, // 2
+  SELECT_TIME       = 5, // 1
+  OVERWRITE         = 6, // 0
+  NFLAGS = 7
 };
-
-// Set the flags according to the mode
-void ModeSelect(int mode, std::bitset<N_MODES>& flag);
+}
 
 // This is needed to call the following functions from Python using ctypes
 #ifdef __cplusplus
@@ -26,8 +28,7 @@ extern "C" {
 int wgMakeHist(const char * x_input_file_name,
                const char * x_pyrame_config_file,
                const char * x_output_dir,
-               const int mode,
-               bool overwrite = false,
+               const unsigned long ul_flags,
                unsigned dif = 0);
   
 #ifdef __cplusplus

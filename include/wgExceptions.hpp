@@ -3,6 +3,7 @@
 
 #include <string>
 #include <exception>
+#include <stdexcept>
 
 // This exception is thrown when a file is not found or its content is invalid
 class wgInvalidFile : public std::exception
@@ -37,7 +38,8 @@ class wgElementNotFound : public std::exception
 private:
   std::string what_message = " ";
 public:
-  explicit wgElementNotFound(std::string message) : what_message(message) { }
+  explicit wgElementNotFound(std::string message) :
+      what_message(message) { }
   const char* what() const noexcept override
   {
 	return what_message.c_str();
@@ -52,6 +54,30 @@ private:
   std::string what_message = " ";
 public:
   explicit wgNotInitialized(std::string message) : what_message(message) { }
+  const char* what() const noexcept override
+  {
+	return what_message.c_str();
+  }
+};
+
+class wgNotImplemented : public std::exception
+{
+ private:
+  std::string what_message = " ";
+public:
+  explicit wgNotImplemented(std::string message) : what_message(message) { }
+  const char* what() const noexcept override
+  {
+	return what_message.c_str();
+  }
+};
+
+class wgFitFailed : public std::exception
+{
+ private:
+  std::string what_message = " ";
+public:
+  explicit wgFitFailed(std::string message) : what_message(message) { }
   const char* what() const noexcept override
   {
 	return what_message.c_str();
